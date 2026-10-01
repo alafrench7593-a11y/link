@@ -12,8 +12,14 @@ export const Training = {
     ];
   },
 
+  // §6 : une séance consomme une séance en stock. L'entraînement est donc une
+  // décision, pas un bouton qu'on presse en boucle. Le refus dit toujours pourquoi.
   train(id) {
-    const s = this.state, T = this.TRAININGS().find((t) => t.id === id); if (!T || s.match && !s.match.done) return;
+    const s = this.state, T = this.TRAININGS().find((t) => t.id === id);
+    if (!T) return { ok: false, why: 'Séance inconnue' };
+    const info = this.trainInfo();
+    if (!info.can) return { ok: false, why: info.why };
+    if (!this.takeSession()) return { ok: false, why: this.trainInfo().why };
     let squad = this.applyFitness(s.squad, null, T), lines = [];
     if (T.gain) squad = squad.map((p) => {
       if (p.pos === 'GB' || p.inj || this.rand(0, 99) > 45 + (p.pot - p.ovr) * 4 * (s.coach === 'formateur' ? 2 : 1)) return p;
@@ -24,7 +30,8 @@ export const Training = {
     const hurt = [];
     if (T.risk) squad = squad.map((p) => { if (!p.inj && this.rand(0, 999) / 1000 < T.risk) { hurt.push(p.name); return Object.assign({}, p, { inj: 1 + this.rand(0, 2) }); } return p; });
     this.buzz(20);
-    this.setState({ squad, cohBonus: Math.min(0.12, (s.cohBonus || 0) + (T.coh || 0)), trainLog: 'Séance ' + T.label + (lines.length ? ' · ' + lines.slice(0, 3).join(', ') : '') + (hurt.length ? ' · blessé : ' + hurt.join(', ') : ''), trainDone: (s.trainDone || 0) + 1 });
+    this.setState({ squad, cohBonus: Math.min(0.12, (s.cohBonus || 0) + (T.coh || 0)), trainLog: 'Séance ' + T.label + (lines.length ? ' · ' + lines.slice(0, 3).join(', ') : '') + (hurt.length ? ' · blessé : ' + hurt.join(', ') : '') + ' · ' + this.sessions() + ' séance(s) restante(s)', trainDone: (s.trainDone || 0) + 1 });
+    return { ok: true, gains: lines, hurt };
   },
 
   applyFitness(squad, mt, training) {

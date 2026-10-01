@@ -49,7 +49,6 @@ export declare class Club {
   profile(p: Player): Record<string, unknown>;
   synergy(xi: Player[]): { score: number; labels: string[] };
   finances(state: ClubState, res: 'w' | 'd' | 'l'): { gate: number; wages: number; net: number };
-  train(id: string): void;
   marketList(): Array<Player & { price: number }>;
   hireStaff(id: 'adjoint' | 'physique' | 'recruteur' | 'kine'): ActionResult;
   staffLv(id: string): number;
@@ -61,7 +60,6 @@ export declare class Club {
   STADES(): Array<{ name: string; cap: number; mult: number; cost: number }>;
   ACADEMIES(): Array<{ name: string; note: string; cost: number }>;
   COACHES(): Array<{ id: string; label: string; desc: string; [k: string]: unknown }>;
-  TRAININGS(): Array<{ id: string; label: string; desc: string; [k: string]: unknown }>;
 
   // Directeur sportif : compétences, niveaux de joueur, quêtes, économie, création.
   SKILL_DEF(): { E: unknown[]; C: unknown[]; POSOK: Record<string, string[]>; LVL: string[] };
@@ -93,6 +91,22 @@ export declare class Club {
   addPlayerXp(p: Player, gain: number): { plv: number; pxp: number; st: Record<string, number>; ovr: number; ups: unknown[] };
   grantPlayerXp(id: number, gain: number, why?: string): ActionResult;
   SHARD_XP(): { cost: number; xp: number; perDay: number };
+  SESSION_RULES(): { freePerDay: number; max: number };
+  sessions(): number;
+  takeSession(): boolean;
+  addSessions(n: number): number;
+  trainInfo(): { sessions: number; max: number; freePerDay: number; can: boolean; why: string; line: string };
+  TRAIN_PACK(): PackDef;
+  TRAIN_LOTS(): TrainLot[];
+  trainPackOdds(): Array<{ id: string; label: string; rarLabel: string; color: string; pct: number; desc: string }>;
+  drawTrainLot(rnd?: () => number): TrainLot;
+  openTrainPack(opts?: { free?: boolean; rnd?: () => number }): { ok: boolean; why?: string; def?: PackDef; got?: TrainLot[]; free?: boolean };
+  commitTrainPack(res: unknown): { ok: boolean; sessions?: number; xp?: number; cards?: string[] };
+  trainPackState(): { can: boolean; why: string; cost: number };
+  UPGRADE_CARDS(): Array<[string, string]>;
+  useUpgrade(playerId: number, stat: string): { ok: boolean; why?: string; ovr?: number };
+  TRAININGS(): Array<{ id: string; label: string; desc: string; [k: string]: unknown }>;
+  train(id: string): { ok: boolean; why?: string; gains?: string[]; hurt?: string[] };
   shardTrainInfo(p: Player): { cost: number; xp: number; used: number; perDay: number; can: boolean; why: string };
   shardTrain(id: number): ActionResult;
 
@@ -159,6 +173,12 @@ export interface HiddenAttrs {
   potReel: number; regularite: number; grandsMatchs: number; pression: number;
   progression: number; blessure: number; adaptation: number;
 }
+/** Un lot du Pack Entraînement : des séances, une carte d'amélioration, ou un stage. */
+export interface TrainLot {
+  id: string; rar: string; rate: number; label: string; desc: string;
+  sessions?: number; up?: number; squadXp?: number; stat?: string | null; stats?: string[] | null;
+}
+
 export interface Quest { id: string; kind: string; goal: number; label: string; reward: number; xp: number; tier: number; prog?: number; claimed?: boolean; }
 export type PackLot =
   | { kind: 'player'; rar: string; id: number; name: string; pos: string; ovr: number; label: string; color: string; shards: number }

@@ -1,7 +1,7 @@
 // LinkFoot : sauvegarde. Sérialise l'état du club, le relit, et le range
 // où tu veux : mémoire, navigateur, ou ton serveur.
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 // Ce qui est conservé d'une session à l'autre. Tout le reste (vue courante, match en cours,
 // animation de pack, horodatages d'affichage) est volatil et recalculé au chargement.
@@ -12,7 +12,7 @@ const PERSIST = [
   'staff', 'stade', 'academy', 'youth', 'inv', 'coach', 'coachMode', 'cohBonus', 'trainDone',
   // directeur sportif : inventaire de compétences, économie encadrée, quêtes, identité du club
   'skillInv', 'nextSkillUid', 'collected', 'seenPlayers', 'shards',
-  'caps', 'ledger', 'quests', 'clubName', 'country', 'created', 'pronos'
+  'caps', 'ledger', 'quests', 'clubName', 'country', 'created', 'pronos', 'sessions'
 ];
 
 export function serialize(club) {
@@ -42,7 +42,10 @@ const MIGRATIONS = {
     freeQueue: (st.freeQueue || []).map(() => 'linkfoot')
   }),
   // v3 : avant les pronostics sur le match du jeu (§9).
-  3: (st) => Object.assign({}, st, { pronos: st.pronos || [] })
+  3: (st) => Object.assign({}, st, { pronos: st.pronos || [] }),
+  // v4 : avant que l'entraînement ne coûte des séances (§6). Les anciennes parties
+  // repartent avec trois séances en stock, de quoi reprendre sans se sentir puni.
+  4: (st) => Object.assign({}, st, { sessions: st.sessions != null ? st.sessions : 3 })
 };
 
 export function deserialize(data) {

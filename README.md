@@ -30,6 +30,7 @@ src/tracks.js   la colonne vertébrale de la progression du club : un seul axe, 
 src/playerxp.js niveau et XP d'un joueur, courbe exponentielle, attributs cachés (§5, §6).
 src/quests.js   quêtes et économie encadrée : plafonds par source, journal (§7, §8, §29).
 src/creation.js création du club, effectif normal de départ et joueur rare offert (§2, §3).
+src/trainpack.js le Pack Entraînement et les séances : l'entraînement est limité (§6, §10).
 src/versus.js   match entre deux vrais clubs, rejouable à l'identique depuis une graine.
 src/online.js   le client en ligne : il parle au serveur et rejoue, il ne décide rien.
 src/onlineui.js ce que l'écran affiche du multijoueur, y compris quand il n'y a pas de serveur.
@@ -378,6 +379,25 @@ node test/traits.js 12       # échoue si une compétence redevient un simple ch
 Avant chaque match, trois pronostics au maximum, mise plafonnée, cotes calculées depuis
 l'écart de niveau. Ils portent sur le match du jeu, jamais sur un match réel, et les gains
 passent par `earn('prono')`, donc par le plafond quotidien.
+
+### L'entraînement est limité (§6)
+
+Chaque séance consomme **une séance en stock**. On en reçoit deux par jour, vingt au
+maximum en réserve, et on en gagne en ouvrant des **Packs Entraînement**. Entraîner
+devient une décision : avec trois séances en poche, on choisit qui on fait progresser.
+
+Le Pack Entraînement est un objet à part du LinkFoot Pack : il ne contient **ni joueur
+ni compétence**, seulement du temps d'entraînement. Deux packs, deux écrans, aucune
+confusion (§10). Ses taux suivent les six raretés du jeu.
+
+| Lot | Rareté | Taux | Effet |
+| --- | --- | --- | --- |
+| Séance d'entraînement | Normal | 52 % | +1 séance |
+| Carte d'amélioration | Rare | 28 % | +2 sur une statistique, au joueur de ton choix |
+| Double séance | Épique | 13 % | +2 séances |
+| Séance spécialisée | Élite | 5 % | +3 séances et une carte |
+| Stage de pré-saison | Gold | 1,8 % | +60 XP à tout l'effectif |
+| Masterclass | Legendary | 0,2 % | +150 XP à tout l'effectif et trois cartes |
 
 ### L'économie
 

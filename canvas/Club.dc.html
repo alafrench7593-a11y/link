@@ -544,9 +544,61 @@ button:disabled{cursor:default}
 </sc-if>
 <sc-if value="{{isTrain}}" hint-placeholder-val="{{false}}">
 <div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 2px 16px 18px; display: flex; flex-direction: column; gap: 12px">
-<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 15px; font-weight: 700">Entraînement de la semaine</span><span style="font-size: 12px; color: #79828F; line-height: 1.45">Une séance entre deux matchs. Chaque séance change l'énergie et la forme, et fait progresser des stats selon le potentiel de chaque joueur. Le repos soigne les blessés.</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 15px; font-weight: 700">Entraînement</span><span style="font-size: 12px; color: #79828F; line-height: 1.45">Chaque séance consomme une séance en stock, change l'énergie et la forme, et fait progresser des stats selon le potentiel de chaque joueur. Le repos soigne les blessés.</span></div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 13px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
+<span style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 12.5px; font-weight: 700">Séances disponibles</span>
+<span style="font-size: 10.5px; color: #79828F">{{tp.freeLine}}</span>
+</span>
+<span style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 28px; color: {{tp.stockFg}}">{{tp.stock}}</span>
+</div>
+<sc-if value="{{tp.empty}}" hint-placeholder-val="{{false}}">
+<div style="padding: 12px 14px; border-radius: 10px; background: rgba(245,200,76,0.1); border: 1px solid rgba(245,200,76,0.35); font-size: 11.5px; line-height: 1.45; color: #F5C84C">{{tp.why}}</div>
+</sc-if>
 <div style="padding: 12px 14px; border-radius: 10px; background: rgba(46,204,113,0.08); border: 1px solid rgba(46,204,113,0.3); font-size: 12px; line-height: 1.4">{{trainLog}}</div>
 <sc-for list="{{trainings}}" as="t" hint-placeholder-count="6"><button onClick="{{t.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 700">{{t.label}}</span><span style="font-size: 11px; color: #79828F">{{t.desc}}</span></span><span style="flex-shrink: 0; height: 34px; display: flex; align-items: center; padding: 0 14px; border-radius: 17px; background: #2ECC71; color: #171B21; font-size: 12px; font-weight: 800">Lancer</span></button></sc-for>
+<div style="position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 10px; background: linear-gradient(105deg, rgba(92,200,255,0.16) 0%, rgba(92,200,255,0.04) 45%, #1E232B 80%); border: 1px solid rgba(92,200,255,0.4)">
+<div style="display: flex; align-items: center; gap: 14px">
+<div style="position: relative; overflow: hidden; width: 62px; height: 82px; flex-shrink: 0; border-radius: 12px; background: {{tp.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #0E1116; box-shadow: 0 8px 18px rgba(0,0,0,0.45), inset 0 0 0 1.5px rgba(255,255,255,0.45)">
+<span class="lf-shine" style="position: absolute; top: -20px; left: 0; width: 24px; height: 130px; background: rgba(255,255,255,0.45)"></span>
+<span style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 28px; line-height: 1">{{tp.count}}</span>
+<span style="font-size: 7.5px; font-weight: 800; letter-spacing: 0.6px">TIRAGES</span>
+</div>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<span style="font-weight: 700; font-size: 15px">{{tp.name}}</span>
+<span style="font-size: 11px; color: #79828F; line-height: 1.4">{{tp.desc}}</span>
+<sc-if value="{{tp.hasWhy}}" hint-placeholder-val="{{false}}"><span style="font-size: 10.5px; font-weight: 600; color: #F5C84C">{{tp.packWhy}}</span></sc-if>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 11px 12px; border-radius: 9px; background: rgba(11,18,16,0.5)">
+<span style="font-size: 10px; font-weight: 800; letter-spacing: 0.5px; color: #79828F">CONTENU ET PROBABILITÉS</span>
+<sc-for list="{{tp.odds}}" as="to" hint-placeholder-count="6">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; align-items: center; gap: 9px">
+<span style="flex-grow: 1; min-width: 0; font-size: 11.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{to.label}}</span>
+<span style="flex-shrink: 0; padding: 1px 7px; border-radius: 8px; font-size: 9px; font-weight: 800; color: #0B1210; background: {{to.color}}">{{to.rar}}</span>
+<span style="width: 42px; flex-shrink: 0; text-align: right; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums">{{to.pct}}</span>
+</div>
+<span style="font-size: 10px; color: #6B736C; line-height: 1.3">{{to.desc}}</span>
+</div>
+</sc-for>
+</div>
+<button onClick="{{tp.open}}" disabled="{{tp.locked}}" style="width: 100%; min-height: 44px; border-radius: 22px; border: none; background: {{tp.btnBg}}; color: {{tp.btnFg}}; font-family: inherit; font-weight: 800; font-size: 13.5px; cursor: pointer">OUVRIR LE PACK ENTRAÎNEMENT · {{tp.price}}</button>
+<sc-if value="{{tp.hasGot}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 11px; color: #2ECC71; line-height: 1.4">{{tp.gotLine}}</span>
+</sc-if>
+</div>
+<sc-if value="{{tp.hasCards}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 7px; padding: 13px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
+<span style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #79828F">CARTES D’AMÉLIORATION EN RÉSERVE</span>
+<span style="font-size: 11px; color: #79828F; line-height: 1.4">Ouvre la fiche d’un joueur pour les utiliser : +2 sur la statistique choisie.</span>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{upCards}}" as="uc" hint-placeholder-count="7">
+<span style="padding: 5px 10px; border-radius: 9px; background: {{uc.bg}}; border: 1px solid {{uc.bd}}; color: {{uc.fg}}; font-size: 11px; font-weight: 700">{{uc.label}} {{uc.n}}</span>
+</sc-for>
+</div>
+</div>
+</sc-if>
 <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none"><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; font-weight: 700">Cohésion d'équipe</span><span style="font-size: 10.5px; color: #79828F">{{cohHint}}</span></span><span style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 26px; color: #2ECC71">{{cohLabel}}</span></div>
 </div>
 </sc-if>
@@ -1660,19 +1712,11 @@ class Component extends DCLogic {
       { id: 'finition', label: 'Boost finition', desc: 'Tir +5, 15 minutes', icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8z' }
     ];
   }
-  UPGRADE_CARDS() { return [['VIT', 'Vitesse'], ['ATQ', 'Attaque'], ['TIR', 'Tir'], ['PAS', 'Passe'], ['DRI', 'Dribble'], ['DÉF', 'Défense'], ['PHY', 'Physique']]; }
   useMatchCard(id) {
     const s = this.state, inv = Object.assign({}, s.inv || {}), mt = s.match; if (!mt || mt.done || !this.eng || !(inv[id] > 0)) return;
     if (!this.eng.card(id)) return; inv[id]--; this.buzz([30, 30, 60]);
     const c = this.MATCH_CARDS().find((x) => x.id === id);
     this.setState({ inv, match: Object.assign({}, mt, { events: mt.events.concat([{ text: mt.minute + "' Carte " + c.label + ' utilisée', color: '#2ECC71' }]) }) });
-  }
-  useUpgrade(pid, stat) {
-    const s = this.state, key = 'up_' + stat, inv = Object.assign({}, s.inv || {}); if (!(inv[key] > 0)) return;
-    const p = s.squad.find((q) => q.id === pid); if (!p) return;
-    const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; }); if (st[stat] == null || st[stat] >= 99) return;
-    st[stat] = Math.min(99, st[stat] + 2); inv[key]--; this.buzz(30);
-    this.setState({ inv, squad: s.squad.map((q) => (q.id === pid ? Object.assign({}, q, { st, ovr: Math.max(q.ovr, this.ovrOf(q.pos, st)) }) : q)) });
   }
   // IA coach : lit la situation chaque minute et agit (auto) ou conseille (assisté)
   coachTick() {
@@ -1825,7 +1869,11 @@ class Component extends DCLogic {
     ];
   }
   train(id) {
-    const s = this.state, T = this.TRAININGS().find((t) => t.id === id); if (!T || s.match && !s.match.done) return;
+    const s = this.state, T = this.TRAININGS().find((t) => t.id === id);
+    if (!T) return { ok: false, why: 'Séance inconnue' };
+    const info = this.trainInfo();
+    if (!info.can) return { ok: false, why: info.why };
+    if (!this.takeSession()) return { ok: false, why: this.trainInfo().why };
     let squad = this.applyFitness(s.squad, null, T), lines = [];
     if (T.gain) squad = squad.map((p) => {
       if (p.pos === 'GB' || p.inj || this.rand(0, 99) > 45 + (p.pot - p.ovr) * 4 * (s.coach === 'formateur' ? 2 : 1)) return p;
@@ -1836,7 +1884,8 @@ class Component extends DCLogic {
     const hurt = [];
     if (T.risk) squad = squad.map((p) => { if (!p.inj && this.rand(0, 999) / 1000 < T.risk) { hurt.push(p.name); return Object.assign({}, p, { inj: 1 + this.rand(0, 2) }); } return p; });
     this.buzz(20);
-    this.setState({ squad, cohBonus: Math.min(0.12, (s.cohBonus || 0) + (T.coh || 0)), trainLog: 'Séance ' + T.label + (lines.length ? ' · ' + lines.slice(0, 3).join(', ') : '') + (hurt.length ? ' · blessé : ' + hurt.join(', ') : ''), trainDone: (s.trainDone || 0) + 1 });
+    this.setState({ squad, cohBonus: Math.min(0.12, (s.cohBonus || 0) + (T.coh || 0)), trainLog: 'Séance ' + T.label + (lines.length ? ' · ' + lines.slice(0, 3).join(', ') : '') + (hurt.length ? ' · blessé : ' + hurt.join(', ') : '') + ' · ' + this.sessions() + ' séance(s) restante(s)', trainDone: (s.trainDone || 0) + 1 });
+    return { ok: true, gains: lines, hurt };
   }
   // ================= TRANSFER MARKET : offres générées, prix selon note, âge, potentiel, forme =================
   marketList() {
@@ -4207,9 +4256,12 @@ class Component extends DCLogic {
     const used = (s.caps && s.caps.shardTrain) || 0;
     const poor = (s.shards || 0) < D.cost;
     const capped = used >= D.perDay;
-    return { cost: D.cost, xp: Math.round(D.xp * this.xpRate(p)), used, perDay: D.perDay,
-      can: !poor && !capped,
-      why: capped ? 'Limite du jour atteinte (' + D.perDay + ' séances)' : poor ? 'Il te manque ' + (D.cost - (s.shards || 0)) + ' fragments' : '' };
+    const none = this.sessions() <= 0;
+    return { cost: D.cost, xp: Math.round(D.xp * this.xpRate(p)), used, perDay: D.perDay, sessions: this.sessions(),
+      can: !poor && !capped && !none,
+      why: capped ? 'Limite du jour atteinte (' + D.perDay + ' séances intensives)'
+        : none ? this.trainInfo().why
+        : poor ? 'Il te manque ' + (D.cost - (s.shards || 0)) + ' fragments' : '' };
   }
 
   shardTrain(id) {
@@ -4217,7 +4269,9 @@ class Component extends DCLogic {
     if (!p) return { ok: false, why: 'Joueur introuvable' };
     const info = this.shardTrainInfo(p);
     if (!info.can) return { ok: false, why: info.why };
-    this.setState({ shards: (s.shards || 0) - info.cost, caps: Object.assign({}, s.caps, { shardTrain: info.used + 1 }) });
+    // une séance intensive consomme aussi une séance : c'est la même ressource partout
+    if (!this.takeSession()) return { ok: false, why: this.trainInfo().why };
+    this.setState({ shards: (s.shards || 0) - info.cost, caps: Object.assign({}, this.state.caps, { shardTrain: info.used + 1 }) });
     return this.grantPlayerXp(id, info.xp, 'séance intensive');
   }
   CAPS() {
@@ -4544,6 +4598,126 @@ class Component extends DCLogic {
       refresh: () => (can ? Promise.all([this.refreshLadder(), this.refreshLeagues(), this.refreshChallenges()]) : refuse())
     };
   }
+  SESSION_RULES() { return { freePerDay: 2, max: 20 }; }
+  sessions() {
+    const s = this.state, R = this.SESSION_RULES();
+    const caps = s.caps || {};
+    if (caps.day !== this.dayKey()) return Math.min(R.max, (s.sessions || 0) + R.freePerDay);
+    return s.sessions || 0;
+  }
+  takeSession() {
+    const s = this.state, R = this.SESSION_RULES(), caps = Object.assign({}, s.caps || {});
+    let have = s.sessions || 0;
+    if (caps.day !== this.dayKey()) { have = Math.min(R.max, have + R.freePerDay); caps.day = this.dayKey(); }
+    if (have <= 0) return false;
+    this.setState({ sessions: have - 1, caps });
+    return true;
+  }
+
+  addSessions(n) {
+    const R = this.SESSION_RULES();
+    this.setState({ sessions: Math.min(R.max, (this.state.sessions || 0) + Math.max(0, Math.round(n))) });
+    return this.state.sessions;
+  }
+  trainInfo() {
+    const n = this.sessions(), R = this.SESSION_RULES();
+    const busy = !!(this.state.match && !this.state.match.done);
+    return {
+      sessions: n, max: R.max, freePerDay: R.freePerDay,
+      can: n > 0 && !busy,
+      why: busy ? 'Impossible pendant un match'
+        : n > 0 ? '' : 'Plus de séance. Tu en reçois ' + R.freePerDay + ' par jour, ou tu en gagnes dans un Pack Entraînement.',
+      line: n + ' séance' + (n > 1 ? 's' : '') + ' en stock · ' + R.freePerDay + ' offertes par jour'
+    };
+  }
+  TRAIN_PACK() {
+    return {
+      key: 'train', name: 'Pack Entraînement', n: 3, cost: 180,
+      content: 'séances, cartes d’amélioration, stages',
+      color: 'linear-gradient(135deg, #5CC8FF, #2F8FE0)', fx: 'silver'
+    };
+  }
+  TRAIN_LOTS() {
+    return [
+      { id: 'seance', rar: 'normal', rate: 0.52, label: 'Séance d’entraînement', desc: '+1 séance', sessions: 1 },
+      { id: 'carte', rar: 'rare', rate: 0.28, label: 'Carte d’amélioration', desc: '+2 sur une statistique, au joueur de ton choix', up: 1 },
+      { id: 'duo', rar: 'epic', rate: 0.13, label: 'Double séance', desc: '+2 séances', sessions: 2 },
+      { id: 'specialise', rar: 'elite', rate: 0.05, label: 'Séance spécialisée', desc: '+3 séances et une carte d’amélioration', sessions: 3, up: 1 },
+      { id: 'stage', rar: 'gold', rate: 0.018, label: 'Stage de pré-saison', desc: '+60 XP à tout l’effectif', squadXp: 60 },
+      { id: 'masterclass', rar: 'legendary', rate: 0.002, label: 'Masterclass', desc: '+150 XP à tout l’effectif et trois cartes d’amélioration', squadXp: 150, up: 3 }
+    ];
+  }
+
+  trainPackOdds() {
+    const L = this.TRAIN_LOTS(), R = this.RARITY();
+    const t = L.reduce((a, x) => a + x.rate, 0) || 1;
+    return L.map((x) => {
+      const r = R.find((y) => y.id === x.rar) || R[0];
+      return { id: x.id, label: x.label, rarLabel: r.label, color: r.tint, pct: x.rate / t * 100, desc: x.desc };
+    });
+  }
+
+  drawTrainLot(rnd) {
+    const L = this.TRAIN_LOTS(), r = rnd || Math.random;
+    let q = r() * L.reduce((a, x) => a + x.rate, 0);
+    for (const x of L) { q -= x.rate; if (q <= 0) return x; }
+    return L[0];
+  }
+
+  openTrainPack(opts) {
+    const o = opts || {}, s = this.state, def = this.TRAIN_PACK();
+    if (!o.free && s.balance < def.cost) return { ok: false, why: 'Il te manque ' + (def.cost - s.balance) + ' jetons' };
+    const r = o.rnd || Math.random, got = [];
+    for (let i = 0; i < def.n; i++) {
+      const lot = this.drawTrainLot(r);
+      const U = this.UPGRADE_CARDS();
+      got.push(Object.assign({}, lot, {
+        stat: lot.up ? U[Math.floor(r() * U.length)][0] : null,
+        stats: lot.up > 1 ? Array.from({ length: lot.up }, () => U[Math.floor(r() * U.length)][0]) : null
+      }));
+    }
+    const order = this.RARITY().map((x) => x.id);
+    got.sort((a, b) => order.indexOf(b.rar) - order.indexOf(a.rar));
+    return { ok: true, def, got, free: !!o.free };
+  }
+  commitTrainPack(res) {
+    if (!res || !res.ok) return { ok: false };
+    const s = this.state, def = res.def, R = this.SESSION_RULES();
+    const inv = Object.assign({}, s.inv || {});
+    let add = 0, xp = 0, cards = [];
+    res.got.forEach((g) => {
+      add += g.sessions || 0;
+      xp += g.squadXp || 0;
+      const list = g.stats || (g.stat ? [g.stat] : []);
+      list.forEach((k) => { inv['up_' + k] = (inv['up_' + k] || 0) + 1; cards.push(k); });
+    });
+    const cost = res.free ? 0 : def.cost;
+    this.setState({
+      sessions: Math.min(R.max, (s.sessions || 0) + add),
+      inv, balance: s.balance - cost
+    });
+    if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
+    // un stage profite à tout l'effectif : c'est ce qui rend les lots rares désirables
+    if (xp) this.state.squad.forEach((p) => this.grantPlayerXp(p.id, xp, 'stage'));
+    this.bumpQuest('pack', 1);
+    return { ok: true, sessions: add, xp, cards };
+  }
+
+  trainPackState() {
+    const def = this.TRAIN_PACK(), s = this.state;
+    const poor = s.balance < def.cost;
+    return { can: !poor, why: poor ? 'Il te manque ' + (def.cost - s.balance) + ' jetons' : '', cost: def.cost };
+  }
+
+  UPGRADE_CARDS() { return [['VIT', 'Vitesse'], ['ATQ', 'Attaque'], ['TIR', 'Tir'], ['PAS', 'Passe'], ['DRI', 'Dribble'], ['DÉF', 'Défense'], ['PHY', 'Physique']]; }
+
+  useUpgrade(pid, stat) {
+    const s = this.state, key = 'up_' + stat, inv = Object.assign({}, s.inv || {}); if (!(inv[key] > 0)) return;
+    const p = s.squad.find((q) => q.id === pid); if (!p) return;
+    const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; }); if (st[stat] == null || st[stat] >= 99) return;
+    st[stat] = Math.min(99, st[stat] + 2); inv[key]--; this.buzz(30);
+    this.setState({ inv, squad: s.squad.map((q) => (q.id === pid ? Object.assign({}, q, { st, ovr: Math.max(q.ovr, this.ovrOf(q.pos, st)) }) : q)) });
+  }
   renderVals() {
     const s = this.state, t = s.tac;
     const color = (o) => (o >= 80 ? 'linear-gradient(135deg, #FFE59A, #E9A93A)' : o >= 70 ? 'linear-gradient(135deg, #F2F6F4, #AEB9C2)' : 'linear-gradient(135deg, #E8B585, #B7773F)');
@@ -4731,7 +4905,37 @@ class Component extends DCLogic {
       hasAdvice: !!(s.coachAdvice && mtc && !mtc.done), adviceText: s.coachAdvice ? s.coachAdvice.min + "' · " + s.coachAdvice.text : '',
       applyAdvice: () => { const a = s.coachAdvice; if (a) { a.act(); this.setState({ coachAdvice: null }); } }, dropAdvice: () => this.setState({ coachAdvice: null }),
       matchCards: this.MATCH_CARDS().map((c) => { const n = (s.inv || {})[c.id] || 0, ok = n > 0 && !!mtc && !mtc.done; return { label: c.label, desc: c.desc, icon: c.icon, n: 'x' + n, use: () => this.useMatchCard(c.id), bg: ok ? 'rgba(46,204,113,0.12)' : '#242A33', bd: ok ? 'rgba(46,204,113,0.45)' : 'rgba(255,255,255,0.06)', fg: ok ? '#2ECC71' : '#5E6672' }; }),
-      upCards: this.UPGRADE_CARDS().map(([k, label]) => ({ label, n: 'x' + ((s.inv || {})['up_' + k] || 0), k })),
+      upCards: this.UPGRADE_CARDS().map(([k, label]) => { const n = (s.inv || {})['up_' + k] || 0;
+        return { label, n: 'x' + n, k, bg: n > 0 ? 'rgba(46,204,113,0.12)' : 'rgba(255,255,255,0.04)', fg: n > 0 ? '#2ECC71' : '#5E6672', bd: n > 0 ? 'rgba(46,204,113,0.4)' : 'rgba(255,255,255,0.06)' }; }),
+      // §6 et §10 : les séances en stock et le Pack Entraînement. L'entraînement devient
+      // une décision : avec trois séances, on choisit qui on fait progresser.
+      tp: (() => {
+        const ti = this.trainInfo(), def = this.TRAIN_PACK(), st2 = this.trainPackState();
+        const inv = s.inv || {}, nCards = this.UPGRADE_CARDS().reduce((a2, [k]) => a2 + (inv['up_' + k] || 0), 0);
+        return {
+          stock: ti.sessions, stockFg: ti.sessions > 0 ? '#2ECC71' : '#F5C84C',
+          freeLine: ti.freePerDay + ' offertes par jour · ' + ti.max + ' au maximum en réserve',
+          empty: ti.sessions <= 0, why: ti.why,
+          name: def.name, desc: def.n + ' tirages · ' + def.content, count: def.n, color: def.color,
+          price: def.cost + ' jetons', locked: !st2.can, hasWhy: !!st2.why, packWhy: st2.why,
+          btnBg: st2.can ? ORANGE : '#242A33', btnFg: st2.can ? ON_ORANGE : '#5E6672',
+          odds: this.trainPackOdds().map((o) => ({ label: o.label, rar: o.rarLabel, color: o.color, desc: o.desc,
+            pct: (o.pct >= 10 ? o.pct.toFixed(0) : o.pct.toFixed(1).replace('.', ',')) + ' %' })),
+          hasCards: nCards > 0,
+          hasGot: !!s.lastTrainPack, gotLine: s.lastTrainPack || '',
+          open: () => {
+            if (!st2.can) { this.setState({ trainLog: st2.why }); return; }
+            const res = this.openTrainPack({});
+            if (!res.ok) { this.setState({ trainLog: res.why }); return; }
+            const got = this.commitTrainPack(res);
+            this.buzz([30, 30, 60]);
+            this.setState({ lastTrainPack: res.got.map((g) => g.label).join(' · ')
+              + (got.sessions ? ' → +' + got.sessions + ' séance' + (got.sessions > 1 ? 's' : '') : '')
+              + (got.cards.length ? ', cartes ' + got.cards.join(', ') : '')
+              + (got.xp ? ', +' + got.xp + ' XP à tout l’effectif' : '') });
+          }
+        };
+      })(),
       coaches: this.COACHES().map((c) => { const on = (s.coach || 'tacticien') === c.id; return { label: c.label, desc: c.desc, stats: 'Tactique ' + c.tactique + ' · Motivation ' + c.motivation + ' · Gestion ' + c.gestion + ' · Développement ' + c.dev, on, pick: () => this.setState({ coach: c.id }), bd: on ? 'rgba(165,216,96,0.7)' : 'rgba(255,255,255,0.06)', btn: on ? 'Actif' : 'Choisir', btnBg: on ? 'rgba(165,216,96,0.12)' : ORANGE, btnFg: on ? '#2ECC71' : ON_ORANGE }; }),
       finLine: s.lastFin || 'Aucun match joué cette semaine.',
       finPreview: (() => { const F = this.finances(s, 'w'); return 'Prochaine recette estimée ' + F.gate + ' · salaires ' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net; })(),
@@ -4744,7 +4948,7 @@ class Component extends DCLogic {
       roleLine: 'Directeur sportif · ' + (s.clubName || 'FC TonPseudo'),
       skillHubLine: (() => { const inv = this.skillInventory(), q = this.activeQuests().filter((x) => x.prog >= x.goal && !x.claimed).length;
         return (inv.length ? inv.filter((k) => k.onName).length + ' équipée(s) · ' + inv.filter((k) => !k.onName).length + ' en réserve' : 'Aucune compétence en réserve') + (q ? ' · ' + q + ' quête(s) à récupérer' : ''); })(),
-      trainings: this.TRAININGS().map((t) => ({ label: t.label, desc: t.desc, pick: () => this.train(t.id) })), trainLog: s.trainLog || 'Aucune séance cette semaine.', trainDone: (s.trainDone || 0) + ' séance' + ((s.trainDone || 0) > 1 ? 's' : '') + ' cette saison',
+      trainings: this.TRAININGS().map((t) => ({ label: t.label, desc: t.desc, pick: () => { const r = this.train(t.id); if (r && !r.ok) this.setState({ trainLog: r.why }); } })), trainLog: s.trainLog || 'Aucune séance cette semaine.', trainDone: (s.trainDone || 0) + ' séance' + ((s.trainDone || 0) > 1 ? 's' : '') + ' cette saison',
       cohLabel: Math.round(Math.min(1.08, Math.max(0.7, 1 - xi.filter((p) => p.pen).length * 0.06 - (s.preset === 'perso' ? 0.04 : 0) - xi.filter((p) => p.fresh).length * 0.03 + (s.cohBonus || 0))) * 100) + ' %',
       cohHint: (xi.filter((p) => p.pen).length ? xi.filter((p) => p.pen).length + ' hors poste · ' : '') + (s.preset === 'perso' ? 'tactique perso · ' : '') + (xi.filter((p) => p.fresh).length ? xi.filter((p) => p.fresh).length + ' nouveau · ' : '') + 'collectif +' + Math.round((s.cohBonus || 0) * 100) + ' %',
       injuredCount: s.squad.filter((p) => p.inj).length, fitAvg: Math.round(s.squad.reduce((a, p) => a + (p.fit != null ? p.fit : 100), 0) / s.squad.length) + ' %',

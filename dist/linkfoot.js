@@ -23,6 +23,8 @@ function INITIAL_STATE() {
       skillInv: [], nextSkillUid: 1, collected: [], seenPlayers: [],
       // §7, §29 : l'économie encadrée. `caps` compte les gains du jour par source,
       // `ledger` garde le journal des transactions.
+      // §6 : l'entraînement se paie en séances, gagnées dans les Packs Entraînement
+      sessions: 3,
       shards: 0, caps: {}, ledger: [], quests: null, clubName: 'FC TonPseudo', country: 'fr', created: true,
       kit: { c1: '#2ECC71', c2: '#0C1210', pat: 'uni', collar: 'rond', sponsor: true }, showKit: false, cam: '2d',
       xp: 340, level: 7, dayStreak: 3, dayClaimed: false, winStreak: 0, showHub: false, levelUp: null, now: Date.now(), freePackAt: Date.now() + 90000, freeQueue: [],
@@ -2082,8 +2084,14 @@ const Training = {
     ];
   },
 
+  // §6 : une séance consomme une séance en stock. L'entraînement est donc une
+  // décision, pas un bouton qu'on presse en boucle. Le refus dit toujours pourquoi.
   train(id) {
-    const s = this.state, T = this.TRAININGS().find((t) => t.id === id); if (!T || s.match && !s.match.done) return;
+    const s = this.state, T = this.TRAININGS().find((t) => t.id === id);
+    if (!T) return { ok: false, why: 'Séance inconnue' };
+    const info = this.trainInfo();
+    if (!info.can) return { ok: false, why: info.why };
+    if (!this.takeSession()) return { ok: false, why: this.trainInfo().why };
     let squad = this.applyFitness(s.squad, null, T), lines = [];
     if (T.gain) squad = squad.map((p) => {
       if (p.pos === 'GB' || p.inj || this.rand(0, 99) > 45 + (p.pot - p.ovr) * 4 * (s.coach === 'formateur' ? 2 : 1)) return p;
@@ -2094,7 +2102,8 @@ const Training = {
     const hurt = [];
     if (T.risk) squad = squad.map((p) => { if (!p.inj && this.rand(0, 999) / 1000 < T.risk) { hurt.push(p.name); return Object.assign({}, p, { inj: 1 + this.rand(0, 2) }); } return p; });
     this.buzz(20);
-    this.setState({ squad, cohBonus: Math.min(0.12, (s.cohBonus || 0) + (T.coh || 0)), trainLog: 'Séance ' + T.label + (lines.length ? ' · ' + lines.slice(0, 3).join(', ') : '') + (hurt.length ? ' · blessé : ' + hurt.join(', ') : ''), trainDone: (s.trainDone || 0) + 1 });
+    this.setState({ squad, cohBonus: Math.min(0.12, (s.cohBonus || 0) + (T.coh || 0)), trainLog: 'Séance ' + T.label + (lines.length ? ' · ' + lines.slice(0, 3).join(', ') : '') + (hurt.length ? ' · blessé : ' + hurt.join(', ') : '') + ' · ' + this.sessions() + ' séance(s) restante(s)', trainDone: (s.trainDone || 0) + 1 });
+    return { ok: true, gains: lines, hurt };
   },
 
   applyFitness(squad, mt, training) {
@@ -2473,6 +2482,7 @@ const Tactics = {
 
 
 
+
 class Club {
   constructor(state) {
     this.state = Object.assign({}, INITIAL_STATE(), state || {});
@@ -2553,12 +2563,12 @@ class Club {
 }
 
 // §80 : chaque domaine vit dans son fichier et vient se mélanger ici.
-Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI);
+Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack);
 
 // LinkFoot : sauvegarde. Sérialise l'état du club, le relit, et le range
 // où tu veux : mémoire, navigateur, ou ton serveur.
 
-const SAVE_VERSION = 4;
+const SAVE_VERSION = 5;
 
 // Ce qui est conservé d'une session à l'autre. Tout le reste (vue courante, match en cours,
 // animation de pack, horodatages d'affichage) est volatil et recalculé au chargement.
@@ -2569,7 +2579,7 @@ const PERSIST = [
   'staff', 'stade', 'academy', 'youth', 'inv', 'coach', 'coachMode', 'cohBonus', 'trainDone',
   // directeur sportif : inventaire de compétences, économie encadrée, quêtes, identité du club
   'skillInv', 'nextSkillUid', 'collected', 'seenPlayers', 'shards',
-  'caps', 'ledger', 'quests', 'clubName', 'country', 'created', 'pronos'
+  'caps', 'ledger', 'quests', 'clubName', 'country', 'created', 'pronos', 'sessions'
 ];
 
 function serialize(club) {
@@ -2599,7 +2609,10 @@ const MIGRATIONS = {
     freeQueue: (st.freeQueue || []).map(() => 'linkfoot')
   }),
   // v3 : avant les pronostics sur le match du jeu (§9).
-  3: (st) => Object.assign({}, st, { pronos: st.pronos || [] })
+  3: (st) => Object.assign({}, st, { pronos: st.pronos || [] }),
+  // v4 : avant que l'entraînement ne coûte des séances (§6). Les anciennes parties
+  // repartent avec trois séances en stock, de quoi reprendre sans se sentir puni.
+  4: (st) => Object.assign({}, st, { sessions: st.sessions != null ? st.sessions : 3 })
 };
 
 function deserialize(data) {

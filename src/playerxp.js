@@ -109,9 +109,12 @@ export const PlayerXP = {
     const used = (s.caps && s.caps.shardTrain) || 0;
     const poor = (s.shards || 0) < D.cost;
     const capped = used >= D.perDay;
-    return { cost: D.cost, xp: Math.round(D.xp * this.xpRate(p)), used, perDay: D.perDay,
-      can: !poor && !capped,
-      why: capped ? 'Limite du jour atteinte (' + D.perDay + ' séances)' : poor ? 'Il te manque ' + (D.cost - (s.shards || 0)) + ' fragments' : '' };
+    const none = this.sessions() <= 0;
+    return { cost: D.cost, xp: Math.round(D.xp * this.xpRate(p)), used, perDay: D.perDay, sessions: this.sessions(),
+      can: !poor && !capped && !none,
+      why: capped ? 'Limite du jour atteinte (' + D.perDay + ' séances intensives)'
+        : none ? this.trainInfo().why
+        : poor ? 'Il te manque ' + (D.cost - (s.shards || 0)) + ' fragments' : '' };
   },
 
   shardTrain(id) {
@@ -119,7 +122,9 @@ export const PlayerXP = {
     if (!p) return { ok: false, why: 'Joueur introuvable' };
     const info = this.shardTrainInfo(p);
     if (!info.can) return { ok: false, why: info.why };
-    this.setState({ shards: (s.shards || 0) - info.cost, caps: Object.assign({}, s.caps, { shardTrain: info.used + 1 }) });
+    // une séance intensive consomme aussi une séance : c'est la même ressource partout
+    if (!this.takeSession()) return { ok: false, why: this.trainInfo().why };
+    this.setState({ shards: (s.shards || 0) - info.cost, caps: Object.assign({}, this.state.caps, { shardTrain: info.used + 1 }) });
     return this.grantPlayerXp(id, info.xp, 'séance intensive');
   }
 };

@@ -96,6 +96,41 @@ const gbId = (c.state.squad.find((p) => p.pos === 'GB') || {}).id;
 const inc = c.equipSkill(9001, gbId);
 ok(inc.ok === false && inc.why.indexOf('COMPÉTENCE INCOMPATIBLE') === 0, '§15 : une compétence incompatible est refusée et nommée');
 
+console.log('§6 et §10 entraînement limité, Pack Entraînement');
+const tc = new Club(); tc.createClub({ name: 'FC Entrain', seed: 77 });
+const t0 = tc.trainInfo();
+ok(t0.sessions > 0 && t0.can, 'on démarre avec quelques séances', t0.line);
+let nSeances = 0;
+while (tc.train('technique').ok && nSeances < 40) nSeances++;
+ok(nSeances === t0.sessions, 'chaque séance consomme une séance en stock', nSeances + ' séances lancées');
+const refus = tc.train('technique');
+ok(refus.ok === false && /Pack Entraînement/.test(refus.why), '§6 : à court de séances, le refus dit où en trouver', refus.why);
+const lots = tc.TRAIN_LOTS();
+ok(Math.abs(lots.reduce((a, x) => a + x.rate, 0) - 1) < 1e-9, '§11 : les taux du Pack Entraînement font 100 %');
+ok(lots.every((x) => ids.indexOf(x.rar) >= 0), 'ses lots utilisent les mêmes raretés que le reste du jeu');
+ok(lots.every((x, i) => i === 0 || x.rate <= lots[i - 1].rate), 'plus le lot est fort, plus il est rare',
+  lots.map((x) => (x.rate * 100).toFixed(1) + ' %').join(' · '));
+ok(tc.TRAIN_PACK().key === 'train' && tc.THE_PACK().key === 'linkfoot',
+  '§10 : le pack de cartes et le pack d’entraînement restent deux objets distincts');
+ok(lots.every((x) => !x.player && !x.skill), 'le Pack Entraînement ne contient ni joueur ni compétence');
+tc.setState({ balance: 2000 });
+const avant = tc.sessions(), pk2 = tc.openTrainPack({});
+ok(pk2.ok && pk2.got.length === 3, 'il s’ouvre et rend 3 lots', pk2.got.map((g) => g.label).join(', '));
+const got2 = tc.commitTrainPack(pk2);
+ok(tc.sessions() >= avant, 'ce qu’il donne arrive dans le stock', avant + ' → ' + tc.sessions() + ' séances');
+ok(tc.state.balance === 2000 - tc.TRAIN_PACK().cost, 'et il est payé', tc.state.balance + ' jetons');
+tc.setState({ balance: 0 });
+ok(tc.openTrainPack({}).ok === false, 'sans jetons, il refuse');
+ok(tc.sessions() <= tc.SESSION_RULES().max, '§29 : on ne peut pas empiler les séances sans limite',
+  tc.sessions() + ' sur ' + tc.SESSION_RULES().max);
+const anyCard = tc.UPGRADE_CARDS()[0][0];
+tc.setState({ inv: Object.assign({}, tc.state.inv, { ['up_' + anyCard]: 1 }) });
+const pU = tc.state.squad.find((p) => p.pos !== 'GB');
+const ovrAvant = pU.ovr;
+const u = tc.useUpgrade(pU.id, anyCard);
+ok(u.ok, 'une carte d’amélioration s’utilise sur un joueur', anyCard + ' : note ' + ovrAvant + ' → ' + u.ovr);
+ok(tc.useUpgrade(pU.id, anyCard).ok === false, 'et elle est bien consommée');
+
 console.log('§7 et §29 économie encadrée');
 const c2 = new Club(); c2.createClub({ name: 'FC Eco', seed: 5 });
 let total = 0;
