@@ -100,6 +100,10 @@ export declare class Club {
   earn(amount: number, source: string, label?: string): { given: number; asked: number; capped: string[] | null };
   spend(amount: number, label?: string): ActionResult;
   logMoney(amount: number, label: string): Array<{ at: number; a: number; l: string }>;
+  PRONO_DEFS(opp?: Opponent, xi?: Player[]): Array<{ id: string; label: string; odd: number; who?: number }>;
+  MAX_STAKE(): number;
+  placeProno(id: string, stake: number): { ok: boolean; why?: string; stake?: number; odd?: number };
+  settlePronos(mt: unknown): { won: number; lost: number; lines: Array<{ label: string; ok: boolean; gain: number }> };
   QUEST_DEFS(): Quest[];
   activeQuests(): Quest[];
   rollQuests(level: number): Quest[];

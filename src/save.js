@@ -1,7 +1,7 @@
 // LinkFoot : sauvegarde. Sérialise l'état du club, le relit, et le range
 // où tu veux : mémoire, navigateur, ou ton serveur.
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 // Ce qui est conservé d'une session à l'autre. Tout le reste (vue courante, match en cours,
 // animation de pack, horodatages d'affichage) est volatil et recalculé au chargement.
@@ -12,7 +12,7 @@ const PERSIST = [
   'staff', 'stade', 'academy', 'youth', 'inv', 'coach', 'coachMode', 'cohBonus', 'trainDone',
   // directeur sportif : inventaire de compétences, économie encadrée, quêtes, identité du club
   'skillInv', 'nextSkillUid', 'collected', 'seenPlayers', 'shards',
-  'caps', 'ledger', 'quests', 'clubName', 'country', 'created'
+  'caps', 'ledger', 'quests', 'clubName', 'country', 'created', 'pronos'
 ];
 
 export function serialize(club) {
@@ -40,7 +40,9 @@ const MIGRATIONS = {
     squad: (st.squad || []).map((p) => Object.assign({ plv: 1, pxp: 0 }, p)),
     // les anciennes clés de packs n'existent plus : tout devient le pack unique
     freeQueue: (st.freeQueue || []).map(() => 'linkfoot')
-  })
+  }),
+  // v3 : avant les pronostics sur le match du jeu (§9).
+  3: (st) => Object.assign({}, st, { pronos: st.pronos || [] })
 };
 
 export function deserialize(data) {

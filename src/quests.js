@@ -127,6 +127,63 @@ export const Quests = {
     return { ok: true, got: got.given, capped: got.capped, xp: q.xp };
   },
 
+  // §9 : les pronostics. Ils portent sur le match que tu t'apprêtes à jouer, dans le jeu,
+  // jamais sur un match réel. La mise est en jetons, le gain passe par `earn` et son
+  // plafond : un pronostic ne peut pas devenir une source infinie d'argent (§29).
+  PRONO_DEFS(opp, xi) {
+    const me = this.metrics(xi || this.pickXI(this.state.formation)).ovr;
+    const gap = me - (opp ? opp.ovr : me);
+    // la cote suit l'écart de niveau : parier sur soi quand on est favori rapporte peu
+    const pWin = Math.max(0.12, Math.min(0.84, 0.5 + gap * 0.028));
+    const odd = (p) => Math.round((1 / Math.max(0.1, p)) * 10) / 10;
+    const scorers = (xi || this.pickXI(this.state.formation)).filter((p) => p.line !== 'GB')
+      .sort((a, b) => b.ovr - a.ovr).slice(0, 3);
+    return [
+      { id: 'win', label: 'Je gagne ce match', odd: odd(pWin) },
+      { id: 'draw', label: 'Match nul', odd: odd(0.24) },
+      { id: 'over', label: 'Plus de 2,5 buts au total', odd: odd(0.47) },
+      { id: 'clean', label: 'Je ne prends aucun but', odd: odd(0.3) },
+      { id: 'poss', label: 'J’ai plus de 55 % de possession', odd: odd(0.42) }
+    ].concat(scorers.map((p) => ({ id: 'sc_' + p.id, label: p.name + ' marque', odd: odd(0.26), who: p.id })));
+  },
+
+  MAX_STAKE() { return 120; },
+
+  placeProno(id, stake) {
+    const s = this.state, bet = Math.max(10, Math.min(this.MAX_STAKE(), Math.round(stake || 40)));
+    if ((s.pronos || []).some((p) => p.id === id)) return { ok: false, why: 'Pronostic déjà pris' };
+    if ((s.pronos || []).length >= 3) return { ok: false, why: 'Trois pronostics par match au maximum' };
+    const sp = this.spend(bet, 'Pronostic : ' + id);
+    if (!sp.ok) return sp;
+    const def = this.PRONO_DEFS(s.nextOpp).find((d) => d.id === id) || { odd: 2, label: id };
+    this.setState({ pronos: (s.pronos || []).concat([{ id, stake: bet, odd: def.odd, label: def.label, who: def.who || null }]) });
+    return { ok: true, stake: bet, odd: def.odd };
+  },
+
+  // Règlement après le coup de sifflet final. Rien n'est versé hors de `earn`.
+  settlePronos(mt) {
+    const s = this.state, bets = s.pronos || [];
+    if (!bets.length) return { won: 0, lost: 0, lines: [] };
+    const hit = (b) => {
+      if (b.id === 'win') return mt.res === 'w';
+      if (b.id === 'draw') return mt.res === 'd';
+      if (b.id === 'over') return mt.hs + mt.as > 2;
+      if (b.id === 'clean') return mt.as === 0;
+      if (b.id === 'poss') return (mt.poss || 50) > 55;
+      if (b.who) return (mt.scorers || []).indexOf(b.who) >= 0;
+      return false;
+    };
+    const lines = [];
+    let won = 0;
+    bets.forEach((b) => {
+      const okb = hit(b);
+      if (okb) { const gain = Math.round(b.stake * b.odd); const g = this.earn(gain, 'prono', 'Pronostic gagné : ' + b.label); won += g.given; lines.push({ label: b.label, ok: true, gain: g.given, capped: !!g.capped }); }
+      else lines.push({ label: b.label, ok: false, gain: -b.stake });
+    });
+    this.setState({ pronos: [], lastProno: lines });
+    return { won, lost: bets.filter((b) => !hit(b)).length, lines };
+  },
+
   // Ce que le match vient de produire comme avancement de quêtes (§19).
   questsAfterMatch(mt, st) {
     const res = mt.res;

@@ -89,6 +89,9 @@ export const Progression = {
     if (over) { patch.levelUp = over; this.buzz([60, 40, 60, 40, 200]); }
     // §8, §19 : le match fait avancer les quêtes. Elles lisent les mêmes chiffres que le rapport.
     this.questsAfterMatch(mt, Object.assign({}, st, { squad: patch.squad || squad, winStreak: st.winStreak }));
+    // §9 : les pronostics se règlent sur le match qui vient d'être joué, jamais sur un match réel.
+    const pr = this.settlePronos(mt);
+    if (pr.lines.length) patch.lastProno = pr.lines;
     if (patch.division && patch.division < st.division) this.bumpQuest('division', 1);
     return patch;
   },

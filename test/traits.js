@@ -1,0 +1,97 @@
+// §14, §19, §23 : une compétence équipée doit se voir sur le terrain.
+// Ce test joue deux séries de matchs identiques, l'une sans compétence, l'autre avec,
+// et vérifie que le comportement a vraiment changé. Il échoue si une compétence
+// n'est plus qu'un chiffre affiché.
+import { Club } from '../src/club.js';
+
+const N = Number(process.argv[2] || 24);
+let fails = 0;
+const ok = (cond, label, detail) => {
+  console.log((cond ? '  ok   ' : '  ÉCHEC') + ' ' + label + (detail ? '  (' + detail + ')' : ''));
+  if (!cond) fails++;
+};
+
+// Joue N matchs avec le même effectif et les mêmes graines, en équipant éventuellement
+// une compétence sur tout le onze. Seule la compétence change d'une série à l'autre.
+function run(skillPicker) {
+  const c = new Club();
+  if (skillPicker) {
+    const inv = [], squad = c.state.squad;
+    let uid = 1;
+    squad.forEach((p) => {
+      const sk = skillPicker(c, p);
+      if (sk) inv.push(Object.assign({}, sk, { uid: uid++, on: p.id }));
+    });
+    c.setState({ skillInv: inv });
+  }
+  const tot = {};
+  for (let i = 0; i < N; i++) {
+    const r = c.playMatch({ club: 'Référence', ovr: 66, style: 'blocmed' }, { seed: 7000 + i });
+    Object.keys(r.cnt).forEach((k) => { tot[k] = (tot[k] || 0) + r.cnt[k]; });
+    tot.goals = (tot.goals || 0) + r.score[0];
+    tot.shots = (tot.shots || 0) + r.stats.H.sh;
+    if (r.res === 'w') tot.wins = (tot.wins || 0) + 1;
+    if (r.res === 'l') tot.losses = (tot.losses || 0) + 1;
+  }
+  return tot;
+}
+
+// Une compétence « toujours active » de la rareté voulue, compatible avec le poste.
+const strong = (eid) => (c, p) => {
+  const D = c.SKILL_DEF();
+  if ((D.POSOK[p.pos] || []).indexOf(eid) < 0) return null;
+  const idx = c.SKILL_INDEX();
+  // la plus puissante combinaison « en permanence » de cet effet
+  let best = null;
+  Object.keys(idx).forEach((rid) => idx[rid].forEach((e) => {
+    if (e[0] !== eid || e[1] !== 0) return;      // cid 0 = condition « always »
+    if (!best || e[4] > best[4]) best = e;
+  }));
+  return best ? c.makeSkill(best[0], best[1], best[2], best[3]) : null;
+};
+
+console.log('série de référence : ' + N + ' matchs, aucune compétence équipée');
+const base = run(null);
+const tier = (t, o) => o['g' + t] || 0;
+// tout se compare en pour mille de décisions prises : deux séries n'ont jamais
+// exactement le même nombre de ballons, donc les totaux bruts ne veulent rien dire.
+const rate = (o, k) => (o[k] || 0) / (o.dec || 1) * 1000;
+const fmt = (v) => v.toFixed(1).replace('.', ',');   // pour mille, au dixième
+console.log('  gestes ' + [1, 2, 3, 4, 5].map((t) => 't' + t + ':' + tier(t, base)).join(' ')
+  + ' · dribbles ' + (base.drib || 0) + ' · décisions ' + (base.dec || 0)
+  + ' · frappes ' + fmt(rate(base, 'act_shot')) + ' pour mille');
+
+console.log('\n§14 Funambule : plus de dribbles, et des gestes plus rares');
+const drib = run(strong('dribbleur'));
+console.log('  gestes ' + [1, 2, 3, 4, 5].map((t) => 't' + t + ':' + tier(t, drib)).join(' ') + ' · dribbles ' + (drib.drib || 0));
+const dribRate = (o) => (o.drib || 0) / (o.dec || 1) * 1000;
+ok(dribRate(drib) > dribRate(base), 'il tente davantage de dribbles',
+  fmt(dribRate(base)) + ' → ' + fmt(dribRate(drib)) + ' pour mille décisions');
+const rareBase = tier(3, base) + tier(4, base) + tier(5, base);
+const rareDrib = tier(3, drib) + tier(4, drib) + tier(5, drib);
+ok(rareDrib > rareBase, 'il accède à des gestes plus avancés', rareBase + ' → ' + rareDrib + ' gestes de palier 3 et plus');
+ok(tier(1, drib) > rareDrib * 2, '§23 : les gestes rares restent minoritaires, jamais systématiques',
+  tier(1, drib) + ' gestes simples contre ' + rareDrib + ' rares');
+
+console.log('\n§14 Passe laser : plus de passes difficiles tentées');
+const pass = run(strong('laser'));
+const hardPass = (o) => rate(o, 'act_pass_through') + rate(o, 'act_pass_long') + rate(o, 'act_pass_switch') + rate(o, 'act_pass_space');
+ok(hardPass(pass) > hardPass(base), 'il joue davantage de passes entre les lignes',
+  fmt(hardPass(base)) + ' → ' + fmt(hardPass(pass)) + ' pour mille décisions');
+
+console.log('\n§14 Tueur : plus de frappes, et des frappes plus audacieuses');
+const shot = run(strong('tueur'));
+ok(rate(shot, 'act_shot') > rate(base, 'act_shot') * 1.04, 'il tente davantage sa chance',
+  fmt(rate(base, 'act_shot')) + ' → ' + fmt(rate(shot, 'act_shot')) + ' frappes pour mille décisions');
+const spec = (o) => (o.sv_volee || 0) + (o.sv_retourne || 0) + (o.sv_talon || 0) + (o.sv_enroule || 0);
+ok(spec(shot) >= spec(base), 'les frappes spectaculaires restent possibles sans devenir la norme',
+  spec(base) + ' → ' + spec(shot) + ' sur ' + (shot.shots || 0) + ' frappes');
+
+console.log('\n§21 aucune compétence ne garantit la victoire');
+const wins = [base, drib, pass, shot].map((o) => o.wins || 0);
+ok(Math.max(...wins) < N, 'aucune série ne gagne tous ses matchs', 'victoires sur ' + N + ' : ' + wins.join(', '));
+ok([base, drib, pass, shot].every((o) => (o.losses || 0) > 0), 'chaque série perd au moins un match',
+  'défaites : ' + [base, drib, pass, shot].map((o) => o.losses || 0).join(', '));
+
+console.log(fails ? '\nÉCHEC : ' + fails + ' vérification(s)' : '\nOK : les compétences se voient sur le terrain');
+process.exit(fails ? 1 : 0);

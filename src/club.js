@@ -54,13 +54,13 @@ export class Club {
       });
     });
     const mt = { opp, oxi, bench: this.benchOf(xi), hs, as, st: f.st, rat: f.rat, res, reward, done: true, ended: true,
-      poss: f.poss, scorers, assisters, assists: assisters.length, log: logs,
+      poss: f.poss, scorers, assisters, assists: assisters.length, cnt: f.cnt || {}, log: logs,
       xi: f.en ? xi.map((p, i) => Object.assign({}, p, { energy: f.en[i], yc: f.cards[i][0], red: f.cards[i][1] })) : xi };
     const record = Object.assign({}, s.record, { [res]: s.record[res] + 1 });
     const base = Object.assign({}, this.state, { balance: s.balance + reward, record });
     const patch = this.afterMatch(mt, base);
     this.setState(Object.assign({ record }, patch));
-    return { score: [hs, as], res, reward, stats: f.st, log: mt.log, patch };
+    return { score: [hs, as], res, reward, stats: f.st, cnt: f.cnt || {}, log: mt.log, patch };
   }
   rand(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
   seedR(seed) { let x = (seed * 2654435761) % 4294967296; return () => { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; }; }

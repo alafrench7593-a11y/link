@@ -348,6 +348,34 @@ matchs, sang-froid, progression, risque de blessure, adaptation tactique). Elles
 s'affichent pas comme des statistiques, mais `hiddenMods()` les traduit en effets réels
 pendant le match, et la fiche du joueur les résume en mots dans le rapport du recruteur (§5).
 
+### Les compétences se voient sur le terrain (§14, §23)
+
+Une compétence équipée alimente un *trait*, et le trait ouvre des variantes de gestes
+et change la prise de décision. Mesuré sur 12 matchs identiques, même effectif, mêmes graines :
+
+| Compétence équipée | Effet mesuré |
+| --- | --- |
+| Funambule | dribbles tentés 8,5 → 15,1 pour mille décisions · gestes de palier 3 et plus : 8 → 160 |
+| Passe laser | passes entre les lignes 62,5 → 86,7 pour mille décisions |
+| Tueur | frappes 4,2 → 4,4 pour mille · frappes spectaculaires 5 → 36 |
+
+Les gestes rares restent minoritaires : avec un Funambule, 392 gestes simples pour 160 rares.
+Le trait ouvre la porte, il ne la force pas. Aucune série ne gagne tous ses matchs (§21).
+
+Les huit gestes techniques (crochet, protection, feinte, double contact, passement, roulette,
+petit pont, sombrero) sont rangés en cinq paliers. Le palier atteignable dépend du dribble,
+de l'agilité et du trait ; un geste de palier 4 ou plus prend sa ligne dans le rapport du match.
+
+```bash
+node test/traits.js 12       # échoue si une compétence redevient un simple chiffre
+```
+
+### Les pronostics (§9)
+
+Avant chaque match, trois pronostics au maximum, mise plafonnée, cotes calculées depuis
+l'écart de niveau. Ils portent sur le match du jeu, jamais sur un match réel, et les gains
+passent par `earn('prono')`, donc par le plafond quotidien.
+
 ### L'économie
 
 Tout gain passe par `earn(montant, source)`, qui applique un plafond quotidien par source

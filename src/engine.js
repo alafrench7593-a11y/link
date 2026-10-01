@@ -108,6 +108,31 @@ export function makeEngine(cfg) {
       return { always: true, trail70: diff < 0 && min >= 70, closeLate: min >= 75 && Math.abs(diff) <= 1, leading: diff > 0, first15: min < 15, momentum: W.clk < p.momT, tired: p.energy < 55, home: s === 'H',
         counter: W.t < T.counterUntil, box: a > 88 || a < 17, setpiece: !!W.set, pressed: W.t < TM[o].cpressUntil, derby: (TM[o].ovr || 0) > (T.ovr || 0), second: W.half === 2 };
     };
+    // ---------- §23 : TRAITS, le pont entre une compétence et ce qu'on voit sur le terrain ----------
+    // Une compétence équipée ne se contente pas de monter un chiffre : elle ouvre des
+    // variantes de gestes et change la prise de décision. Chaque trait vaut de 0 à ~1,2,
+    // proportionnellement à la puissance des compétences actives qui l'alimentent.
+    // Les gestes rares restent CONTEXTUELS : le trait ouvre la porte, il ne la force pas.
+    const TRAIT_OF = {
+      dribbleur: 'drib', sprinter: 'sprint', moteur: 'sprint',
+      laser: 'pass', visionnaire: 'pass', chef: 'pass', meneur: 'pass',
+      tueur: 'shot', renard: 'shot', clutch: 'shot', acier: 'shot',
+      mur: 'tackle', gladiateur: 'tackle', pressing: 'press', grinta: 'press',
+      aerien: 'aerial', gk_reflex: 'gk', gk_mains: 'hands', calme: 'calm', leader: 'lead'
+    };
+    // Lecture d'un trait, sûre même avant la première minute.
+    const TR = (p, k) => ((p && p.tr && p.tr[k]) || 0);
+    const traitsOf = (p) => {
+      const tr = {};
+      (p.active || []).forEach((k) => {
+        const t = TRAIT_OF[k.eid];
+        if (!t) return;
+        // la puissance de la compétence décide de l'ampleur : une Legendary ouvre tout,
+        // une Normal entrouvre à peine.
+        tr[t] = Math.min(1.2, (tr[t] || 0) + Math.max(0.08, (k.power != null ? k.power : 20) / 100));
+      });
+      return tr;
+    };
     const applySkills = () => {
       ['H', 'A'].forEach((s) => {
         const team = Object.assign({}, TM[s].boost && TM[s].boost.attr || {});
@@ -116,6 +141,7 @@ export function makeEngine(cfg) {
           if (!p.base) return; p.drain = 1; const add = Object.assign({}, team);
           p.active.forEach((k) => { for (const a in k.eff) { if (a === 'drain') p.drain *= k.eff[a]; else if (a !== 'team') add[a] = (add[a] || 0) + k.eff[a]; } });
           for (const a in p.base) p[a] = Math.round(Math.max(20, Math.min(99, p.base[a] + (add[a] || 0))));
+          p.tr = traitsOf(p);                       // §23 recalculé chaque minute, avec les conditions
           p.vmax = 5.5 + (p.pace - 40) * 0.064;
         });
       });
@@ -220,20 +246,23 @@ export function makeEngine(cfg) {
       return cl((5 - p.wf) * 0.25, 0, 1);   // 0 = pied fort, 1 = pied faible franc
     };
     const pickShot = (p, a, gkOut, fresh) => {
-      const z = W.ball.z, tech = p.dri * 0.5 + p.sht * 0.5, pw = p.pow != null ? p.pow : p.phy;
+      // §23 le trait de finition ouvre les frappes spectaculaires : retourné, talonnade,
+      // volée. Elles restent conditionnées à la hauteur du ballon et à l'angle.
+      const ts = TR(p, 'shot');
+      const z = W.ball.z, tech = p.dri * 0.5 + p.sht * 0.5 + ts * 12, pw = p.pow != null ? p.pow : p.phy;
       const opts = [], add = (k, w) => { if (w > 0) opts.push({ k, w }); };
       const tight = Math.abs(p.x - 34) > 13 && a > 92;           // §23 angle ferme
       const justBeat = W.t - (p.beatT || -9) < 1.6;              // §23 tir apres dribble
-      if (z > 0.9) { add('volee', 10 + (tech - 60) * 0.5); add('retourne', tech > 82 && a > 90 ? (tech - 82) * 0.4 : 0); }
+      if (z > 0.9) { add('volee', (10 + (tech - 60) * 0.5) * (1 + ts * 0.5)); add('retourne', tech > 82 - ts * 9 && a > 90 ? (tech - 82 + ts * 9) * 0.4 * (1 + ts) : 0); }
       else if (z > 0.3) { add('demi', 10 + (tech - 60) * 0.4); add('volee', 3); add('reprise', 6 + (tech - 60) * 0.3); }
       else {
         add('place', a > 86 ? 14 : 5);
         add('puissant', 6 + (pw - 60) * 0.35 + (a < 88 ? 8 : 0));
         add('rasSol', 7 + (p.sht - 60) * 0.2);
-        add('enroule', tech > 70 ? (tech - 70) * 0.9 + (Math.abs(p.x - 34) > 8 ? 5 : 0) : 0);
+        add('enroule', tech > 70 ? ((tech - 70) * 0.9 + (Math.abs(p.x - 34) > 8 ? 5 : 0)) * (1 + ts * 0.4) : 0);
         add('seche', fresh ? 8 + (tech - 60) * 0.25 : 0);
         add('lob', gkOut ? 10 + (tech - 60) * 0.4 : 0.5);
-        add('talon', tech > 80 && a > 92 ? (tech - 80) * 0.22 : 0);
+        add('talon', tech > 80 - ts * 8 && a > 92 ? (tech - 80 + ts * 8) * 0.22 * (1 + ts * 0.8) : 0);
         add('apresDrib', justBeat ? 14 + (tech - 60) * 0.3 : 0);
         add('ferme', tight ? 12 : 0);
         add('faible', weakFoot(p) > 0.4 ? 9 : 1);
@@ -254,6 +283,7 @@ export function makeEngine(cfg) {
       const skill = (p.sht + T.bonus - 65) / 55 * (head ? 0.6 : 1) + (p.energy - 100) / 500;
       const gkOutNow = hy(gk.x - 34, gk.y - yOf(s, PL)) > 5;
       const sv = head || fk ? null : (W.forceSv || pickShot(p, a, gkOutNow, W.t - p.rcvT < 0.55)); W.forceSv = null;
+      if (sv) { W.cnt = W.cnt || {}; W.cnt['sv_' + sv] = (W.cnt['sv_' + sv] || 0) + 1; }
       const V2 = sv ? SHOTS[sv] : null;
       let vg = V2 ? V2.g : 1; if (sv === 'lob') vg = gkOutNow ? 1.32 : 0.45;
       if (sv) { W.sv = W.sv || {}; const sc = W.sv[sv] || (W.sv[sv] = { n: 0, g: 0 }); sc.n++; }
@@ -316,7 +346,9 @@ export function makeEngine(cfg) {
         W.fl = null; W.owner = null; const b = W.ball, ang = R() * 6.283; b.vx = Math.cos(ang) * 3.5 + (f ? (f.x1 - f.x0) / f.dur * 0.15 : 0); b.vy = Math.sin(ang) * 3.5 + (f ? (f.y1 - f.y0) / f.dur * 0.15 : 0); b.z = 0; W.last = q.s; q.beat = 0.35; return;
       }
       gain(q, 'pass');
-      const roll = tq + (R() - 0.5) * 26;
+      // §23 le contrôle orienté et le contrôle d'élite s'ouvrent au joueur technique,
+      // et un dribbleur confirmé les sort plus souvent.
+      const roll = tq + (R() - 0.5) * 26 + TR(q, 'drib') * 7;
       const lvl = roll < 48 ? 'long' : roll < 76 ? 'correct' : roll < 90 ? 'oriente' : 'elite';
       W.cnt = W.cnt || {}; W.cnt['t_' + lvl] = (W.cnt['t_' + lvl] || 0) + 1;
       if (lvl === 'long') {
@@ -416,12 +448,13 @@ export function makeEngine(cfg) {
       if (f.res === 'save') {
         rt(gk, 0.12 + f.xg * 0.9);
         const dbl = W.t - (W.lastSaveT || -9) < 2.6 && W.lastSaveGk === gk.code;
-        const SAV = dbl ? 'DOUBLE ARRÊT !' : f.xg > 0.35 ? 'ARRÊT RÉFLEXE !' : f.sv === 'lob' ? 'LE GARDIEN SE DÉTEND' : f.sv === 'rasSol' || f.sv === 'ferme' ? 'ARRÊT DU PIED' : f.head ? 'CLAQUETTE !' : 'ARRÊT !';
+        const SAV = dbl ? 'DOUBLE ARRÊT !' : f.xg > 0.35 || (TR(gk, 'gk') > 0.5 && f.xg > 0.18) ? 'ARRÊT RÉFLEXE !' : f.sv === 'lob' ? 'LE GARDIEN SE DÉTEND' : f.sv === 'rasSol' || f.sv === 'ferme' ? 'ARRÊT DU PIED' : f.head ? 'CLAQUETTE !' : 'ARRÊT !';
         const SAVC = dbl ? gk.short + ' repousse une deuxième fois, incroyable !' : f.xg > 0.35 ? 'Réflexe énorme de ' + gk.short + ' !' : f.sv === 'lob' ? gk.short + ' se détend et capte le ballon piqué' : f.sv === 'rasSol' || f.sv === 'ferme' ? gk.short + ' sort le pied, superbe' : f.head ? gk.short + ' claque la tête de ' + p.short + ' sur sa barre' : 'Parade de ' + gk.short + ' devant ' + p.short + ' !';
         W.lastSaveT = W.t; W.lastSaveGk = gk.code;
         banner(SAV, gk.short, '#F2F4F7', 1.4); com(SAVC);
         if (f.xg > 0.22 && !f.pen) logE('Grosse parade de ' + gk.name + ' devant ' + p.name, s === 'H' ? '#BDEBC9' : '#F2B6B6', 'save', s);
-        const r = R(), cp = cl(0.44 + (gk.han - 65) / 70 - f.xg * 0.25, 0.2, 0.78);
+        // §23 Mains sûres capte au lieu de repousser, Réflexes félins sort les frappes les plus dures
+        const r = R(), cp = cl(0.44 + (gk.han - 65) / 70 - f.xg * 0.25 + TR(gk, 'hands') * 0.12, 0.2, 0.82);
         if (r < cp) { gkHold(gk); return; }
         if (r < cp + (1 - cp) * 0.55) { com('Le gardien détourne en corner'); outBehind(o, b.x); return; }
         b.vx = (R() - 0.5) * 9; b.vy = (s === 'H' ? 1 : -1) * (4 + R() * 5); b.z = 0.3; W.owner = null; W.last = o; return;
@@ -607,7 +640,10 @@ export function makeEngine(cfg) {
           pS *= sig(4.5 * (mm + 0.12));
         }
       }
-      const skill = p.pas + TM[s].bonus;
+      // §14 « augmente la précision de certaines passes » : seulement les longues et
+      // celles qui cassent une ligne, pas la passe latérale de dix mètres.
+      const hard = kind === 'through' || kind === 'long' || kind === 'switch' || kind === 'space';
+      const skill = p.pas + TM[s].bonus + (hard ? TR(p, 'pass') * 9 : 0);
       pS *= 1 - cl(d / 110 * (1.45 - skill / 100) * (aerial ? 1.8 : 1), 0, 0.5);
       pS *= 0.85 + 0.15 * TM[s].coh;
       return { pS, space, d, off: kind !== 'through' && isOffPos(q) };
@@ -624,7 +660,11 @@ export function makeEngine(cfg) {
       if (!isGK && a0 > 71 && Math.abs(p.x - 34) < 30) {
         const e = shotEst(p, false);
         const ev = e.xg * (a0 < 88 ? (e.blocker ? 1.5 : 2.4) * (1 + (p.pow - 65) / 70) : 1.0) * (1 + (p.sht - 65) / 110) * (T.tac.longshot && a0 < 88 ? 1.6 : 1) * (T.shout === 'exiger' ? 1.1 : 1) * (1 + (T.ment - 3) * 0.04) - (1 - e.xg) * 0.004;
-        if (e.xg > 0.015) opts.push({ k: 'shot', ev: oneV1 ? ev * 1.5 : ev });
+        // §14 un Tueur tente la frappe dans des situations qu'un autre refuserait :
+        // son seuil d'acceptation baisse ET la frappe pèse plus lourd dans son choix.
+        const ts2 = TR(p, 'shot');
+        const evS = ev * (1 + ts2 * 0.5);
+        if (e.xg > 0.015 - ts2 * 0.007) opts.push({ k: 'shot', ev: oneV1 ? evS * 1.5 : evS });
       }
       const addPass = (q, tx, ty, kind, aerial) => {
         tx = cl(tx, 1, PW - 1); ty = cl(ty, 1, PL - 1);
@@ -633,8 +673,13 @@ export function makeEngine(cfg) {
         const prog = tA - a0;
         if (counter) ev *= prog > 5 ? 1.25 : prog < -3 ? 0.55 : 1;
         if (T.tac.pass === 0 && e.d > 26) ev *= 0.85; if (T.tac.pass === 2 && prog > 12) ev *= 1.15;
-        if (kind === 'through') ev *= T.tac.behind ? 1.3 : 1.1;
-        if (kind === 'switch') ev *= 1.05 + Math.max(0, p.pas - 70) / 260;
+        // §14 la Passe laser joue entre les lignes : les passes difficiles deviennent
+        // une option raisonnable, et le receveur rapide est davantage servi dans la profondeur.
+        const tp = TR(p, 'pass');
+        if (kind === 'through') ev *= (T.tac.behind ? 1.3 : 1.1) * (1 + tp * 0.45) * (1 + TR(q, 'sprint') * 0.3);
+        if (kind === 'space') ev *= (1 + tp * 0.3) * (1 + TR(q, 'sprint') * 0.35);
+        if (kind === 'long') ev *= 1 + tp * 0.4;
+        if (kind === 'switch') ev *= (1.05 + Math.max(0, p.pas - 70) / 260) * (1 + tp * 0.5);
         if (isGK && T.tac.gk === 0 && !aerial) ev *= 1.2; if (isGK && T.tac.gk === 1 && aerial) ev *= 1.25;
         if (e.off) { if (R() < 0.62) return; }
         opts.push({ k: 'pass', q, x: tx, y: ty, kind, aerial: !!aerial, ev, off: e.off });
@@ -642,7 +687,8 @@ export function makeEngine(cfg) {
       for (const q of LV[s]) {
         if (q === p || q.fall > 0) continue;
         const dq = hy(q.x - p.x, q.y - p.y); if (dq < 4 || dq > 62) continue;
-        const vis = p.dec * 0.6 + p.pas * 0.4;   // §20 un passeur d'élite voit des solutions que les autres ne voient pas
+        // §14, §20 un Visionnaire voit des solutions que les autres ne voient pas
+        const vis = p.dec * 0.6 + p.pas * 0.4 + TR(p, 'pass') * 16;
         if (dq > 30 && R() > vis / 100 + 0.2) continue;
         const lead = 0.3 + dq / 32, qa = aOf(s, q.y);
         addPass(q, q.x + q.vx * lead * 0.8, q.y + q.vy * lead * 0.8, 'pass', dq > 38 && !isGK ? true : false);
@@ -671,14 +717,16 @@ export function makeEngine(cfg) {
           if (bm < -0.05 && blk && hy(blk.x - p.x, blk.y - p.y) < 6.5) { if (blk.line === 'GB') pS *= 0.3; else { drib = true; pS = Math.min(1, pS / sig(4 * (bm + 0.25))) * pDrib(p, blk); } }
           const sp = spaceAt(s, tx, ty);
           let ev = pS * V(s, tx, ty, sp) - (1 - pS) * lossCost(s, p.x, p.y) - (W.t - p.rcvT) * 0.0012;
-          if (drib) ev *= T.tac.dribble ? 1.12 : 0.94;
+          // §14 le dribbleur tente davantage et prend plus de risques : il élimine plus souvent,
+          // mais il perd aussi plus de ballons, puisqu'il tente des duels qu'un autre refuserait.
+          if (drib) ev *= (T.tac.dribble ? 1.12 : 0.94) * (1 + TR(p, 'drib') * 0.42);
           if (counter && label !== 'side') ev *= 1.2;
           if (oneV1) ev *= 0.55;
           opts.push({ k: 'carry', x: tx, y: ty, ev, drib, blk: drib ? blk : null, label });
         };
         const fy = s === 'H' ? -1 : 1, gy = yOf(s, PL);
         carry(34 - p.x, gy - p.y, pr < 3 ? 5 : 9, 'goal');
-        carry(0, fy, pr < 3 ? 5 : 10, 'fwd');
+        carry(0, fy, (pr < 3 ? 5 : 10) * (1 + TR(p, 'sprint') * 0.22), 'fwd');   // §14 il attaque la profondeur plus loin
         carry((p.x < 34 ? 1 : -1) * 0.65, fy * 0.76, 7, 'in');
         if (a0 > 58 && Math.abs(p.x - 34) > 15) carry((p.x < 34 ? -1 : 1) * 0.15, fy, 10, 'line');
         if (pr < 2.6) carry(p.x < 34 ? 1 : -1, -fy * 0.3, 4, 'side');
@@ -687,7 +735,8 @@ export function makeEngine(cfg) {
           const spots = [['near', 34 + nl * 3.2, 100.3], ['far', 34 - nl * 4.5, 99], ['spot', 34 + nl * 0.5, 94], ['six', 34, 101.3]];
           for (const [nm, sx, sa] of spots) {
             const tx = sx, ty = yOf(s, sa); let aw = 0, dw = 0.35;
-            for (const q of LV[s]) if (q !== p && q.line !== 'GB') { const d = Math.min(hy(q.x - tx, q.y - ty), hy(q.tx - tx, q.ty - ty) + 0.8); if (d < 4.5) aw += Math.pow(q.phy / 70, 2) * (1.3 - d / 4.5); }
+            // §23 une Tour de contrôle gagne davantage de duels aériens sur les centres
+            for (const q of LV[s]) if (q !== p && q.line !== 'GB') { const d = Math.min(hy(q.x - tx, q.y - ty), hy(q.tx - tx, q.ty - ty) + 0.8); if (d < 4.5) aw += Math.pow(q.phy / 70, 2) * (1.3 - d / 4.5) * (1 + TR(q, 'aerial') * 0.45); }
             for (const r of LV[o]) { const d = hy(r.x - tx, r.y - ty); if (d < 3.6) dw += Math.pow(r.phy / 70, 2) * (1.3 - d / 3.6) * 1.2 * (r.line === 'GB' ? 1.5 : 1); }
             if (aw < 0.25) continue;
             const pWin = aw / (aw + dw * 1.5), ev = (0.5 * pWin * 0.8 * xgAt(sa, sx) * 0.5 - (1 - 0.5 * pWin) * 0.008) * [0.65, 1, 1.35][T.tac.cross] * (1 + (p.pas - 65) / 150);
@@ -704,6 +753,11 @@ export function makeEngine(cfg) {
       let ch = best;
       if (R() > qd) { const alt = opts.slice(1, 4).filter((x) => x.ev > best.ev - 0.012); if (alt.length) ch = alt[Math.floor(R() * alt.length)]; }
       if (cfg.dbg) cfg.dbg(W, p, ch, opts);
+      // §23 compteurs de décision : ce que le joueur a RÉELLEMENT choisi de faire.
+      // Ils servent au garde-fou test/traits.js, qui vérifie qu'une compétence change
+      // le comportement et pas seulement les chiffres affichés.
+      W.cnt = W.cnt || {}; W.cnt.dec = (W.cnt.dec || 0) + 1;
+      W.cnt['act_' + ch.k + (ch.k === 'pass' ? '_' + ch.kind : '')] = (W.cnt['act_' + ch.k + (ch.k === 'pass' ? '_' + ch.kind : '')] || 0) + 1;
       exec(p, ch, counter);
     };
     const exec = (p, ch, counter) => {
@@ -771,17 +825,56 @@ export function makeEngine(cfg) {
       else key(a > 72 ? 20 : 5, s, 'foul');
       setPiece(pen ? 'pen' : 'fk', s, vic.x, vic.y);
     };
+    // gestes techniques : palier selon dribble + agilité, du plus simple au plus rare
+    // §31 cinq tiers de gestes : 1 basique, 2 intermédiaire, 3 avancé, 4 élite, 5 exceptionnel.
+    // Le tier conditionne l'accès au geste et pilote le rendu : plus le tier est haut, plus l'effet visuel est marqué.
+    const DRIBS = [
+      { n: 'crochet', lab: 'crochet', min: 0, cost: 0.22, gain: 0.30, tier: 1 },
+      { n: 'protect', lab: 'protection de balle', min: 0, cost: 0.10, gain: 0.18, tier: 1 },
+      { n: 'feinte', lab: 'feinte de corps', min: 62, cost: 0.26, gain: 0.40, tier: 2 },
+      { n: 'double', lab: 'double contact', min: 68, cost: 0.28, gain: 0.46, tier: 2 },
+      { n: 'passement', lab: 'passement de jambes', min: 74, cost: 0.32, gain: 0.54, tier: 3 },
+      { n: 'roulette', lab: 'roulette', min: 80, cost: 0.36, gain: 0.62, tier: 3 },
+      { n: 'pont', lab: 'petit pont', min: 85, cost: 0.42, gain: 0.74, tier: 4 },
+      { n: 'sombrero', lab: 'sombrero', min: 91, cost: 0.48, gain: 0.82, tier: 5 }
+    ];
+    const pickDrib = (p, forced) => {
+      // §23 un Funambule accède à des gestes qu'un joueur de même note n'atteint pas,
+      // et les sort plus souvent. Sans la compétence, le palier reste celui des statistiques.
+      const td = TR(p, 'drib');
+      const lvl = p.dri * 0.7 + p.agi0 * 30 + td * 18;
+      const pool = DRIBS.filter((d) => lvl >= d.min);
+      if (!pool.length) return DRIBS[0];
+      // les gestes rares restent rares même pour un joueur d'élite : le trait les rend
+      // possibles, pas systématiques.
+      const w = pool.map((d, i) => (i === 0 || i === 1 ? 3 : Math.max(0.25, 1.6 - (d.min - 55) / 45) * (1 + td * 1.1)) * (forced ? (i > 1 ? 1.6 : 0.5) : 1));
+      let r2 = R() * w.reduce((a, b) => a + b, 0);
+      for (let i = 0; i < pool.length; i++) { r2 -= w[i]; if (r2 <= 0) return pool[i]; }
+      return pool[0];
+    };
     const duels = () => {
       const c = W.owner; if (!c || W.set || c.line === 'GB') return;
       const s = c.s, o = OT[s];
       if (c.carry && c.carry.drib && !c.carry.done && c.carry.blk && !c.carry.blk.red) {
         const bl = c.carry.blk;
         if (hy(bl.x - c.x, bl.y - c.y) < 1.4) {
-          c.carry.done = true; const pd = pDrib(c, bl); W.cnt = W.cnt || {}; W.cnt.drib = (W.cnt.drib || 0) + 1;
-          if (R() < pd) { W.cnt.dribOk = (W.cnt.dribOk || 0) + 1; bl.beat = 1.1; c.beatT = W.t; rt(c, 0.07); rt(bl, -0.03); com(c.short + ' élimine ' + bl.short + ' !'); if (aOf(s, c.y) > 66) key(12, s, 'drib'); c.vx *= 1.1; c.vy *= 1.1; }
+          c.carry.done = true;
+          // §23 et §31 : le geste joué dépend du joueur. Un crochet pour tout le monde,
+          // un petit pont ou un sombrero seulement pour qui a la technique ou la compétence.
+          // Le geste choisi change la difficulté du duel et ce que le commentaire raconte.
+          const g = pickDrib(c, false);
+          const pd = cl(pDrib(c, bl) - g.cost * 0.5 + g.gain * 0.22, 0.1, 0.9);
+          W.cnt = W.cnt || {}; W.cnt.drib = (W.cnt.drib || 0) + 1; W.cnt['g' + g.tier] = (W.cnt['g' + g.tier] || 0) + 1;
+          if (R() < pd) { W.cnt.dribOk = (W.cnt.dribOk || 0) + 1; bl.beat = 1.1 + g.gain * 0.5; c.beatT = W.t; c.lastGest = g.n; rt(c, 0.07 + g.gain * 0.04); rt(bl, -0.03); mark({ k: 'skill', c: c.code, tier: g.tier });
+            com(c.short + (g.tier >= 4 ? ' : ' + g.lab + ' sur ' + bl.short + ' !' : g.tier >= 3 ? ' élimine ' + bl.short + ' d’une ' + g.lab : ' élimine ' + bl.short + ' !'));
+            // §23 un geste de haut palier mérite sa ligne dans le rapport : il reste rare,
+            // donc il ne noie pas le fil des événements.
+            if (g.tier >= 4) logE(c.name + ' : ' + g.lab + ' sur ' + bl.name, s === 'H' ? '#BDEBC9' : '#F2B6B6', 'skill', s);
+            if (aOf(s, c.y) > 66) key(12 + g.tier * 2, s, 'drib'); c.vx *= 1.1 + g.gain * 0.08; c.vy *= 1.1 + g.gain * 0.08; }
           else { const pf = (inBox(aOf(s, c.y), c.x) ? 0.15 : 1) * 0.17 * [0.65, 1, 1.45][TM[o].tac.tackle] * (TM[o].shout === 'calme' ? 0.75 : 1) * (bl.yc >= 1 ? 0.14 : 1);
             if (R() < pf) { foul(bl, c, 'drib'); return; }
-            rt(bl, 0.07); rt(c, -0.04); W.st[o].tk++; com('Tacle de ' + bl.short + ', ballon récupéré');
+            rt(bl, 0.07); rt(c, -0.04); W.st[o].tk++;
+            com((TR(bl, 'tackle') > 0.4 && R() < 0.45 ? 'Tacle glissé de ' : TR(bl, 'press') > 0.4 && R() < 0.4 ? 'Interception de ' : 'Tacle de ') + bl.short + ', ballon récupéré');
             if (R() < 0.7) gain(bl, 'tackle'); else { W.owner = null; const b = W.ball; b.vx = (R() - 0.5) * 8; b.vy = (R() - 0.5) * 8; W.last = o; }
             c.beat = 0.5; }
           return;
@@ -801,10 +894,11 @@ export function makeEngine(cfg) {
         const pa = (ownBox ? 0.5 : 1) * 0.34 * [0.7, 1, 1.35][TM[o].tac.tackle] * (fresh ? 1.6 : 1) * (d.press ? 1.3 : 1) * (d.stopper ? 1.2 : 1) * (d.yc >= 1 ? 0.45 : 1);
         d.tkT = W.t + 0.5; if (R() > pa) continue;
         const backToGoal = (c.fy * (s === 'H' ? -1 : 1)) < -0.2;
-        const pWin = cl(0.35 + (d.def + TM[o].bonus - Math.max(c.dri, c.phy * 0.92) - TM[s].bonus) / 80 + (backToGoal ? 0.08 : 0) + (fresh ? 0.05 : 0), 0.12, 0.72);
+        // §23 le Mur intervient mieux dans sa surface ; le Funambule résiste mieux au retour
+        const pWin = cl(0.35 + (d.def + TM[o].bonus - Math.max(c.dri, c.phy * 0.92) - TM[s].bonus) / 80 + (backToGoal ? 0.08 : 0) + (fresh ? 0.05 : 0) + TR(d, 'tackle') * 0.07 - TR(c, 'drib') * 0.05, 0.12, 0.72);
         const pF = (ownBox ? 0.08 : 1) * 0.135 * [0.6, 1, 1.45][TM[o].tac.tackle] * (TM[o].shout === 'calme' ? 0.75 : 1) * (pWin < 0.3 ? 1.3 : 1) * (d.yc >= 1 ? 0.14 : 1);
         const r = R();
-        if (r < pWin) { rt(d, 0.07); rt(c, -0.04); W.st[o].tk++; com('Tacle de ' + d.short + ' !'); if (R() < 0.72) gain(d, 'tackle'); else { W.owner = null; const b = W.ball; b.vx = (R() - 0.5) * 9; b.vy = (R() - 0.5) * 9; W.last = o; } return; }
+        if (r < pWin) { rt(d, 0.07); rt(c, -0.04); W.st[o].tk++; com((TR(d, 'tackle') > 0.4 && R() < 0.45 ? 'Tacle glissé de ' : TR(d, 'press') > 0.4 && R() < 0.4 ? 'Interception de ' : 'Tacle de ') + d.short + ' !'); if (R() < 0.72) gain(d, 'tackle'); else { W.owner = null; const b = W.ball; b.vx = (R() - 0.5) * 9; b.vy = (R() - 0.5) * 9; W.last = o; } return; }
         if (r < pWin + pF) { foul(d, c, 'tackle'); return; }
         d.beat = 0.7; return;
       }
@@ -1108,7 +1202,8 @@ export function makeEngine(cfg) {
         const want = Math.min(sp * p.urg, d * 1.7), wx = d > 0.05 ? dx / d * want : 0, wy = d > 0.05 ? dy / d * want : 0;
         let ax = wx - p.vx, ay = wy - p.vy; const am = hy(ax, ay);
         const vv = hy(p.vx, p.vy), turn = vv > 0.6 && want > 0.3 ? Math.max(0, (p.vx * wx + p.vy * wy) / (vv * Math.max(0.01, want))) : 1;   // 1 = tout droit, -1 = demi-tour
-        const lim = (p.acc0 != null ? p.acc0 : 0.45) * (p.urg > 0.9 ? 1.18 : 1) * (0.55 + 0.45 * (p.agi0 != null ? p.agi0 : 0.7)) * (turn < 0.2 ? 0.55 + 0.45 * (p.agi0 != null ? p.agi0 : 0.7) : 1) * (0.8 + 0.2 * p.energy / 100);
+        // §14 un Sprinter accélère plus fort : il prend deux mètres au démarrage.
+        const lim = (p.acc0 != null ? p.acc0 : 0.45) * (1 + TR(p, 'sprint') * 0.26) * (p.urg > 0.9 ? 1.18 : 1) * (0.55 + 0.45 * (p.agi0 != null ? p.agi0 : 0.7)) * (turn < 0.2 ? 0.55 + 0.45 * (p.agi0 != null ? p.agi0 : 0.7) : 1) * (0.8 + 0.2 * p.energy / 100);
         if (am > lim) { ax *= lim / am; ay *= lim / am; }
         p.vx += ax; p.vy += ay;
       }
@@ -1167,62 +1262,6 @@ export function makeEngine(cfg) {
       logE('Changement pour ' + club('A') + ' : ' + d.name + ' remplace ' + cand.name, '#4FA8E8', 'sub', 'A');
     };
     // ============ CONTRÔLE DIRECT ============
-    // gestes techniques : palier selon dribble + agilité, du plus simple au plus rare
-    // §31 cinq tiers de gestes : 1 basique, 2 intermédiaire, 3 avancé, 4 élite, 5 exceptionnel.
-    // Le tier conditionne l'accès au geste et pilote le rendu : plus le tier est haut, plus l'effet visuel est marqué.
-    const DRIBS = [
-      { n: 'crochet', lab: 'crochet', min: 0, cost: 0.22, gain: 0.30, tier: 1 },
-      { n: 'protect', lab: 'protection de balle', min: 0, cost: 0.10, gain: 0.18, tier: 1 },
-      { n: 'feinte', lab: 'feinte de corps', min: 62, cost: 0.26, gain: 0.40, tier: 2 },
-      { n: 'double', lab: 'double contact', min: 68, cost: 0.28, gain: 0.46, tier: 2 },
-      { n: 'passement', lab: 'passement de jambes', min: 74, cost: 0.32, gain: 0.54, tier: 3 },
-      { n: 'roulette', lab: 'roulette', min: 80, cost: 0.36, gain: 0.62, tier: 3 },
-      { n: 'pont', lab: 'petit pont', min: 85, cost: 0.42, gain: 0.74, tier: 4 },
-      { n: 'sombrero', lab: 'sombrero', min: 91, cost: 0.48, gain: 0.82, tier: 5 }
-    ];
-    const pickDrib = (p, forced) => {
-      const lvl = p.dri * 0.7 + p.agi0 * 30;
-      const pool = DRIBS.filter((d) => lvl >= d.min);
-      if (!pool.length) return DRIBS[0];
-      // les gestes rares restent rares même pour un joueur d'élite
-      const w = pool.map((d, i) => (i === 0 || i === 1 ? 3 : Math.max(0.25, 1.6 - (d.min - 55) / 45)) * (forced ? (i > 1 ? 1.6 : 0.5) : 1));
-      let r2 = R() * w.reduce((a, b) => a + b, 0);
-      for (let i = 0; i < pool.length; i++) { r2 -= w[i]; if (r2 <= 0) return pool[i]; }
-      return pool[0];
-    };
-    const doSkill = (p, forced) => {
-      const r = nearestOpp(p); if (!r.p || r.d > 4.5) { p.carry = { x: p.x + p.fx * 6, y: p.y + p.fy * 6, until: W.t + 0.6, drib: true }; return; }
-      const g = pickDrib(p, forced), d2 = r.p;
-      const atk = p.dri * 0.34 + p.pace * 0.18 + p.agi0 * 26 + p.bal0 * 14 + (p.active || []).length * 1.5;
-      const def = d2.def * 0.4 + d2.pace * 0.16 + d2.dec * 0.12 + d2.bal0 * 16;
-      const pOK = cl(0.36 + (atk - def) / 62 - g.cost + (W.t < TM[p.s].counterUntil ? 0.05 : 0) + (p.energy - 70) / 400, 0.1, 0.88);
-      W.st[p.s].pc = (W.st[p.s].pc || 0) + 1;
-      if (R() < pOK) {
-        d2.beat = 0.55 + g.gain * 0.5; rt(p, 0.12 + g.gain * 0.12); rt(d2, -0.08);
-        const ux = p.fx, uy = p.fy, side = R() < 0.5 ? 1 : -1;
-        p.carry = { x: cl(p.x + ux * 7 - uy * side * 2.5, 1, PW - 1), y: cl(p.y + uy * 7 + ux * side * 2.5, 1, PL - 1), until: W.t + 1.1, drib: true };
-        com(p.short + ' : ' + g.lab + ' sur ' + d2.short + ' !');
-        mark({ k: 'skill', c: p.code, tier: g.tier });   // §28 à §31 le rendu suit le tier du geste
-        if (g.min >= 80) { banner('QUEL GESTE !', p.short, '#2ECC71', 1.2); logE(p.short + ' élimine ' + d2.short + ' d’' + (g.n === 'pont' ? 'un petit pont' : 'une ' + g.lab), '#2ECC71', 'drib', p.s); }
-        key(g.min >= 80 ? 30 : 14, p.s, 'drib');
-      } else {
-        com(g.lab + ' raté de ' + p.short); rt(p, -0.1);
-        if (R() < 0.55) { gain(d2, 'tackle'); rt(d2, 0.12); } else { p.carry = null; p.nextDec = W.t + 0.2; }
-      }
-    };
-    // tacle / pressing manuel : variantes selon le profil du défenseur
-    const doTackle = (p) => {
-      const c = W.owner; if (!c || c.s === p.s) return;
-      const d = hy(c.x - p.x, c.y - p.y);
-      if (d > 2.6) { p.carry = null; return; }
-      const slide = d > 1.5 && p.def > 60 && R() < 0.45;
-      const atk = c.dri * 0.32 + c.bal0 * 22 + c.pace * 0.12;
-      const def = p.def * 0.38 + p.dec * 0.14 + p.bal0 * 20 + (slide ? 8 : 0) - (c.beat > 0 ? -14 : 0);
-      const pOK = cl(0.34 + (def - atk) / 58 + (p.energy - 70) / 420, 0.08, 0.9);
-      if (R() < pOK) { W.st[p.s].tk++; gain(p, 'tackle'); rt(p, 0.14); com((slide ? 'Tacle glissé de ' : 'Interception de ') + p.short + ' devant ' + c.short); }
-      else if (slide && R() < 0.5) { p.fall = 0.8; foul(p, c, 'tackle'); }
-      else { p.beat = 0.5; com(c.short + ' résiste au retour de ' + p.short); }
-    };
     const tick = () => {
       if (lastMin < 0) { lastMin = 0; applySkills(); }
       refreshLV();
@@ -1307,7 +1346,7 @@ export function makeEngine(cfg) {
       },
       finish() { W.skip = true; pend = null; let g = 0; while (!W.ended && g++ < 200000) { tick(); keys.length = 0; } snap(); },
       snapAt(t) { let lo = null; for (let i = hist.length - 1; i >= 0; i--) if (hist[i].t <= t + 1e-6) { lo = hist[i]; break; } return lo || hist[0] || null; },
-      state() { snap(); return hist[hist.length - 1]; },
+      state() { snap(); return Object.assign({}, hist[hist.length - 1], { cnt: W.cnt || {} }); },
       sub(side, i, d) {
         const T = TM[side], old = T.ps[i]; if (!old) return;
         const np = mkP(side, i, d, { line: old.line, fx: old.bx / 0.68, fy: 100 - old.ba / 1.05 });
