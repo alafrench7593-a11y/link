@@ -32,6 +32,7 @@ src/quests.js   quêtes et économie encadrée : plafonds par source, journal (�
 src/creation.js création du club, effectif normal de départ et joueur rare offert (§2, §3).
 src/versus.js   match entre deux vrais clubs, rejouable à l'identique depuis une graine.
 src/online.js   le client en ligne : il parle au serveur et rejoue, il ne décide rien.
+src/onlineui.js ce que l'écran affiche du multijoueur, y compris quand il n'y a pas de serveur.
 src/state.js    état de départ d'un club.
 src/save.js     sérialisation versionnée et stockages (mémoire, navigateur, HTTP).
 src/league.js   classements, calendriers, montées et descentes (§72, §75).
@@ -452,9 +453,13 @@ app.use('/online', onlineRoutes({
 ```
 
 ```bash
-node test/online.js      # 41 vérifications, serveur monté en mémoire, aucun port ouvert
-npm run demo             # le serveur de démonstration sert aussi /online
+node test/online.js       # le serveur monté en mémoire, aucun port ouvert
+node test/e2e-online.mjs  # le circuit complet : vrai serveur HTTP, vrai client fetch
+npm run demo              # le serveur de démonstration sert aussi /online
 ```
+
+Hors ligne, l'écran Ligue le dit en une phrase et les boutons refusent avec leur raison,
+au lieu de rester muets. Le reste du jeu continue de fonctionner sans serveur.
 
 ## Une seule échelle
 

@@ -74,8 +74,8 @@ const METHODS = ['rand', 'seedR', 'statW', 'ovrOf', 'genStats', 'cardStats', 'pr
   'playerXpNeed', 'playerLevel', 'playerXp', 'playerProgress', 'hiddenOf', 'hiddenMods', 'injuryRisk', 'xpRate', 'matchXp', 'addPlayerXp', 'grantPlayerXp',
   'SHARD_XP', 'shardTrainInfo', 'shardTrain',
   'CAPS', 'logMoney', 'dayKey', 'earn', 'spend', 'PRONO_DEFS', 'MAX_STAKE', 'placeProno', 'settlePronos', 'QUEST_DEFS', 'activeQuests', 'rollQuests', 'bumpQuest', 'claimQuest', 'questsAfterMatch',
-  'CREATION_STEPS', 'COUNTRIES', 'starterSquad', 'starterRare', 'canEquipRaw', 'genStatsFor', 'createClub', 'creationSummary'];
-const SOURCES = ['club.js', 'players.js', 'skills.js', 'cards.js', 'staff.js', 'training.js', 'transfer.js', 'progression.js', 'tactics.js', 'tracks.js', 'playerxp.js', 'quests.js', 'creation.js'];
+  'isOnline', 'onlineSummary', 'onlineActions', 'CREATION_STEPS', 'COUNTRIES', 'starterSquad', 'starterRare', 'canEquipRaw', 'genStatsFor', 'createClub', 'creationSummary'];
+const SOURCES = ['club.js', 'players.js', 'skills.js', 'cards.js', 'staff.js', 'training.js', 'transfer.js', 'progression.js', 'tactics.js', 'tracks.js', 'playerxp.js', 'quests.js', 'creation.js', 'onlineui.js'];
 const club = SOURCES.map((f) => read('src/' + f)).join('\n');
 for (const name of METHODS) {
   const from = findMethod(club, name);

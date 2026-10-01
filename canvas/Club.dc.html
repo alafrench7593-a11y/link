@@ -649,7 +649,39 @@ button:disabled{cursor:default}
 </div>
 </sc-for>
 </div>
-<span style="font-size: 11px; color: #79828F; line-height: 1.5">Saison de 5 matchs : les 2 premiers montent en division supérieure (+500 jetons et un Pack Or). Victoire +120 jetons · nul +50 · défaite +20.</span>
+<span style="font-size: 11px; color: #79828F; line-height: 1.5">Saison de 5 matchs : les 2 premiers montent en division supérieure (+500 jetons et un LinkFoot Pack). Victoire +120 jetons · nul +50 · défaite +20.</span>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<span style="font-size: 14px; font-weight: 700">En ligne</span>
+<span style="font-size: 11px; font-weight: 700; color: {{on.stateFg}}">{{on.state}}</span>
+</div>
+<span style="font-size: 11px; color: #79828F; line-height: 1.45">{{on.why}}</span>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<button sc-camel-on-click="{{on.publish}}" style="flex: 1 1 140px; min-height: 38px; padding: 0 12px; border-radius: 19px; border: none; background: {{on.btnBg}}; color: {{on.btnFg}}; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer">Publier mon équipe</button>
+<button sc-camel-on-click="{{on.refresh}}" style="flex: 1 1 110px; min-height: 38px; padding: 0 12px; border-radius: 19px; border: 1px solid rgba(255,255,255,0.14); background: transparent; color: #F2F4F7; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer">Actualiser</button>
+</div>
+<span style="font-size: 11px; color: #AEB6C2; line-height: 1.4">{{on.lastLine}}</span>
+<sc-if value="{{on.hasLadder}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #79828F; padding-top: 4px">CLASSEMENT GÉNÉRAL</span>
+<sc-for list="{{on.ladder}}" as="ld" hint-placeholder-count="5">
+<div style="display: flex; align-items: baseline; gap: 10px">
+<span style="width: 22px; flex-shrink: 0; font-size: 11.5px; font-weight: 700; color: #79828F">{{ld.rank}}</span>
+<span style="flex-grow: 1; min-width: 0; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ld.name}}</span>
+<span style="flex-shrink: 0; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums">{{ld.elo}}</span>
+</div>
+</sc-for>
+</sc-if>
+<sc-if value="{{on.hasLeagues}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #79828F; padding-top: 4px">MES LIGUES ENTRE AMIS</span>
+<sc-for list="{{on.leagues}}" as="lgx" hint-placeholder-count="2">
+<div style="display: flex; align-items: baseline; gap: 10px">
+<span style="flex-grow: 1; min-width: 0; font-size: 12px">{{lgx.name}}</span>
+<span style="flex-shrink: 0; font-size: 11px; color: #79828F">{{lgx.sub}}</span>
+</div>
+</sc-for>
+</sc-if>
+<span style="font-size: 10px; color: #6B736C; line-height: 1.45">{{on.rules}}</span>
+</div>
 </div>
 </sc-if>
 <sc-if value="{{isHome}}" hint-placeholder-val="{{true}}"><nav aria-label="Navigation principale" style="flex-shrink: 0; height: 64px; padding: 0 4px; background: #13171C; border-top: 1px solid rgba(255,255,255,0.07); display: flex; align-items: center; justify-content: space-between"><a href="Fil.dc.html" style="flex: 1 1 0; height: 54px; margin: 0 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 500; color: #5E6672; background: transparent"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"></path></svg>Accueil</a><a href="Main.dc.html" style="flex: 1 1 0; height: 54px; margin: 0 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 500; color: #5E6672; background: transparent"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m12 7 3.5 2.5-1.3 4h-4.4l-1.3-4Z"></path></svg>Matchs</a><a href="Club.dc.html" aria-current="page" style="flex: 1 1 0; height: 54px; margin: 0 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 700; color: #2ECC71; background: transparent; border-bottom: 2px solid #2ECC71"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 20 5v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5z"></path><path d="M9 11.5 11 13.5 15 9.5"></path></svg>Mon Club</a><a href="Paris.dc.html" style="flex: 1 1 0; height: 54px; margin: 0 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 500; color: #5E6672; background: transparent"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="7" width="19" height="11" rx="5.5"></rect><path d="M7.5 10.5v4M5.5 12.5h4"></path><circle cx="15.5" cy="11.5" r="1"></circle><circle cx="18" cy="14" r="1"></circle></svg>Mini-jeux</a><a href="Profil.dc.html" style="flex: 1 1 0; height: 54px; margin: 0 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 10px; font-weight: 500; color: #5E6672; background: transparent"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>Profil</a></nav></sc-if><sc-if value="{{notHome}}" hint-placeholder-val="{{false}}"><div role="tablist" aria-label="Sections du club" style="flex-shrink: 0; display: flex; padding: 8px 6px 12px; background: linear-gradient(180deg, rgba(15,19,16,0.96) 0%, #0C100D 100%); border-top: 1px solid rgba(255,255,255,0.07); box-shadow: 0 -12px 28px rgba(0,0,0,0.35)">
@@ -4474,6 +4506,44 @@ class Component extends DCLogic {
     this.setState({ pronos: [], lastProno: lines });
     return { won, lost: bets.filter((b) => !hit(b)).length, lines };
   }
+  isOnline() { return !!(this.online && this.onlineState && !this.onlineState.offline); }
+
+  onlineSummary() {
+    const s = this.state, st = this.onlineState || {};
+    const on = this.isOnline();
+    return {
+      connected: on,
+      state: on ? 'En ligne' : this.online ? 'Serveur injoignable' : 'Hors ligne',
+      // Le message s'adresse au joueur, pas au développeur : il dit ce qui se passe
+      // et ce qu'il peut faire, pas comment le code est branché.
+      why: on ? 'Ton équipe est publiée : les autres clubs peuvent te défier.' : this.online
+        ? 'Le serveur ne répond pas. Tout le reste du jeu continue de fonctionner.'
+        : 'Les matchs classés, les ligues entre amis et le classement arrivent bientôt. Le reste du jeu fonctionne sans eux.',
+      error: s.onlineError || null,
+      elo: s.elo || null,
+      ladder: (st.ladder || []).slice(0, 20),
+      leagues: st.leagues || [],
+      challenges: st.challenges || [],
+      last: s.lastVersus || null,
+      lastLine: s.lastVersus
+        ? 'Dernier match classé : ' + s.lastVersus.score.join(' - ') + ' contre ' + s.lastVersus.opponent
+          + ' · Elo ' + (s.lastVersus.delta >= 0 ? '+' : '') + s.lastVersus.delta
+        : 'Aucun match classé joué.'
+    };
+  }
+  onlineActions() {
+    const can = this.isOnline();
+    const refuse = () => Promise.resolve({ ok: false, why: this.onlineSummary().why });
+    return {
+      can,
+      publish: () => (can ? this.goOnline() : refuse()),
+      // §81 : si l'action n'est pas disponible, le bouton le dit au lieu de ne rien faire.
+      ranked: (id) => (can ? this.playRanked(id) : refuse()),
+      createLeague: (name) => (can ? this.online.createLeague(name, 2) : refuse()),
+      joinLeague: (code) => (can ? this.online.joinLeague(code) : refuse()),
+      refresh: () => (can ? Promise.all([this.refreshLadder(), this.refreshLeagues(), this.refreshChallenges()]) : refuse())
+    };
+  }
   renderVals() {
     const s = this.state, t = s.tac;
     const color = (o) => (o >= 80 ? 'linear-gradient(135deg, #FFE59A, #E9A93A)' : o >= 70 ? 'linear-gradient(135deg, #F2F6F4, #AEB9C2)' : 'linear-gradient(135deg, #E8B585, #B7773F)');
@@ -4705,6 +4775,23 @@ class Component extends DCLogic {
       nav: Object.fromEntries(['squad', 'tactic', 'packs', 'match', 'league'].map((id) => { const on = s.view === id; return [id, { on, pick: () => this.setState({ view: id }), fg: on ? '#F2F4F7' : '#79828F', fw: on ? 700 : 500, dash: on ? '#2ECC71' : 'transparent' }]; })),
       showLevelBar: !(s.view === 'match' && mtc && !mtc.done), goLeague: () => this.setState({ view: 'league' }), divShort: 'D' + s.division,
       isSquad: s.view === 'squad', isTactic: s.view === 'tactic', isPacks: s.view === 'packs', isMatch: s.view === 'match', isLeague: s.view === 'league',
+      // §26 : le bloc multijoueur. Hors ligne, il dit ce qui manque au lieu d'afficher
+      // des boutons morts, et les actions refusent avec leur raison (§81).
+      on: (() => {
+        const o = this.onlineSummary(), act = this.onlineActions();
+        return {
+          state: o.state, why: o.error || o.why, lastLine: o.lastLine,
+          stateFg: o.connected ? '#2ECC71' : '#F5C84C',
+          btnBg: o.connected ? ORANGE : '#242A33', btnFg: o.connected ? ON_ORANGE : '#5E6672',
+          publish: () => { act.publish().then((r) => { if (r && !r.ok) this.setState({ onlineError: r.why }); }); },
+          refresh: () => { act.refresh().then((r) => { if (r && !r.ok) this.setState({ onlineError: r.why }); }); },
+          hasLadder: o.ladder.length > 0,
+          ladder: o.ladder.map((r) => ({ rank: r.rank, name: r.name || r.id, elo: r.elo })),
+          hasLeagues: o.leagues.length > 0,
+          leagues: o.leagues.map((l) => ({ name: l.name, sub: l.members + ' clubs · ' + (l.closed ? 'journée ' + l.days : 'code ' + l.code) })),
+          rules: 'Matchs classés : 40 par jour, 20 secondes entre deux. Le serveur joue la rencontre et la vérifie : un score annoncé faux est démenti.'
+        };
+      })(),
       xi: xi.map((p) => { const c = COORD[p.line][idx[p.line]++] || [50, 50]; const on = s.sel === p.slot; return { x: c[0] + '%', y: c[1] + '%', ovr: p.ovr, short: p.name.split(' ').slice(1).join(' '), bg: '#13171C', glow: on ? 'rgba(46,204,113,0.75)' : 'rgba(0,0,0,0.45)', ring: on ? '#2ECC71' : p.pen ? '#FF4757' : tierC(p.ovr), cls: on ? 'lf-glowp' : '', sel: on,
         role: p.pen ? 'Hors poste −' + p.pen : roleOf(p), roleColor: p.pen ? '#FF4757' : '#2ECC71',
         aria: p.name + ', ' + p.line + ', note ' + p.ovr, pick: () => this.setState({ sel: on ? null : p.slot }) }; }),
