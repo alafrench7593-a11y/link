@@ -164,7 +164,10 @@ const LEVIERS = [
 
   ['§43 Les consignes individuelles changent le milieu', 'milieuxBas', 'milieuxHauts', [
     ['milieux offensifs : plus de présence dans la surface', pm('boxRcv'), '>'],
-    ['et plus de frappes', pm('act_shot'), '>']]],
+    // Pas « plus de frappes pour mille décisions » : des milieux qui montent gardent
+    // le ballon plus haut, donc le nombre de décisions monte avec les frappes et le
+    // rapport reste plat. Ce qui compte, c'est le danger produit.
+    ['et plus de danger créé', brut('xg'), '>']]],
 
   ['§24 Le plan tactique préparé pèse sur le match', 'sansPlan', 'avecPlan', [
     ['on prend plus de points', brut('pts'), '>', 0],

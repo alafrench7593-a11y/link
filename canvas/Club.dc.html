@@ -2503,7 +2503,7 @@ class Component extends DCLogic {
       ['sht', 'pas', 'dri', 'def', 'phy', 'pace', 'dec'].forEach((k) => { p[k] = Math.round(p[k] + fm); });
       p.foot = d.foot || 'Droit'; p.wf = d.wf != null ? d.wf : 3;   // §25 pied fort et pied faible
       p.base = { sht: p.sht, pas: p.pas, dri: p.dri, def: p.def, phy: p.phy, pace: p.pace, dec: p.dec, ref: p.ref, han: p.han }; p.skills = d.skills || []; p.drain = 1; p.momT = -1; p.active = [];
-      p.vmax = 5.5 + (p.pace - 40) * 0.064;
+      p.vmax = 6.10 + (p.pace - 40) * 0.045;
       // accélération, agilité, équilibre : dérivés des stats, distincts de la vitesse de pointe
       p.acc0 = 0.30 + (p.dri * 0.5 + p.pace * 0.5 - 40) * 0.0052;     // démarrage
       p.agi0 = 0.55 + (p.dri - 45) * 0.007 - (p.phy - 65) * 0.0022;   // changement de direction
@@ -2610,7 +2610,7 @@ class Component extends DCLogic {
           p.active.forEach((k) => { for (const a in k.eff) { if (a === 'drain') p.drain *= k.eff[a]; else if (a !== 'team') add[a] = (add[a] || 0) + k.eff[a]; } });
           for (const a in p.base) p[a] = Math.round(Math.max(20, Math.min(99, p.base[a] + (add[a] || 0))));
           p.tr = traitsOf(p);                       // §23 recalculé chaque minute, avec les conditions
-          p.vmax = 5.5 + (p.pace - 40) * 0.064;
+          p.vmax = 6.10 + (p.pace - 40) * 0.045;
         });
       });
     };
@@ -3478,7 +3478,12 @@ class Component extends DCLogic {
         }
         // appels : préparation le long de la ligne
         if (carSettled && !p.run && (k === 'ST' || k === 'W' || k === 'AM' || p.duty === 'Attaque' || (T.tac.behind && k === 'CM')) && aOf(s, p.y) > off - 10 && bA > 40 && !boxMode) {
-          if (!p.prep && R() < 0.05 * (1 + T.tac.behind + Math.max(0, T.ment - 3) * 0.3)) p.prep = { until: W.t + 2.2 + R(), dx: (R() < 0.5 ? -1 : 1) * (3 + R() * 4), err: gauss() * 0.9 * (1.3 - p.dec / 100) + 0.3 };
+          // §44 Un bon attaquant part plus souvent, et au bon moment. Le taux était
+          // plat : le meilleur avant-centre du jeu faisait autant d'appels que le pire.
+          // t0 sert au temps de réaction du défenseur, plus bas : c'est le décalage
+          // entre le départ de l'appel et le moment où il est vu.
+          const flair = 0.05 + Math.max(0, p.att + p.dec - 130) * 0.0006;
+          if (!p.prep && R() < flair * (1 + T.tac.behind + Math.max(0, T.ment - 3) * 0.3)) p.prep = { t0: W.t, until: W.t + 2.2 + R(), dx: (R() < 0.5 ? -1 : 1) * (3 + R() * 4), err: gauss() * 0.9 * (1.3 - p.dec / 100) + 0.3 };
         }
         if (p.prep) { if (W.t > p.prep.until || !carSettled) p.prep = null; else { a = off - 0.7 + p.prep.err; x += p.prep.dx; urg = 0.95; } }
         if (!p.prep) a = Math.min(a, off - 0.7);
@@ -3538,7 +3543,21 @@ class Component extends DCLogic {
         if (!best) continue;
         const ra = aOf(s, best.y);
         let na = p.tl.a, nx = p.tl.x + (xl(s, best.x) - p.tl.x) * (man ? 0.65 : 0.4);
-        if (p.line === 'DEF' && ra < D - 1 && Math.abs(xl(s, best.x) - p.tl.x) < 7) na = Math.max(ra - 1.2, 3);   // suit l'appel dans son dos
+        // LE TEMPS DE RÉACTION. Le défenseur suivait l'appel dans son dos au pas de
+        // calcul près, sans jamais être pris de vitesse par le MOUVEMENT : seule une
+        // vitesse de pointe supérieure pouvait le battre. D'où un jeu où un effectif
+        // athlétique créait trois fois plus de danger qu'un effectif technique de même
+        // note, et où resserrer l'écart de vitesse vidait le match de ses occasions.
+        //
+        // Un appel se gagne d'abord par le départ : l'attaquant part, le défenseur met
+        // un demi-temps à le voir, et ce demi-temps dépend de l'anticipation des deux.
+        // Un attaquant qui sait masquer son appel gagne du terrain sans courir plus
+        // vite ; un défenseur qui lit le jeu ne se laisse pas prendre.
+        const reaction = best.prep
+          ? cl(0.85 + (best.att + best.dec - 130) * 0.0045 - (p.def + p.dec - 130) * 0.0045, 0.20, 1.6)
+          : 0;
+        const vu = !best.prep || W.t - best.prep.t0 >= reaction;
+        if (vu && p.line === 'DEF' && ra < D - 1 && Math.abs(xl(s, best.x) - p.tl.x) < 7) na = Math.max(ra - 1.2, 3);   // suit l'appel dans son dos
         if (p.line === 'MIL' && ra < midA && ra > D + 2) na = Math.max(ra - 1.5, D + 3);                           // ferme l'intervalle
         if (p.line === 'DEF') { na = cl(na, D - 3.5, D + 1); nx = cl(nx, p.tl.x - dGap * 0.45, p.tl.x + dGap * 0.45); }   // la ligne reste plate et espacée
         p.intent = 'MARK';

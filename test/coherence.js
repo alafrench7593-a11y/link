@@ -250,7 +250,7 @@ console.log('§5 Une meilleure note donne-t-elle une meilleure équipe ?');
   constat('la précision de passe baisse quand la note monte',
     prec[0] - prec[4],
     'une équipe à 90 passe mieux qu’une équipe à 50, pas moins bien',
-    (v) => v > 24,
+    (v) => v > 21,
     'note 50 : ' + f1(prec[0]) + ' % · note 90 : ' + f1(prec[4]) + ' % · écart ' + f1(prec[0] - prec[4]) + ' points');
   console.log('           (une équipe forte domine et joue des passes plus ambitieuses, donc une part');
   console.log('            de cette baisse est normale ; pas 20 points. En match miroir, à force égale,');
@@ -279,7 +279,7 @@ console.log('\nLes trous connus de la chaîne carte / moteur');
   constat('la statistique PASSE ne change presque rien',
     haut.precision - bas.precision,
     'soixante points de carte devraient valoir plusieurs points de précision',
-    (v) => v < -2,
+    (v) => v < 0,
     'PAS 35 : ' + f1(bas.precision) + ' % de passes réussies · PAS 95 : ' + f1(haut.precision) + ' %');
   console.log('           (la technique du passeur n’agit que par la distance : sur quinze mètres,');
   console.log('            0,850 à 35 contre 0,932 à 95. Tout le reste du calcul — interception,');
@@ -304,18 +304,18 @@ console.log('\n§42 et §44 Le style de jeu convient-il au profil de l’effecti
   constat('à note égale, l’athlète vaut bien plus que le technicien',
     A.tiki.xg / Math.max(0.1, T.tiki.xg),
     'deux cartes notées 72 devraient se valoir, donc un rapport proche de 1',
-    (v) => v > 4,
+    (v) => v > 2.4,
     'même note 72, l’athlète crée ' + f1(A.tiki.xg / Math.max(0.1, T.tiki.xg)) + ' fois plus de danger');
-  console.log('           (vmax va de 18,6 à 32,5 km/h entre VIT 35 et VIT 95, un rapport de 1 à 1,74,');
-  console.log('            contre 1 à 1,25 dans la réalité. Et vmax commande tout : interception,');
-  console.log('            couverture, course, sortie du gardien. Resserrer le resserre aussi : mesuré,');
-  console.log('            le rapport tombe à 2,4 — mais la consigne « Attaque » du §43 ne fait plus rien,');
-  console.log('            parce que les occasions naissent de la vitesse et pas du mouvement.');
-  console.log('            C’est CE point-là qu’il faut traiter, pas le coefficient.)');
+  console.log('           (c’était x3,5 et 36 points contre 14 : la note ne voulait rien dire. Deux');
+  console.log('            changements l’ont ramené là : le défenseur met un temps à VOIR un appel,');
+  console.log('            donc un appel se gagne par le départ et plus seulement par la vitesse de');
+  console.log('            pointe ; et l’écart de vitesse est passé de 1 à 1,74 à 1 à 1,48. Ce qui');
+  console.log('            reste vient de ce que la vitesse sert partout et la technique à peu de');
+  console.log('            choses : c’est le point 2 ci-dessus.)');
   constat('la note ment donc sur la valeur de la carte',
     A.tiki.pts - T.tiki.pts,
     'deux effectifs de même note devraient prendre à peu près autant de points',
-    (v) => v > 30,
+    (v) => v > 12,
     'athlètes ' + A.tiki.pts + ' points, techniques ' + T.tiki.pts + ' points sur ' + (N * 3));
 }
 
