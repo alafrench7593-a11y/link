@@ -75,7 +75,7 @@ export class Club {
     const form = p.form != null ? p.form : 70, morale = p.morale != null ? p.morale : 72;
     const value = this.valueOf(Object.assign({}, p, { age, pot, form }));
     const salary = Math.round(value / 60 / 10) * 10;
-    return { age, pot, perso, foot, wf, height: h, weight: Math.round(h * 0.42 - 8 + r() * 6), nat: NAT[Math.floor(r() * NAT.length)], value, salary, contract: p.contract != null ? p.contract : 1 + Math.floor(r() * 3), form, morale, fit: p.fit != null ? p.fit : 100, inj: p.inj || 0, skills: this.skillsOf(p), hidden: !p.scouted };
+    return { age: age + (p.ageAdj || 0), pot, perso, foot, wf, height: h, weight: Math.round(h * 0.42 - 8 + r() * 6), nat: NAT[Math.floor(r() * NAT.length)], value, salary, contract: p.contract != null ? p.contract : 1 + Math.floor(r() * 3), form, morale, fit: p.fit != null ? p.fit : 100, inj: p.inj || 0, skills: this.skillsOf(p), hidden: !p.scouted };
   }
   valueOf(p) {
     const age = p.age != null ? p.age : this.profile(p).age, pot = p.pot != null ? p.pot : p.ovr;
@@ -217,6 +217,7 @@ export class Club {
     if (seasonP >= 5) {
       const tbl = this.table(st.record), rank = tbl.findIndex((c) => c.me) + 1, last = tbl.length;
       // le centre de formation sort un jeune à chaque fin de saison
+      patch.squad = this.ageSquad(patch.squad || st.squad);   // §70 une saison de plus pour tout le monde
       const yg = this.youthPlayer(st);
       let ygTxt = '';
       if (yg) { patch.squad = (patch.squad || st.squad).concat([yg]); patch.youth = (st.youth || []).concat([yg.id]); ygTxt = ' Le centre sort ' + yg.name + ' (' + yg.pos + ' ' + yg.ovr + ', potentiel ' + yg.pot + ').'; }
@@ -361,6 +362,36 @@ export class Club {
     const pool = this.CARD_POOL();
     const have = pool.filter((c) => owned.has(c.id)).length;
     return { have, total: pool.length };
+  }
+  // §71 vendre un joueur : 75 % de sa valeur, interdit si l'effectif tombe sous 12
+  sellPlayer(id) {
+    const s = this.state;
+    if (s.match && !s.match.done) return { ok: false, why: 'Impossible pendant un match' };
+    if (s.squad.length <= 12) return { ok: false, why: 'Il te faut au moins 12 joueurs' };
+    const p = s.squad.find((x) => x.id === id);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    const price = Math.round(this.profile(p).value * 0.6);
+    this.buzz(25);
+    this.setState({ squad: s.squad.filter((x) => x.id !== id), balance: s.balance + price, sel: null,
+      trainLog: p.name + ' vendu pour ' + price + ' jetons' });
+    return { ok: true, price };
+  }
+  // §70 une saison de plus : tout le monde prend un an, les anciens déclinent, les jeunes progressent
+  ageSquad(squad) {
+    return squad.map((p) => {
+      const q = Object.assign({}, p, { ageAdj: (p.ageAdj || 0) + 1 });
+      const pr = this.profile(q);
+      if (q.pos === 'GB') return q;
+      const st = {}; this.cardStats(q).forEach((x) => { st[x.l] = x.v; });
+      if (pr.age >= 31 && this.rand(0, 99) < (pr.age - 29) * 22) {
+        const k = ['VIT', 'PHY', 'DRI'][this.rand(0, 2)];
+        if (st[k] != null && st[k] > 30) { st[k] -= 1 + (pr.age >= 34 ? 1 : 0); return Object.assign(q, { st, ovr: Math.max(40, this.ovrOf(q.pos, st)) }); }
+      } else if (pr.age <= 23 && q.pot && q.ovr < q.pot && this.rand(0, 99) < 55) {
+        const k = ['VIT', 'ATQ', 'TIR', 'PAS', 'DRI', 'DÉF', 'PHY'][this.rand(0, 6)];
+        if (st[k] != null && st[k] < 99) { st[k] += 1; return Object.assign(q, { st, ovr: Math.min(q.pot, Math.max(q.ovr, this.ovrOf(q.pos, st))) }); }
+      }
+      return q;
+    });
   }
   STAFF_DEFS() {
     return [

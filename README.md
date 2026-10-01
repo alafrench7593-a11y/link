@@ -208,6 +208,23 @@ Cinq packs (`Club.PACK_DEFS()`) avec des tables de poids différentes, et
 Une carte Or n'est pas automatiquement meilleure : sa rareté fixe une fourchette de
 note, ce sont les statistiques et les compétences qui décident ensuite.
 
+## Météo, âge, amicaux
+
+`§54` La météo est tirée une fois par match (soleil 52 %, nocturne 26 %, pluie 16 %,
+neige 6 %) et agit vraiment : la pluie fait glisser le ballon et salit les contrôles,
+la neige le freine et dégrade fortement les passes. Elle s'affiche sur la ligne de
+coup d'envoi, pas ailleurs.
+
+`§70` À chaque fin de saison, tout le monde prend un an. Au-delà de 31 ans un joueur
+peut perdre un point de vitesse, de physique ou de dribble, et cela s'accélère après
+34 ans. Avant 24 ans il progresse vers son potentiel.
+
+`§73` et `§51` Un bouton « Amical » sur chaque adversaire lance un match hors
+championnat : il ne compte pas au classement, rapporte la moitié, et se termine
+par une séance de tirs au but en cas de nul. La séance suit les règles réelles,
+cinq tireurs puis mort subite, et chaque frappe compare le tir et le sang-froid du
+tireur aux réflexes du gardien, avec la pression qui monte à partir du quatrième.
+
 ## Versions de sauvegarde
 
 `SAVE_VERSION` vaut 2. Une sauvegarde plus ancienne est migrée au chargement par

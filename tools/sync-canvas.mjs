@@ -65,7 +65,7 @@ const METHODS = ['rand', 'seedR', 'statW', 'ovrOf', 'genStats', 'cardStats', 'pr
   'MATCH_CARDS', 'UPGRADE_CARDS', 'useUpgrade', 'STAFF_DEFS', 'staffLv', 'staffWages', 'hireStaff',
   'STADES', 'upgradeStade', 'ACADEMIES', 'upgradeAcademy', 'youthPlayer', 'synergy', 'finances',
   'marketList', 'formCoords', 'penalty', 'pickXI', 'benchOf', 'ROLE_OPTS', 'metrics', 'baseShape', 'engineCfg',
-  'RARITY', 'rarityOf', 'CARD_POOL', 'drawCard', 'PACK_DEFS', 'packOdds', 'collection'];
+  'RARITY', 'rarityOf', 'CARD_POOL', 'drawCard', 'PACK_DEFS', 'packOdds', 'collection', 'sellPlayer', 'ageSquad'];
 const club = read('src/club.js');
 for (const name of METHODS) {
   const from = findMethod(club, name);

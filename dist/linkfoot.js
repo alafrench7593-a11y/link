@@ -334,7 +334,7 @@ function makeEngine(cfg) {
       return q.dri * 0.45 + q.pas * 0.35 + q.dec * 0.2
         - (nd < 1.6 ? 16 : nd < 2.6 ? 9 : nd < 4 ? 4 : 0)
         - (f && f.aerial ? 9 : 0) - (f && f.v > 18 ? 6 : 0) - (f && f.v > 24 ? 4 : 0)
-        - (100 - q.energy) * 0.12;
+        - (100 - q.energy) * 0.12 + WX.ctrl;   // §54 la pluie et la neige salissent les contrôles
     };
     const receive = (q) => {
       const f = W.fl;
@@ -764,7 +764,7 @@ function makeEngine(cfg) {
       const q = ch.q, d = hy(ch.x - p.x, ch.y - p.y), pr = nearestOpp(p).d;
       const skill = p.pas + T.bonus;
       const one = !!p.oneTouch; p.oneTouch = false;
-      const sd = d * (0.012 + 0.09 * Math.max(0, 1 - skill / 100)) * (pr < 2 ? 1.6 : pr < 4 ? 1.2 : 1) * (ch.aerial ? 1.7 : 1) * (1.2 - 0.2 * p.energy / 100) * (T.shout === 'calme' ? 0.9 : 1) * (one ? 1.3 : 1) * (1 + weakFoot(p) * 0.35);
+      const sd = d * (0.012 + 0.09 * Math.max(0, 1 - skill / 100)) * (pr < 2 ? 1.6 : pr < 4 ? 1.2 : 1) * (ch.aerial ? 1.7 : 1) * (1.2 - 0.2 * p.energy / 100) * (T.shout === 'calme' ? 0.9 : 1) * (one ? 1.3 : 1) * (1 + weakFoot(p) * 0.35) * WX.pass;
       const tx = ch.x + gauss() * sd, ty = ch.y + gauss() * sd;
       const f = kick(p, tx, ty, ch.kind === 'through' ? 'through' : ch.aerial ? 'long' : 'pass', q, { aerial: ch.aerial });
       W.st[s].pa++;
@@ -1161,6 +1161,17 @@ function makeEngine(cfg) {
         const vr = v / p.vmax; p.energy = Math.max(12, p.energy - DT * (0.0078 + 0.016 * vr * vr) * (1.25 - p.phy / 200) * (p.line === 'GB' ? 0.3 : 1) * TM[p.s].fatK * (p.drain || 1));
       }
     };
+    // §54 météo : tirée une fois par match. Elle agit sur la glisse du ballon,
+    // la précision des passes et la propreté des contrôles. Pas de décor : que des effets.
+    const WEATHER = {
+      soleil: { l: 'Plein soleil', fric: 1, ctrl: 0, pass: 1, pace: 1 },
+      nuit: { l: 'Match en nocturne', fric: 1, ctrl: -2, pass: 1.03, pace: 1 },
+      pluie: { l: 'Sous la pluie', fric: 0.82, ctrl: -9, pass: 1.18, pace: 0.985 },
+      neige: { l: 'Sur un terrain enneigé', fric: 1.35, ctrl: -14, pass: 1.3, pace: 0.95 }
+    };
+    const wq = R();
+    W.wx = wq < 0.52 ? 'soleil' : wq < 0.78 ? 'nuit' : wq < 0.94 ? 'pluie' : 'neige';
+    const WX = WEATHER[W.wx];
     const ballStep = () => {
       const b = W.ball;
       if (W.owner) {
@@ -1171,7 +1182,7 @@ function makeEngine(cfg) {
       if (W.fl) { flightStep(); return; }
       b.x += b.vx * DT; b.y += b.vy * DT;
       if (b.z > 0 || b.vz) { b.vz -= 9.8 * DT; b.z += b.vz * DT; if (b.z <= 0) { b.z = 0; b.vz = Math.abs(b.vz) > 2 ? -b.vz * 0.35 : 0; } }
-      const f = b.z > 0.2 ? 0.99 : Math.exp(-1.3 * DT); b.vx *= f; b.vy *= f; if (hy(b.vx, b.vy) < 0.25) { b.vx = b.vy = 0; }
+      const f = b.z > 0.2 ? 0.99 : Math.exp(-1.3 * WX.fric * DT); b.vx *= f; b.vy *= f; if (hy(b.vx, b.vy) < 0.25) { b.vx = b.vy = 0; }
       if (b.x < -0.3 || b.x > PW + 0.3 || b.y < -0.3 || b.y > PL + 0.3) { outOfPlay(); return; }
       pickup();
     };
@@ -1394,7 +1405,43 @@ function makeEngine(cfg) {
       intents(side) { return TM[side].ps.map((p) => p.intent || ''); },
       situation() { const T = TM.H; return { min: Math.floor(W.clk / 60), diff: W.score.H - W.score.A, tired: T.ps.map((p, i) => ({ i, e: p.energy, red: p.red, line: p.line })).filter((p) => !p.red && p.e < 45), poss: W.poss, subs: T.subs, phase: T.phase }; },
       setTac(side, tac, ment) { TM[side].tac = Object.assign({}, tac); if (ment != null) TM[side].ment = ment; setTP(TM[side]); },
-      clockLabel
+      clockLabel,
+      weather() { return { id: W.wx, label: WX.l }; },
+      // §51 séance de tirs au but : 5 tireurs chacun, puis mort subite.
+      // Chaque frappe compare le tir et le sang-froid du tireur aux réflexes du gardien,
+      // et la pression monte quand la série peut se terminer.
+      shootout() {
+        const order = (sd) => LV[sd].filter((p) => p.line !== 'GB').sort((a2, b2) => (b2.sht + b2.dec) - (a2.sht + a2.dec));
+        const takers = { H: order('H'), A: order('A') }, gk = { H: TM.H.ps[0], A: TM.A.ps[0] };
+        const sc = { H: 0, A: 0 }, kicks = [];
+        logE('Séance de tirs au but', '#F2E27C', 'pso');
+        const shootOne = (sd, i, pressure) => {
+          const t = takers[sd][i % takers[sd].length], g = gk[OT[sd]];
+          const base = 0.78 + (t.sht - 70) * 0.004 + (t.dec - 70) * 0.002 - ((g.red ? 30 : g.ref) - 70) * 0.004 - pressure * 0.06;
+          const ok = R() < cl(base, 0.45, 0.94);
+          if (ok) sc[sd]++;
+          kicks.push({ s: sd, name: t.name, ok });
+          logE((ok ? 'But de ' : 'Tir manqué de ') + t.name + ' · ' + sc.H + '-' + sc.A, ok ? (sd === 'H' ? '#8BFFA8' : '#FF8A8A') : '#B4C0BA', 'pso', sd);
+          rt(t, ok ? 0.2 : -0.3); if (!ok) rt(g, 0.25);
+          return ok;
+        };
+        for (let i = 0; i < 5; i++) {
+          for (const sd of ['H', 'A']) {
+            const left = { H: 5 - i, A: 5 - i - (sd === 'A' ? 1 : 0) };
+            const gap = sc[sd] - sc[OT[sd]];
+            if (gap > left[OT[sd]]) break;                      // série déjà pliée
+            if (-gap > left[sd] - 1) break;
+            shootOne(sd, i, i >= 3 ? 1 : 0);
+          }
+          if (Math.abs(sc.H - sc.A) > Math.max(5 - i - 1, 0)) break;
+        }
+        let i = 5;
+        while (sc.H === sc.A && i < 20) { const a2 = shootOne('H', i, 1.4), b2 = shootOne('A', i, 1.4); if (a2 !== b2) break; i++; }
+        const win = sc.H > sc.A ? 'H' : 'A';
+        logE('Séance remportée par ' + club(win) + ' ' + sc.H + '-' + sc.A, '#F2E27C', 'pso', win);
+        banner('TIRS AU BUT', sc.H + ' - ' + sc.A, win === 'H' ? '#86EBA0' : '#FF8A8A', 3);
+        return { H: sc.H, A: sc.A, win, kicks };
+      }
     };
     snap();
     return api;
@@ -1476,7 +1523,7 @@ class Club {
     const form = p.form != null ? p.form : 70, morale = p.morale != null ? p.morale : 72;
     const value = this.valueOf(Object.assign({}, p, { age, pot, form }));
     const salary = Math.round(value / 60 / 10) * 10;
-    return { age, pot, perso, foot, wf, height: h, weight: Math.round(h * 0.42 - 8 + r() * 6), nat: NAT[Math.floor(r() * NAT.length)], value, salary, contract: p.contract != null ? p.contract : 1 + Math.floor(r() * 3), form, morale, fit: p.fit != null ? p.fit : 100, inj: p.inj || 0, skills: this.skillsOf(p), hidden: !p.scouted };
+    return { age: age + (p.ageAdj || 0), pot, perso, foot, wf, height: h, weight: Math.round(h * 0.42 - 8 + r() * 6), nat: NAT[Math.floor(r() * NAT.length)], value, salary, contract: p.contract != null ? p.contract : 1 + Math.floor(r() * 3), form, morale, fit: p.fit != null ? p.fit : 100, inj: p.inj || 0, skills: this.skillsOf(p), hidden: !p.scouted };
   }
   valueOf(p) {
     const age = p.age != null ? p.age : this.profile(p).age, pot = p.pot != null ? p.pot : p.ovr;
@@ -1618,6 +1665,7 @@ class Club {
     if (seasonP >= 5) {
       const tbl = this.table(st.record), rank = tbl.findIndex((c) => c.me) + 1, last = tbl.length;
       // le centre de formation sort un jeune à chaque fin de saison
+      patch.squad = this.ageSquad(patch.squad || st.squad);   // §70 une saison de plus pour tout le monde
       const yg = this.youthPlayer(st);
       let ygTxt = '';
       if (yg) { patch.squad = (patch.squad || st.squad).concat([yg]); patch.youth = (st.youth || []).concat([yg.id]); ygTxt = ' Le centre sort ' + yg.name + ' (' + yg.pos + ' ' + yg.ovr + ', potentiel ' + yg.pot + ').'; }
@@ -1762,6 +1810,36 @@ class Club {
     const pool = this.CARD_POOL();
     const have = pool.filter((c) => owned.has(c.id)).length;
     return { have, total: pool.length };
+  }
+  // §71 vendre un joueur : 75 % de sa valeur, interdit si l'effectif tombe sous 12
+  sellPlayer(id) {
+    const s = this.state;
+    if (s.match && !s.match.done) return { ok: false, why: 'Impossible pendant un match' };
+    if (s.squad.length <= 12) return { ok: false, why: 'Il te faut au moins 12 joueurs' };
+    const p = s.squad.find((x) => x.id === id);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    const price = Math.round(this.profile(p).value * 0.6);
+    this.buzz(25);
+    this.setState({ squad: s.squad.filter((x) => x.id !== id), balance: s.balance + price, sel: null,
+      trainLog: p.name + ' vendu pour ' + price + ' jetons' });
+    return { ok: true, price };
+  }
+  // §70 une saison de plus : tout le monde prend un an, les anciens déclinent, les jeunes progressent
+  ageSquad(squad) {
+    return squad.map((p) => {
+      const q = Object.assign({}, p, { ageAdj: (p.ageAdj || 0) + 1 });
+      const pr = this.profile(q);
+      if (q.pos === 'GB') return q;
+      const st = {}; this.cardStats(q).forEach((x) => { st[x.l] = x.v; });
+      if (pr.age >= 31 && this.rand(0, 99) < (pr.age - 29) * 22) {
+        const k = ['VIT', 'PHY', 'DRI'][this.rand(0, 2)];
+        if (st[k] != null && st[k] > 30) { st[k] -= 1 + (pr.age >= 34 ? 1 : 0); return Object.assign(q, { st, ovr: Math.max(40, this.ovrOf(q.pos, st)) }); }
+      } else if (pr.age <= 23 && q.pot && q.ovr < q.pot && this.rand(0, 99) < 55) {
+        const k = ['VIT', 'ATQ', 'TIR', 'PAS', 'DRI', 'DÉF', 'PHY'][this.rand(0, 6)];
+        if (st[k] != null && st[k] < 99) { st[k] += 1; return Object.assign(q, { st, ovr: Math.min(q.pot, Math.max(q.ovr, this.ovrOf(q.pos, st))) }); }
+      }
+      return q;
+    });
   }
   STAFF_DEFS() {
     return [
