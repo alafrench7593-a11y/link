@@ -596,7 +596,7 @@ export function makeEngine(cfg) {
       if (!isGK && a0 > 71 && Math.abs(p.x - 34) < 30) {
         const e = shotEst(p, false);
         const ev = e.xg * (a0 < 88 ? (e.blocker ? 1.5 : 2.4) * (1 + (p.pow - 65) / 70) : 1.0) * (1 + (p.sht - 65) / 110) * (T.tac.longshot && a0 < 88 ? 1.6 : 1) * (T.shout === 'exiger' ? 1.1 : 1) * (1 + (T.ment - 3) * 0.04) - (1 - e.xg) * 0.004;
-        if (e.xg > 0.009) opts.push({ k: 'shot', ev: oneV1 ? ev * 1.5 : ev });
+        if (e.xg > 0.015) opts.push({ k: 'shot', ev: oneV1 ? ev * 1.5 : ev });
       }
       const addPass = (q, tx, ty, kind, aerial) => {
         tx = cl(tx, 1, PW - 1); ty = cl(ty, 1, PL - 1);
