@@ -192,6 +192,22 @@ Après un `npm run sync`, republie `canvas/Club.dc.html` dans le canvas. L'ordre
 est toujours le même : corriger dans `src/`, mesurer avec `npm test`, synchroniser, republier.
 Ne corrige jamais directement dans l'artboard : le prochain `sync` écraserait ta correction.
 
+## Cartes et collection
+
+Les taux de rareté sont centralisés dans `Club.RARITY()` : Normal 55 %, Commun 25 %,
+Rare 12 %, Épique 5 %, Élite 2 %, Or 0,9 %, Légendaire 0,1 %. Changer une valeur
+change le jeu partout, y compris les probabilités affichées au joueur.
+
+`Club.CARD_POOL()` est un catalogue fixe de 500 cartes, identifiants stables. Les packs
+tirent dedans, donc les doublons sont réels : un doublon se convertit en fragments
+selon sa rareté (1 pour une Normale, 200 pour une Légendaire). La collection se compte
+sur 500.
+
+Cinq packs (`Club.PACK_DEFS()`) avec des tables de poids différentes, et
+`Club.packOdds(def)` calcule les probabilités réelles affichées sur l'écran Packs.
+Une carte Or n'est pas automatiquement meilleure : sa rareté fixe une fourchette de
+note, ce sont les statistiques et les compétences qui décident ensuite.
+
 ## Versions de sauvegarde
 
 `SAVE_VERSION` vaut 2. Une sauvegarde plus ancienne est migrée au chargement par

@@ -64,14 +64,22 @@ const METHODS = ['rand', 'seedR', 'statW', 'ovrOf', 'genStats', 'cardStats', 'pr
   'table', 'bumpMission', 'afterMatch', 'applyFitness', 'TRAININGS', 'train', 'COACHES',
   'MATCH_CARDS', 'UPGRADE_CARDS', 'useUpgrade', 'STAFF_DEFS', 'staffLv', 'staffWages', 'hireStaff',
   'STADES', 'upgradeStade', 'ACADEMIES', 'upgradeAcademy', 'youthPlayer', 'synergy', 'finances',
-  'marketList', 'formCoords', 'penalty', 'pickXI', 'benchOf', 'ROLE_OPTS', 'metrics', 'baseShape', 'engineCfg'];
+  'marketList', 'formCoords', 'penalty', 'pickXI', 'benchOf', 'ROLE_OPTS', 'metrics', 'baseShape', 'engineCfg',
+  'RARITY', 'rarityOf', 'CARD_POOL', 'drawCard', 'PACK_DEFS', 'packOdds', 'collection'];
 const club = read('src/club.js');
 for (const name of METHODS) {
   const from = findMethod(club, name);
   if (!from) throw new Error('méthode absente de src/club.js : ' + name);
   const body = club.slice(from.start, from.end);
   const hit = findMethod(artboard, name);
-  if (!hit) throw new Error('méthode absente de l\'artboard : ' + name);
+  if (!hit) {
+    // méthode nouvelle : on l'insère avant renderVals
+    const anchor = findMethod(artboard, 'renderVals');
+    if (!anchor) throw new Error('renderVals introuvable dans l\'artboard');
+    artboard = artboard.slice(0, anchor.start) + body + '\n' + artboard.slice(anchor.start);
+    changed.push(name + ' (ajoutée)');
+    continue;
+  }
   const cur = artboard.slice(hit.start, hit.end);
   if (cur.trim() !== body.trim()) { artboard = artboard.slice(0, hit.start) + body + artboard.slice(hit.end); changed.push(name); }
 }

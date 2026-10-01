@@ -293,6 +293,13 @@ button:disabled{cursor:default}
 </sc-if>
 <sc-if value="{{isPacks}}" hint-placeholder-val="{{false}}">
 <div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 2px 16px 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px; background: linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%), #121916; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 10px 28px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)">
+<span style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 12.5px; font-weight: 700">Collection</span>
+<span style="font-size: 10.5px; color: #8C9A92">{{shardLine}}</span>
+</span>
+<span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 26px; color: #C8F56B">{{collLine}}</span>
+</div>
 <div style="display: flex; flex-direction: column; gap: 4px">
 <span style="font-size: 15px; font-weight: 700">Packs de joueurs</span>
 <span style="font-size: 12px; color: #8C9A92; line-height: 1.5">Joueurs 100 % fictifs, sans visage. Mêmes jetons que pour les pronos.</span>
@@ -883,17 +890,23 @@ class Component extends DCLogic {
     const s = this.state;
     const free = !!pk.free;
     if ((!free && s.balance < pk.cost) || s.pack) return;
-    const POS = ['GB', 'DEF', 'DEF', 'MIL', 'MIL', 'ATT', 'ATT'];
-    let id = s.nextId;
+    // §56 à §63 : on tire dans le catalogue de 500 cartes. Une carte déjà possédée devient des fragments.
+    const owned = new Set(s.squad.map((p) => p.id).concat(s.collected || []));
     const got = [];
+    let shards = 0;
     for (let i = 0; i < pk.n; i++) {
-      let ovr = this.rand(pk.min, pk.max);
-      if (pk.boost && i === 0) ovr = Math.max(ovr, pk.boost);
-      got.push({ id: id++, name: this.newName(), pos: POS[this.rand(0, POS.length - 1)], ovr, fresh: true });
+      const c = this.drawCard(pk.w);
+      const dup = owned.has(c.id) || got.some((g) => g.id === c.id);
+      const rar = this.rarityOf(c.rar);
+      if (dup) { shards += rar.shards; got.push(Object.assign({}, c, { dup: true, shards: rar.shards })); }
+      else { owned.add(c.id); got.push(Object.assign({}, c, { fresh: true })); }
     }
-    got.sort((a, b) => b.ovr - a.ovr);
+    const order = this.RARITY().map((r) => r.id);
+    got.sort((a, b) => order.indexOf(b.rar) - order.indexOf(a.rar) || b.ovr - a.ovr);
     this.buzz(20);
-    this.setState({ missions: this.bumpMission(s.missions, 'pack', 1), freeQueue: free ? s.freeQueue.slice(1) : s.freeQueue, balance: s.balance - (free ? 0 : pk.cost), nextId: id, pack: { def: pk, got, phase: 'charge', taps: 0, burst: false, walk: 0 } });
+    this.setState({ missions: this.bumpMission(s.missions, 'pack', 1), freeQueue: free ? s.freeQueue.slice(1) : s.freeQueue,
+      balance: s.balance - (free ? 0 : pk.cost), shards: (s.shards || 0) + shards,
+      pack: { def: pk, got, phase: 'charge', taps: 0, burst: false, walk: 0, shards } });
   }
   tapPack() {
     const pk = this.state.pack;
@@ -918,7 +931,9 @@ class Component extends DCLogic {
   closePack() {
     const s = this.state, pk = s.pack;
     if (!pk) return;
-    this.setState({ pack: null, squad: s.squad.map((p) => Object.assign({}, p, { fresh: false })).concat(pk.got), view: 'squad' });
+    const keep = pk.got.filter((c) => !c.dup);   // les doublons sont déjà convertis en fragments
+    this.setState({ pack: null, squad: s.squad.map((p) => Object.assign({}, p, { fresh: false })).concat(keep),
+      collected: (s.collected || []).concat(pk.got.map((c) => c.id)), view: 'squad' });
   }
   styles() {
     if (this._styles) return this._styles;
@@ -1361,11 +1376,13 @@ class Component extends DCLogic {
     const pot = p.pot != null ? p.pot : Math.min(96, base + Math.max(0, Math.round((28 - age) * 1.4 + r() * 8)));
     const perso = PERSO[Math.floor(r() * PERSO.length)];
     const foot = r() < 0.72 ? 'Droit' : r() < 0.9 ? 'Gauche' : 'Ambidextre';
+    // §25 pied faible, de 1 (inutilisable) a 5 (ambidextre) : la plupart des joueurs sont a 3
+    const wq = r(); const wf = foot === 'Ambidextre' ? 5 : wq < 0.18 ? 2 : wq < 0.62 ? 3 : wq < 0.9 ? 4 : 5;
     const h = 165 + Math.floor(r() * 30) + (p.pos === 'GB' ? 10 : p.pos === 'DEF' ? 4 : 0);
     const form = p.form != null ? p.form : 70, morale = p.morale != null ? p.morale : 72;
     const value = this.valueOf(Object.assign({}, p, { age, pot, form }));
     const salary = Math.round(value / 60 / 10) * 10;
-    return { age, pot, perso, foot, height: h, weight: Math.round(h * 0.42 - 8 + r() * 6), nat: NAT[Math.floor(r() * NAT.length)], value, salary, contract: p.contract != null ? p.contract : 1 + Math.floor(r() * 3), form, morale, fit: p.fit != null ? p.fit : 100, inj: p.inj || 0, skills: this.skillsOf(p), hidden: !p.scouted };
+    return { age, pot, perso, foot, wf, height: h, weight: Math.round(h * 0.42 - 8 + r() * 6), nat: NAT[Math.floor(r() * NAT.length)], value, salary, contract: p.contract != null ? p.contract : 1 + Math.floor(r() * 3), form, morale, fit: p.fit != null ? p.fit : 100, inj: p.inj || 0, skills: this.skillsOf(p), hidden: !p.scouted };
   }
   valueOf(p) {
     const age = p.age != null ? p.age : this.profile(p).age, pot = p.pot != null ? p.pot : p.ovr;
@@ -1977,8 +1994,8 @@ class Component extends DCLogic {
     const adv = s.preset === 'perso' ? 0 : this.matchup(s.preset, opp.style);
     const syn = this.synergy(xi);
     const coh = Math.min(1.2, Math.max(0.7, 1 - xi.filter((p) => p.pen).length * 0.06 - (s.preset === 'perso' ? 0.04 : 0) - xi.filter((p) => p.fresh).length * 0.03 + (s.cohBonus || 0) + syn.score));
-    const H = { club: 'FC TonPseudo', sbonus: this.staffLv('adjoint') * 0.8, coach: this.COACHES().find((c) => c.id === (s.coach || 'tacticien')), coh, tac: s.tac, ment: s.mentality, adv, coords: coordsFrom(s.formation), players: xi.map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p), energy: p.energy, form: p.form != null ? p.form : 70, morale: p.morale != null ? p.morale : 72, skills: this.skillsOf(p), role: s.roles[p.slot] || this.ROLE_OPTS(p.line, p.slot, s.formation)[0], duty: s.duties[p.slot] || 'Soutien' })) };
-    const A = { club: opp.club, tac: st.tac, ment: st.m, adv: -adv, coords: coordsFrom(st.form), players: oxi.map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p), skills: this.skillsOf(p) })), bench: (obench || []).map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p) })) };
+    const H = { club: 'FC TonPseudo', sbonus: this.staffLv('adjoint') * 0.8, coach: this.COACHES().find((c) => c.id === (s.coach || 'tacticien')), coh, tac: s.tac, ment: s.mentality, adv, coords: coordsFrom(s.formation), home: true, players: xi.map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p), energy: p.energy, form: p.form != null ? p.form : 70, morale: p.morale != null ? p.morale : 72, skills: this.skillsOf(p), foot: this.profile(p).foot, wf: this.profile(p).wf, role: s.roles[p.slot] || this.ROLE_OPTS(p.line, p.slot, s.formation)[0], duty: s.duties[p.slot] || 'Soutien' })) };
+    const A = { club: opp.club, tac: st.tac, ment: st.m, adv: -adv, coords: coordsFrom(st.form), players: oxi.map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p), skills: this.skillsOf(p), foot: this.profile(p).foot, wf: this.profile(p).wf })), bench: (obench || []).map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p) })) };
     return { sides: { H, A } };
   }
   startClock() { clearInterval(this.timer); this.timer = setInterval(() => { this.pbTick(); this.coachTick(); }, 100); }
@@ -2138,6 +2155,7 @@ class Component extends DCLogic {
       else { p.pace = g('VIT', o); p.att = g('ATQ', o); p.pow = g('TIR', o); p.sht = Math.round(p.att * 0.55 + p.pow * 0.45); p.pas = g('PAS', o); p.dri = g('DRI', o); p.def = g('DÉF', o); p.phy = g('PHY', o); p.dec = Math.round(o * 0.5 + p.pas * 0.3 + p.att * 0.2); p.ref = 40; p.han = 40; p.div = 40; p.gpos = 40; }
       const fm = ((d.form != null ? d.form : 70) - 70) / 10 + ((d.morale != null ? d.morale : 72) - 72) / 20;   // forme et moral : ±3 points
       ['sht', 'pas', 'dri', 'def', 'phy', 'pace', 'dec'].forEach((k) => { p[k] = Math.round(p[k] + fm); });
+      p.foot = d.foot || 'Droit'; p.wf = d.wf != null ? d.wf : 3;   // §25 pied fort et pied faible
       p.base = { sht: p.sht, pas: p.pas, dri: p.dri, def: p.def, phy: p.phy, pace: p.pace, dec: p.dec, ref: p.ref, han: p.han }; p.skills = d.skills || []; p.drain = 1; p.momT = -1; p.active = [];
       p.vmax = 5.5 + (p.pace - 40) * 0.064;
       // accélération, agilité, équilibre : dérivés des stats, distincts de la vitesse de pointe
@@ -2183,7 +2201,7 @@ class Component extends DCLogic {
       T.rest = [37, 32, 27][t.line] - m * 1.8;
       T.tempoInt = [0.8, 0.56, 0.38][t.tempo] * (sh === 'exiger' ? 0.85 : 1);
       T.fatK = 1 + 0.12 * (t.press - 1) + 0.1 * (t.tempo - 1) + (t.mark === 2 ? 0.06 : 0) + (sh === 'exiger' ? 0.08 : 0);
-      T.bonus = (T.adv || 0) * 2.5 + (T.sbonus || 0) + (sh === 'encourager' ? 1.5 : 0) + (T.coach ? (T.coach.tactique - 70) / 25 : 0) + (T.boost && T.boost.bonus || 0);
+      T.bonus = (T.adv || 0) * 2.5 + (T.sbonus || 0) + (T.home ? 0.9 : 0) + (sh === 'encourager' ? 1.5 : 0) + (T.coach ? (T.coach.tactique - 70) / 25 : 0) + (T.boost && T.boost.bonus || 0);
     };
     // phase de jeu de l'équipe (ATTACK / DEFENSE / TRANSITION_ATTACK / TRANSITION_DEFENSE) et intention de chaque joueur
     const phaseOf = (T) => (W.poss === T.s ? (W.t < T.counterUntil ? 'TRANSITION_ATTACK' : 'ATTACK') : (W.t < T.cpressUntil || W.t < T.regroupUntil ? 'TRANSITION_DEFENSE' : 'DEFENSE'));
@@ -2201,7 +2219,7 @@ class Component extends DCLogic {
     };
     ['H', 'A'].forEach((s) => {
       const c = cfg.sides[s];
-      const T = TM[s] = { s, coach: c.coach || null, coh: c.coh != null ? c.coh : 1, sbonus: c.sbonus || 0, tac: Object.assign({}, c.tac), ment: c.ment != null ? c.ment : 3, adv: c.adv || 0, shout: null, club: c.club, ps: [], bench: (c.bench || []).slice(), D: 30, counterUntil: 0, cpressUntil: 0, regroupUntil: 0, subs: 0 };
+      const T = TM[s] = { s, coach: c.coach || null, coh: c.coh != null ? c.coh : 1, sbonus: c.sbonus || 0, home: !!c.home, tac: Object.assign({}, c.tac), ment: c.ment != null ? c.ment : 3, adv: c.adv || 0, shout: null, club: c.club, ps: [], bench: (c.bench || []).slice(), D: 30, counterUntil: 0, cpressUntil: 0, regroupUntil: 0, subs: 0 };
       c.players.forEach((d, i) => T.ps.push(mkP(s, i, d, c.coords[i])));
       classify(T); setTP(T); T.ovr = T.ps.reduce((a, p) => a + p.ovr, 0) / T.ps.length;
     });
@@ -2309,21 +2327,38 @@ class Component extends DCLogic {
       demi: { l: 'demi-volée', ot: -0.07, g: 1.1, v: 1.1, apex: 0.6 },
       talon: { l: 'talonnade', ot: -0.16, g: 1.05, v: 0.7, apex: 0.4, surprise: 0.25 },
       retourne: { l: 'retourné acrobatique', ot: -0.22, g: 1.28, v: 1, apex: 0.7 },
-      faible: { l: 'frappe du mauvais pied', ot: -0.09, g: 0.9, v: 0.9, apex: 0.6 }
+      faible: { l: 'frappe du mauvais pied', ot: -0.09, g: 0.9, v: 0.9, apex: 0.6 },
+      rasSol: { l: 'frappe à ras de terre', ot: 0.04, g: 1.06, v: 1.05, apex: 0.18 },
+      reprise: { l: 'reprise de la demi-volée', ot: -0.08, g: 1.14, v: 1.06, apex: 0.5 },
+      apresDrib: { l: 'frappe dans la foulée du dribble', ot: 0.02, g: 1.12, v: 1.02, apex: 0.55, surprise: 0.15 },
+      ferme: { l: 'frappe sous un angle fermé', ot: -0.14, g: 1.3, v: 1.08, apex: 0.45 }
+    };
+    // §25 le pied qui frappe : un droitier place a gauche doit soit repiquer, soit tirer du mauvais pied
+    const weakFoot = (p) => {
+      if (p.foot === 'Ambidextre' || p.wf >= 5) return 0;
+      const lx = xl(p.s, p.x), onLeft = lx < 30, onRight = lx > 38;
+      const strongSide = p.foot === 'Gauche' ? onLeft : onRight;
+      if (strongSide || (!onLeft && !onRight)) return 0;
+      return cl((5 - p.wf) * 0.25, 0, 1);   // 0 = pied fort, 1 = pied faible franc
     };
     const pickShot = (p, a, gkOut, fresh) => {
       const z = W.ball.z, tech = p.dri * 0.5 + p.sht * 0.5, pw = p.pow != null ? p.pow : p.phy;
       const opts = [], add = (k, w) => { if (w > 0) opts.push({ k, w }); };
+      const tight = Math.abs(p.x - 34) > 13 && a > 92;           // §23 angle ferme
+      const justBeat = W.t - (p.beatT || -9) < 1.6;              // §23 tir apres dribble
       if (z > 0.9) { add('volee', 10 + (tech - 60) * 0.5); add('retourne', tech > 82 && a > 90 ? (tech - 82) * 0.4 : 0); }
-      else if (z > 0.3) { add('demi', 10 + (tech - 60) * 0.4); add('volee', 3); }
+      else if (z > 0.3) { add('demi', 10 + (tech - 60) * 0.4); add('volee', 3); add('reprise', 6 + (tech - 60) * 0.3); }
       else {
-        add('place', a > 86 ? 16 : 5);
+        add('place', a > 86 ? 14 : 5);
         add('puissant', 6 + (pw - 60) * 0.35 + (a < 88 ? 8 : 0));
+        add('rasSol', 7 + (p.sht - 60) * 0.2);
         add('enroule', tech > 70 ? (tech - 70) * 0.9 + (Math.abs(p.x - 34) > 8 ? 5 : 0) : 0);
         add('seche', fresh ? 8 + (tech - 60) * 0.25 : 0);
         add('lob', gkOut ? 10 + (tech - 60) * 0.4 : 0.5);
         add('talon', tech > 80 && a > 92 ? (tech - 80) * 0.22 : 0);
-        add('faible', 3);
+        add('apresDrib', justBeat ? 14 + (tech - 60) * 0.3 : 0);
+        add('ferme', tight ? 12 : 0);
+        add('faible', weakFoot(p) > 0.4 ? 9 : 1);
       }
       if (!opts.length) return 'place';
       let r = R() * opts.reduce((t, o) => t + o.w, 0);
@@ -2349,7 +2384,7 @@ class Component extends DCLogic {
       const blocked = est.blocker && R() < est.pBlock;
       if (blocked) res = 'block';
       else {
-        const pOT = cl(0.37 + skill * 0.35 + (a > 94 ? 0.12 : a > 88 ? 0.05 : 0) - (head ? 0.05 : 0) - (fk ? 0.05 : 0) + (V2 ? V2.ot : 0), 0.18, 0.8);
+        const pOT = cl(0.37 + skill * 0.35 + (a > 94 ? 0.12 : a > 88 ? 0.05 : 0) - (head ? 0.05 : 0) - (fk ? 0.05 : 0) + (V2 ? V2.ot : 0) - (head || fk ? 0 : weakFoot(p) * 0.12), 0.18, 0.8);
         const pG = cl(xg * vg * Math.max(0.3, 0.92 + skill * 0.6 - gks * 1.2) / (pOT * (1 - est.pBlock)), 0.01, 0.9);
         res = R() < pOT ? (R() < pG ? 'goal' : 'save') : 'miss';
       }
@@ -2500,7 +2535,12 @@ class Component extends DCLogic {
       const f = W.fl, p = f.shooter, s = p.s, o = OT[s], b = W.ball, gk = TM[o].ps[0]; W.fl = null;
       if (f.res === 'goal') { b.x = f.x1; b.y = yOf(s, PL + 1.3); b.z = 0.4; goalScored(p, f); return; }
       if (f.res === 'save') {
-        rt(gk, 0.12 + f.xg * 0.9); banner('ARRÊT !', gk.short, '#F2F5F3', 1.4); com('Parade de ' + gk.short + ' devant ' + p.short + ' !');
+        rt(gk, 0.12 + f.xg * 0.9);
+        const dbl = W.t - (W.lastSaveT || -9) < 2.6 && W.lastSaveGk === gk.code;
+        const SAV = dbl ? 'DOUBLE ARRÊT !' : f.xg > 0.35 ? 'ARRÊT RÉFLEXE !' : f.sv === 'lob' ? 'LE GARDIEN SE DÉTEND' : f.sv === 'rasSol' || f.sv === 'ferme' ? 'ARRÊT DU PIED' : f.head ? 'CLAQUETTE !' : 'ARRÊT !';
+        const SAVC = dbl ? gk.short + ' repousse une deuxième fois, incroyable !' : f.xg > 0.35 ? 'Réflexe énorme de ' + gk.short + ' !' : f.sv === 'lob' ? gk.short + ' se détend et capte le ballon piqué' : f.sv === 'rasSol' || f.sv === 'ferme' ? gk.short + ' sort le pied, superbe' : f.head ? gk.short + ' claque la tête de ' + p.short + ' sur sa barre' : 'Parade de ' + gk.short + ' devant ' + p.short + ' !';
+        W.lastSaveT = W.t; W.lastSaveGk = gk.code;
+        banner(SAV, gk.short, '#F2F5F3', 1.4); com(SAVC);
         if (f.xg > 0.22 && !f.pen) logE('Grosse parade de ' + gk.name + ' devant ' + p.name, s === 'H' ? '#BDEBC9' : '#F2B6B6', 'save', s);
         const r = R(), cp = cl(0.44 + (gk.han - 65) / 70 - f.xg * 0.25, 0.2, 0.78);
         if (r < cp) { gkHold(gk); return; }
@@ -2547,6 +2587,10 @@ class Component extends DCLogic {
       else if (o1 === 'counter') { kind = 'counter'; how = pick(['au bout d’un contre éclair', 'après une contre-attaque fulgurante', 'en conclusion d’un contre à trois contre deux']) + (asN ? ', servi par ' + asN : ''); }
       else if (o1 === 'solo' && (f.held > 3 || f.nd < 2)) { kind = 'solo'; how = pick(['après un slalom dans la défense', 'd’un exploit individuel', 'après un petit pont et une frappe croisée', 'après avoir effacé deux défenseurs']); }
       else if (close) { kind = 'close'; how = pick(['du bout du pied à bout portant', 'sur un cafouillage dans la surface', 'en renard des surfaces', 'd’une talonnade astucieuse']) + (asN ? ', servi par ' + asN : ''); }
+      else if (f.sv === 'apresDrib') { kind = 'solo'; how = pick(['dans la foulée de son dribble', 'après avoir éliminé son vis-à-vis', 'enchaînant crochet et frappe']); }
+      else if (f.sv === 'ferme') { kind = 'long'; how = pick(['sous un angle totalement fermé', 'd’un angle impossible, au premier poteau', 'depuis la ligne de sortie de but']) + (asN ? ', servi par ' + asN : ''); }
+      else if (f.sv === 'rasSol') { kind = 'pass'; how = pick(['d’une frappe à ras de terre', 'd’un plat du pied au ras du poteau', 'd’une frappe rasante sous le gardien']) + (asN ? ', servi par ' + asN : ''); }
+      else if (f.sv === 'reprise') { kind = 'volley'; how = pick(['d’une reprise à la retombée du ballon', 'd’une demi-volée rageuse']) + (asN ? ', sur le centre de ' + asN : ''); }
       else if (f.sv === 'enroule') { kind = far ? 'long' : 'pass'; how = pick(['d’une frappe enroulée dans la lucarne opposée', 'en enroulant sa frappe au second poteau', 'd’un enroulé imparable']) + (asN ? ', décalé par ' + asN : ''); }
       else if (f.sv === 'puissant') { kind = far ? 'long' : 'pass'; how = pick(['d’une frappe surpuissante', 'd’une mine sous la barre', 'd’un boulet de canon']) + (asN ? ', servi par ' + asN : ''); }
       else if (f.sv === 'seche') { kind = 'pass'; how = pick(['d’une frappe en première intention', 'en une touche, sans contrôle', 'd’une reprise sèche, le gardien est surpris']) + (asN ? ', sur la passe de ' + asN : ''); }
@@ -2798,7 +2842,7 @@ class Component extends DCLogic {
       }
       if (ch.k === 'cross') {
         const low = T.tac.cross === 0 || (T.tac.cross === 1 && R() < 0.35);
-        const sd = 1.2 + (1 - (p.pas + T.bonus) / 100) * 6 * (nearestOpp(p).d < 2 ? 1.4 : 1); W.cnt = W.cnt || {}; W.cnt.cross = (W.cnt.cross || 0) + 1;
+        const sd = (1.2 + (1 - (p.pas + T.bonus) / 100) * 6) * (nearestOpp(p).d < 2 ? 1.4 : 1) * (1 + weakFoot(p) * 0.4); W.cnt = W.cnt || {}; W.cnt.cross = (W.cnt.cross || 0) + 1;
         const tx = cl(ch.x + gauss() * sd, 1, 67), ty = ch.y + gauss() * sd * 0.8;
         const tgt = LV[s].filter((q) => q !== p && q.line !== 'GB').sort((a2, b2) => hy(a2.x - tx, a2.y - ty) - hy(b2.x - tx, b2.y - ty))[0];
         const f = kick(p, tx, ty, 'cross', tgt, { aerial: true, apex: low ? 1.3 : 4 + R() * 1.5 }); if (low) f.dur *= 0.72;
@@ -2810,7 +2854,7 @@ class Component extends DCLogic {
       const q = ch.q, d = hy(ch.x - p.x, ch.y - p.y), pr = nearestOpp(p).d;
       const skill = p.pas + T.bonus;
       const one = !!p.oneTouch; p.oneTouch = false;
-      const sd = d * (0.012 + 0.09 * Math.max(0, 1 - skill / 100)) * (pr < 2 ? 1.6 : pr < 4 ? 1.2 : 1) * (ch.aerial ? 1.7 : 1) * (1.2 - 0.2 * p.energy / 100) * (T.shout === 'calme' ? 0.9 : 1) * (one ? 1.3 : 1);
+      const sd = d * (0.012 + 0.09 * Math.max(0, 1 - skill / 100)) * (pr < 2 ? 1.6 : pr < 4 ? 1.2 : 1) * (ch.aerial ? 1.7 : 1) * (1.2 - 0.2 * p.energy / 100) * (T.shout === 'calme' ? 0.9 : 1) * (one ? 1.3 : 1) * (1 + weakFoot(p) * 0.35);
       const tx = ch.x + gauss() * sd, ty = ch.y + gauss() * sd;
       const f = kick(p, tx, ty, ch.kind === 'through' ? 'through' : ch.aerial ? 'long' : 'pass', q, { aerial: ch.aerial });
       W.st[s].pa++;
@@ -2855,7 +2899,7 @@ class Component extends DCLogic {
         const bl = c.carry.blk;
         if (hy(bl.x - c.x, bl.y - c.y) < 1.4) {
           c.carry.done = true; const pd = pDrib(c, bl); W.cnt = W.cnt || {}; W.cnt.drib = (W.cnt.drib || 0) + 1;
-          if (R() < pd) { W.cnt.dribOk = (W.cnt.dribOk || 0) + 1; bl.beat = 1.1; rt(c, 0.07); rt(bl, -0.03); com(c.short + ' élimine ' + bl.short + ' !'); if (aOf(s, c.y) > 66) key(12, s, 'drib'); c.vx *= 1.1; c.vy *= 1.1; }
+          if (R() < pd) { W.cnt.dribOk = (W.cnt.dribOk || 0) + 1; bl.beat = 1.1; c.beatT = W.t; rt(c, 0.07); rt(bl, -0.03); com(c.short + ' élimine ' + bl.short + ' !'); if (aOf(s, c.y) > 66) key(12, s, 'drib'); c.vx *= 1.1; c.vy *= 1.1; }
           else { const pf = (inBox(aOf(s, c.y), c.x) ? 0.15 : 1) * 0.17 * [0.65, 1, 1.45][TM[o].tac.tackle] * (TM[o].shout === 'calme' ? 0.75 : 1) * (bl.yc >= 1 ? 0.14 : 1);
             if (R() < pf) { foul(bl, c, 'drib'); return; }
             rt(bl, 0.07); rt(c, -0.04); W.st[o].tk++; com('Tacle de ' + bl.short + ', ballon récupéré');
@@ -3445,6 +3489,64 @@ class Component extends DCLogic {
     snap();
     return api;
   }
+  RARITY() {
+    return [
+      { id: 'normal', label: 'Normal', rate: 0.55, lo: 48, hi: 64, shards: 1, color: 'linear-gradient(135deg, #AEB9C2, #6F8077)', ink: '#0B1210' },
+      { id: 'common', label: 'Commun', rate: 0.25, lo: 56, hi: 70, shards: 2, color: 'linear-gradient(135deg, #CFE0D4, #8FA89A)', ink: '#0B1210' },
+      { id: 'rare', label: 'Rare', rate: 0.12, lo: 64, hi: 77, shards: 5, color: 'linear-gradient(135deg, #7FB0FF, #3E6BFF)', ink: '#06101F' },
+      { id: 'epic', label: 'Épique', rate: 0.05, lo: 71, hi: 83, shards: 12, color: 'linear-gradient(135deg, #C39BFF, #7B4FD8)', ink: '#120A24' },
+      { id: 'elite', label: 'Élite', rate: 0.02, lo: 77, hi: 88, shards: 30, color: 'linear-gradient(135deg, #4FDCC4, #1E9E92)', ink: '#04201C' },
+      { id: 'gold', label: 'Or', rate: 0.009, lo: 82, hi: 92, shards: 80, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', ink: '#241703' },
+      { id: 'legendary', label: 'Légendaire', rate: 0.001, lo: 86, hi: 95, shards: 200, color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', ink: '#2A0812' }
+    ];
+  }
+  rarityOf(id) { return this.RARITY().find((r) => r.id === id) || this.RARITY()[0]; }
+  CARD_POOL() {
+    if (this._pool) return this._pool;
+    const R = this.RARITY(), r = this.seedR(424242);
+    const F = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.', 'H.', 'I.', 'J.', 'K.', 'L.', 'M.', 'N.', 'O.', 'P.', 'R.', 'S.', 'T.', 'V.', 'Y.', 'Z.'];
+    const L = ['Marvello', 'Ducasson', 'Ebongué', 'Halvorsen', 'Quintero', 'Belkadi-Roy', 'Stranieri', 'Okafor-Lemaire', 'Vasquet', 'Nyamsi', 'Gaudrel', 'Petrakis', 'Lindau', 'Moreau-Diaby', 'Castagne-Nil', 'Rivoire', 'Takamura', 'Ferbault', 'Ansaldi', 'Kowalevski', 'Dembrel', 'Soumahé', 'Varnier', 'Okonkwé', 'Delacroix-Sy', 'Ferrandi', 'Braxton', 'Kessler', 'Mbaloula', 'Arroyo-Faye', 'Lindqvist', 'Rouvière', 'Adebanjo', 'Castellane', 'Moulinet', 'Tavares', 'Bellanger', 'Cissoko-Vidal', 'Ngoumou', 'Rakotoson', 'Esperanza', 'Haugen', 'Pirlotti', 'Zemmouri', 'Okonjo', 'Vanthier', 'Bramante', 'Keita-Marsal'];
+    const POS = ['GB', 'DEF', 'DEF', 'DEF', 'MIL', 'MIL', 'MIL', 'ATT', 'ATT'];
+    const pool = [];
+    // la part de chaque rareté dans le catalogue suit les taux, avec au moins une carte par rareté
+    const counts = R.map((x) => Math.max(1, Math.round(x.rate * 500)));
+    counts[0] += 500 - counts.reduce((a2, v) => a2 + v, 0);   // le catalogue fait exactement 500 cartes
+    R.forEach((rar, ri) => {
+      for (let k = 0; k < counts[ri]; k++) {
+        const id = 50000 + pool.length;
+        pool.push({ id, name: F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)],
+          pos: POS[Math.floor(r() * POS.length)], ovr: rar.lo + Math.floor(r() * (rar.hi - rar.lo + 1)), rar: rar.id });
+      }
+    });
+    return (this._pool = pool);
+  }
+  drawCard(packWeights, rnd) {
+    const R = this.RARITY(), w = R.map((x) => x.rate * ((packWeights || {})[x.id] != null ? packWeights[x.id] : 1));
+    let t = w.reduce((a, v) => a + v, 0), q = (rnd || Math.random)() * t, pick = R[0];
+    for (let i = 0; i < R.length; i++) { q -= w[i]; if (q <= 0) { pick = R[i]; break; } }
+    const pool = this.CARD_POOL().filter((c) => c.rar === pick.id);
+    return pool[Math.floor((rnd || Math.random)() * pool.length)];
+  }
+  PACK_DEFS() {
+    return [
+      { key: 'basic', name: 'Pack Basic', n: 3, cost: 150, w: {}, color: 'linear-gradient(135deg, #AEB9C2, #6F8077)', fx: 'bronze' },
+      { key: 'premium', name: 'Pack Premium', n: 4, cost: 400, w: { normal: 0.4, common: 1.2, rare: 2.2, epic: 2.5, elite: 2, gold: 1.6, legendary: 1.4 }, color: 'linear-gradient(135deg, #F2F6F4, #AEB9C2)', fx: 'silver' },
+      { key: 'elite', name: 'Pack Élite', n: 3, cost: 900, w: { normal: 0.1, common: 0.5, rare: 2, epic: 4, elite: 5, gold: 3, legendary: 2.5 }, color: 'linear-gradient(135deg, #4FDCC4, #1E9E92)', fx: 'silver' },
+      { key: 'gold', name: 'Pack Or', n: 3, cost: 2000, w: { normal: 0, common: 0.2, rare: 1.2, epic: 4, elite: 8, gold: 9, legendary: 6 }, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', fx: 'gold' },
+      { key: 'special', name: 'Pack Spécial', n: 2, cost: 1200, w: { normal: 0, common: 0, rare: 2, epic: 5, elite: 6, gold: 5, legendary: 4 }, color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', fx: 'gold' }
+    ];
+  }
+  packOdds(def) {
+    const R = this.RARITY(), w = R.map((x) => x.rate * ((def.w || {})[x.id] != null ? def.w[x.id] : 1));
+    const t = w.reduce((a, v) => a + v, 0) || 1;
+    return R.map((x, i) => ({ id: x.id, label: x.label, color: x.color, pct: (w[i] / t * 100) }));
+  }
+  collection() {
+    const owned = new Set((this.state.squad || []).concat(this.state.collected || []).map((p) => p.id != null ? p.id : p));
+    const pool = this.CARD_POOL();
+    const have = pool.filter((c) => owned.has(c.id)).length;
+    return { have, total: pool.length };
+  }
   renderVals() {
     const s = this.state, t = s.tac;
     const color = (o) => (o >= 80 ? 'linear-gradient(135deg, #FFE59A, #E9A93A)' : o >= 70 ? 'linear-gradient(135deg, #F2F6F4, #AEB9C2)' : 'linear-gradient(135deg, #E8B585, #B7773F)');
@@ -3479,11 +3581,10 @@ class Component extends DCLogic {
       { user: '@Ailier_59', club: 'Flèches du Nord', ovr: 68, color: '#E5484D', style: 'ailes' },
       { user: '@Gasp_fan', club: 'Duel FC', ovr: 69, color: '#2BB5A0', style: 'homme' }
     ].map((o) => Object.assign(o, { styleName: STY[o.style].name, ovr: o.ovr - 5 + (4 - s.division) * 3 }));
-    const packDefs = [
-      { key: 'bronze', name: 'Pack Bronze', desc: '3 joueurs · notes 55 à 68', n: 3, min: 55, max: 68, cost: 150, color: 'linear-gradient(135deg, #E8B585, #B7773F)', fx: 'bronze' },
-      { key: 'equipe', name: 'Pack Équipe', desc: '5 joueurs · 60 à 78 · un 72+ garanti', n: 5, min: 60, max: 78, boost: 72, cost: 350, color: 'linear-gradient(135deg, #F2F6F4, #AEB9C2)', fx: 'silver' },
-      { key: 'or', name: 'Pack Or', desc: '3 joueurs · notes 75 à 88 · walkout garanti', n: 3, min: 75, max: 88, cost: 800, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', fx: 'gold' }
-    ];
+    const packDefs = this.PACK_DEFS().map((d) => {
+      const o = this.packOdds(d).filter((x) => x.pct >= 0.05);
+      return Object.assign({}, d, { desc: d.n + ' cartes · ' + o.slice(2).map((x) => x.label + ' ' + x.pct.toFixed(x.pct < 10 ? 1 : 0).replace('.', ',') + ' %').join(' · ') });
+    });
     const best = pk ? pk.got[0] : null;
     const tier = best ? (best.ovr >= 80 ? 'gold' : best.ovr >= 70 ? 'silver' : 'bronze') : 'bronze';
     const FX = {
@@ -3719,6 +3820,8 @@ class Component extends DCLogic {
           nextRole: () => this.setState({ roles: Object.assign({}, s.roles, { [p.slot]: opts[(opts.indexOf(cur) + 1) % opts.length] }), preset: 'perso' }),
           nextDuty: () => this.setState({ duties: Object.assign({}, s.duties, { [p.slot]: di[(di.indexOf(cd) + 1) % 3] }), preset: 'perso' }) };
       }),
+      collLine: (() => { const c = this.collection(); return c.have + ' / ' + c.total; })(),
+      shardLine: (s.shards || 0) + ' fragments · un doublon en rapporte selon sa rareté',
       packs: packDefs.map((pd) => {
         const ok = s.balance >= pd.cost;
         return { name: pd.name, desc: pd.desc, count: pd.n, color: pd.color, price: pd.cost + ' jetons', locked: !ok,

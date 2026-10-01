@@ -33,6 +33,7 @@ export function makeEngine(cfg) {
       else { p.pace = g('VIT', o); p.att = g('ATQ', o); p.pow = g('TIR', o); p.sht = Math.round(p.att * 0.55 + p.pow * 0.45); p.pas = g('PAS', o); p.dri = g('DRI', o); p.def = g('DÉF', o); p.phy = g('PHY', o); p.dec = Math.round(o * 0.5 + p.pas * 0.3 + p.att * 0.2); p.ref = 40; p.han = 40; p.div = 40; p.gpos = 40; }
       const fm = ((d.form != null ? d.form : 70) - 70) / 10 + ((d.morale != null ? d.morale : 72) - 72) / 20;   // forme et moral : ±3 points
       ['sht', 'pas', 'dri', 'def', 'phy', 'pace', 'dec'].forEach((k) => { p[k] = Math.round(p[k] + fm); });
+      p.foot = d.foot || 'Droit'; p.wf = d.wf != null ? d.wf : 3;   // §25 pied fort et pied faible
       p.base = { sht: p.sht, pas: p.pas, dri: p.dri, def: p.def, phy: p.phy, pace: p.pace, dec: p.dec, ref: p.ref, han: p.han }; p.skills = d.skills || []; p.drain = 1; p.momT = -1; p.active = [];
       p.vmax = 5.5 + (p.pace - 40) * 0.064;
       // accélération, agilité, équilibre : dérivés des stats, distincts de la vitesse de pointe
@@ -78,7 +79,7 @@ export function makeEngine(cfg) {
       T.rest = [37, 32, 27][t.line] - m * 1.8;
       T.tempoInt = [0.8, 0.56, 0.38][t.tempo] * (sh === 'exiger' ? 0.85 : 1);
       T.fatK = 1 + 0.12 * (t.press - 1) + 0.1 * (t.tempo - 1) + (t.mark === 2 ? 0.06 : 0) + (sh === 'exiger' ? 0.08 : 0);
-      T.bonus = (T.adv || 0) * 2.5 + (T.sbonus || 0) + (sh === 'encourager' ? 1.5 : 0) + (T.coach ? (T.coach.tactique - 70) / 25 : 0) + (T.boost && T.boost.bonus || 0);
+      T.bonus = (T.adv || 0) * 2.5 + (T.sbonus || 0) + (T.home ? 0.9 : 0) + (sh === 'encourager' ? 1.5 : 0) + (T.coach ? (T.coach.tactique - 70) / 25 : 0) + (T.boost && T.boost.bonus || 0);
     };
     // phase de jeu de l'équipe (ATTACK / DEFENSE / TRANSITION_ATTACK / TRANSITION_DEFENSE) et intention de chaque joueur
     const phaseOf = (T) => (W.poss === T.s ? (W.t < T.counterUntil ? 'TRANSITION_ATTACK' : 'ATTACK') : (W.t < T.cpressUntil || W.t < T.regroupUntil ? 'TRANSITION_DEFENSE' : 'DEFENSE'));
@@ -96,7 +97,7 @@ export function makeEngine(cfg) {
     };
     ['H', 'A'].forEach((s) => {
       const c = cfg.sides[s];
-      const T = TM[s] = { s, coach: c.coach || null, coh: c.coh != null ? c.coh : 1, sbonus: c.sbonus || 0, tac: Object.assign({}, c.tac), ment: c.ment != null ? c.ment : 3, adv: c.adv || 0, shout: null, club: c.club, ps: [], bench: (c.bench || []).slice(), D: 30, counterUntil: 0, cpressUntil: 0, regroupUntil: 0, subs: 0 };
+      const T = TM[s] = { s, coach: c.coach || null, coh: c.coh != null ? c.coh : 1, sbonus: c.sbonus || 0, home: !!c.home, tac: Object.assign({}, c.tac), ment: c.ment != null ? c.ment : 3, adv: c.adv || 0, shout: null, club: c.club, ps: [], bench: (c.bench || []).slice(), D: 30, counterUntil: 0, cpressUntil: 0, regroupUntil: 0, subs: 0 };
       c.players.forEach((d, i) => T.ps.push(mkP(s, i, d, c.coords[i])));
       classify(T); setTP(T); T.ovr = T.ps.reduce((a, p) => a + p.ovr, 0) / T.ps.length;
     });
@@ -204,21 +205,38 @@ export function makeEngine(cfg) {
       demi: { l: 'demi-volée', ot: -0.07, g: 1.1, v: 1.1, apex: 0.6 },
       talon: { l: 'talonnade', ot: -0.16, g: 1.05, v: 0.7, apex: 0.4, surprise: 0.25 },
       retourne: { l: 'retourné acrobatique', ot: -0.22, g: 1.28, v: 1, apex: 0.7 },
-      faible: { l: 'frappe du mauvais pied', ot: -0.09, g: 0.9, v: 0.9, apex: 0.6 }
+      faible: { l: 'frappe du mauvais pied', ot: -0.09, g: 0.9, v: 0.9, apex: 0.6 },
+      rasSol: { l: 'frappe à ras de terre', ot: 0.04, g: 1.06, v: 1.05, apex: 0.18 },
+      reprise: { l: 'reprise de la demi-volée', ot: -0.08, g: 1.14, v: 1.06, apex: 0.5 },
+      apresDrib: { l: 'frappe dans la foulée du dribble', ot: 0.02, g: 1.12, v: 1.02, apex: 0.55, surprise: 0.15 },
+      ferme: { l: 'frappe sous un angle fermé', ot: -0.14, g: 1.3, v: 1.08, apex: 0.45 }
+    };
+    // §25 le pied qui frappe : un droitier place a gauche doit soit repiquer, soit tirer du mauvais pied
+    const weakFoot = (p) => {
+      if (p.foot === 'Ambidextre' || p.wf >= 5) return 0;
+      const lx = xl(p.s, p.x), onLeft = lx < 30, onRight = lx > 38;
+      const strongSide = p.foot === 'Gauche' ? onLeft : onRight;
+      if (strongSide || (!onLeft && !onRight)) return 0;
+      return cl((5 - p.wf) * 0.25, 0, 1);   // 0 = pied fort, 1 = pied faible franc
     };
     const pickShot = (p, a, gkOut, fresh) => {
       const z = W.ball.z, tech = p.dri * 0.5 + p.sht * 0.5, pw = p.pow != null ? p.pow : p.phy;
       const opts = [], add = (k, w) => { if (w > 0) opts.push({ k, w }); };
+      const tight = Math.abs(p.x - 34) > 13 && a > 92;           // §23 angle ferme
+      const justBeat = W.t - (p.beatT || -9) < 1.6;              // §23 tir apres dribble
       if (z > 0.9) { add('volee', 10 + (tech - 60) * 0.5); add('retourne', tech > 82 && a > 90 ? (tech - 82) * 0.4 : 0); }
-      else if (z > 0.3) { add('demi', 10 + (tech - 60) * 0.4); add('volee', 3); }
+      else if (z > 0.3) { add('demi', 10 + (tech - 60) * 0.4); add('volee', 3); add('reprise', 6 + (tech - 60) * 0.3); }
       else {
-        add('place', a > 86 ? 16 : 5);
+        add('place', a > 86 ? 14 : 5);
         add('puissant', 6 + (pw - 60) * 0.35 + (a < 88 ? 8 : 0));
+        add('rasSol', 7 + (p.sht - 60) * 0.2);
         add('enroule', tech > 70 ? (tech - 70) * 0.9 + (Math.abs(p.x - 34) > 8 ? 5 : 0) : 0);
         add('seche', fresh ? 8 + (tech - 60) * 0.25 : 0);
         add('lob', gkOut ? 10 + (tech - 60) * 0.4 : 0.5);
         add('talon', tech > 80 && a > 92 ? (tech - 80) * 0.22 : 0);
-        add('faible', 3);
+        add('apresDrib', justBeat ? 14 + (tech - 60) * 0.3 : 0);
+        add('ferme', tight ? 12 : 0);
+        add('faible', weakFoot(p) > 0.4 ? 9 : 1);
       }
       if (!opts.length) return 'place';
       let r = R() * opts.reduce((t, o) => t + o.w, 0);
@@ -244,7 +262,7 @@ export function makeEngine(cfg) {
       const blocked = est.blocker && R() < est.pBlock;
       if (blocked) res = 'block';
       else {
-        const pOT = cl(0.37 + skill * 0.35 + (a > 94 ? 0.12 : a > 88 ? 0.05 : 0) - (head ? 0.05 : 0) - (fk ? 0.05 : 0) + (V2 ? V2.ot : 0), 0.18, 0.8);
+        const pOT = cl(0.37 + skill * 0.35 + (a > 94 ? 0.12 : a > 88 ? 0.05 : 0) - (head ? 0.05 : 0) - (fk ? 0.05 : 0) + (V2 ? V2.ot : 0) - (head || fk ? 0 : weakFoot(p) * 0.12), 0.18, 0.8);
         const pG = cl(xg * vg * Math.max(0.3, 0.92 + skill * 0.6 - gks * 1.2) / (pOT * (1 - est.pBlock)), 0.01, 0.9);
         res = R() < pOT ? (R() < pG ? 'goal' : 'save') : 'miss';
       }
@@ -395,7 +413,12 @@ export function makeEngine(cfg) {
       const f = W.fl, p = f.shooter, s = p.s, o = OT[s], b = W.ball, gk = TM[o].ps[0]; W.fl = null;
       if (f.res === 'goal') { b.x = f.x1; b.y = yOf(s, PL + 1.3); b.z = 0.4; goalScored(p, f); return; }
       if (f.res === 'save') {
-        rt(gk, 0.12 + f.xg * 0.9); banner('ARRÊT !', gk.short, '#F2F5F3', 1.4); com('Parade de ' + gk.short + ' devant ' + p.short + ' !');
+        rt(gk, 0.12 + f.xg * 0.9);
+        const dbl = W.t - (W.lastSaveT || -9) < 2.6 && W.lastSaveGk === gk.code;
+        const SAV = dbl ? 'DOUBLE ARRÊT !' : f.xg > 0.35 ? 'ARRÊT RÉFLEXE !' : f.sv === 'lob' ? 'LE GARDIEN SE DÉTEND' : f.sv === 'rasSol' || f.sv === 'ferme' ? 'ARRÊT DU PIED' : f.head ? 'CLAQUETTE !' : 'ARRÊT !';
+        const SAVC = dbl ? gk.short + ' repousse une deuxième fois, incroyable !' : f.xg > 0.35 ? 'Réflexe énorme de ' + gk.short + ' !' : f.sv === 'lob' ? gk.short + ' se détend et capte le ballon piqué' : f.sv === 'rasSol' || f.sv === 'ferme' ? gk.short + ' sort le pied, superbe' : f.head ? gk.short + ' claque la tête de ' + p.short + ' sur sa barre' : 'Parade de ' + gk.short + ' devant ' + p.short + ' !';
+        W.lastSaveT = W.t; W.lastSaveGk = gk.code;
+        banner(SAV, gk.short, '#F2F5F3', 1.4); com(SAVC);
         if (f.xg > 0.22 && !f.pen) logE('Grosse parade de ' + gk.name + ' devant ' + p.name, s === 'H' ? '#BDEBC9' : '#F2B6B6', 'save', s);
         const r = R(), cp = cl(0.44 + (gk.han - 65) / 70 - f.xg * 0.25, 0.2, 0.78);
         if (r < cp) { gkHold(gk); return; }
@@ -442,6 +465,10 @@ export function makeEngine(cfg) {
       else if (o1 === 'counter') { kind = 'counter'; how = pick(['au bout d’un contre éclair', 'après une contre-attaque fulgurante', 'en conclusion d’un contre à trois contre deux']) + (asN ? ', servi par ' + asN : ''); }
       else if (o1 === 'solo' && (f.held > 3 || f.nd < 2)) { kind = 'solo'; how = pick(['après un slalom dans la défense', 'd’un exploit individuel', 'après un petit pont et une frappe croisée', 'après avoir effacé deux défenseurs']); }
       else if (close) { kind = 'close'; how = pick(['du bout du pied à bout portant', 'sur un cafouillage dans la surface', 'en renard des surfaces', 'd’une talonnade astucieuse']) + (asN ? ', servi par ' + asN : ''); }
+      else if (f.sv === 'apresDrib') { kind = 'solo'; how = pick(['dans la foulée de son dribble', 'après avoir éliminé son vis-à-vis', 'enchaînant crochet et frappe']); }
+      else if (f.sv === 'ferme') { kind = 'long'; how = pick(['sous un angle totalement fermé', 'd’un angle impossible, au premier poteau', 'depuis la ligne de sortie de but']) + (asN ? ', servi par ' + asN : ''); }
+      else if (f.sv === 'rasSol') { kind = 'pass'; how = pick(['d’une frappe à ras de terre', 'd’un plat du pied au ras du poteau', 'd’une frappe rasante sous le gardien']) + (asN ? ', servi par ' + asN : ''); }
+      else if (f.sv === 'reprise') { kind = 'volley'; how = pick(['d’une reprise à la retombée du ballon', 'd’une demi-volée rageuse']) + (asN ? ', sur le centre de ' + asN : ''); }
       else if (f.sv === 'enroule') { kind = far ? 'long' : 'pass'; how = pick(['d’une frappe enroulée dans la lucarne opposée', 'en enroulant sa frappe au second poteau', 'd’un enroulé imparable']) + (asN ? ', décalé par ' + asN : ''); }
       else if (f.sv === 'puissant') { kind = far ? 'long' : 'pass'; how = pick(['d’une frappe surpuissante', 'd’une mine sous la barre', 'd’un boulet de canon']) + (asN ? ', servi par ' + asN : ''); }
       else if (f.sv === 'seche') { kind = 'pass'; how = pick(['d’une frappe en première intention', 'en une touche, sans contrôle', 'd’une reprise sèche, le gardien est surpris']) + (asN ? ', sur la passe de ' + asN : ''); }
@@ -693,7 +720,7 @@ export function makeEngine(cfg) {
       }
       if (ch.k === 'cross') {
         const low = T.tac.cross === 0 || (T.tac.cross === 1 && R() < 0.35);
-        const sd = 1.2 + (1 - (p.pas + T.bonus) / 100) * 6 * (nearestOpp(p).d < 2 ? 1.4 : 1); W.cnt = W.cnt || {}; W.cnt.cross = (W.cnt.cross || 0) + 1;
+        const sd = (1.2 + (1 - (p.pas + T.bonus) / 100) * 6) * (nearestOpp(p).d < 2 ? 1.4 : 1) * (1 + weakFoot(p) * 0.4); W.cnt = W.cnt || {}; W.cnt.cross = (W.cnt.cross || 0) + 1;
         const tx = cl(ch.x + gauss() * sd, 1, 67), ty = ch.y + gauss() * sd * 0.8;
         const tgt = LV[s].filter((q) => q !== p && q.line !== 'GB').sort((a2, b2) => hy(a2.x - tx, a2.y - ty) - hy(b2.x - tx, b2.y - ty))[0];
         const f = kick(p, tx, ty, 'cross', tgt, { aerial: true, apex: low ? 1.3 : 4 + R() * 1.5 }); if (low) f.dur *= 0.72;
@@ -705,7 +732,7 @@ export function makeEngine(cfg) {
       const q = ch.q, d = hy(ch.x - p.x, ch.y - p.y), pr = nearestOpp(p).d;
       const skill = p.pas + T.bonus;
       const one = !!p.oneTouch; p.oneTouch = false;
-      const sd = d * (0.012 + 0.09 * Math.max(0, 1 - skill / 100)) * (pr < 2 ? 1.6 : pr < 4 ? 1.2 : 1) * (ch.aerial ? 1.7 : 1) * (1.2 - 0.2 * p.energy / 100) * (T.shout === 'calme' ? 0.9 : 1) * (one ? 1.3 : 1);
+      const sd = d * (0.012 + 0.09 * Math.max(0, 1 - skill / 100)) * (pr < 2 ? 1.6 : pr < 4 ? 1.2 : 1) * (ch.aerial ? 1.7 : 1) * (1.2 - 0.2 * p.energy / 100) * (T.shout === 'calme' ? 0.9 : 1) * (one ? 1.3 : 1) * (1 + weakFoot(p) * 0.35);
       const tx = ch.x + gauss() * sd, ty = ch.y + gauss() * sd;
       const f = kick(p, tx, ty, ch.kind === 'through' ? 'through' : ch.aerial ? 'long' : 'pass', q, { aerial: ch.aerial });
       W.st[s].pa++;
@@ -750,7 +777,7 @@ export function makeEngine(cfg) {
         const bl = c.carry.blk;
         if (hy(bl.x - c.x, bl.y - c.y) < 1.4) {
           c.carry.done = true; const pd = pDrib(c, bl); W.cnt = W.cnt || {}; W.cnt.drib = (W.cnt.drib || 0) + 1;
-          if (R() < pd) { W.cnt.dribOk = (W.cnt.dribOk || 0) + 1; bl.beat = 1.1; rt(c, 0.07); rt(bl, -0.03); com(c.short + ' élimine ' + bl.short + ' !'); if (aOf(s, c.y) > 66) key(12, s, 'drib'); c.vx *= 1.1; c.vy *= 1.1; }
+          if (R() < pd) { W.cnt.dribOk = (W.cnt.dribOk || 0) + 1; bl.beat = 1.1; c.beatT = W.t; rt(c, 0.07); rt(bl, -0.03); com(c.short + ' élimine ' + bl.short + ' !'); if (aOf(s, c.y) > 66) key(12, s, 'drib'); c.vx *= 1.1; c.vy *= 1.1; }
           else { const pf = (inBox(aOf(s, c.y), c.x) ? 0.15 : 1) * 0.17 * [0.65, 1, 1.45][TM[o].tac.tackle] * (TM[o].shout === 'calme' ? 0.75 : 1) * (bl.yc >= 1 ? 0.14 : 1);
             if (R() < pf) { foul(bl, c, 'drib'); return; }
             rt(bl, 0.07); rt(c, -0.04); W.st[o].tk++; com('Tacle de ' + bl.short + ', ballon récupéré');
