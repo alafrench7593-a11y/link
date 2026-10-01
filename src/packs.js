@@ -21,6 +21,70 @@ export const Packs = {
     ];
   },
 
+  // ---------- LE KIOSQUE ----------
+  // Les quatre packs au même endroit, décrits de la même façon. Avant, chacun vivait
+  // dans l'écran où on utilise son contenu : il fallait ouvrir trois écrans pour voir
+  // trois prix. Maintenant on achète ici et on utilise là-bas, et chaque pack dit où
+  // son contenu finit (`useView`, `useLabel`).
+  //
+  // La méthode ne décide RIEN : elle lit les quatre définitions existantes, demande
+  // leurs probabilités et leur état à leurs propres fonctions, et les met dans la même
+  // forme. Un pack ajouté ailleurs apparaît ici sans toucher à l'interface.
+  KIOSQUE() {
+    return [
+      { key: 'linkfoot', def: this.THE_PACK(), family: 'Joueurs',
+        question: 'Il me faut des joueurs',
+        odds: () => this.packOdds(this.THE_PACK()), kind: 'rarete',
+        state: () => this.packState(this.THE_PACK()),
+        useView: 'squad', useLabel: 'Les cartes arrivent dans l’effectif',
+        last: 'lastCardPack' },
+      { key: 'skill', def: this.SKILL_PACK(), family: 'Compétences',
+        question: 'Il me faut des compétences',
+        odds: () => this.skillPackOdds(), kind: 'rarete',
+        state: () => this.skillPackState(),
+        useView: 'skills', useLabel: 'Les compétences vont en réserve, à équiper dans Compétences',
+        last: 'lastSkillPack' },
+      { key: 'train', def: this.TRAIN_PACK(), family: 'Entraînement',
+        question: 'Il me faut du temps d’entraînement',
+        odds: () => this.trainPackOdds(), kind: 'lots',
+        state: () => this.trainPackState(),
+        useView: 'train', useLabel: 'Séances et cartes utilisables dans Entraînement',
+        last: 'lastTrainPack' },
+      { key: 'coach', def: this.COACH_PACK(), family: 'Tactique',
+        question: 'Il me faut des idées de jeu',
+        odds: () => this.coachPackOdds(), kind: 'lots',
+        state: () => this.coachPackState(),
+        useView: 'train', useLabel: 'Causeries et plans utilisables dans Entraînement',
+        last: 'lastCoachPack' }
+    ];
+  },
+
+  // La liste prête à afficher. Aucune fonction d'interface là-dedans : l'écran y branche
+  // son bouton lui-même, parce que l'ouverture du pack de cartes a une animation et que
+  // les trois autres n'en ont pas.
+  kiosque() {
+    const s = this.state;
+    return this.KIOSQUE().map((e) => {
+      const st = e.state(), d = e.def;
+      return {
+        key: e.key, name: d.name, family: e.family, question: e.question,
+        n: d.n, cost: d.cost, color: d.color, content: d.content,
+        desc: d.n + ' tirages · ' + d.content,
+        can: !!st.can, why: st.why || '', locked: !st.can,
+        useView: e.useView, useLabel: e.useLabel,
+        got: s[e.last] || '',
+        kind: e.kind, odds: e.odds()
+      };
+    });
+  },
+
+  // Combien coûte le kiosque entier, et ce que le solde permet d'ouvrir maintenant.
+  kiosqueSummary() {
+    const k = this.kiosque();
+    return { n: k.length, open: k.filter((x) => x.can).length,
+      cheapest: k.reduce((a, x) => (a == null || x.cost < a ? x.cost : a), null) };
+  },
+
   // ---------- Pack Compétence ----------
   // Il ne contient QUE des compétences, aux taux du §11. C'est le pack qu'on ouvre
   // quand l'effectif est là mais que personne ne sort du lot.
@@ -64,6 +128,7 @@ export const Packs = {
     res.got.forEach((g) => inv.push(Object.assign({}, g.skill, { uid: uid++, on: null })));
     const cost = res.free ? 0 : def.cost;
     this.setState({ skillInv: inv, nextSkillUid: uid, balance: s.balance - cost,
+      lastSkillPack: res.got.map((g) => g.name + ' (' + g.label + ')').join(' · '),
       missions: this.bumpMission(s.missions, 'pack', 1) });
     if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
     this.bumpQuest('pack', 1);
@@ -136,7 +201,8 @@ export const Packs = {
       if (g.plans) coach.plan = (coach.plan || 0) + g.plans - 1;   // le plan de campagne contient trois plans
     });
     const cost = res.free ? 0 : def.cost;
-    this.setState({ coachInv: coach, balance: s.balance - cost });
+    this.setState({ coachInv: coach, balance: s.balance - cost,
+      lastCoachPack: res.got.map((g) => g.label).join(' · ') });
     if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
     this.bumpQuest('pack', 1);
     return { ok: true, added: res.got.map((g) => g.label) };

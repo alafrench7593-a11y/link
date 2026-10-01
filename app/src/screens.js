@@ -223,14 +223,13 @@ export function MatchScreen({ club, state, act }) {
 }
 
 // ---------- entraînement ----------
-export function TrainScreen({ club, state, act }) {
+export function TrainScreen({ club, state, act, go }) {
   // Une séance ciblée demande sur QUI l'appliquer : on ne choisit pas à la place
   // du directeur sportif. Tant qu'il n'a pas répondu, l'écran montre l'effectif.
   const [pickStat, setPickStat] = useState(null);
   const ti = club.trainInfo();
   const opts = club.trainingOptions();
-  const tp = club.TRAIN_PACK(), tps = club.trainPackState();
-  const cp = club.COACH_PACK(), cps = club.coachPackState();
+  const tp = club.TRAIN_PACK(), cp = club.COACH_PACK();
   const meets = club.meetings();
 
   if (pickStat) {
@@ -299,71 +298,97 @@ export function TrainScreen({ club, state, act }) {
         ))}
       </Card>
 
-      <PackCard club={club} def={tp} state={tps} odds={club.trainPackOdds()}
-        act={act} open={(c) => c.commitTrainPack(c.openTrainPack({}))} />
-      <PackCard club={club} def={cp} state={cps} odds={club.coachPackOdds()}
-        act={act} open={(c) => c.commitCoachPack(c.openCoachPack({}))} />
+      {/* L'achat est passé dans le kiosque : ici on se sert de ce qu'on a. */}
+      <Card tint="rgba(92,200,255,0.35)">
+        <Text style={st.body}>{tp.name} {tp.cost} · {cp.name} {cp.cost} jetons</Text>
+        <Text style={st.hint}>Les deux sont dans le kiosque, avec les deux autres packs. Tu les ouvres là-bas, tu t’en sers ici.</Text>
+        <Btn label="Le kiosque" small onPress={() => go('packs')} />
+      </Card>
 
       {state.trainLog ? <Card><Text style={st.body}>{state.trainLog}</Text></Card> : null}
     </ScrollView>
   );
 }
 
-// ---------- packs ----------
-export function PacksScreen({ club, state, act }) {
-  const def = club.THE_PACK(), ps = club.packState(def);
-  const sp = club.SKILL_PACK(), sps = club.skillPackState();
+// ---------- le kiosque ----------
+// Les quatre packs au même endroit. L'écran ne connaît aucun pack par son nom : il
+// affiche ce que club.kiosque() lui donne, donc un pack ajouté dans le moteur apparaît
+// ici sans qu'on touche à ce fichier.
+const OUVRIR = {
+  linkfoot: (c) => c.commitPack(c.openPack({})),
+  skill: (c) => c.commitSkillPack(c.openSkillPack({})),
+  train: (c) => c.commitTrainPack(c.openTrainPack({})),
+  coach: (c) => c.commitCoachPack(c.openCoachPack({}))
+};
+const TEINTE = { linkfoot: '#2ECC71', skill: '#C39BFF', train: '#5CC8FF', coach: '#F2C66B' };
+
+export function PacksScreen({ club, state, act, go }) {
   const col = club.collection();
+  const q = club.kiosqueSummary();
   return (
     <ScrollView contentContainerStyle={st.page}>
-      <Title sub="Un pack ne donne qu’une seule famille de choses.">Packs</Title>
+      <Title sub="Chacun ne donne qu’une seule famille de choses, donc tu sais toujours lequel ouvrir.">Le kiosque</Title>
       <Card>
         <Row>
           <View style={{ flex: 1 }}>
             <Text style={st.body}>Collection de cartes</Text>
-            <Text style={st.hint}>{state.shards || 0} fragments</Text>
+            <Text style={st.hint}>{state.shards || 0} fragments · {q.n} packs, {q.open} ouvrable(s)</Text>
           </View>
           <Text style={[st.ovr, { color: C.green }]}>{col.have} / {col.total}</Text>
         </Row>
       </Card>
-      <PackCard club={club} def={def} state={ps} odds={club.packOdds(def)}
-        act={act} open={(c) => c.commitPack(c.openPack({}))} />
-      <PackCard club={club} def={sp} state={sps} odds={club.skillPackOdds()}
-        act={act} open={(c) => c.commitSkillPack(c.openSkillPack({}))} />
+      {club.kiosque().map((k) => (
+        <PackCard key={k.key} k={k} act={act} go={go} />
+      ))}
     </ScrollView>
   );
 }
 
-function PackCard({ club, def, state, odds, act, open }) {
+function PackCard({ k, act, go }) {
   return (
-    <Card tint="rgba(46,204,113,0.35)">
+    <Card tint={TEINTE[k.key] + '59'}>
       <Row>
         <View style={{ flex: 1 }}>
-          <Text style={st.name}>{def.name}</Text>
-          <Text style={st.hint}>{def.n} tirages · {def.content}</Text>
+          <Tag color={TEINTE[k.key]}>{k.family}</Tag>
+          <Text style={st.name}>{k.name}</Text>
+          <Text style={st.hint}>{k.desc}</Text>
+          <Text style={st.hint}>{k.question}</Text>
         </View>
       </Row>
-      <Text style={st.lbl}>PROBABILITÉS</Text>
-      {odds.map((o, i) => (
-        <Row key={i}>
-          <Text style={[st.hint, { flex: 1 }]}>{o.label}</Text>
-          {o.rarLabel ? <Tag color={o.color}>{o.rarLabel}</Tag> : null}
-          <Text style={st.body}>{o.pct >= 10 ? o.pct.toFixed(0) : o.pct.toFixed(1).replace('.', ',')} %</Text>
-        </Row>
+      <Text style={st.lbl}>PROBABILITÉS PAR TIRAGE</Text>
+      {k.odds.map((o, i) => (
+        <View key={i}>
+          <Row>
+            <Text style={[st.hint, { flex: 1 }]}>{o.label}</Text>
+            {o.rarLabel ? <Tag color={o.color}>{o.rarLabel}</Tag> : null}
+            <Text style={st.body}>{o.pct >= 10 ? o.pct.toFixed(0) : o.pct.toFixed(1).replace('.', ',')} %</Text>
+          </Row>
+          {o.desc ? <Text style={st.hint}>{o.desc}</Text> : null}
+        </View>
       ))}
-      <Btn label={'OUVRIR · ' + def.cost + ' jetons'} why={state.why} onPress={() => act(open)} />
+      {k.got ? <Text style={[st.hint, { color: C.green }]}>Dernier tirage : {k.got}</Text> : null}
+      <Btn label={'OUVRIR · ' + k.cost + ' jetons'} why={k.why} onPress={() => act(OUVRIR[k.key])} />
+      <Row>
+        <Text style={[st.hint, { flex: 1 }]}>{k.useLabel}</Text>
+        <Btn label="Y aller" small onPress={() => go(k.useView === 'squad' ? 'squad' : k.useView)} />
+      </Row>
     </Card>
   );
 }
 
 // ---------- compétences et quêtes ----------
-export function SkillsScreen({ club, state, act }) {
+export function SkillsScreen({ club, state, act, go }) {
   const inv = club.skillInventory();
   const quests = club.activeQuests();
   return (
     <ScrollView contentContainerStyle={st.page}>
       <Title sub={club.skillCount().toLocaleString('fr-FR') + ' combinaisons possibles'}>Compétences</Title>
-      {inv.length === 0 ? <Empty>Aucune compétence en réserve. Ouvre un Pack Compétence.</Empty> : null}
+      <Card tint="rgba(195,155,255,0.35)">
+        <Text style={st.body}>{club.SKILL_PACK().name} · {club.SKILL_PACK().cost} jetons</Text>
+        <Text style={st.hint}>Tous les packs sont regroupés dans le kiosque. Ici on équipe, là-bas on ouvre.</Text>
+        <Btn label="Le kiosque" small onPress={() => go('packs')} />
+      </Card>
+      {inv.length === 0 ? <Empty>Aucune compétence en réserve pour l’instant.</Empty> : null}
       {inv.map((k) => (
         <Card key={k.uid}>
           <Row>

@@ -151,6 +151,8 @@ export const Cards = {
     this.setState({ squad, skillInv: inv, collected, nextSkillUid: uid,
       shards: (s.shards || 0) + res.shards,
       balance: s.balance - cost,
+      // ce que le kiosque affiche sous la carte du pack : le dernier tirage, en clair
+      lastCardPack: res.got.map((g) => g.name + ' (' + g.label + ')').join(' · '),
       missions: this.bumpMission(s.missions, 'pack', 1),
       freeQueue: res.free ? s.freeQueue.slice(1) : s.freeQueue });
     if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);

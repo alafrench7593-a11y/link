@@ -145,7 +145,11 @@ export const TrainPack = {
     const cost = res.free ? 0 : def.cost;
     this.setState({
       sessions: Math.min(R.max, (s.sessions || 0) + add),
-      inv, balance: s.balance - cost
+      inv, balance: s.balance - cost,
+      lastTrainPack: res.got.map((g) => g.label).join(' · ')
+        + (add ? ' → +' + add + ' séance' + (add > 1 ? 's' : '') : '')
+        + (cards.length ? ', cartes ' + cards.join(', ') : '')
+        + (xp ? ', +' + xp + ' XP à tout l’effectif' : '')
     });
     if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
     // un stage profite à tout l'effectif : c'est ce qui rend les lots rares désirables
