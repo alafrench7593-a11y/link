@@ -32,6 +32,7 @@ src/quests.js   quêtes et économie encadrée : plafonds par source, journal (�
 src/creation.js création du club, effectif normal de départ et joueur rare offert (§2, §3).
 src/trainpack.js le Pack Entraînement et les séances : l'entraînement est limité (§6, §10).
 src/packs.js    le registre des quatre packs, plus le Pack Compétence et le Pack Entraîneur.
+src/news.js     le journal : transforme de vrais résultats en articles (§26).
 src/versus.js   match entre deux vrais clubs, rejouable à l'identique depuis une graine.
 src/online.js   le client en ligne : il parle au serveur et rejoue, il ne décide rien.
 src/onlineui.js ce que l'écran affiche du multijoueur, y compris quand il n'y a pas de serveur.
@@ -480,7 +481,29 @@ rejoue la rencontre et dément un client qui prétendrait avoir gagné 9-0.
 | `POST /challenges` · `/:id/accept` | les défis entre amis |
 | `POST /tournaments` · `/:id/play` | les tournois, joués entre de vrais clubs, tirs au but compris |
 | `POST /pack` | l'ouverture d'un pack, tirée par le serveur |
+| `GET /feed` | le fil du journal : matchs, meilleures notes, transferts, classement |
+| `POST /market/list` · `/market/:id/buy` | le marché des transferts entre vrais clubs |
 | `GET /wallet` · `GET /balance` | ce qui a été versé, ce qu'il reste pour la journée |
+
+### L'écran En ligne et le journal
+
+Un écran dédié (`ClubEnLigne`) avec six diapositives : le journal, les ligues entre amis,
+les tournois, le classement général, les meilleures équipes, les meilleurs joueurs.
+
+Le journal n'invente rien. Chaque article cite un match, un classement ou un transfert
+qui a réellement eu lieu : la une est le résultat le plus marquant de la semaine, le
+joueur de la semaine est la meilleure note relevée, le mercato liste les vrais transferts.
+S'il n'y a pas de résultat, il n'y a pas d'article.
+
+Hors ligne, l'écran montre un **exemple étiqueté comme tel**, construit sur le club solo :
+assez pour juger la mise en page, sans mentir sur son contenu.
+
+### Le marché des transferts en ligne (§25)
+
+Un joueur se met en vente, les autres clubs l'achètent, le serveur encaisse et paie.
+Cinq annonces par club au maximum, prix entre 50 et 200 000 jetons, et le solde reconnu
+par le serveur fait foi : un prix changé côté client ne vaut rien. Chaque transfert
+passe dans le journal.
 
 ### Ce que le serveur refuse (§29)
 

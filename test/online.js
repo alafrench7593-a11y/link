@@ -149,6 +149,46 @@ const clubs = {};
   const deuxFois = await call('bob', 'POST', '/challenges/' + ch.body.id + '/accept');
   ok(deuxFois.status === 409, 'un défi ne se joue pas deux fois');
 
+  console.log('\n§25, §26 marché des transferts en ligne');
+  const joueur = { id: 777, name: 'R. Esperanza', pos: 'MIL', ovr: 74, plv: 9, rar: 'rare' };
+  const ann = await call('bob', 'POST', '/market/list', { player: joueur, price: 1200 });
+  ok(ann.status === 200 && ann.body.id, 'un joueur se met en vente', ann.body.sellerName + ' · ' + ann.body.price + ' jetons');
+  const horsLimites = await call('bob', 'POST', '/market/list', { player: joueur, price: 1 });
+  ok(horsLimites.status === 400, 'un prix hors limites est refusé', horsLimites.body.error);
+  const liste = await call('alice', 'GET', '/market');
+  ok(liste.body.items.length >= 1, 'il apparaît dans la liste');
+  const soiMarche = await call('bob', 'POST', '/market/' + ann.body.id + '/buy');
+  ok(soiMarche.status === 400, 'on n’achète pas son propre joueur');
+  const pauvre = await call('chloe', 'POST', '/market/' + ann.body.id + '/buy');
+  ok(pauvre.status === 402, 'sans jetons reconnus par le serveur, pas d’achat', pauvre.body.error);
+  const avantVendeur = (await storage.get('u_bob')) || { balance: 0 };
+  // alice a gagné des jetons en match classé : le serveur lui en reconnaît
+  const uA = (await storage.get('u_alice')) || { balance: 0 };
+  await storage.put('u_alice', Object.assign(uA, { balance: Math.max(uA.balance, 2000) }));
+  const achat = await call('alice', 'POST', '/market/' + ann.body.id + '/buy');
+  ok(achat.status === 200, 'un club qui a les jetons l’achète',
+    achat.status === 200 ? achat.body.player.name + ' pour ' + achat.body.price : achat.body.error);
+  const apresVendeur = await storage.get('u_bob');
+  ok(apresVendeur.balance > (avantVendeur.balance || 0), 'le vendeur est payé par le serveur',
+    (avantVendeur.balance || 0) + ' → ' + apresVendeur.balance);
+  const encore = await call('alice', 'POST', '/market/' + ann.body.id + '/buy');
+  ok(encore.status === 404, 'un joueur vendu ne se vend pas deux fois');
+  const feed2 = await call('alice', 'GET', '/feed');
+  ok((feed2.body.transfers || []).length >= 1, '§26 : le journal reprend le transfert',
+    (feed2.body.transfers[0] || {}).player + ' → ' + (feed2.body.transfers[0] || {}).to);
+
+  console.log('\n§26 le journal');
+  ok((feed2.body.matches || []).length >= 1, 'le fil contient les matchs joués', feed2.body.matches.length + ' matchs');
+  ok((feed2.body.players || []).length >= 1, 'et les meilleures notes', feed2.body.players.length + ' joueurs');
+  ok((feed2.body.ladder || []).every((r) => r.name), 'le classement parle de clubs, pas d’identifiants',
+    (feed2.body.ladder[0] || {}).name);
+  const Club2 = (await import('../src/club.js')).Club;
+  const red = new Club2();
+  const arts = red.buildNews(feed2.body);
+  ok(arts.length > 0, 'le journal produit des articles', arts.length + ' articles');
+  ok(arts.some((a2) => a2.section === 'une'), 'avec une une');
+  ok(arts.every((a2) => a2.title && a2.ago), 'chacun a un titre et une date');
+
   console.log('\n§26 classement général');
   const lad = await call('alice', 'GET', '/ladder');
   ok(lad.body.rows.length >= 2, 'le classement liste les clubs', lad.body.rows.length + ' clubs');

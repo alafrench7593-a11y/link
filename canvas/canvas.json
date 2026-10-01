@@ -1,0 +1,259 @@
+{
+ "v": 3,
+ "attachments": {},
+ "boards": {
+  "Activite.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "Activité",
+   "w": 390,
+   "x": 1880,
+   "y": 1264
+  },
+  "Club.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "9 · Mon Club",
+   "w": 390,
+   "x": 2350,
+   "y": 1264
+  },
+  "ClubLigue.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "Mon Club · Ligue",
+   "w": 390,
+   "x": 940,
+   "y": 2528
+  },
+  "ClubMaillot.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "Mon Club · Maillot",
+   "w": 390,
+   "x": 1880,
+   "y": 2528
+  },
+  "ClubMatch.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "Mon Club · adversaires",
+   "w": 390,
+   "x": 2350,
+   "y": 2528
+  },
+  "ClubMatchDirect.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "Mon Club · match en direct",
+   "w": 390,
+   "x": 2820,
+   "y": 2528
+  },
+  "ClubPacks.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "Mon Club · Packs",
+   "w": 390,
+   "x": 470,
+   "y": 2528
+  },
+  "ClubRapport.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "Mon Club · rapport",
+   "w": 390,
+   "x": 3290,
+   "y": 2528
+  },
+  "ClubRecompenses.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "Mon Club · Récompenses",
+   "w": 390,
+   "x": 1410,
+   "y": 2528
+  },
+  "ClubTactique.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "Mon Club · Tactique",
+   "w": 390,
+   "x": 0,
+   "y": 2528
+  },
+  "Communautes.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "4 · Communautés",
+   "w": 390,
+   "x": 2350,
+   "y": 0
+  },
+  "Competitions.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "8 · Compétitions",
+   "w": 390,
+   "x": 1410,
+   "y": 1264
+  },
+  "Createur.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "3 · Page créateur",
+   "w": 390,
+   "x": 1880,
+   "y": 0
+  },
+  "Fil.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "Accueil · fil d'actu",
+   "w": 390,
+   "x": 470,
+   "y": 0
+  },
+  "Inscription.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "0 · Inscription",
+   "w": 390,
+   "x": 0,
+   "y": 0
+  },
+  "Logo.dc.html": {
+   "h": 860,
+   "title": "Logo · 3 pistes",
+   "w": 1320,
+   "x": 0,
+   "y": 3792
+  },
+  "Main.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "1 · Matchs",
+   "w": 390,
+   "x": 940,
+   "y": 0
+  },
+  "Match.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "2 · Salon du match",
+   "w": 390,
+   "x": 1410,
+   "y": 0
+  },
+  "Paris.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "7 · Pronos",
+   "w": 390,
+   "x": 940,
+   "y": 1264
+  },
+  "Piece-p3ai.dc.html": {
+   "frameless": true,
+   "h": 844,
+   "title": "Dc-import",
+   "w": 390,
+   "x": 3800,
+   "y": 0
+  },
+  "Profil.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "5 · Mon profil",
+   "w": 390,
+   "x": 0,
+   "y": 1264
+  },
+  "Supporter.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "6 · Profil supporter",
+   "w": 390,
+   "x": 470,
+   "y": 1264
+  },
+  "ClubEnLigne.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "title": "Mon Club · En ligne",
+   "w": 390,
+   "x": 3760,
+   "y": 2528
+  }
+ },
+ "createdOnFiles": {
+  "at": "2026-09-30T00:23:18Z",
+  "v": 1
+ },
+ "designSystems": [],
+ "launch": {
+  "view": "focused",
+  "file": "Fil.dc.html"
+ },
+ "notes": {
+  "t1": {
+   "kind": "title1",
+   "maxW": 2740,
+   "text": "LinkFoot · écrans principaux",
+   "w": 240,
+   "x": 0,
+   "y": -300
+  },
+  "t2": {
+   "kind": "title1",
+   "maxW": 2740,
+   "text": "LinkFoot · profil, pronos, mini-jeu",
+   "w": 240,
+   "x": 0,
+   "y": 964
+  },
+  "t3": {
+   "kind": "title1",
+   "maxW": 3680,
+   "text": "Mon Club · tous les écrans",
+   "w": 240,
+   "x": 0,
+   "y": 2228
+  },
+  "t4": {
+   "kind": "title1",
+   "maxW": 1320,
+   "text": "Identité · logo",
+   "w": 240,
+   "x": 0,
+   "y": 3492
+  }
+ },
+ "order": [
+  "Inscription.dc.html",
+  "Fil.dc.html",
+  "Main.dc.html",
+  "Match.dc.html",
+  "Createur.dc.html",
+  "Communautes.dc.html",
+  "Profil.dc.html",
+  "Supporter.dc.html",
+  "Paris.dc.html",
+  "Competitions.dc.html",
+  "Activite.dc.html",
+  "Club.dc.html",
+  "ClubTactique.dc.html",
+  "ClubPacks.dc.html",
+  "ClubLigue.dc.html",
+  "ClubRecompenses.dc.html",
+  "ClubMaillot.dc.html",
+  "ClubMatch.dc.html",
+  "ClubMatchDirect.dc.html",
+  "ClubRapport.dc.html",
+  "ClubEnLigne.dc.html",
+  "Logo.dc.html",
+  "Piece-p3ai.dc.html"
+ ],
+ "pages": [],
+ "title": "LinkFoot (redesign)"
+}

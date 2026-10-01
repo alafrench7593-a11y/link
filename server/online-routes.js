@@ -50,7 +50,9 @@ const K = {
   ladder: () => 'ladder',
   tournament: (id) => 'tr_' + id,
   caps: (id) => 'caps_' + id,
-  ledger: (id) => 'led_' + id
+  ledger: (id) => 'led_' + id,
+  feed: () => 'feed',
+  market: () => 'market'
 };
 
 async function getOr(storage, key, fallback) {
@@ -116,6 +118,30 @@ async function updateLadder(storage, a, b, res) {
   return { a: ra, b: rb, da, db };
 }
 
+// §26 : alimenter le journal. On y range le score, les meilleures notes du match et
+// les mouvements au classement. Vingt lignes gardées de chaque, pas plus : le journal
+// raconte la semaine, pas l'histoire du jeu.
+async function pushFeed(storage, home, away, res, comp) {
+  const F = await getOr(storage, K.feed(), { matches: [], players: [], transfers: [], movers: [] });
+  F.matches.unshift({ at: now(), home: home.club, away: away.club, score: res.score, comp });
+  // l'homme du match de chaque côté, s'il y a des notes
+  ['H', 'A'].forEach((sd) => {
+    const r = res.rat && res.rat[sd];
+    if (!r || !r.length) return;
+    let bi = 0; r.forEach((v, i) => { if (v > r[bi]) bi = i; });
+    const team = sd === 'H' ? home : away;
+    const p = team.xi && team.xi[bi];
+    if (!p) return;
+    const goals = (res.log || []).filter((l) => l.k === 'G' && l.s === sd && l.text.indexOf(p.name) >= 0).length;
+    F.players.unshift({ at: now(), name: p.name, club: team.club, rating: r[bi], goals });
+  });
+  await storage.put(K.feed(), {
+    matches: F.matches.slice(0, 40), players: F.players.slice(0, 40),
+    transfers: (F.transfers || []).slice(0, 60), movers: (F.movers || []).slice(0, 20),
+    tournaments: F.tournaments || []
+  });
+}
+
 // ---------- le routeur ----------
 // Monté tel quel dans un Express : app.use('/online', onlineRoutes({ storage, auth }));
 // `auth(req)` doit rendre l'identifiant du joueur, ou null. Le serveur ne gère ni mot
@@ -160,6 +186,7 @@ export function onlineRoutes(opts) {
       const c2 = await loadCaps(storage, uid);
       c2.versusCount = (c2.versusCount || 0) + 1; c2.lastMatch = now();
       await storage.put(K.caps(uid), c2);
+      await pushFeed(storage, me, them, res, 'Match classé');
       // le replay tient en trois nombres : les deux joueurs le rejouent à l'identique
       return [200, { replay: { home: uid, away: p.id, seed }, score: res.score, res: res.res, elo: lad.a.elo, delta: lad.da, tokens: got }];
     },
@@ -369,6 +396,84 @@ export function onlineRoutes(opts) {
     'GET /balance': async (uid) => {
       const u = await getOr(storage, K.user(uid), { balance: 0, collected: [] });
       return [200, { balance: u.balance, collected: (u.collected || []).length }];
+    },
+
+    // §26 : le fil du journal. Le serveur garde les derniers résultats, les meilleures
+    // notes et les transferts, et le client en fait des articles. Rien n'est inventé :
+    // chaque ligne vient d'un match ou d'un transfert qui a réellement eu lieu.
+    'GET /feed': async (uid) => {
+      const F = await getOr(storage, K.feed(), { matches: [], players: [], transfers: [], movers: [] });
+      const L = await getOr(storage, K.ladder(), { rows: {} });
+      const rows = Object.values(L.rows).sort((a, b) => b.elo - a.elo).slice(0, 20).map((r, i) => Object.assign({ rank: i + 1 }, r));
+      // les noms de club, pour que le journal parle de clubs et pas d'identifiants
+      for (const r of rows) { const t = await storage.get(K.team(r.id)); r.name = t ? t.club : r.id; }
+      const mine = await getOr(storage, K.inbox(uid), { leagues: [] });
+      const leagues = [];
+      for (const id of mine.leagues || []) { const lg = await storage.get(K.league(id)); if (lg) leagues.push({ id: lg.id, name: lg.name, code: lg.code, members: lg.members.length, closed: lg.closed, days: lg.played.length, table: standings(lg.rows).slice(0, 6) }); }
+      return [200, {
+        matches: F.matches.slice(0, 20), players: F.players.slice(0, 20),
+        transfers: F.transfers.slice(0, 12), movers: F.movers.slice(0, 10),
+        ladder: rows, leagues, tournaments: F.tournaments || []
+      }];
+    },
+
+    // §25, §26 : le marché des transferts entre vrais clubs. On met un joueur en vente,
+    // les autres l'achètent. Le serveur tient la liste et encaisse : un prix changé
+    // côté client ne vaut rien ici (§29).
+    'POST /market/list': async (uid, body) => {
+      if (!body || !body.player || typeof body.price !== 'number') return [400, { error: 'annonce invalide' }];
+      const M = await getOr(storage, K.market(), { items: [] });
+      const mine = M.items.filter((x) => x.seller === uid);
+      if (mine.length >= 5) return [429, { error: 'cinq joueurs en vente au maximum' }];
+      if (body.price < 50 || body.price > 200000) return [400, { error: 'prix hors limites (50 à 200 000 jetons)' }];
+      const t = await storage.get(K.team(uid));
+      const item = {
+        id: 'tf' + Math.floor(rnd() * 1e9).toString(36),
+        seller: uid, sellerName: t ? t.club : uid,
+        player: body.player, price: Math.round(body.price), at: now()
+      };
+      M.items.unshift(item);
+      await storage.put(K.market(), { items: M.items.slice(0, 400) });
+      return [200, item];
+    },
+
+    'GET /market': async (uid) => {
+      const M = await getOr(storage, K.market(), { items: [] });
+      return [200, { items: M.items.slice(0, 60), mine: M.items.filter((x) => x.seller === uid) }];
+    },
+
+    'POST /market/:id/buy': async (uid, body, p) => {
+      const M = await getOr(storage, K.market(), { items: [] });
+      const i = M.items.findIndex((x) => x.id === p.id);
+      if (i < 0) return [404, { error: 'annonce introuvable ou déjà vendue' }];
+      const item = M.items[i];
+      if (item.seller === uid) return [400, { error: 'on n’achète pas son propre joueur' }];
+      const u = await getOr(storage, K.user(uid), { balance: 0, collected: [] });
+      if (u.balance < item.price) return [402, { error: 'il te manque ' + (item.price - u.balance) + ' jetons' }];
+      u.balance -= item.price;
+      await storage.put(K.user(uid), u);
+      await earn(storage, item.seller, item.price, 'vente', 'Vente de ' + item.player.name);
+      M.items.splice(i, 1);
+      await storage.put(K.market(), { items: M.items });
+      const led = await getOr(storage, K.ledger(uid), []);
+      led.unshift({ at: now(), a: -item.price, l: 'Achat de ' + item.player.name, src: 'achat' });
+      await storage.put(K.ledger(uid), led.slice(0, 200));
+      // le journal s'en fait l'écho
+      const F = await getOr(storage, K.feed(), { matches: [], players: [], transfers: [], movers: [] });
+      const me = await storage.get(K.team(uid));
+      F.transfers.unshift({ at: now(), player: item.player.name, from: item.sellerName, to: me ? me.club : uid, price: item.price });
+      await storage.put(K.feed(), Object.assign(F, { transfers: F.transfers.slice(0, 60) }));
+      return [200, { ok: true, player: item.player, price: item.price, balance: u.balance }];
+    },
+
+    'POST /market/:id/cancel': async (uid, body, p) => {
+      const M = await getOr(storage, K.market(), { items: [] });
+      const i = M.items.findIndex((x) => x.id === p.id);
+      if (i < 0) return [404, { error: 'annonce introuvable' }];
+      if (M.items[i].seller !== uid) return [403, { error: 'ce n’est pas ton annonce' }];
+      M.items.splice(i, 1);
+      await storage.put(K.market(), { items: M.items });
+      return [204, null];
     },
 
     // Ce que le serveur a versé à ce joueur, et ce qu'il lui reste pour la journée (§29).

@@ -2489,6 +2489,7 @@ const Tactics = {
 
 
 
+
 class Club {
   constructor(state) {
     this.state = Object.assign({}, INITIAL_STATE(), state || {});
@@ -2569,7 +2570,7 @@ class Club {
 }
 
 // §80 : chaque domaine vit dans son fichier et vient se mélanger ici.
-Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs);
+Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs, News);
 
 // LinkFoot : sauvegarde. Sérialise l'état du club, le relit, et le range
 // où tu veux : mémoire, navigateur, ou ton serveur.

@@ -121,6 +121,11 @@ export declare class Club {
   plansLeft(): number;
   usePlan(styleKey: string): { ok: boolean; why?: string; style?: string };
   styleList(): Array<{ k: string; name: string; [key: string]: unknown }>;
+  NEWS_SECTIONS(): Array<{ id: string; label: string }>;
+  buildNews(feed: unknown): NewsItem[];
+  newsBySection(feed: unknown): Array<{ id: string; label: string; items: NewsItem[]; empty: boolean }>;
+  onlineSlides(feed: unknown): Array<{ id: string; label: string; sub: string; empty: boolean; emptyWhy: string }>;
+  demoFeed(): Record<string, unknown>;
   UPGRADE_CARDS(): Array<[string, string]>;
   useUpgrade(playerId: number, stat: string): { ok: boolean; why?: string; ovr?: number };
   TRAININGS(): Array<{ id: string; label: string; desc: string; [k: string]: unknown }>;
@@ -317,3 +322,6 @@ export declare class OnlineClient {
 }
 
 export declare function connectOnline(club: Club, online: OnlineClient): Club;
+
+/** Un article du journal, construit depuis un vrai résultat. */
+export interface NewsItem { section: string; kind: string; at: number; title: string; sub: string; body: string; ago: string; }

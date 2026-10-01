@@ -51,6 +51,13 @@ export class OnlineClient {
   openPack(free) { return this.call('POST', '/pack', { free: !!free }); }
   balance() { return this.call('GET', '/balance'); }
 
+  // §26 : le fil du journal, et le marché des transferts entre vrais clubs.
+  feed() { return this.call('GET', '/feed'); }
+  market() { return this.call('GET', '/market'); }
+  listPlayer(player, price) { return this.call('POST', '/market/list', { player, price }); }
+  buyPlayer(id) { return this.call('POST', '/market/' + id + '/buy'); }
+  cancelListing(id) { return this.call('POST', '/market/' + id + '/cancel'); }
+
   ladder() { return this.call('GET', '/ladder'); }
   wallet() { return this.call('GET', '/wallet'); }
 
@@ -105,6 +112,30 @@ export function connectOnline(club, online) {
     if (!r.ok) return r;
     club.commitPack({ ok: true, def: club.THE_PACK(), got: r.got, shards: r.shards, free: !!free });
     club.setState({ balance: r.balance, onlineError: null });
+    return r;
+  };
+
+  // Le journal et le marché : on garde la dernière réponse du serveur pour que l'écran
+  // ait quelque chose à montrer même pendant un rechargement.
+  club.refreshFeed = async () => { const r = await guard(() => online.feed()); if (r.ok) club.onlineState.feed = r; return r; };
+  club.refreshMarket = async () => { const r = await guard(() => online.market()); if (r.ok) club.onlineState.market = r; return r; };
+
+  // Mettre un joueur en vente : on envoie la fiche telle que le serveur la verra.
+  club.sellOnline = async (id, price) => {
+    const p = club.state.squad.find((x) => x.id === id);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    if (club.state.squad.length <= 12) return { ok: false, why: 'Il te faut au moins 12 joueurs' };
+    const card = { id: p.id, name: p.name, pos: p.pos, ovr: p.ovr, plv: club.playerLevel(p), rar: club.rarityFor(p).id };
+    const r = await guard(() => online.listPlayer(card, price || club.valueOf(p)));
+    if (r.ok) club.setState({ squad: club.state.squad.filter((x) => x.id !== id), trainLog: p.name + ' est en vente' });
+    return r;
+  };
+
+  club.buyOnline = async (listingId) => {
+    const r = await guard(() => online.buyPlayer(listingId));
+    if (!r.ok) return r;
+    const p = Object.assign({}, r.player, { fresh: true, scouted: true, pxp: 0 });
+    club.setState({ squad: club.state.squad.concat([p]), balance: r.balance, trainLog: p.name + ' rejoint le club' });
     return r;
   };
 
