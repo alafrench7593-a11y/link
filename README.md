@@ -16,8 +16,15 @@ JavaScript ordinaire, donc sérialisable, donc persistable où tu veux.
 src/engine.js   moteur de match : 11 contre 11, physique du ballon, décisions des joueurs,
                 dribbles, tacles, hors-jeu, coups de pied arrêtés, cartons, remplacements,
                 contrôle direct au joystick. ~1 300 lignes, zéro dépendance.
-src/club.js     classe Club : effectif, compétences, entraînement, forme, blessures, marché,
-                staff, stade, centre de formation, synergies, finances, saison, divisions.
+src/club.js     classe Club : le noyau, qui mélange les modules de domaine ci-dessous.
+src/players.js  fiches joueurs : statistiques, note globale, profil.
+src/skills.js   compétences procédurales (§32 à §36).
+src/cards.js    raretés, catalogue de 500 cartes, packs, collection, fragments, niveaux (§56 à §65).
+src/staff.js    staff, stade, centre de formation, synergies, finances.
+src/training.js entraînement, forme, énergie, blessures (§68, §69).
+src/transfer.js valeur, marché, vente (§71).
+src/progression.js niveaux, missions, suites de match, saison, vieillissement (§70, §72).
+src/tactics.js  tactiques, formations, rôles, composition, passerelle vers le moteur (§40 à §43).
 src/state.js    état de départ d'un club.
 src/save.js     sérialisation versionnée et stockages (mémoire, navigateur, HTTP).
 src/league.js   classements, calendriers, montées et descentes (§72, §75).
@@ -255,6 +262,19 @@ géolocalisation et les règles des plateformes validés.
 Un doublon donne des fragments, les fragments font monter une carte du niveau 1 au
 niveau 5 : 25, 60, 140 puis 320 fragments. Chaque niveau donne +2 sur les deux
 statistiques les plus importantes du poste, donc un gain réel de note.
+
+## Découpage (§80)
+
+Quinze modules : `engine`, `players`, `skills`, `cards`, `staff`, `training`, `transfer`,
+`progression`, `tactics`, `club`, `state`, `save`, `league`, `tournament`, `react`,
+plus `server/`. Chaque domaine expose un objet de méthodes que `club.js` mélange dans
+`Club.prototype`, donc l'appelant ne voit qu'une seule classe.
+
+`engine.js` reste d'un seul tenant : c'est une fermeture unique où les décisions, la
+physique et le rendu des images partagent le même état `W`. Le découper demanderait de
+faire transiter cet état entre modules, ce qui coûterait en performance et ferait
+courir un risque de régression sur un moteur calibré. Le script de synchronisation lit
+maintenant les neuf fichiers de règles, pas seulement `club.js`.
 
 ## Versions de sauvegarde
 

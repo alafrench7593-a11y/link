@@ -912,8 +912,9 @@ class Component extends DCLogic {
     const pk = this.state.pack;
     if (!pk || pk.phase !== 'charge') return;
     const taps = pk.taps + 1;
-    this.buzz(taps < 3 ? 35 : [40, 30, 40, 30, 120]);
-    if (taps < 3) { this.setState({ pack: Object.assign({}, pk, { taps }) }); return; }
+    const need = pk.def && pk.def.fx === 'gold' ? 5 : 3;   // §59 une carte Or se mérite
+    this.buzz(taps < need ? 25 + taps * 12 : [60, 30, 60, 30, 50, 30, 220]);
+    if (taps < need) { this.setState({ pack: Object.assign({}, pk, { taps }) }); return; }
     this.setState({ pack: Object.assign({}, pk, { taps, burst: true }) });
     const best = pk.got[0].ovr;
     this.later(() => {
@@ -1730,12 +1731,37 @@ class Component extends DCLogic {
         g.net = 1; g.netSide = e.s;
         const col = e.s === 'H' ? this.state.kit.c1 : mt.opp.color;
         for (let k = 0; k < 70; k++) g.confetti.push({ x: W / 2 + (Math.random() - 0.5) * 60, y: H * 0.3, vx: (Math.random() - 0.5) * 260, vy: -Math.random() * 260 - 60, c: [col, '#FFFFFF', '#FFE14D', '#86EBA0'][k % 4], r: Math.random() * 6, life: 2.2 });
-      } else if (e.k === 'card') g.popups.push({ c: e.c, col: e.col, t: 0 });
+        g.cut = { name: e.name || '', side: e.s, t: 0, dur: 1.5, col };   // §49 plan serré sur le buteur
+        g.roar = Math.max(g.roar || 0, 1);                                    // §53 le stade explose
+        g.shake = 1;
+      } else if (e.k === 'card') { g.popups.push({ c: e.c, col: e.col, t: 0 }); if (e.col === '#E5484D') { g.roar = Math.max(g.roar || 0, 0.7); g.shake = 0.5; } }
+      else if (e.k === 'roar') { g.roar = Math.max(g.roar || 0, e.v || 0.5); }
+      else if (e.k === 'skill') { g.fx = g.fx || []; g.fx.push({ c: e.c, tier: e.tier || 1, t: 0 }); if (e.tier >= 4) { g.roar = Math.max(g.roar || 0, 0.5); } }
+    };
+    // §49 le plan serré : nom du buteur en grand, volets qui s'ouvrent, puis retour au jeu
+    const drawCutIn = (rdt) => {
+      const c = g.cut; if (!c) return; c.t += rdt; if (c.t > c.dur) { g.cut = null; return; }
+      const u = c.t / c.dur, open = Math.min(1, u * 4), close = Math.max(0, (u - 0.78) / 0.22);
+      const h = (H - BAR) * 0.3 * open * (1 - close);
+      if (h < 1) return;
+      const cy = (H - BAR) / 2;
+      x.save();
+      x.fillStyle = 'rgba(6,10,8,0.93)'; x.fillRect(0, cy - h / 2, W, h);
+      const gr = x.createLinearGradient(0, cy - h / 2, W, cy + h / 2); gr.addColorStop(0, c.col); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      x.fillStyle = gr; x.globalAlpha = 0.35; x.fillRect(0, cy - h / 2, W, 3); x.fillRect(0, cy + h / 2 - 3, W, 3); x.globalAlpha = 1;
+      if (h > 26) {
+        const slide = (1 - open) * -30;
+        x.textAlign = 'center'; x.textBaseline = 'middle';
+        x.fillStyle = '#F2F5F3'; x.font = '900 11px Sora, Arial'; x.fillText('B U T', W / 2 + slide, cy - h * 0.22);
+        x.fillStyle = c.col; x.font = '900 ' + Math.min(30, h * 0.34) + 'px Sora, Arial';
+        x.fillText((c.name || '').toUpperCase().slice(0, 18), W / 2 + slide, cy + h * 0.1);
+      }
+      x.restore();
     };
     const drawBanner = (rdt) => {
       const bn = g.banner; if (!bn) return; bn.t += rdt; if (bn.t > bn.dur) { g.banner = null; return; }
       const e = Math.min(1, bn.t * 5), out = Math.max(0, (bn.t - bn.dur + 0.3) / 0.3), a = 1 - out;
-      const big = bn.text === 'BUT !', bw = big ? 236 : 206, bh = big ? 66 : 46, bx = W / 2 - bw / 2 + (1 - e) * -40, byy = big ? (H - BAR) * 0.34 : 42;
+      const big = bn.text === 'BUT !', bw = big ? 236 : 206, bh = big ? 66 : 46, bx = W / 2 - bw / 2 + (1 - e) * -40, byy = big ? (g.cut ? 34 : (H - BAR) * 0.34) : 42;
       x.globalAlpha = a; x.fillStyle = 'rgba(10,14,12,0.9)'; x.beginPath(); if (x.roundRect) x.roundRect(bx, byy, bw, bh, 12); else x.rect(bx, byy, bw, bh); x.fill(); x.fillStyle = bn.color; x.fillRect(bx, byy, 6, bh);
       x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = bn.color; x.font = '800 ' + (big ? 30 : 17) + 'px Sora, Arial'; x.fillText(bn.text, W / 2 + 3 + (1 - e) * -40, byy + (bn.sub ? bh * 0.4 : bh / 2));
       if (bn.sub) { x.fillStyle = '#F2F5F3'; x.font = '600 ' + (big ? 12 : 10.5) + 'px Sora, Arial'; x.fillText(bn.sub, W / 2 + 3 + (1 - e) * -40, byy + bh * 0.76); }
@@ -1745,7 +1771,9 @@ class Component extends DCLogic {
       if (!g.alive) return;
       g.raf = requestAnimationFrame(draw);
       const now = performance.now(), rdt = Math.min(0.05, (now - (g.last || now)) / 1000); g.last = now;
-      x.setTransform(dpr, 0, 0, dpr, 0, 0); x.fillStyle = '#18222B'; x.fillRect(0, 0, W, H);
+      g.roar = Math.max(0, (g.roar || 0) - rdt * 1.1); g.shake = Math.max(0, (g.shake || 0) - rdt * 2.4);
+      const shx = g.shake > 0 ? (Math.random() - 0.5) * g.shake * 5 : 0, shy = g.shake > 0 ? (Math.random() - 0.5) * g.shake * 5 : 0;
+      x.setTransform(dpr, 0, 0, dpr, dpr * shx, dpr * shy); x.fillStyle = '#18222B'; x.fillRect(-6, -6, W + 12, H + 12);
       const mt = this.state.match, pb = this.pb;
       if (!mt) return;
       const clip = pb ? (pb.clip || pb.prev) : null;
@@ -1775,6 +1803,7 @@ class Component extends DCLogic {
       g.cam.x += (cxT - g.cam.x) * Math.min(1, rdt * 3); g.cam.y += (cyT - g.cam.y) * Math.min(1, rdt * 3);
       const OX = W / 2 - g.cam.x * Z, OY = (H - BAR) / 2 - g.cam.y * Z;
       x.setTransform(dpr * Z / K, 0, 0, dpr * Z / K, dpr * (OX - MG * Z), dpr * (OY - MG * Z)); x.drawImage(off, 0, 0);
+      if (g.roar > 0.02) { x.setTransform(dpr, 0, 0, dpr, 0, 0); x.globalAlpha = g.roar * 0.14; x.fillStyle = '#FFF4C2'; x.fillRect(0, 0, W, H - BAR); x.globalAlpha = 1; }
       x.setTransform(dpr * Z, 0, 0, dpr * Z, dpr * OX, dpr * OY);
       if (g.net > 0) { g.net = Math.max(0, g.net - rdt * 0.5); const gy0 = g.netSide === 'H' ? -2 : PL; x.fillStyle = 'rgba(255,255,255,' + (0.4 * g.net) + ')'; x.fillRect(30.34 + Math.sin(now / 16) * 0.2, gy0, 7.32, 2); }
       if (A) {
@@ -1835,6 +1864,17 @@ class Component extends DCLogic {
       x.setTransform(dpr, 0, 0, dpr, 0, 0);
       const vg = x.createRadialGradient(W / 2, (H - BAR) / 2, Math.min(W, H) * 0.35, W / 2, (H - BAR) / 2, Math.max(W, H) * 0.75); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.45)'); x.fillStyle = vg; x.fillRect(0, 0, W, H - BAR);
       if (A) { x.textAlign = 'left'; x.textBaseline = 'middle'; x.font = '800 10px Sora, Arial'; const sc = (A.sc || [0, 0]); const lab = 'TON FC ' + sc[0] + ' - ' + sc[1] + ' ' + (mt.opp.club || '').toUpperCase().slice(0, 12); const tw = x.measureText(lab).width + 16; x.fillStyle = 'rgba(10,14,12,0.78)'; x.beginPath(); if (x.roundRect) x.roundRect(W - tw - 10, 10, tw, 22, 11); else x.rect(W - tw - 10, 10, tw, 22); x.fill(); x.fillStyle = '#F2F5F3'; x.fillText(lab, W - tw - 2, 21); }
+      if (g.fx && g.fx.length) {
+        x.setTransform(dpr * Z, 0, 0, dpr * Z, dpr * OX, dpr * OY);
+        g.fx = g.fx.filter((f2) => { f2.t += rdt; return f2.t < 0.9; });
+        g.fx.forEach((f2) => { const pp = pos(f2.c); if (!pp) return; const u = f2.t / 0.9;
+          x.save(); x.globalAlpha = (1 - u) * 0.85; x.lineWidth = 0.1 + f2.tier * 0.045;
+          x.strokeStyle = ['#FFFFFF', '#CFE0D4', '#7FB0FF', '#C39BFF', '#FFE59A'][Math.min(4, f2.tier - 1)];
+          for (let k2 = 0; k2 < f2.tier; k2++) { x.beginPath(); x.arc(pp.x, pp.y, 0.7 + u * (1.6 + k2 * 0.9), 0, 7); x.stroke(); }
+          x.restore(); });
+        x.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      drawCutIn(rdt);
       drawBanner(rdt);
       if (pb && pb.trans > 0) {
         const a = Math.min(1, pb.trans / 0.25) * 0.85; x.fillStyle = 'rgba(8,12,10,' + a + ')'; x.fillRect(0, 0, W, H - BAR);
@@ -2395,6 +2435,7 @@ class Component extends DCLogic {
         res = R() < pOT ? (R() < pG ? 'goal' : 'save') : 'miss';
       }
       if (res === 'goal' || res === 'save') W.st[s].on++;
+      if (xg > 0.3 && res !== 'goal') mark({ k: 'roar', v: 0.55 });   // §53 le stade retient son souffle sur une grosse occasion
       if (res === 'goal') oo.g++;
       const gy = yOf(s, PL), sgn = s === 'H' ? -1 : 1;
       let tx, ty, post = false;
@@ -2565,7 +2606,7 @@ class Component extends DCLogic {
     };
     const ownGoal = (bl, shooter) => {
       const s = shooter.s, o = bl.s; W.score[s]++; rt(bl, -0.9); const b = W.ball; b.x = 34; b.y = yOf(s, PL + 1.3); b.z = 0.3;
-      mark({ k: 'goal', s, c: bl.code }); banner('CSC !', bl.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#86EBA0' : '#FF8A8A', 2.8);
+      mark({ k: 'goal', s, c: bl.code, name: bl.short }); banner('CSC !', bl.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#86EBA0' : '#FF8A8A', 2.8);
       com('Malheureux ' + bl.short + ' : la frappe de ' + shooter.short + ' est déviée dans son propre but !');
       logE('BUT ! ' + bl.name + ' contre son camp, frappe déviée de ' + shooter.name + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#8BFFA8' : '#FF8A8A', 'G', s);
       key(100, s, 'goal'); W.celK = 'calme'; W.cel = W.t + 3.2; W.celS = s; W.scorer = shooter; W.owner = null; W.fl = null;
@@ -2605,7 +2646,7 @@ class Component extends DCLogic {
       const BAN = { pen: ['PENALTY TRANSFORMÉ', 'BUT !'], fk: ['COUP FRANC MAGISTRAL', 'QUEL COUP FRANC !'], head: ['BUT DE LA TÊTE !', 'BUT !'], lob: ['LOB SOMPTUEUX', 'QUEL BUT !'], long: ['GOLAZO !', 'QUELLE FRAPPE !', 'MISSILE !'], volley: ['QUELLE REPRISE !', 'BUT !'], through: ['BUT !', 'PROFONDEUR !'], counter: ['CONTRE ÉCLAIR', 'BUT !'], solo: ['EXPLOIT INDIVIDUEL', 'QUEL BUT !'], close: ['BUT !', 'RENARD DES SURFACES'], pass: ['BUT !', 'BUUUT !'] };
       const COM = { pen: ['Sans trembler : {p} transforme le penalty.', '{p} prend le gardien à contre-pied !'], fk: ['Coup franc de {p}, le ballon file dans la lucarne !', '{p} passe au-dessus du mur, imparable !'], head: ['{p} s’élève plus haut que tout le monde !', 'Tête rageuse de {p}, le gardien ne peut rien faire !'], lob: ['{p} voit le gardien avancé et le lobe !', 'Pichenette de génie de {p} !'], long: ['Frappe de loin de {p}, quel missile !', '{p} arme de 25 mètres, lucarne opposée !', 'Personne ne l’attendait : {p} tente et ça rentre !'], volley: ['Reprise de volée de {p}, magnifique !', '{p} reprend le centre en une touche !'], through: ['{p} file seul au but et conclut !', 'Lancé dans la profondeur, {p} ne tremble pas !'], counter: ['Contre éclair conclu par {p} !', 'En trois passes, {p} punit la défense !'], solo: ['{p} efface tout le monde et marque !', 'Exploit personnel de {p}, quel slalom !'], close: ['{p} pousse le ballon au fond, à bout portant !', 'Cafouillage dans la surface, {p} en profite !'], pass: ['{p} croise sa frappe, le ballon fait trembler les filets !', 'Frappe placée de {p}, petit filet !', '{p} trouve la faille !'] };
       const excl = f.xg < 0.1 ? ' Une frappe à ' + Math.round(f.xg * 100) + ' % de chance : du grand art.' : '';
-      mark({ k: 'goal', s, c: p.code }); banner(pick(BAN[kind]), p.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#86EBA0' : '#FF8A8A', 2.8);
+      mark({ k: 'goal', s, c: p.code, name: p.short }); banner(pick(BAN[kind]), p.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#86EBA0' : '#FF8A8A', 2.8);
       com(pick(COM[kind]).replace('{p}', p.short) + excl);
       logE('BUT ! ' + p.name + ' ' + how + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#8BFFA8' : '#FF8A8A', 'G', s);
       key(100, s, 'goal');
@@ -3304,15 +3345,17 @@ class Component extends DCLogic {
     const HUM = () => (W.hum != null && TM.H.ps[W.hum] && !TM.H.ps[W.hum].red ? TM.H.ps[W.hum] : null);
     const IN = () => (cfg.input ? cfg.input() : null);
     // gestes techniques : palier selon dribble + agilité, du plus simple au plus rare
+    // §31 cinq tiers de gestes : 1 basique, 2 intermédiaire, 3 avancé, 4 élite, 5 exceptionnel.
+    // Le tier conditionne l'accès au geste et pilote le rendu : plus le tier est haut, plus l'effet visuel est marqué.
     const DRIBS = [
-      { n: 'crochet', lab: 'crochet', min: 0, cost: 0.22, gain: 0.30 },
-      { n: 'protect', lab: 'protection de balle', min: 0, cost: 0.10, gain: 0.18 },
-      { n: 'feinte', lab: 'feinte de corps', min: 62, cost: 0.26, gain: 0.40 },
-      { n: 'double', lab: 'double contact', min: 68, cost: 0.28, gain: 0.46 },
-      { n: 'passement', lab: 'passement de jambes', min: 74, cost: 0.32, gain: 0.54 },
-      { n: 'roulette', lab: 'roulette', min: 80, cost: 0.36, gain: 0.62 },
-      { n: 'pont', lab: 'petit pont', min: 85, cost: 0.42, gain: 0.74 },
-      { n: 'sombrero', lab: 'sombrero', min: 91, cost: 0.48, gain: 0.82 }
+      { n: 'crochet', lab: 'crochet', min: 0, cost: 0.22, gain: 0.30, tier: 1 },
+      { n: 'protect', lab: 'protection de balle', min: 0, cost: 0.10, gain: 0.18, tier: 1 },
+      { n: 'feinte', lab: 'feinte de corps', min: 62, cost: 0.26, gain: 0.40, tier: 2 },
+      { n: 'double', lab: 'double contact', min: 68, cost: 0.28, gain: 0.46, tier: 2 },
+      { n: 'passement', lab: 'passement de jambes', min: 74, cost: 0.32, gain: 0.54, tier: 3 },
+      { n: 'roulette', lab: 'roulette', min: 80, cost: 0.36, gain: 0.62, tier: 3 },
+      { n: 'pont', lab: 'petit pont', min: 85, cost: 0.42, gain: 0.74, tier: 4 },
+      { n: 'sombrero', lab: 'sombrero', min: 91, cost: 0.48, gain: 0.82, tier: 5 }
     ];
     const pickDrib = (p, forced) => {
       const lvl = p.dri * 0.7 + p.agi0 * 30;
@@ -3336,6 +3379,7 @@ class Component extends DCLogic {
         const ux = p.fx, uy = p.fy, side = R() < 0.5 ? 1 : -1;
         p.carry = { x: cl(p.x + ux * 7 - uy * side * 2.5, 1, PW - 1), y: cl(p.y + uy * 7 + ux * side * 2.5, 1, PL - 1), until: W.t + 1.1, drib: true };
         com(p.short + ' : ' + g.lab + ' sur ' + d2.short + ' !');
+        mark({ k: 'skill', c: p.code, tier: g.tier });   // §28 à §31 le rendu suit le tier du geste
         if (g.min >= 80) { banner('QUEL GESTE !', p.short, '#C8F56B', 1.2); logE(p.short + ' élimine ' + d2.short + ' d’' + (g.n === 'pont' ? 'un petit pont' : 'une ' + g.lab), '#C8F56B', 'drib', p.s); }
         key(g.min >= 80 ? 30 : 14, p.s, 'drib');
       } else {
@@ -3941,7 +3985,7 @@ class Component extends DCLogic {
       fxGlow: FX.glow, fxRay: FX.ray, fxText: FX.text,
       raysOpacity: pk ? (pk.phase === 'charge' ? 0.35 + pk.taps * 0.2 : 1) : 0,
       fxPack: pk ? pk.def.color : '', packName: pk ? pk.def.name.replace('Pack ', '') : '', packCountLabel: pk ? pk.def.n + ' JOUEURS' : '',
-      packCls: pk ? (pk.taps >= 2 ? 'lf-shake-hard' : 'lf-shake') : '',
+      packCls: pk ? (pk.taps >= (pk.def && pk.def.fx === 'gold' ? 3 : 2) ? 'lf-shake-hard' : 'lf-shake') : '',
       chargeHint: pk ? ['TOUCHE POUR OUVRIR', 'ENCORE !', 'ENCORE UNE FOIS !'][Math.min(2, pk.taps)] : '',
       tapPack: () => this.tapPack(),
       walkBanner: best ? (best.ovr >= 85 ? 'LÉGENDE !' : best.ovr >= 80 ? 'WALKOUT !' : 'GROSSE PIOCHE !') : '',

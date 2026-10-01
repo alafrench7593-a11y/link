@@ -267,6 +267,7 @@ export function makeEngine(cfg) {
         res = R() < pOT ? (R() < pG ? 'goal' : 'save') : 'miss';
       }
       if (res === 'goal' || res === 'save') W.st[s].on++;
+      if (xg > 0.3 && res !== 'goal') mark({ k: 'roar', v: 0.55 });   // §53 le stade retient son souffle sur une grosse occasion
       if (res === 'goal') oo.g++;
       const gy = yOf(s, PL), sgn = s === 'H' ? -1 : 1;
       let tx, ty, post = false;
@@ -437,7 +438,7 @@ export function makeEngine(cfg) {
     };
     const ownGoal = (bl, shooter) => {
       const s = shooter.s, o = bl.s; W.score[s]++; rt(bl, -0.9); const b = W.ball; b.x = 34; b.y = yOf(s, PL + 1.3); b.z = 0.3;
-      mark({ k: 'goal', s, c: bl.code }); banner('CSC !', bl.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#86EBA0' : '#FF8A8A', 2.8);
+      mark({ k: 'goal', s, c: bl.code, name: bl.short }); banner('CSC !', bl.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#86EBA0' : '#FF8A8A', 2.8);
       com('Malheureux ' + bl.short + ' : la frappe de ' + shooter.short + ' est déviée dans son propre but !');
       logE('BUT ! ' + bl.name + ' contre son camp, frappe déviée de ' + shooter.name + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#8BFFA8' : '#FF8A8A', 'G', s);
       key(100, s, 'goal'); W.celK = 'calme'; W.cel = W.t + 3.2; W.celS = s; W.scorer = shooter; W.owner = null; W.fl = null;
@@ -477,7 +478,7 @@ export function makeEngine(cfg) {
       const BAN = { pen: ['PENALTY TRANSFORMÉ', 'BUT !'], fk: ['COUP FRANC MAGISTRAL', 'QUEL COUP FRANC !'], head: ['BUT DE LA TÊTE !', 'BUT !'], lob: ['LOB SOMPTUEUX', 'QUEL BUT !'], long: ['GOLAZO !', 'QUELLE FRAPPE !', 'MISSILE !'], volley: ['QUELLE REPRISE !', 'BUT !'], through: ['BUT !', 'PROFONDEUR !'], counter: ['CONTRE ÉCLAIR', 'BUT !'], solo: ['EXPLOIT INDIVIDUEL', 'QUEL BUT !'], close: ['BUT !', 'RENARD DES SURFACES'], pass: ['BUT !', 'BUUUT !'] };
       const COM = { pen: ['Sans trembler : {p} transforme le penalty.', '{p} prend le gardien à contre-pied !'], fk: ['Coup franc de {p}, le ballon file dans la lucarne !', '{p} passe au-dessus du mur, imparable !'], head: ['{p} s’élève plus haut que tout le monde !', 'Tête rageuse de {p}, le gardien ne peut rien faire !'], lob: ['{p} voit le gardien avancé et le lobe !', 'Pichenette de génie de {p} !'], long: ['Frappe de loin de {p}, quel missile !', '{p} arme de 25 mètres, lucarne opposée !', 'Personne ne l’attendait : {p} tente et ça rentre !'], volley: ['Reprise de volée de {p}, magnifique !', '{p} reprend le centre en une touche !'], through: ['{p} file seul au but et conclut !', 'Lancé dans la profondeur, {p} ne tremble pas !'], counter: ['Contre éclair conclu par {p} !', 'En trois passes, {p} punit la défense !'], solo: ['{p} efface tout le monde et marque !', 'Exploit personnel de {p}, quel slalom !'], close: ['{p} pousse le ballon au fond, à bout portant !', 'Cafouillage dans la surface, {p} en profite !'], pass: ['{p} croise sa frappe, le ballon fait trembler les filets !', 'Frappe placée de {p}, petit filet !', '{p} trouve la faille !'] };
       const excl = f.xg < 0.1 ? ' Une frappe à ' + Math.round(f.xg * 100) + ' % de chance : du grand art.' : '';
-      mark({ k: 'goal', s, c: p.code }); banner(pick(BAN[kind]), p.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#86EBA0' : '#FF8A8A', 2.8);
+      mark({ k: 'goal', s, c: p.code, name: p.short }); banner(pick(BAN[kind]), p.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#86EBA0' : '#FF8A8A', 2.8);
       com(pick(COM[kind]).replace('{p}', p.short) + excl);
       logE('BUT ! ' + p.name + ' ' + how + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#8BFFA8' : '#FF8A8A', 'G', s);
       key(100, s, 'goal');
@@ -1176,15 +1177,17 @@ export function makeEngine(cfg) {
     const HUM = () => (W.hum != null && TM.H.ps[W.hum] && !TM.H.ps[W.hum].red ? TM.H.ps[W.hum] : null);
     const IN = () => (cfg.input ? cfg.input() : null);
     // gestes techniques : palier selon dribble + agilité, du plus simple au plus rare
+    // §31 cinq tiers de gestes : 1 basique, 2 intermédiaire, 3 avancé, 4 élite, 5 exceptionnel.
+    // Le tier conditionne l'accès au geste et pilote le rendu : plus le tier est haut, plus l'effet visuel est marqué.
     const DRIBS = [
-      { n: 'crochet', lab: 'crochet', min: 0, cost: 0.22, gain: 0.30 },
-      { n: 'protect', lab: 'protection de balle', min: 0, cost: 0.10, gain: 0.18 },
-      { n: 'feinte', lab: 'feinte de corps', min: 62, cost: 0.26, gain: 0.40 },
-      { n: 'double', lab: 'double contact', min: 68, cost: 0.28, gain: 0.46 },
-      { n: 'passement', lab: 'passement de jambes', min: 74, cost: 0.32, gain: 0.54 },
-      { n: 'roulette', lab: 'roulette', min: 80, cost: 0.36, gain: 0.62 },
-      { n: 'pont', lab: 'petit pont', min: 85, cost: 0.42, gain: 0.74 },
-      { n: 'sombrero', lab: 'sombrero', min: 91, cost: 0.48, gain: 0.82 }
+      { n: 'crochet', lab: 'crochet', min: 0, cost: 0.22, gain: 0.30, tier: 1 },
+      { n: 'protect', lab: 'protection de balle', min: 0, cost: 0.10, gain: 0.18, tier: 1 },
+      { n: 'feinte', lab: 'feinte de corps', min: 62, cost: 0.26, gain: 0.40, tier: 2 },
+      { n: 'double', lab: 'double contact', min: 68, cost: 0.28, gain: 0.46, tier: 2 },
+      { n: 'passement', lab: 'passement de jambes', min: 74, cost: 0.32, gain: 0.54, tier: 3 },
+      { n: 'roulette', lab: 'roulette', min: 80, cost: 0.36, gain: 0.62, tier: 3 },
+      { n: 'pont', lab: 'petit pont', min: 85, cost: 0.42, gain: 0.74, tier: 4 },
+      { n: 'sombrero', lab: 'sombrero', min: 91, cost: 0.48, gain: 0.82, tier: 5 }
     ];
     const pickDrib = (p, forced) => {
       const lvl = p.dri * 0.7 + p.agi0 * 30;
@@ -1208,6 +1211,7 @@ export function makeEngine(cfg) {
         const ux = p.fx, uy = p.fy, side = R() < 0.5 ? 1 : -1;
         p.carry = { x: cl(p.x + ux * 7 - uy * side * 2.5, 1, PW - 1), y: cl(p.y + uy * 7 + ux * side * 2.5, 1, PL - 1), until: W.t + 1.1, drib: true };
         com(p.short + ' : ' + g.lab + ' sur ' + d2.short + ' !');
+        mark({ k: 'skill', c: p.code, tier: g.tier });   // §28 à §31 le rendu suit le tier du geste
         if (g.min >= 80) { banner('QUEL GESTE !', p.short, '#C8F56B', 1.2); logE(p.short + ' élimine ' + d2.short + ' d’' + (g.n === 'pont' ? 'un petit pont' : 'une ' + g.lab), '#C8F56B', 'drib', p.s); }
         key(g.min >= 80 ? 30 : 14, p.s, 'drib');
       } else {

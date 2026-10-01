@@ -1,6 +1,7 @@
 // Une seule source de vérité.
 //
-// Le moteur et les règles vivent dans src/. L'écran Mon Club (canvas/Club.dc.html)
+// Le moteur et les règles vivent dans src/ (club.js plus les modules de domaine).
+// L'écran Mon Club (canvas/Club.dc.html)
 // en contenait une copie, qui divergeait dès qu'on corrigeait d'un seul côté.
 // Ce script réinjecte src/engine.js et les méthodes de src/club.js dans l'artboard.
 //
@@ -66,10 +67,11 @@ const METHODS = ['rand', 'seedR', 'statW', 'ovrOf', 'genStats', 'cardStats', 'pr
   'STADES', 'upgradeStade', 'ACADEMIES', 'upgradeAcademy', 'youthPlayer', 'synergy', 'finances',
   'marketList', 'formCoords', 'penalty', 'pickXI', 'benchOf', 'ROLE_OPTS', 'metrics', 'baseShape', 'engineCfg',
   'RARITY', 'rarityOf', 'CARD_POOL', 'drawCard', 'PACK_DEFS', 'packOdds', 'collection', 'sellPlayer', 'ageSquad', 'UPGRADE_COST', 'cardLevel', 'upgradeInfo', 'levelUpPlayer'];
-const club = read('src/club.js');
+const SOURCES = ['club.js', 'players.js', 'skills.js', 'cards.js', 'staff.js', 'training.js', 'transfer.js', 'progression.js', 'tactics.js'];
+const club = SOURCES.map((f) => read('src/' + f)).join('\n');
 for (const name of METHODS) {
   const from = findMethod(club, name);
-  if (!from) throw new Error('méthode absente de src/club.js : ' + name);
+  if (!from) throw new Error('méthode absente des sources : ' + name);
   const body = club.slice(from.start, from.end);
   const hit = findMethod(artboard, name);
   if (!hit) {

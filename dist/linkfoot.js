@@ -299,6 +299,7 @@ function makeEngine(cfg) {
         res = R() < pOT ? (R() < pG ? 'goal' : 'save') : 'miss';
       }
       if (res === 'goal' || res === 'save') W.st[s].on++;
+      if (xg > 0.3 && res !== 'goal') mark({ k: 'roar', v: 0.55 });   // §53 le stade retient son souffle sur une grosse occasion
       if (res === 'goal') oo.g++;
       const gy = yOf(s, PL), sgn = s === 'H' ? -1 : 1;
       let tx, ty, post = false;
@@ -469,7 +470,7 @@ function makeEngine(cfg) {
     };
     const ownGoal = (bl, shooter) => {
       const s = shooter.s, o = bl.s; W.score[s]++; rt(bl, -0.9); const b = W.ball; b.x = 34; b.y = yOf(s, PL + 1.3); b.z = 0.3;
-      mark({ k: 'goal', s, c: bl.code }); banner('CSC !', bl.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#86EBA0' : '#FF8A8A', 2.8);
+      mark({ k: 'goal', s, c: bl.code, name: bl.short }); banner('CSC !', bl.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#86EBA0' : '#FF8A8A', 2.8);
       com('Malheureux ' + bl.short + ' : la frappe de ' + shooter.short + ' est déviée dans son propre but !');
       logE('BUT ! ' + bl.name + ' contre son camp, frappe déviée de ' + shooter.name + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#8BFFA8' : '#FF8A8A', 'G', s);
       key(100, s, 'goal'); W.celK = 'calme'; W.cel = W.t + 3.2; W.celS = s; W.scorer = shooter; W.owner = null; W.fl = null;
@@ -509,7 +510,7 @@ function makeEngine(cfg) {
       const BAN = { pen: ['PENALTY TRANSFORMÉ', 'BUT !'], fk: ['COUP FRANC MAGISTRAL', 'QUEL COUP FRANC !'], head: ['BUT DE LA TÊTE !', 'BUT !'], lob: ['LOB SOMPTUEUX', 'QUEL BUT !'], long: ['GOLAZO !', 'QUELLE FRAPPE !', 'MISSILE !'], volley: ['QUELLE REPRISE !', 'BUT !'], through: ['BUT !', 'PROFONDEUR !'], counter: ['CONTRE ÉCLAIR', 'BUT !'], solo: ['EXPLOIT INDIVIDUEL', 'QUEL BUT !'], close: ['BUT !', 'RENARD DES SURFACES'], pass: ['BUT !', 'BUUUT !'] };
       const COM = { pen: ['Sans trembler : {p} transforme le penalty.', '{p} prend le gardien à contre-pied !'], fk: ['Coup franc de {p}, le ballon file dans la lucarne !', '{p} passe au-dessus du mur, imparable !'], head: ['{p} s’élève plus haut que tout le monde !', 'Tête rageuse de {p}, le gardien ne peut rien faire !'], lob: ['{p} voit le gardien avancé et le lobe !', 'Pichenette de génie de {p} !'], long: ['Frappe de loin de {p}, quel missile !', '{p} arme de 25 mètres, lucarne opposée !', 'Personne ne l’attendait : {p} tente et ça rentre !'], volley: ['Reprise de volée de {p}, magnifique !', '{p} reprend le centre en une touche !'], through: ['{p} file seul au but et conclut !', 'Lancé dans la profondeur, {p} ne tremble pas !'], counter: ['Contre éclair conclu par {p} !', 'En trois passes, {p} punit la défense !'], solo: ['{p} efface tout le monde et marque !', 'Exploit personnel de {p}, quel slalom !'], close: ['{p} pousse le ballon au fond, à bout portant !', 'Cafouillage dans la surface, {p} en profite !'], pass: ['{p} croise sa frappe, le ballon fait trembler les filets !', 'Frappe placée de {p}, petit filet !', '{p} trouve la faille !'] };
       const excl = f.xg < 0.1 ? ' Une frappe à ' + Math.round(f.xg * 100) + ' % de chance : du grand art.' : '';
-      mark({ k: 'goal', s, c: p.code }); banner(pick(BAN[kind]), p.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#86EBA0' : '#FF8A8A', 2.8);
+      mark({ k: 'goal', s, c: p.code, name: p.short }); banner(pick(BAN[kind]), p.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#86EBA0' : '#FF8A8A', 2.8);
       com(pick(COM[kind]).replace('{p}', p.short) + excl);
       logE('BUT ! ' + p.name + ' ' + how + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#8BFFA8' : '#FF8A8A', 'G', s);
       key(100, s, 'goal');
@@ -1208,15 +1209,17 @@ function makeEngine(cfg) {
     const HUM = () => (W.hum != null && TM.H.ps[W.hum] && !TM.H.ps[W.hum].red ? TM.H.ps[W.hum] : null);
     const IN = () => (cfg.input ? cfg.input() : null);
     // gestes techniques : palier selon dribble + agilité, du plus simple au plus rare
+    // §31 cinq tiers de gestes : 1 basique, 2 intermédiaire, 3 avancé, 4 élite, 5 exceptionnel.
+    // Le tier conditionne l'accès au geste et pilote le rendu : plus le tier est haut, plus l'effet visuel est marqué.
     const DRIBS = [
-      { n: 'crochet', lab: 'crochet', min: 0, cost: 0.22, gain: 0.30 },
-      { n: 'protect', lab: 'protection de balle', min: 0, cost: 0.10, gain: 0.18 },
-      { n: 'feinte', lab: 'feinte de corps', min: 62, cost: 0.26, gain: 0.40 },
-      { n: 'double', lab: 'double contact', min: 68, cost: 0.28, gain: 0.46 },
-      { n: 'passement', lab: 'passement de jambes', min: 74, cost: 0.32, gain: 0.54 },
-      { n: 'roulette', lab: 'roulette', min: 80, cost: 0.36, gain: 0.62 },
-      { n: 'pont', lab: 'petit pont', min: 85, cost: 0.42, gain: 0.74 },
-      { n: 'sombrero', lab: 'sombrero', min: 91, cost: 0.48, gain: 0.82 }
+      { n: 'crochet', lab: 'crochet', min: 0, cost: 0.22, gain: 0.30, tier: 1 },
+      { n: 'protect', lab: 'protection de balle', min: 0, cost: 0.10, gain: 0.18, tier: 1 },
+      { n: 'feinte', lab: 'feinte de corps', min: 62, cost: 0.26, gain: 0.40, tier: 2 },
+      { n: 'double', lab: 'double contact', min: 68, cost: 0.28, gain: 0.46, tier: 2 },
+      { n: 'passement', lab: 'passement de jambes', min: 74, cost: 0.32, gain: 0.54, tier: 3 },
+      { n: 'roulette', lab: 'roulette', min: 80, cost: 0.36, gain: 0.62, tier: 3 },
+      { n: 'pont', lab: 'petit pont', min: 85, cost: 0.42, gain: 0.74, tier: 4 },
+      { n: 'sombrero', lab: 'sombrero', min: 91, cost: 0.48, gain: 0.82, tier: 5 }
     ];
     const pickDrib = (p, forced) => {
       const lvl = p.dri * 0.7 + p.agi0 * 30;
@@ -1240,6 +1243,7 @@ function makeEngine(cfg) {
         const ux = p.fx, uy = p.fy, side = R() < 0.5 ? 1 : -1;
         p.carry = { x: cl(p.x + ux * 7 - uy * side * 2.5, 1, PW - 1), y: cl(p.y + uy * 7 + ux * side * 2.5, 1, PL - 1), until: W.t + 1.1, drib: true };
         com(p.short + ' : ' + g.lab + ' sur ' + d2.short + ' !');
+        mark({ k: 'skill', c: p.code, tier: g.tier });   // §28 à §31 le rendu suit le tier du geste
         if (g.min >= 80) { banner('QUEL GESTE !', p.short, '#C8F56B', 1.2); logE(p.short + ' élimine ' + d2.short + ' d’' + (g.n === 'pont' ? 'un petit pont' : 'une ' + g.lab), '#C8F56B', 'drib', p.s); }
         key(g.min >= 80 ? 30 : 14, p.s, 'drib');
       } else {
@@ -1447,54 +1451,15 @@ function makeEngine(cfg) {
     return api;
   }
 
-// LinkFoot : état du club et règles du manager. Aucune dépendance au DOM ni à React.
-// Le même code que l'interface utilise, sorti de la page pour tourner dans une app ou sur un serveur.
-
-
-class Club {
-  constructor(state) {
-    this.state = Object.assign({}, INITIAL_STATE(), state || {});
-    this._listeners = [];
-  }
-  // --- compatibilité avec le code de l'interface : setState fusionne, buzz et later ne font rien ici
-  setState(patch) {
-    Object.assign(this.state, typeof patch === 'function' ? patch(this.state) : patch);
-    this._listeners.forEach((fn) => fn(this.state));
-    return this.state;
-  }
-  onChange(fn) { this._listeners.push(fn); return () => { this._listeners = this._listeners.filter((f) => f !== fn); }; }
-  buzz() {}
-  later(fn) { return setTimeout(fn, 0); }
-  makeEngine(cfg) { return makeEngine(cfg); }
-
-  // --- un match complet, sans interface : construit le moteur, le déroule, applique les suites
-  playMatch(opp, opts) {
-    const s = this.state, o = opts || {};
-    const xi = this.pickXI(s.formation).map((p) => Object.assign({}, p, { energy: p.fit != null ? p.fit : 100, yc: 0, red: false }));
-    const styles = this.styles(), oppForm = (styles[opp.style] || {}).form || '4-4-2';
-    const shapeA = this.baseShape(oppForm, 'A'), rnd = this.seedR(o.seed != null ? o.seed : Date.now() % 100000);
-    const oxi = shapeA.map((b, i) => ({ id: 9000 + i, name: 'J' + i, pos: b.line, line: b.line, ovr: Math.round(opp.ovr + (rnd() - 0.5) * 8), energy: 100, yc: 0, red: false }));
-    const obench = ['MIL', 'ATT', 'DEF'].map((pos, i) => ({ id: 9500 + i, name: 'B' + i, pos, ovr: Math.round(opp.ovr - 2) }));
-    const E = makeEngine(Object.assign(this.engineCfg(opp, xi, oxi, obench), { rnd }));
-    E.finish();
-    const f = E.state();
-    const hs = f.score.H, as = f.score.A;
-    const res = hs > as ? 'w' : hs === as ? 'd' : 'l', reward = res === 'w' ? 120 : res === 'd' ? 50 : 20;
-    const mt = { opp, oxi, bench: this.benchOf(xi), hs, as, st: f.st, rat: f.rat, res, reward, done: true, ended: true,
-      log: E.log.map((l) => ({ m: l.m, text: l.text, k: l.k, s: l.s })),
-      xi: f.en ? xi.map((p, i) => Object.assign({}, p, { energy: f.en[i], yc: f.cards[i][0], red: f.cards[i][1] })) : xi };
-    const record = Object.assign({}, s.record, { [res]: s.record[res] + 1 });
-    const base = Object.assign({}, this.state, { balance: s.balance + reward, record });
-    const patch = this.afterMatch(mt, base);
-    this.setState(Object.assign({ record }, patch));
-    return { score: [hs, as], res, reward, stats: f.st, log: mt.log, patch };
-  }
-  rand(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
-  seedR(seed) { let x = (seed * 2654435761) % 4294967296; return () => { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; }; }
+// LinkFoot : Fiches joueurs : statistiques, note globale, profil (âge, nationalité, pied, forme).
+// Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
+const Players = {
   statW(pos) {
     return { ATT: { ATQ: 0.28, TIR: 0.2, DRI: 0.16, VIT: 0.16, PAS: 0.1, PHY: 0.08, 'DÉF': 0.02 }, MIL: { PAS: 0.26, DRI: 0.17, 'DÉF': 0.14, ATQ: 0.12, PHY: 0.11, TIR: 0.1, VIT: 0.1 }, DEF: { 'DÉF': 0.38, PHY: 0.22, VIT: 0.15, PAS: 0.12, DRI: 0.05, ATQ: 0.04, TIR: 0.04 }, GB: { 'RÉF': 0.3, PLO: 0.25, MAI: 0.2, PLA: 0.15, 'DÉG': 0.05, VIT: 0.05 } }[pos] || this.statW('MIL');
-  }
-  ovrOf(pos, st) { const w = this.statW(pos); let a = 0, t = 0; for (const k in w) { a += (st[k] != null ? st[k] : 50) * w[k]; t += w[k]; } return Math.round(a / t); }
+  },
+
+  ovrOf(pos, st) { const w = this.statW(pos); let a = 0, t = 0; for (const k in w) { a += (st[k] != null ? st[k] : 50) * w[k]; t += w[k]; } return Math.round(a / t); },
+
   genStats(pos, target, seed) {
     const r = this.seedR(seed);
     const bias = { GB: { VIT: -14, PLO: 4, 'RÉF': 6, MAI: 2, 'DÉG': -6, PLA: 3 }, DEF: { VIT: -2, ATQ: -20, TIR: -16, PAS: -6, DRI: -8, 'DÉF': 8, PHY: 6 }, MIL: { VIT: 0, ATQ: 0, TIR: -2, PAS: 6, DRI: 4, 'DÉF': -6, PHY: -2 }, ATT: { VIT: 6, ATQ: 8, TIR: 6, PAS: -3, DRI: 5, 'DÉF': -28, PHY: -3 } }[pos] || {};
@@ -1502,12 +1467,14 @@ class Club {
     for (let i = 0; i < 5; i++) { for (const k in st) st[k] = Math.max(25, Math.min(99, st[k])); const d = target - this.ovrOf(pos, st); if (!d) break; for (const k in st) st[k] += d; }
     for (const k in st) st[k] = Math.max(25, Math.min(99, st[k]));
     return st;
-  }
+  },
+
   cardStats(p) {
     const st = p.st || this.genStats(p.pos, p.base != null ? p.base : p.ovr, p.id * 31 + 7);
     const order = p.pos === 'GB' ? ['VIT', 'PLO', 'RÉF', 'MAI', 'DÉG', 'PLA'] : ['VIT', 'ATQ', 'TIR', 'PAS', 'DRI', 'DÉF', 'PHY'];
     return order.map((l) => ({ l, v: st[l] != null ? st[l] : 50 }));
-  }
+  },
+
   profile(p) {
     const r = this.seedR((p.id || 1) * 7919 + 13);
     const NAT = ['France', 'France', 'France', 'Sénégal', 'Maroc', 'Algérie', 'Brésil', 'Argentine', 'Espagne', 'Italie', 'Portugal', 'Belgique', 'Côte d’Ivoire', 'Cameroun', 'Nigeria', 'Pays-Bas', 'Allemagne', 'Japon', 'Norvège', 'Pologne'];
@@ -1525,12 +1492,11 @@ class Club {
     const salary = Math.round(value / 60 / 10) * 10;
     return { age: age + (p.ageAdj || 0), pot, perso, foot, wf, height: h, weight: Math.round(h * 0.42 - 8 + r() * 6), nat: NAT[Math.floor(r() * NAT.length)], value, salary, contract: p.contract != null ? p.contract : 1 + Math.floor(r() * 3), form, morale, fit: p.fit != null ? p.fit : 100, inj: p.inj || 0, skills: this.skillsOf(p), hidden: !p.scouted };
   }
-  valueOf(p) {
-    const age = p.age != null ? p.age : this.profile(p).age, pot = p.pot != null ? p.pot : p.ovr;
-    const ageK = age <= 21 ? 1.35 : age <= 25 ? 1.2 : age <= 29 ? 1 : age <= 32 ? 0.7 : 0.45;
-    const formK = 0.85 + ((p.form != null ? p.form : 70) - 50) / 200;
-    return Math.round(Math.pow(Math.max(40, p.ovr) / 10, 3.2) * ageK * formK * (1 + Math.max(0, pot - p.ovr) / 40) / 3) * 10;
-  }
+};
+
+// LinkFoot : Compétences procédurales : 20 effets x 14 conditions x 6 raretés x 5 niveaux (§32 à §36).
+// Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
+const Skills = {
   SKILL_DEF() {
     if (this._skill) return this._skill;
     const E = [
@@ -1564,15 +1530,18 @@ class Club {
     const RAR = [['commune', 'Commune', 0.55, '#B4C0BA'], ['normale', 'Normale', 0.75, '#EEF3EF'], ['rare', 'Rare', 1.0, '#7FB0FF'], ['elite', 'Élite', 1.25, '#C39BFF'], ['mythique', 'Mythique', 1.5, '#FFC24A'], ['legendaire', 'Légendaire', 1.8, '#FF6B5C']];
     const POSOK = { GB: ['gk_reflex', 'gk_mains', 'calme', 'leader', 'acier', 'moteur'], DEF: ['mur', 'gladiateur', 'aerien', 'leader', 'calme', 'moteur', 'grinta', 'pressing', 'laser', 'sprinter', 'acier'], MIL: ['visionnaire', 'laser', 'chef', 'meneur', 'moteur', 'pressing', 'dribbleur', 'calme', 'grinta', 'clutch', 'gladiateur', 'sprinter'], ATT: ['tueur', 'renard', 'sprinter', 'dribbleur', 'clutch', 'aerien', 'grinta', 'acier', 'gladiateur', 'visionnaire'] };
     return (this._skill = { E, C, RAR, POSOK, LVL: ['I', 'II', 'III', 'IV', 'V'] });
-  }
-  skillCount() { const D = this.SKILL_DEF(); let n = 0; for (const pos in D.POSOK) n += D.POSOK[pos].length; return n * D.C.length * D.RAR.length * D.LVL.length; }
+  },
+
+  skillCount() { const D = this.SKILL_DEF(); let n = 0; for (const pos in D.POSOK) n += D.POSOK[pos].length; return n * D.C.length * D.RAR.length * D.LVL.length; },
+
   makeSkill(eid, cid, rar, lvl, cond) {
     const D = this.SKILL_DEF(), e = D.E.find((x) => x[0] === eid), c = D.C[cid], R2 = D.RAR[rar];
     const mult = R2[2] * (0.7 + lvl * 0.15) * c[2] * 0.55;
     const eff = {}; for (const k in e[3]) eff[k] = k === 'drain' ? e[3][k] : k === 'team' ? Object.fromEntries(Object.entries(e[3][k]).map(([a, v]) => [a, v * mult])) : e[3][k] * mult;
     const name = e[1] + (lvl ? ' ' + D.LVL[lvl] : '') + (c[0] === 'always' ? '' : ' · ' + ['', 'grinta', 'clutch', 'dominant', 'précoce', 'momentum', 'increvable', 'local', 'contre', 'surface', 'CPA', 'sous pression', 'outsider', '2e MT'][cid]);
     return { id: eid + ':' + cid + ':' + rar + ':' + lvl, eid, cid: c[0], name, cat: e[2], rar: R2[0], rarLabel: R2[1], color: R2[3], lvl: lvl + 1, eff, desc: e[4] + (c[0] === 'always' ? '' : ', ' + c[1]) + '.' };
-  }
+  },
+
   skillsOf(p) {
     if (p.skills) return p.skills;
     const D = this.SKILL_DEF(), r = this.seedR((p.id || 1) * 104729 + 3), pool = D.POSOK[p.pos] || D.POSOK.MIL;
@@ -1583,57 +1552,310 @@ class Club {
     }
     return out;
   }
-  styles() {
-    if (this._styles) return this._styles;
-    const D = { width: 1, tempo: 1, pass: 1, behind: 0, cross: 1, dribble: 0, longshot: 0, patience: 0, line: 1, engage: 1, press: 1, trap: 0, tackle: 1, lost: 1, won: 1, gk: 0, mark: 0, fullbacks: 1, overload: 0, ptrap: 0, timewaste: 0 };
-    const S = (k, fam, name, form, m, tac, desc, ref, beats, weak, threat) => ({ k, fam, name, form, m, tac: Object.assign({}, D, tac), desc, ref, beats, weak, threat });
-    const list = [
-      S('equilibre', 'Équilibre', 'Équilibré', '4-3-3', 3, {}, 'Aucun excès : un peu de tout, idéal pour découvrir l’adversaire.', 'La base de toutes les équipes', [], [], 'mid'),
-      S('tiki', 'Possession', 'Tiki-taka', '4-3-3', 4, { tempo: 0, pass: 0, cross: 0, patience: 1, line: 2, engage: 2, press: 2, trap: 1, lost: 0 }, 'Passes courtes à l’infini, 65 % de possession, on fatigue l’adversaire avec le ballon.', 'Popularisé par le Barça de la fin des années 2000', ['direct', 'kick', 'blocmed'], ['contre', 'gegen', 'bus'], 'keep'),
-      S('posit', 'Possession', 'Jeu de position', '4-3-3', 4, { tempo: 1, pass: 0, patience: 1, width: 2, line: 2, engage: 2, press: 2, lost: 0, fullbacks: 2 }, 'Chaque joueur occupe une zone précise pour créer des supériorités numériques entre les lignes.', 'La méthode Guardiola', ['blocbas', 'blocmed', 'homme'], ['gegen', 'contre'], 'keep'),
-      S('relation', 'Possession', 'Jeu relationnel', '4-2-3-1', 4, { tempo: 1, pass: 0, dribble: 1, patience: 1, width: 0, overload: 2, line: 1, lost: 0 }, 'Les joueurs se rapprochent du ballon et combinent en petits triangles, sans positions fixes.', 'Style de Fluminense, très brésilien', ['homme', 'blocmed'], ['gegen', 'blocbas'], 'keep'),
-      S('total', 'Possession', 'Football total', '4-3-3', 5, { tempo: 2, pass: 1, behind: 1, dribble: 1, line: 2, engage: 2, press: 2, trap: 1, lost: 0, fullbacks: 1 }, 'Tout le monde attaque, tout le monde défend, permutations permanentes. Très fatigant.', 'L’Ajax et les Pays-Bas des années 70', ['blocmed', 'catenaccio', 'bus'], ['contre', 'direct'], 'keep'),
-      S('gegen', 'Pressing', 'Gegenpressing', '4-3-3', 4, { tempo: 2, behind: 1, line: 2, engage: 2, press: 2, trap: 1, lost: 0, won: 0, ptrap: 2 }, 'Dès la perte du ballon, on presse à 5 pour le récupérer en moins de 8 secondes.', 'La signature de Klopp', ['tiki', 'posit', 'relation'], ['direct', 'kick'], 'press'),
-      S('blochaut', 'Pressing', 'Bloc haut', '4-4-2', 4, { line: 2, engage: 2, press: 2, trap: 1, lost: 0, ptrap: 1 }, 'Ligne défensive très haute et piège du hors-jeu : l’adversaire étouffe dans son camp.', 'Utilisé par la plupart des grosses équipes', ['tiki', 'relation', 'bus'], ['contre', 'vertical', 'direct'], 'press'),
-      S('homme', 'Pressing', 'Pressing homme à homme', '3-5-2', 4, { line: 2, engage: 2, press: 2, tackle: 2, mark: 2, lost: 0 }, 'Chaque joueur suit son adversaire direct partout sur le terrain. Duels, duels, duels.', 'Bielsa et Gasperini', ['posit', 'tiki', 'pistons'], ['relation', 'surcharge', 'vertical'], 'press'),
-      S('blocmed', 'Défensif', 'Bloc médian', '4-4-2', 2, { width: 0, line: 1, engage: 1, press: 1, lost: 1, won: 0, ptrap: 2 }, 'On attend au milieu de terrain, on ferme l’axe et on presse seulement dans les zones pièges.', 'Très utilisé en sélection nationale', ['contre', 'direct', 'kick', 'vertical'], ['posit', 'total', 'surcharge'], 'mid'),
-      S('blocbas', 'Défensif', 'Bloc bas', '4-4-2', 1, { width: 0, pass: 2, longshot: 1, line: 0, engage: 0, press: 0, tackle: 2, lost: 1, gk: 1, fullbacks: 0 }, 'Deux lignes de 4 collées devant la surface : aucun espace dans le dos, on attend l’erreur.', 'L’arme des outsiders', ['contre', 'vertical', 'kick', 'relation'], ['posit', 'ailes', 'pistons'], 'low'),
-      S('catenaccio', 'Défensif', 'Catenaccio', '5-3-2', 1, { width: 0, pass: 2, behind: 1, line: 0, engage: 0, press: 1, tackle: 2, mark: 2, gk: 1, fullbacks: 0 }, 'Un libéro derrière la défense, marquage individuel strict et contres éclairs.', 'Le verrou italien des années 60', ['tiki', 'gegen', 'vertical'], ['ailes', 'total', 'surcharge'], 'low'),
-      S('bus', 'Défensif', 'Garer le bus', '5-3-2', 0, { width: 0, tempo: 0, pass: 2, line: 0, engage: 0, press: 0, tackle: 2, gk: 1, fullbacks: 0, timewaste: 1 }, 'Les 11 joueurs derrière le ballon, on défend le score coûte que coûte.', 'Le plan anti-favori', ['tiki', 'posit'], ['ailes', 'total', 'blochaut', 'pistons'], 'low'),
-      S('contre', 'Transition', 'Contre-attaque', '4-4-2', 2, { tempo: 2, pass: 2, behind: 1, dribble: 1, line: 0, engage: 0, won: 0, gk: 1 }, 'On récupère bas et on se projette en 3 passes dans le dos d’une défense montée.', 'Le classique des équipes rapides', ['tiki', 'posit', 'blochaut', 'total', 'ailes'], ['blocbas', 'blocmed'], 'space'),
-      S('vertical', 'Transition', 'Transitions verticales', '4-2-3-1', 3, { tempo: 2, pass: 2, behind: 1, line: 1, engage: 1, press: 1, won: 0 }, 'Dès la récupération, le ballon va vers l’avant : peu de passes, beaucoup de vitesse.', 'Leicester champion en 2016', ['blochaut', 'homme', 'gegen'], ['blocbas', 'blocmed', 'catenaccio'], 'space'),
-      S('direct', 'Direct', 'Jeu direct', '4-4-2', 4, { width: 2, tempo: 2, pass: 2, behind: 1, cross: 2, longshot: 1, tackle: 2, gk: 1 }, 'Longs ballons vers un grand attaquant, on gagne les deuxièmes ballons.', 'Le foot anglais traditionnel', ['gegen', 'blochaut', 'total'], ['blocmed', 'tiki', 'posit'], 'space'),
-      S('kick', 'Direct', 'Kick and rush', '4-4-2', 5, { width: 2, tempo: 2, pass: 2, behind: 1, cross: 2, longshot: 1, engage: 2, press: 2, tackle: 2, gk: 1 }, 'On balance devant et on court : intensité maximale, peu de construction.', 'Le football d’avant, 100 % engagement', ['gegen', 'homme'], ['blocbas', 'blocmed', 'tiki'], 'space'),
-      S('ailes', 'Couloirs', 'Jeu sur les ailes', '4-4-2', 4, { width: 2, cross: 2, dribble: 1, fullbacks: 1 }, 'Débordements et centres : on étire le bloc adverse sur toute la largeur.', 'Idéal avec des ailiers rapides', ['blocbas', 'bus', 'catenaccio'], ['contre', 'blocmed'], 'wide'),
-      S('surcharge', 'Couloirs', 'Surcharge et renversement', '4-3-3', 4, { width: 2, pass: 1, patience: 1, overload: 1, fullbacks: 2 }, 'On attire l’adversaire d’un côté à 5 contre 3, puis on renverse vers un ailier seul de l’autre côté.', 'Très utilisé dans le foot moderne', ['homme', 'blocmed', 'catenaccio'], ['gegen', 'contre'], 'wide'),
-      S('pistons', 'Couloirs', 'Pistons en 3-5-2', '3-5-2', 4, { width: 2, cross: 1, behind: 1, fullbacks: 1, line: 1 }, 'Trois défenseurs centraux et deux pistons qui font tout le couloir : largeur et solidité.', 'Système favori de nombreux entraîneurs italiens', ['blocbas', 'bus', 'kick'], ['contre', 'homme'], 'wide')
+};
+
+// LinkFoot : Cartes : raretés, catalogue de 500, packs, collection, fragments et niveaux (§56 à §65).
+// Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
+const Cards = {
+  RARITY() {
+    return [
+      { id: 'normal', label: 'Normal', rate: 0.55, lo: 48, hi: 64, shards: 1, color: 'linear-gradient(135deg, #AEB9C2, #6F8077)', ink: '#0B1210' },
+      { id: 'common', label: 'Commun', rate: 0.25, lo: 56, hi: 70, shards: 2, color: 'linear-gradient(135deg, #CFE0D4, #8FA89A)', ink: '#0B1210' },
+      { id: 'rare', label: 'Rare', rate: 0.12, lo: 64, hi: 77, shards: 5, color: 'linear-gradient(135deg, #7FB0FF, #3E6BFF)', ink: '#06101F' },
+      { id: 'epic', label: 'Épique', rate: 0.05, lo: 71, hi: 83, shards: 12, color: 'linear-gradient(135deg, #C39BFF, #7B4FD8)', ink: '#120A24' },
+      { id: 'elite', label: 'Élite', rate: 0.02, lo: 77, hi: 88, shards: 30, color: 'linear-gradient(135deg, #4FDCC4, #1E9E92)', ink: '#04201C' },
+      { id: 'gold', label: 'Or', rate: 0.009, lo: 82, hi: 92, shards: 80, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', ink: '#241703' },
+      { id: 'legendary', label: 'Légendaire', rate: 0.001, lo: 86, hi: 95, shards: 200, color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', ink: '#2A0812' }
     ];
-    this._styles = {};
-    list.forEach((x) => { this._styles[x.k] = x; });
-    this._styleList = list;
-    return this._styles;
+  },
+
+  rarityOf(id) { return this.RARITY().find((r) => r.id === id) || this.RARITY()[0]; },
+
+  CARD_POOL() {
+    if (this._pool) return this._pool;
+    const R = this.RARITY(), r = this.seedR(424242);
+    const F = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.', 'H.', 'I.', 'J.', 'K.', 'L.', 'M.', 'N.', 'O.', 'P.', 'R.', 'S.', 'T.', 'V.', 'Y.', 'Z.'];
+    const L = ['Marvello', 'Ducasson', 'Ebongué', 'Halvorsen', 'Quintero', 'Belkadi-Roy', 'Stranieri', 'Okafor-Lemaire', 'Vasquet', 'Nyamsi', 'Gaudrel', 'Petrakis', 'Lindau', 'Moreau-Diaby', 'Castagne-Nil', 'Rivoire', 'Takamura', 'Ferbault', 'Ansaldi', 'Kowalevski', 'Dembrel', 'Soumahé', 'Varnier', 'Okonkwé', 'Delacroix-Sy', 'Ferrandi', 'Braxton', 'Kessler', 'Mbaloula', 'Arroyo-Faye', 'Lindqvist', 'Rouvière', 'Adebanjo', 'Castellane', 'Moulinet', 'Tavares', 'Bellanger', 'Cissoko-Vidal', 'Ngoumou', 'Rakotoson', 'Esperanza', 'Haugen', 'Pirlotti', 'Zemmouri', 'Okonjo', 'Vanthier', 'Bramante', 'Keita-Marsal'];
+    const POS = ['GB', 'DEF', 'DEF', 'DEF', 'MIL', 'MIL', 'MIL', 'ATT', 'ATT'];
+    const pool = [];
+    // la part de chaque rareté dans le catalogue suit les taux, avec au moins une carte par rareté
+    const counts = R.map((x) => Math.max(1, Math.round(x.rate * 500)));
+    counts[0] += 500 - counts.reduce((a2, v) => a2 + v, 0);   // le catalogue fait exactement 500 cartes
+    R.forEach((rar, ri) => {
+      for (let k = 0; k < counts[ri]; k++) {
+        const id = 50000 + pool.length;
+        pool.push({ id, name: F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)],
+          pos: POS[Math.floor(r() * POS.length)], ovr: rar.lo + Math.floor(r() * (rar.hi - rar.lo + 1)), rar: rar.id });
+      }
+    });
+    return (this._pool = pool);
+  },
+
+  drawCard(packWeights, rnd) {
+    const R = this.RARITY(), w = R.map((x) => x.rate * ((packWeights || {})[x.id] != null ? packWeights[x.id] : 1));
+    let t = w.reduce((a, v) => a + v, 0), q = (rnd || Math.random)() * t, pick = R[0];
+    for (let i = 0; i < R.length; i++) { q -= w[i]; if (q <= 0) { pick = R[i]; break; } }
+    const pool = this.CARD_POOL().filter((c) => c.rar === pick.id);
+    return pool[Math.floor((rnd || Math.random)() * pool.length)];
+  },
+
+  PACK_DEFS() {
+    return [
+      { key: 'basic', name: 'Pack Basic', n: 3, cost: 150, w: {}, color: 'linear-gradient(135deg, #AEB9C2, #6F8077)', fx: 'bronze' },
+      { key: 'premium', name: 'Pack Premium', n: 4, cost: 400, w: { normal: 0.4, common: 1.2, rare: 2.2, epic: 2.5, elite: 2, gold: 1.6, legendary: 1.4 }, color: 'linear-gradient(135deg, #F2F6F4, #AEB9C2)', fx: 'silver' },
+      { key: 'elite', name: 'Pack Élite', n: 3, cost: 900, w: { normal: 0.1, common: 0.5, rare: 2, epic: 4, elite: 5, gold: 3, legendary: 2.5 }, color: 'linear-gradient(135deg, #4FDCC4, #1E9E92)', fx: 'silver' },
+      { key: 'gold', name: 'Pack Or', n: 3, cost: 2000, w: { normal: 0, common: 0.2, rare: 1.2, epic: 4, elite: 8, gold: 9, legendary: 6 }, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', fx: 'gold' },
+      { key: 'special', name: 'Pack Spécial', n: 2, cost: 1200, w: { normal: 0, common: 0, rare: 2, epic: 5, elite: 6, gold: 5, legendary: 4 }, color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', fx: 'gold' }
+    ];
+  },
+
+  packOdds(def) {
+    const R = this.RARITY(), w = R.map((x) => x.rate * ((def.w || {})[x.id] != null ? def.w[x.id] : 1));
+    const t = w.reduce((a, v) => a + v, 0) || 1;
+    return R.map((x, i) => ({ id: x.id, label: x.label, color: x.color, pct: (w[i] / t * 100) }));
+  },
+
+  collection() {
+    const owned = new Set((this.state.squad || []).concat(this.state.collected || []).map((p) => p.id != null ? p.id : p));
+    const pool = this.CARD_POOL();
+    const have = pool.filter((c) => owned.has(c.id)).length;
+    return { have, total: pool.length };
+  },
+
+  UPGRADE_COST() { return [0, 25, 60, 140, 320]; },
+
+  cardLevel(p) { return p.lvl || 1; },
+
+  upgradeInfo(p) {
+    const lvl = this.cardLevel(p), max = lvl >= 5;
+    const cost = max ? 0 : this.UPGRADE_COST()[lvl];
+    return { lvl, max, cost, can: !max && (this.state.shards || 0) >= cost };
+  },
+
+  levelUpPlayer(id) {
+    const s = this.state, p = s.squad.find((x) => x.id === id);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    const info = this.upgradeInfo(p);
+    if (info.max) return { ok: false, why: 'Niveau maximum' };
+    if (!info.can) return { ok: false, why: 'Il te manque ' + (info.cost - (s.shards || 0)) + ' fragments' };
+    const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; });
+    const w = this.statW(p.pos), keys = Object.keys(w).sort((a, b) => w[b] - w[a]).slice(0, 2);
+    keys.forEach((k) => { if (st[k] != null && st[k] < 99) st[k] += 2; });
+    const ovr = Math.max(p.ovr, this.ovrOf(p.pos, st));
+    this.buzz([30, 30, 60]);
+    this.setState({ shards: (s.shards || 0) - info.cost,
+      squad: s.squad.map((x) => (x.id === id ? Object.assign({}, x, { st, ovr, lvl: info.lvl + 1 }) : x)),
+      trainLog: p.name + ' passe niveau ' + (info.lvl + 1) + ' · ' + keys.map((k) => '+2 ' + k).join(', ') });
+    return { ok: true, lvl: info.lvl + 1 };
+  },
+
+  MATCH_CARDS() {
+    return [
+      { id: 'energie', label: 'Boost énergie', desc: '+15 % d’énergie pour tout le XI', icon: 'M13 2 3 14h7l-1 8 10-12h-7z' },
+      { id: 'motivation', label: 'Motivation', desc: 'Décision et finition +, 20 minutes', icon: 'M12 2 15 8l7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z' },
+      { id: 'pressing', label: 'Pressing', desc: 'Pressing haut et intense, 15 minutes', icon: 'M4 12h16M12 4l8 8-8 8' },
+      { id: 'bloc', label: 'Bloc défensif', desc: 'Bloc bas, défense renforcée, 15 minutes', icon: 'M12 2 20 5v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5z' },
+      { id: 'contre', label: 'Contre-attaque', desc: 'Vitesse et transitions rapides, 15 minutes', icon: 'M3 17 9 11l4 4 8-8M14 7h7v7' },
+      { id: 'finition', label: 'Boost finition', desc: 'Tir +5, 15 minutes', icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8z' }
+    ];
+  },
+
+  UPGRADE_CARDS() { return [['VIT', 'Vitesse'], ['ATQ', 'Attaque'], ['TIR', 'Tir'], ['PAS', 'Passe'], ['DRI', 'Dribble'], ['DÉF', 'Défense'], ['PHY', 'Physique']]; },
+
+  useUpgrade(pid, stat) {
+    const s = this.state, key = 'up_' + stat, inv = Object.assign({}, s.inv || {}); if (!(inv[key] > 0)) return;
+    const p = s.squad.find((q) => q.id === pid); if (!p) return;
+    const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; }); if (st[stat] == null || st[stat] >= 99) return;
+    st[stat] = Math.min(99, st[stat] + 2); inv[key]--; this.buzz(30);
+    this.setState({ inv, squad: s.squad.map((q) => (q.id === pid ? Object.assign({}, q, { st, ovr: Math.max(q.ovr, this.ovrOf(q.pos, st)) }) : q)) });
   }
-  matchup(a, b) {
-    const S = this.styles(), A = S[a], B = S[b];
-    if (!A || !B) return 0;
-    let v = (A.beats.includes(b) ? 1 : 0) - (A.weak.includes(b) ? 1 : 0) + (B.weak.includes(a) ? 1 : 0) - (B.beats.includes(a) ? 1 : 0);
-    return Math.max(-2, Math.min(2, v));
+};
+
+// LinkFoot : Staff, stade, centre de formation, synergies et finances.
+// Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
+const Staff = {
+  STAFF_DEFS() {
+    return [
+      { id: 'adjoint', label: 'Entraîneur adjoint', cost: [400, 900, 1800], wage: [0, 12, 26, 48], eff: ['Aucun', 'Bonus tactique +0,8 en match', 'Bonus tactique +1,6 en match', 'Bonus tactique +2,4 en match'] },
+      { id: 'physique', label: 'Préparateur physique', cost: [350, 800, 1600], wage: [0, 10, 22, 42], eff: ['Aucun', 'Récupération +5, blessures −18 %', 'Récupération +10, blessures −36 %', 'Récupération +15, blessures −54 %'] },
+      { id: 'recruteur', label: 'Recruteur', cost: [300, 750, 1500], wage: [0, 9, 20, 38], eff: ['Aucun', 'Marché +2 de note', 'Marché +4 de note, stats révélées', 'Marché +6 de note, stats révélées'] },
+      { id: 'kine', label: 'Kinésithérapeute', cost: [320, 760, 1500], wage: [0, 9, 20, 38], eff: ['Aucun', 'Blessures −20 %', 'Blessures −40 %', 'Blessures −60 %'] }
+    ];
+  },
+
+  staffLv(id) { const st = this.state.staff || {}; return st[id] || 0; },
+
+  staffWages() { return this.STAFF_DEFS().reduce((a, d) => a + d.wage[this.staffLv(d.id)], 0); },
+
+  hireStaff(id) {
+    const s = this.state, d = this.STAFF_DEFS().find((x) => x.id === id), lv = this.staffLv(id);
+    if (!d || lv >= 3) return; const cost = d.cost[lv]; if (s.balance < cost) return;
+    this.buzz([25, 25, 50]);
+    this.setState({ balance: s.balance - cost, staff: Object.assign({}, s.staff, { [id]: lv + 1 }), staffLog: d.label + ' niveau ' + (lv + 1) + ' recruté' });
+  },
+
+  STADES() {
+    return [
+      { name: 'Terrain municipal', cap: 800, mult: 1, cost: 0 },
+      { name: 'Stade de quartier', cap: 2500, mult: 1.3, cost: 900 },
+      { name: 'Enceinte couverte', cap: 8000, mult: 1.7, cost: 2200 },
+      { name: 'Stade de division', cap: 20000, mult: 2.2, cost: 4800 },
+      { name: 'Grand stade LinkFoot', cap: 45000, mult: 3, cost: 9500 }
+    ];
+  },
+
+  upgradeStade() {
+    const s = this.state, L = this.STADES(), lv = s.stade || 0; if (lv >= L.length - 1) return;
+    const cost = L[lv + 1].cost; if (s.balance < cost) return;
+    this.buzz([25, 25, 60]); this.setState({ balance: s.balance - cost, stade: lv + 1, staffLog: L[lv + 1].name + ' construit' });
+  },
+
+  ACADEMIES() {
+    return [
+      { name: 'Aucun centre', note: 'Pas de jeune formé', cost: 0, lo: 0, hi: 0, potLo: 0, potHi: 0 },
+      { name: 'École de foot', note: '1 jeune par saison · note 48 à 56 · potentiel 68 à 78', cost: 700, lo: 48, hi: 56, potLo: 68, potHi: 78 },
+      { name: 'Centre de formation', note: '1 jeune par saison · note 54 à 62 · potentiel 74 à 85', cost: 2000, lo: 54, hi: 62, potLo: 74, potHi: 85 },
+      { name: 'Académie d’élite', note: '1 jeune par saison · note 58 à 66 · potentiel 80 à 92', cost: 5000, lo: 58, hi: 66, potLo: 80, potHi: 92 }
+    ];
+  },
+
+  upgradeAcademy() {
+    const s = this.state, A = this.ACADEMIES(), lv = s.academy || 0; if (lv >= A.length - 1) return;
+    const cost = A[lv + 1].cost; if (s.balance < cost) return;
+    this.buzz([25, 25, 60]); this.setState({ balance: s.balance - cost, academy: lv + 1, staffLog: A[lv + 1].name + ' ouvert' });
+  },
+
+  youthPlayer(st) {
+    const A = this.ACADEMIES()[st.academy || 0]; if (!A.lo) return null;
+    const r = this.seedR(st.division * 311 + st.seasonP * 97 + (st.youth || []).length * 13 + 7);
+    const F = ['A.', 'B.', 'C.', 'E.', 'I.', 'K.', 'L.', 'M.', 'N.', 'R.', 'S.', 'T.', 'Y.'];
+    const L = ['Baptiste', 'Covelli', 'Diarra-Noel', 'Ewane', 'Fontenay', 'Greco', 'Hadji-Lenoir', 'Istvan', 'Jourdain', 'Keita-Marsal', 'Lombardi', 'Novak', 'Oyelaran', 'Prunier', 'Sagnol-Diaz', 'Terrasse', 'Vukovic'];
+    const POS = ['GB', 'DEF', 'DEF', 'MIL', 'MIL', 'MIL', 'ATT', 'ATT'];
+    const bonus = st.coach === 'formateur' ? 3 : 0;
+    const ovr = A.lo + Math.floor(r() * (A.hi - A.lo + 1)) + bonus;
+    const pot = Math.max(ovr + 6, A.potLo + Math.floor(r() * (A.potHi - A.potLo + 1)) + bonus);
+    return { id: 30000 + (st.division * 100) + Math.floor(r() * 900), name: F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)], pos: POS[Math.floor(r() * POS.length)], ovr, pot, age: 16 + Math.floor(r() * 4), youth: true, fresh: true, scouted: true };
+  },
+
+  synergy(xi) {
+    const nat = {}, labels = [];
+    xi.forEach((p) => { const n = this.profile(p).nat || '—'; nat[n] = (nat[n] || 0) + 1; });
+    let sc = 0;
+    Object.keys(nat).sort((a, b) => nat[b] - nat[a]).forEach((n) => { if (nat[n] >= 3) { sc += (nat[n] - 2) * 0.03; labels.push(n + ' ×' + nat[n]); } });
+    const fit = xi.filter((p) => !p.pen).length; sc += (fit - 9) * 0.014;
+    const form = xi.length ? xi.reduce((a, p) => a + this.profile(p).form, 0) / xi.length : 70;
+    sc += (form - 70) * 0.0035;
+    return { score: Math.max(-0.18, Math.min(0.3, sc)), labels };
+  },
+
+  finances(st, res) {
+    const base = [0, 700, 520, 380, 260, 180][st.division] + (res === 'w' ? 60 : 0);
+    const gate = Math.round(base * this.STADES()[st.stade || 0].mult);
+    const wages = Math.round(st.squad.reduce((a, p) => a + this.profile(p).salary, 0) / 10 * (st.coach === 'gestionnaire' ? 0.85 : 1)) + this.staffWages();
+    return { gate, wages, net: gate - wages };
   }
-  levelNeed(l) { return 300 + l * 100; }
+};
+
+// LinkFoot : Entraînement, forme, énergie et blessures (§68, §69).
+// Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
+const Training = {
+  TRAININGS() {
+    return [
+      { id: 'repos', label: 'Repos', desc: 'Énergie +25, soigne les blessés plus vite', fit: 25, form: -2, gain: null, risk: 0 },
+      { id: 'physique', label: 'Physique', desc: 'VIT et PHY progressent, énergie −10', fit: -10, form: 3, gain: ['VIT', 'PHY'], risk: 0.06 },
+      { id: 'technique', label: 'Technique', desc: 'PAS et DRI progressent', fit: -6, form: 4, gain: ['PAS', 'DRI'], risk: 0.03 },
+      { id: 'tir', label: 'Finition', desc: 'ATQ et TIR progressent', fit: -6, form: 4, gain: ['ATQ', 'TIR'], risk: 0.03 },
+      { id: 'defense', label: 'Défense', desc: 'DÉF et PHY progressent', fit: -8, form: 3, gain: ['DÉF', 'PHY'], risk: 0.04 },
+      { id: 'collectif', label: 'Collectif', desc: 'Cohésion +, forme +', fit: -5, form: 6, gain: null, risk: 0.02, coh: 0.04 }
+    ];
+  },
+
+  train(id) {
+    const s = this.state, T = this.TRAININGS().find((t) => t.id === id); if (!T || s.match && !s.match.done) return;
+    let squad = this.applyFitness(s.squad, null, T), lines = [];
+    if (T.gain) squad = squad.map((p) => {
+      if (p.pos === 'GB' || p.inj || this.rand(0, 99) > 45 + (p.pot - p.ovr) * 4 * (s.coach === 'formateur' ? 2 : 1)) return p;
+      const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; }); const k = T.gain[this.rand(0, T.gain.length - 1)];
+      if (st[k] >= 99 || p.ovr >= p.pot) return p; st[k]++; const ovr = Math.max(p.ovr, this.ovrOf(p.pos, st)); lines.push(p.name.split(' ').slice(1).join(' ') + ' +1 ' + k);
+      return Object.assign({}, p, { st, ovr });
+    });
+    const hurt = [];
+    if (T.risk) squad = squad.map((p) => { if (!p.inj && this.rand(0, 999) / 1000 < T.risk) { hurt.push(p.name); return Object.assign({}, p, { inj: 1 + this.rand(0, 2) }); } return p; });
+    this.buzz(20);
+    this.setState({ squad, cohBonus: Math.min(0.12, (s.cohBonus || 0) + (T.coh || 0)), trainLog: 'Séance ' + T.label + (lines.length ? ' · ' + lines.slice(0, 3).join(', ') : '') + (hurt.length ? ' · blessé : ' + hurt.join(', ') : ''), trainDone: (s.trainDone || 0) + 1 });
+  },
+
+  applyFitness(squad, mt, training) {
+    const played = new Set(mt ? mt.xi.map((p) => p.id) : []);
+    return squad.map((p) => {
+      const pr = this.profile(p); let fit = pr.fit, inj = pr.inj, form = pr.form, morale = pr.morale;
+      if (mt) {
+        const xp = mt.xi.find((q) => q.id === p.id);
+        if (xp) {
+          const rat = mt.rat && mt.rat.H[mt.xi.indexOf(xp)] || 6;
+          fit = Math.min(100, Math.max(20, Math.round((xp.energy != null ? xp.energy * 0.45 + 52 : fit - 10) + this.staffLv('physique') * 5)));   // une semaine de récupération entre deux matchs
+          form = Math.round(Math.max(20, Math.min(99, form * 0.75 + (rat - 6) * 12 + 18)));
+          morale = Math.round(Math.max(20, Math.min(99, morale + (mt.res === 'w' ? 6 : mt.res === 'd' ? 1 : -5) + (rat >= 7.5 ? 4 : 0))));
+          const risk = (0.012 + Math.max(0, 60 - (xp.energy != null ? xp.energy : 70)) / 600 + (pr.age >= 31 ? 0.01 : 0)) * (xp.red ? 0 : 1) * (1 - this.staffLv('physique') * 0.18);
+          if (!inj && this.rand(0, 999) / 1000 < risk) { const base = 1 + this.rand(0, 3) + (this.rand(0, 9) === 0 ? 3 : 0); inj = Math.max(1, Math.round(base * (1 - this.staffLv('kine') * 0.2))); }
+        } else { fit = Math.min(100, fit + 30 + this.staffLv('physique') * 5); morale = Math.max(20, morale - (played.size ? 2 : 0)); if (inj) inj -= 1 + (this.staffLv('kine') >= 2 && this.rand(0, 1) ? 1 : 0); if (inj < 0) inj = 0; }
+      }
+      if (training) { const T = training; fit = Math.max(15, Math.min(100, fit + T.fit)); form = Math.max(20, Math.min(99, form + T.form)); if (inj && T.id === 'repos') inj = Math.max(0, inj - 1); }
+      return Object.assign({}, p, { age: pr.age, pot: pr.pot, fit, inj, form, morale, contract: pr.contract, skills: pr.skills });
+    });
+  }
+};
+
+// LinkFoot : Marché des transferts : valeur, offres, vente (§71).
+// Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
+const Transfer = {
+  valueOf(p) {
+    const age = p.age != null ? p.age : this.profile(p).age, pot = p.pot != null ? p.pot : p.ovr;
+    const ageK = age <= 21 ? 1.35 : age <= 25 ? 1.2 : age <= 29 ? 1 : age <= 32 ? 0.7 : 0.45;
+    const formK = 0.85 + ((p.form != null ? p.form : 70) - 50) / 200;
+    return Math.round(Math.pow(Math.max(40, p.ovr) / 10, 3.2) * ageK * formK * (1 + Math.max(0, pot - p.ovr) / 40) / 3) * 10;
+  },
+
+  marketList() {
+    const s = this.state; if (s.market && s.market.week === s.seasonP + s.division * 10) return s.market.list;
+    const POS = ['GB', 'DEF', 'DEF', 'MIL', 'MIL', 'ATT'], r = this.seedR(s.division * 977 + s.seasonP * 31 + 5);
+    const list = []; const F = ['A.', 'B.', 'C.', 'D.', 'E.', 'G.', 'H.', 'I.', 'J.', 'K.', 'L.', 'M.', 'N.', 'O.', 'R.', 'S.', 'T.', 'V.', 'Y.', 'Z.'];
+    const L = ['Marvello', 'Ducasson', 'Ebongué', 'Halvorsen', 'Quintero', 'Belkadi-Roy', 'Stranieri', 'Okafor-Lemaire', 'Vasquet', 'Nyamsi', 'Gaudrel', 'Petrakis', 'Lindau', 'Moreau-Diaby', 'Castagne-Nil', 'Rivoire', 'Takamura', 'Ferbault', 'Ansaldi', 'Kowalevski', 'Dembrel', 'Soumahé'];
+    for (let i = 0; i < 6; i++) {
+      const ovr = 55 + Math.floor(r() * 12) + (5 - s.division) * 3 + this.staffLv('recruteur') * 2, id = 20000 + s.division * 1000 + s.seasonP * 100 + i;
+      const p = { id, name: F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)], pos: POS[Math.floor(r() * POS.length)], ovr };
+      list.push(Object.assign(p, { scouted: this.staffLv('recruteur') >= 2, price: this.valueOf(Object.assign({}, p, this.profile(p))) }));
+    }
+    return list;
+  },
+
+  sellPlayer(id) {
+    const s = this.state;
+    if (s.match && !s.match.done) return { ok: false, why: 'Impossible pendant un match' };
+    if (s.squad.length <= 12) return { ok: false, why: 'Il te faut au moins 12 joueurs' };
+    const p = s.squad.find((x) => x.id === id);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    const price = Math.round(this.profile(p).value * 0.6);
+    this.buzz(25);
+    this.setState({ squad: s.squad.filter((x) => x.id !== id), balance: s.balance + price, sel: null,
+      trainLog: p.name + ' vendu pour ' + price + ' jetons' });
+    return { ok: true, price };
+  }
+};
+
+// LinkFoot : Progression du club : niveaux, missions, suites de match, saison, vieillissement (§70, §72).
+// Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
+const Progression = {
+  levelNeed(l) { return 300 + l * 100; },
+
   addXp(st, gain) {
     let xp = st.xp + gain, level = st.level, bal = 0, queue = st.freeQueue.slice(), ups = [];
     while (xp >= this.levelNeed(level)) { xp -= this.levelNeed(level); level++; const pack = level % 5 === 0; bal += 100 + level * 20; if (pack) queue.push('or'); ups.push({ level, text: '+' + (100 + level * 20) + ' jetons' + (pack ? ' + Pack Or offert' : '') }); }
     return { xp, level, bonusBal: bal, freeQueue: queue, ups };
-  }
-  table(rec) {
-    const others = [
-      { user: '@Massilia13', club: 'Olympique Vieux-Port', w: 3, d: 1, l: 0 }, { user: '@Lina_psg', club: 'Auteuil United', w: 2, d: 1, l: 1 },
-      { user: '@Yohan_foot', club: 'Sporting Yoyo', w: 2, d: 0, l: 2 }, { user: '@KopBleu', club: 'Kop Bleu FC', w: 1, d: 1, l: 2 }, { user: '@Nina_foot', club: 'Real Canal FC', w: 0, d: 2, l: 2 }
-    ];
-    return others.concat([{ user: 'Toi', club: 'FC TonPseudo', w: rec.w, d: rec.d, l: rec.l, me: true }])
-      .map((c) => Object.assign({}, c, { pts: c.w * 3 + c.d, p: c.w + c.d + c.l })).sort((a, b) => b.pts - a.pts || b.w - a.w);
-  }
-  bumpMission(ms, id, n) { return ms.map((m) => (m.id === id && !m.claimed ? Object.assign({}, m, { prog: Math.min(m.goal, m.prog + n) }) : m)); }
+  },
+
+  bumpMission(ms, id, n) { return ms.map((m) => (m.id === id && !m.claimed ? Object.assign({}, m, { prog: Math.min(m.goal, m.prog + n) }) : m)); },
+
   afterMatch(mt, st) {
     const res = mt.res, win = res === 'w';
     const winStreak = win ? st.winStreak + 1 : 0;
@@ -1676,155 +1898,8 @@ class Club {
     } else patch.seasonP = seasonP;
     if (over) { patch.levelUp = over; this.buzz([60, 40, 60, 40, 200]); }
     return patch;
-  }
-  applyFitness(squad, mt, training) {
-    const played = new Set(mt ? mt.xi.map((p) => p.id) : []);
-    return squad.map((p) => {
-      const pr = this.profile(p); let fit = pr.fit, inj = pr.inj, form = pr.form, morale = pr.morale;
-      if (mt) {
-        const xp = mt.xi.find((q) => q.id === p.id);
-        if (xp) {
-          const rat = mt.rat && mt.rat.H[mt.xi.indexOf(xp)] || 6;
-          fit = Math.min(100, Math.max(20, Math.round((xp.energy != null ? xp.energy * 0.45 + 52 : fit - 10) + this.staffLv('physique') * 5)));   // une semaine de récupération entre deux matchs
-          form = Math.round(Math.max(20, Math.min(99, form * 0.75 + (rat - 6) * 12 + 18)));
-          morale = Math.round(Math.max(20, Math.min(99, morale + (mt.res === 'w' ? 6 : mt.res === 'd' ? 1 : -5) + (rat >= 7.5 ? 4 : 0))));
-          const risk = (0.012 + Math.max(0, 60 - (xp.energy != null ? xp.energy : 70)) / 600 + (pr.age >= 31 ? 0.01 : 0)) * (xp.red ? 0 : 1) * (1 - this.staffLv('physique') * 0.18);
-          if (!inj && this.rand(0, 999) / 1000 < risk) { const base = 1 + this.rand(0, 3) + (this.rand(0, 9) === 0 ? 3 : 0); inj = Math.max(1, Math.round(base * (1 - this.staffLv('kine') * 0.2))); }
-        } else { fit = Math.min(100, fit + 30 + this.staffLv('physique') * 5); morale = Math.max(20, morale - (played.size ? 2 : 0)); if (inj) inj -= 1 + (this.staffLv('kine') >= 2 && this.rand(0, 1) ? 1 : 0); if (inj < 0) inj = 0; }
-      }
-      if (training) { const T = training; fit = Math.max(15, Math.min(100, fit + T.fit)); form = Math.max(20, Math.min(99, form + T.form)); if (inj && T.id === 'repos') inj = Math.max(0, inj - 1); }
-      return Object.assign({}, p, { age: pr.age, pot: pr.pot, fit, inj, form, morale, contract: pr.contract, skills: pr.skills });
-    });
-  }
-  TRAININGS() {
-    return [
-      { id: 'repos', label: 'Repos', desc: 'Énergie +25, soigne les blessés plus vite', fit: 25, form: -2, gain: null, risk: 0 },
-      { id: 'physique', label: 'Physique', desc: 'VIT et PHY progressent, énergie −10', fit: -10, form: 3, gain: ['VIT', 'PHY'], risk: 0.06 },
-      { id: 'technique', label: 'Technique', desc: 'PAS et DRI progressent', fit: -6, form: 4, gain: ['PAS', 'DRI'], risk: 0.03 },
-      { id: 'tir', label: 'Finition', desc: 'ATQ et TIR progressent', fit: -6, form: 4, gain: ['ATQ', 'TIR'], risk: 0.03 },
-      { id: 'defense', label: 'Défense', desc: 'DÉF et PHY progressent', fit: -8, form: 3, gain: ['DÉF', 'PHY'], risk: 0.04 },
-      { id: 'collectif', label: 'Collectif', desc: 'Cohésion +, forme +', fit: -5, form: 6, gain: null, risk: 0.02, coh: 0.04 }
-    ];
-  }
-  train(id) {
-    const s = this.state, T = this.TRAININGS().find((t) => t.id === id); if (!T || s.match && !s.match.done) return;
-    let squad = this.applyFitness(s.squad, null, T), lines = [];
-    if (T.gain) squad = squad.map((p) => {
-      if (p.pos === 'GB' || p.inj || this.rand(0, 99) > 45 + (p.pot - p.ovr) * 4 * (s.coach === 'formateur' ? 2 : 1)) return p;
-      const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; }); const k = T.gain[this.rand(0, T.gain.length - 1)];
-      if (st[k] >= 99 || p.ovr >= p.pot) return p; st[k]++; const ovr = Math.max(p.ovr, this.ovrOf(p.pos, st)); lines.push(p.name.split(' ').slice(1).join(' ') + ' +1 ' + k);
-      return Object.assign({}, p, { st, ovr });
-    });
-    const hurt = [];
-    if (T.risk) squad = squad.map((p) => { if (!p.inj && this.rand(0, 999) / 1000 < T.risk) { hurt.push(p.name); return Object.assign({}, p, { inj: 1 + this.rand(0, 2) }); } return p; });
-    this.buzz(20);
-    this.setState({ squad, cohBonus: Math.min(0.12, (s.cohBonus || 0) + (T.coh || 0)), trainLog: 'Séance ' + T.label + (lines.length ? ' · ' + lines.slice(0, 3).join(', ') : '') + (hurt.length ? ' · blessé : ' + hurt.join(', ') : ''), trainDone: (s.trainDone || 0) + 1 });
-  }
-  COACHES() {
-    return [
-      { id: 'tacticien', label: 'Tacticien', tactique: 88, motivation: 62, gestion: 74, dev: 66, desc: 'Bonus tactique en match, adaptation fine au score' },
-      { id: 'motivateur', label: 'Motivateur', tactique: 64, motivation: 90, gestion: 80, dev: 62, desc: 'Moral et forme remontent plus vite, meilleure fin de match' },
-      { id: 'defensif', label: 'Défensif', tactique: 80, motivation: 66, gestion: 72, dev: 64, desc: 'Bloc plus solide, moins de buts encaissés' },
-      { id: 'offensif', label: 'Offensif', tactique: 78, motivation: 74, gestion: 66, dev: 66, desc: 'Plus d’occasions créées, défense plus exposée' },
-      { id: 'formateur', label: 'Formateur', tactique: 66, motivation: 70, gestion: 70, dev: 92, desc: 'Les jeunes progressent deux fois plus vite à l’entraînement' },
-      { id: 'gestionnaire', label: 'Gestionnaire', tactique: 70, motivation: 72, gestion: 92, dev: 72, desc: 'Moins de blessures, salaires mieux négociés' }
-    ];
-  }
-  MATCH_CARDS() {
-    return [
-      { id: 'energie', label: 'Boost énergie', desc: '+15 % d’énergie pour tout le XI', icon: 'M13 2 3 14h7l-1 8 10-12h-7z' },
-      { id: 'motivation', label: 'Motivation', desc: 'Décision et finition +, 20 minutes', icon: 'M12 2 15 8l7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z' },
-      { id: 'pressing', label: 'Pressing', desc: 'Pressing haut et intense, 15 minutes', icon: 'M4 12h16M12 4l8 8-8 8' },
-      { id: 'bloc', label: 'Bloc défensif', desc: 'Bloc bas, défense renforcée, 15 minutes', icon: 'M12 2 20 5v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5z' },
-      { id: 'contre', label: 'Contre-attaque', desc: 'Vitesse et transitions rapides, 15 minutes', icon: 'M3 17 9 11l4 4 8-8M14 7h7v7' },
-      { id: 'finition', label: 'Boost finition', desc: 'Tir +5, 15 minutes', icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8z' }
-    ];
-  }
-  UPGRADE_CARDS() { return [['VIT', 'Vitesse'], ['ATQ', 'Attaque'], ['TIR', 'Tir'], ['PAS', 'Passe'], ['DRI', 'Dribble'], ['DÉF', 'Défense'], ['PHY', 'Physique']]; }
-  useUpgrade(pid, stat) {
-    const s = this.state, key = 'up_' + stat, inv = Object.assign({}, s.inv || {}); if (!(inv[key] > 0)) return;
-    const p = s.squad.find((q) => q.id === pid); if (!p) return;
-    const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; }); if (st[stat] == null || st[stat] >= 99) return;
-    st[stat] = Math.min(99, st[stat] + 2); inv[key]--; this.buzz(30);
-    this.setState({ inv, squad: s.squad.map((q) => (q.id === pid ? Object.assign({}, q, { st, ovr: Math.max(q.ovr, this.ovrOf(q.pos, st)) }) : q)) });
-  }
-  // ================= CARTES : RARETÉS, CATALOGUE, PACKS (§56 à §65) =================
-  // Les taux sont centralisés ici. Changer une valeur change le jeu partout.
-  RARITY() {
-    return [
-      { id: 'normal', label: 'Normal', rate: 0.55, lo: 48, hi: 64, shards: 1, color: 'linear-gradient(135deg, #AEB9C2, #6F8077)', ink: '#0B1210' },
-      { id: 'common', label: 'Commun', rate: 0.25, lo: 56, hi: 70, shards: 2, color: 'linear-gradient(135deg, #CFE0D4, #8FA89A)', ink: '#0B1210' },
-      { id: 'rare', label: 'Rare', rate: 0.12, lo: 64, hi: 77, shards: 5, color: 'linear-gradient(135deg, #7FB0FF, #3E6BFF)', ink: '#06101F' },
-      { id: 'epic', label: 'Épique', rate: 0.05, lo: 71, hi: 83, shards: 12, color: 'linear-gradient(135deg, #C39BFF, #7B4FD8)', ink: '#120A24' },
-      { id: 'elite', label: 'Élite', rate: 0.02, lo: 77, hi: 88, shards: 30, color: 'linear-gradient(135deg, #4FDCC4, #1E9E92)', ink: '#04201C' },
-      { id: 'gold', label: 'Or', rate: 0.009, lo: 82, hi: 92, shards: 80, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', ink: '#241703' },
-      { id: 'legendary', label: 'Légendaire', rate: 0.001, lo: 86, hi: 95, shards: 200, color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', ink: '#2A0812' }
-    ];
-  }
-  rarityOf(id) { return this.RARITY().find((r) => r.id === id) || this.RARITY()[0]; }
-  // Catalogue fixe de 500 cartes : des identifiants stables, donc des doublons réels et une collection qui a du sens.
-  CARD_POOL() {
-    if (this._pool) return this._pool;
-    const R = this.RARITY(), r = this.seedR(424242);
-    const F = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.', 'H.', 'I.', 'J.', 'K.', 'L.', 'M.', 'N.', 'O.', 'P.', 'R.', 'S.', 'T.', 'V.', 'Y.', 'Z.'];
-    const L = ['Marvello', 'Ducasson', 'Ebongué', 'Halvorsen', 'Quintero', 'Belkadi-Roy', 'Stranieri', 'Okafor-Lemaire', 'Vasquet', 'Nyamsi', 'Gaudrel', 'Petrakis', 'Lindau', 'Moreau-Diaby', 'Castagne-Nil', 'Rivoire', 'Takamura', 'Ferbault', 'Ansaldi', 'Kowalevski', 'Dembrel', 'Soumahé', 'Varnier', 'Okonkwé', 'Delacroix-Sy', 'Ferrandi', 'Braxton', 'Kessler', 'Mbaloula', 'Arroyo-Faye', 'Lindqvist', 'Rouvière', 'Adebanjo', 'Castellane', 'Moulinet', 'Tavares', 'Bellanger', 'Cissoko-Vidal', 'Ngoumou', 'Rakotoson', 'Esperanza', 'Haugen', 'Pirlotti', 'Zemmouri', 'Okonjo', 'Vanthier', 'Bramante', 'Keita-Marsal'];
-    const POS = ['GB', 'DEF', 'DEF', 'DEF', 'MIL', 'MIL', 'MIL', 'ATT', 'ATT'];
-    const pool = [];
-    // la part de chaque rareté dans le catalogue suit les taux, avec au moins une carte par rareté
-    const counts = R.map((x) => Math.max(1, Math.round(x.rate * 500)));
-    counts[0] += 500 - counts.reduce((a2, v) => a2 + v, 0);   // le catalogue fait exactement 500 cartes
-    R.forEach((rar, ri) => {
-      for (let k = 0; k < counts[ri]; k++) {
-        const id = 50000 + pool.length;
-        pool.push({ id, name: F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)],
-          pos: POS[Math.floor(r() * POS.length)], ovr: rar.lo + Math.floor(r() * (rar.hi - rar.lo + 1)), rar: rar.id });
-      }
-    });
-    return (this._pool = pool);
-  }
-  // Tirage d'une carte selon la table de raretés d'un pack (poids multiplicatifs).
-  drawCard(packWeights, rnd) {
-    const R = this.RARITY(), w = R.map((x) => x.rate * ((packWeights || {})[x.id] != null ? packWeights[x.id] : 1));
-    let t = w.reduce((a, v) => a + v, 0), q = (rnd || Math.random)() * t, pick = R[0];
-    for (let i = 0; i < R.length; i++) { q -= w[i]; if (q <= 0) { pick = R[i]; break; } }
-    const pool = this.CARD_POOL().filter((c) => c.rar === pick.id);
-    return pool[Math.floor((rnd || Math.random)() * pool.length)];
-  }
-  PACK_DEFS() {
-    return [
-      { key: 'basic', name: 'Pack Basic', n: 3, cost: 150, w: {}, color: 'linear-gradient(135deg, #AEB9C2, #6F8077)', fx: 'bronze' },
-      { key: 'premium', name: 'Pack Premium', n: 4, cost: 400, w: { normal: 0.4, common: 1.2, rare: 2.2, epic: 2.5, elite: 2, gold: 1.6, legendary: 1.4 }, color: 'linear-gradient(135deg, #F2F6F4, #AEB9C2)', fx: 'silver' },
-      { key: 'elite', name: 'Pack Élite', n: 3, cost: 900, w: { normal: 0.1, common: 0.5, rare: 2, epic: 4, elite: 5, gold: 3, legendary: 2.5 }, color: 'linear-gradient(135deg, #4FDCC4, #1E9E92)', fx: 'silver' },
-      { key: 'gold', name: 'Pack Or', n: 3, cost: 2000, w: { normal: 0, common: 0.2, rare: 1.2, epic: 4, elite: 8, gold: 9, legendary: 6 }, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', fx: 'gold' },
-      { key: 'special', name: 'Pack Spécial', n: 2, cost: 1200, w: { normal: 0, common: 0, rare: 2, epic: 5, elite: 6, gold: 5, legendary: 4 }, color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', fx: 'gold' }
-    ];
-  }
-  // Probabilités réelles d'un pack, affichées au joueur (§58).
-  packOdds(def) {
-    const R = this.RARITY(), w = R.map((x) => x.rate * ((def.w || {})[x.id] != null ? def.w[x.id] : 1));
-    const t = w.reduce((a, v) => a + v, 0) || 1;
-    return R.map((x, i) => ({ id: x.id, label: x.label, color: x.color, pct: (w[i] / t * 100) }));
-  }
-  collection() {
-    const owned = new Set((this.state.squad || []).concat(this.state.collected || []).map((p) => p.id != null ? p.id : p));
-    const pool = this.CARD_POOL();
-    const have = pool.filter((c) => owned.has(c.id)).length;
-    return { have, total: pool.length };
-  }
-  // §71 vendre un joueur : 75 % de sa valeur, interdit si l'effectif tombe sous 12
-  sellPlayer(id) {
-    const s = this.state;
-    if (s.match && !s.match.done) return { ok: false, why: 'Impossible pendant un match' };
-    if (s.squad.length <= 12) return { ok: false, why: 'Il te faut au moins 12 joueurs' };
-    const p = s.squad.find((x) => x.id === id);
-    if (!p) return { ok: false, why: 'Joueur introuvable' };
-    const price = Math.round(this.profile(p).value * 0.6);
-    this.buzz(25);
-    this.setState({ squad: s.squad.filter((x) => x.id !== id), balance: s.balance + price, sel: null,
-      trainLog: p.name + ' vendu pour ' + price + ' jetons' });
-    return { ok: true, price };
-  }
-  // §70 une saison de plus : tout le monde prend un an, les anciens déclinent, les jeunes progressent
+  },
+
   ageSquad(squad) {
     return squad.map((p) => {
       const q = Object.assign({}, p, { ageAdj: (p.ageAdj || 0) + 1 });
@@ -1840,113 +1915,59 @@ class Club {
       }
       return q;
     });
-  }
-  // §60 à §63 niveaux de carte : les fragments issus des doublons servent à faire monter une carte.
-  UPGRADE_COST() { return [0, 25, 60, 140, 320]; }   // index = niveau visé moins 1
-  cardLevel(p) { return p.lvl || 1; }
-  upgradeInfo(p) {
-    const lvl = this.cardLevel(p), max = lvl >= 5;
-    const cost = max ? 0 : this.UPGRADE_COST()[lvl];
-    return { lvl, max, cost, can: !max && (this.state.shards || 0) >= cost };
-  }
-  levelUpPlayer(id) {
-    const s = this.state, p = s.squad.find((x) => x.id === id);
-    if (!p) return { ok: false, why: 'Joueur introuvable' };
-    const info = this.upgradeInfo(p);
-    if (info.max) return { ok: false, why: 'Niveau maximum' };
-    if (!info.can) return { ok: false, why: 'Il te manque ' + (info.cost - (s.shards || 0)) + ' fragments' };
-    const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; });
-    const w = this.statW(p.pos), keys = Object.keys(w).sort((a, b) => w[b] - w[a]).slice(0, 2);
-    keys.forEach((k) => { if (st[k] != null && st[k] < 99) st[k] += 2; });
-    const ovr = Math.max(p.ovr, this.ovrOf(p.pos, st));
-    this.buzz([30, 30, 60]);
-    this.setState({ shards: (s.shards || 0) - info.cost,
-      squad: s.squad.map((x) => (x.id === id ? Object.assign({}, x, { st, ovr, lvl: info.lvl + 1 }) : x)),
-      trainLog: p.name + ' passe niveau ' + (info.lvl + 1) + ' · ' + keys.map((k) => '+2 ' + k).join(', ') });
-    return { ok: true, lvl: info.lvl + 1 };
-  }
-  STAFF_DEFS() {
-    return [
-      { id: 'adjoint', label: 'Entraîneur adjoint', cost: [400, 900, 1800], wage: [0, 12, 26, 48], eff: ['Aucun', 'Bonus tactique +0,8 en match', 'Bonus tactique +1,6 en match', 'Bonus tactique +2,4 en match'] },
-      { id: 'physique', label: 'Préparateur physique', cost: [350, 800, 1600], wage: [0, 10, 22, 42], eff: ['Aucun', 'Récupération +5, blessures −18 %', 'Récupération +10, blessures −36 %', 'Récupération +15, blessures −54 %'] },
-      { id: 'recruteur', label: 'Recruteur', cost: [300, 750, 1500], wage: [0, 9, 20, 38], eff: ['Aucun', 'Marché +2 de note', 'Marché +4 de note, stats révélées', 'Marché +6 de note, stats révélées'] },
-      { id: 'kine', label: 'Kinésithérapeute', cost: [320, 760, 1500], wage: [0, 9, 20, 38], eff: ['Aucun', 'Blessures −20 %', 'Blessures −40 %', 'Blessures −60 %'] }
+  },
+
+  table(rec) {
+    const others = [
+      { user: '@Massilia13', club: 'Olympique Vieux-Port', w: 3, d: 1, l: 0 }, { user: '@Lina_psg', club: 'Auteuil United', w: 2, d: 1, l: 1 },
+      { user: '@Yohan_foot', club: 'Sporting Yoyo', w: 2, d: 0, l: 2 }, { user: '@KopBleu', club: 'Kop Bleu FC', w: 1, d: 1, l: 2 }, { user: '@Nina_foot', club: 'Real Canal FC', w: 0, d: 2, l: 2 }
     ];
+    return others.concat([{ user: 'Toi', club: 'FC TonPseudo', w: rec.w, d: rec.d, l: rec.l, me: true }])
+      .map((c) => Object.assign({}, c, { pts: c.w * 3 + c.d, p: c.w + c.d + c.l })).sort((a, b) => b.pts - a.pts || b.w - a.w);
   }
-  staffLv(id) { const st = this.state.staff || {}; return st[id] || 0; }
-  staffWages() { return this.STAFF_DEFS().reduce((a, d) => a + d.wage[this.staffLv(d.id)], 0); }
-  hireStaff(id) {
-    const s = this.state, d = this.STAFF_DEFS().find((x) => x.id === id), lv = this.staffLv(id);
-    if (!d || lv >= 3) return; const cost = d.cost[lv]; if (s.balance < cost) return;
-    this.buzz([25, 25, 50]);
-    this.setState({ balance: s.balance - cost, staff: Object.assign({}, s.staff, { [id]: lv + 1 }), staffLog: d.label + ' niveau ' + (lv + 1) + ' recruté' });
-  }
-  STADES() {
-    return [
-      { name: 'Terrain municipal', cap: 800, mult: 1, cost: 0 },
-      { name: 'Stade de quartier', cap: 2500, mult: 1.3, cost: 900 },
-      { name: 'Enceinte couverte', cap: 8000, mult: 1.7, cost: 2200 },
-      { name: 'Stade de division', cap: 20000, mult: 2.2, cost: 4800 },
-      { name: 'Grand stade LinkFoot', cap: 45000, mult: 3, cost: 9500 }
+};
+
+// LinkFoot : Tactiques, formations, rôles, composition et passerelle vers le moteur (§40 à §43).
+// Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
+const Tactics = {
+  styles() {
+    if (this._styles) return this._styles;
+    const D = { width: 1, tempo: 1, pass: 1, behind: 0, cross: 1, dribble: 0, longshot: 0, patience: 0, line: 1, engage: 1, press: 1, trap: 0, tackle: 1, lost: 1, won: 1, gk: 0, mark: 0, fullbacks: 1, overload: 0, ptrap: 0, timewaste: 0 };
+    const S = (k, fam, name, form, m, tac, desc, ref, beats, weak, threat) => ({ k, fam, name, form, m, tac: Object.assign({}, D, tac), desc, ref, beats, weak, threat });
+    const list = [
+      S('equilibre', 'Équilibre', 'Équilibré', '4-3-3', 3, {}, 'Aucun excès : un peu de tout, idéal pour découvrir l’adversaire.', 'La base de toutes les équipes', [], [], 'mid'),
+      S('tiki', 'Possession', 'Tiki-taka', '4-3-3', 4, { tempo: 0, pass: 0, cross: 0, patience: 1, line: 2, engage: 2, press: 2, trap: 1, lost: 0 }, 'Passes courtes à l’infini, 65 % de possession, on fatigue l’adversaire avec le ballon.', 'Popularisé par le Barça de la fin des années 2000', ['direct', 'kick', 'blocmed'], ['contre', 'gegen', 'bus'], 'keep'),
+      S('posit', 'Possession', 'Jeu de position', '4-3-3', 4, { tempo: 1, pass: 0, patience: 1, width: 2, line: 2, engage: 2, press: 2, lost: 0, fullbacks: 2 }, 'Chaque joueur occupe une zone précise pour créer des supériorités numériques entre les lignes.', 'La méthode Guardiola', ['blocbas', 'blocmed', 'homme'], ['gegen', 'contre'], 'keep'),
+      S('relation', 'Possession', 'Jeu relationnel', '4-2-3-1', 4, { tempo: 1, pass: 0, dribble: 1, patience: 1, width: 0, overload: 2, line: 1, lost: 0 }, 'Les joueurs se rapprochent du ballon et combinent en petits triangles, sans positions fixes.', 'Style de Fluminense, très brésilien', ['homme', 'blocmed'], ['gegen', 'blocbas'], 'keep'),
+      S('total', 'Possession', 'Football total', '4-3-3', 5, { tempo: 2, pass: 1, behind: 1, dribble: 1, line: 2, engage: 2, press: 2, trap: 1, lost: 0, fullbacks: 1 }, 'Tout le monde attaque, tout le monde défend, permutations permanentes. Très fatigant.', 'L’Ajax et les Pays-Bas des années 70', ['blocmed', 'catenaccio', 'bus'], ['contre', 'direct'], 'keep'),
+      S('gegen', 'Pressing', 'Gegenpressing', '4-3-3', 4, { tempo: 2, behind: 1, line: 2, engage: 2, press: 2, trap: 1, lost: 0, won: 0, ptrap: 2 }, 'Dès la perte du ballon, on presse à 5 pour le récupérer en moins de 8 secondes.', 'La signature de Klopp', ['tiki', 'posit', 'relation'], ['direct', 'kick'], 'press'),
+      S('blochaut', 'Pressing', 'Bloc haut', '4-4-2', 4, { line: 2, engage: 2, press: 2, trap: 1, lost: 0, ptrap: 1 }, 'Ligne défensive très haute et piège du hors-jeu : l’adversaire étouffe dans son camp.', 'Utilisé par la plupart des grosses équipes', ['tiki', 'relation', 'bus'], ['contre', 'vertical', 'direct'], 'press'),
+      S('homme', 'Pressing', 'Pressing homme à homme', '3-5-2', 4, { line: 2, engage: 2, press: 2, tackle: 2, mark: 2, lost: 0 }, 'Chaque joueur suit son adversaire direct partout sur le terrain. Duels, duels, duels.', 'Bielsa et Gasperini', ['posit', 'tiki', 'pistons'], ['relation', 'surcharge', 'vertical'], 'press'),
+      S('blocmed', 'Défensif', 'Bloc médian', '4-4-2', 2, { width: 0, line: 1, engage: 1, press: 1, lost: 1, won: 0, ptrap: 2 }, 'On attend au milieu de terrain, on ferme l’axe et on presse seulement dans les zones pièges.', 'Très utilisé en sélection nationale', ['contre', 'direct', 'kick', 'vertical'], ['posit', 'total', 'surcharge'], 'mid'),
+      S('blocbas', 'Défensif', 'Bloc bas', '4-4-2', 1, { width: 0, pass: 2, longshot: 1, line: 0, engage: 0, press: 0, tackle: 2, lost: 1, gk: 1, fullbacks: 0 }, 'Deux lignes de 4 collées devant la surface : aucun espace dans le dos, on attend l’erreur.', 'L’arme des outsiders', ['contre', 'vertical', 'kick', 'relation'], ['posit', 'ailes', 'pistons'], 'low'),
+      S('catenaccio', 'Défensif', 'Catenaccio', '5-3-2', 1, { width: 0, pass: 2, behind: 1, line: 0, engage: 0, press: 1, tackle: 2, mark: 2, gk: 1, fullbacks: 0 }, 'Un libéro derrière la défense, marquage individuel strict et contres éclairs.', 'Le verrou italien des années 60', ['tiki', 'gegen', 'vertical'], ['ailes', 'total', 'surcharge'], 'low'),
+      S('bus', 'Défensif', 'Garer le bus', '5-3-2', 0, { width: 0, tempo: 0, pass: 2, line: 0, engage: 0, press: 0, tackle: 2, gk: 1, fullbacks: 0, timewaste: 1 }, 'Les 11 joueurs derrière le ballon, on défend le score coûte que coûte.', 'Le plan anti-favori', ['tiki', 'posit'], ['ailes', 'total', 'blochaut', 'pistons'], 'low'),
+      S('contre', 'Transition', 'Contre-attaque', '4-4-2', 2, { tempo: 2, pass: 2, behind: 1, dribble: 1, line: 0, engage: 0, won: 0, gk: 1 }, 'On récupère bas et on se projette en 3 passes dans le dos d’une défense montée.', 'Le classique des équipes rapides', ['tiki', 'posit', 'blochaut', 'total', 'ailes'], ['blocbas', 'blocmed'], 'space'),
+      S('vertical', 'Transition', 'Transitions verticales', '4-2-3-1', 3, { tempo: 2, pass: 2, behind: 1, line: 1, engage: 1, press: 1, won: 0 }, 'Dès la récupération, le ballon va vers l’avant : peu de passes, beaucoup de vitesse.', 'Leicester champion en 2016', ['blochaut', 'homme', 'gegen'], ['blocbas', 'blocmed', 'catenaccio'], 'space'),
+      S('direct', 'Direct', 'Jeu direct', '4-4-2', 4, { width: 2, tempo: 2, pass: 2, behind: 1, cross: 2, longshot: 1, tackle: 2, gk: 1 }, 'Longs ballons vers un grand attaquant, on gagne les deuxièmes ballons.', 'Le foot anglais traditionnel', ['gegen', 'blochaut', 'total'], ['blocmed', 'tiki', 'posit'], 'space'),
+      S('kick', 'Direct', 'Kick and rush', '4-4-2', 5, { width: 2, tempo: 2, pass: 2, behind: 1, cross: 2, longshot: 1, engage: 2, press: 2, tackle: 2, gk: 1 }, 'On balance devant et on court : intensité maximale, peu de construction.', 'Le football d’avant, 100 % engagement', ['gegen', 'homme'], ['blocbas', 'blocmed', 'tiki'], 'space'),
+      S('ailes', 'Couloirs', 'Jeu sur les ailes', '4-4-2', 4, { width: 2, cross: 2, dribble: 1, fullbacks: 1 }, 'Débordements et centres : on étire le bloc adverse sur toute la largeur.', 'Idéal avec des ailiers rapides', ['blocbas', 'bus', 'catenaccio'], ['contre', 'blocmed'], 'wide'),
+      S('surcharge', 'Couloirs', 'Surcharge et renversement', '4-3-3', 4, { width: 2, pass: 1, patience: 1, overload: 1, fullbacks: 2 }, 'On attire l’adversaire d’un côté à 5 contre 3, puis on renverse vers un ailier seul de l’autre côté.', 'Très utilisé dans le foot moderne', ['homme', 'blocmed', 'catenaccio'], ['gegen', 'contre'], 'wide'),
+      S('pistons', 'Couloirs', 'Pistons en 3-5-2', '3-5-2', 4, { width: 2, cross: 1, behind: 1, fullbacks: 1, line: 1 }, 'Trois défenseurs centraux et deux pistons qui font tout le couloir : largeur et solidité.', 'Système favori de nombreux entraîneurs italiens', ['blocbas', 'bus', 'kick'], ['contre', 'homme'], 'wide')
     ];
-  }
-  upgradeStade() {
-    const s = this.state, L = this.STADES(), lv = s.stade || 0; if (lv >= L.length - 1) return;
-    const cost = L[lv + 1].cost; if (s.balance < cost) return;
-    this.buzz([25, 25, 60]); this.setState({ balance: s.balance - cost, stade: lv + 1, staffLog: L[lv + 1].name + ' construit' });
-  }
-  ACADEMIES() {
-    return [
-      { name: 'Aucun centre', note: 'Pas de jeune formé', cost: 0, lo: 0, hi: 0, potLo: 0, potHi: 0 },
-      { name: 'École de foot', note: '1 jeune par saison · note 48 à 56 · potentiel 68 à 78', cost: 700, lo: 48, hi: 56, potLo: 68, potHi: 78 },
-      { name: 'Centre de formation', note: '1 jeune par saison · note 54 à 62 · potentiel 74 à 85', cost: 2000, lo: 54, hi: 62, potLo: 74, potHi: 85 },
-      { name: 'Académie d’élite', note: '1 jeune par saison · note 58 à 66 · potentiel 80 à 92', cost: 5000, lo: 58, hi: 66, potLo: 80, potHi: 92 }
-    ];
-  }
-  upgradeAcademy() {
-    const s = this.state, A = this.ACADEMIES(), lv = s.academy || 0; if (lv >= A.length - 1) return;
-    const cost = A[lv + 1].cost; if (s.balance < cost) return;
-    this.buzz([25, 25, 60]); this.setState({ balance: s.balance - cost, academy: lv + 1, staffLog: A[lv + 1].name + ' ouvert' });
-  }
-  youthPlayer(st) {
-    const A = this.ACADEMIES()[st.academy || 0]; if (!A.lo) return null;
-    const r = this.seedR(st.division * 311 + st.seasonP * 97 + (st.youth || []).length * 13 + 7);
-    const F = ['A.', 'B.', 'C.', 'E.', 'I.', 'K.', 'L.', 'M.', 'N.', 'R.', 'S.', 'T.', 'Y.'];
-    const L = ['Baptiste', 'Covelli', 'Diarra-Noel', 'Ewane', 'Fontenay', 'Greco', 'Hadji-Lenoir', 'Istvan', 'Jourdain', 'Keita-Marsal', 'Lombardi', 'Novak', 'Oyelaran', 'Prunier', 'Sagnol-Diaz', 'Terrasse', 'Vukovic'];
-    const POS = ['GB', 'DEF', 'DEF', 'MIL', 'MIL', 'MIL', 'ATT', 'ATT'];
-    const bonus = st.coach === 'formateur' ? 3 : 0;
-    const ovr = A.lo + Math.floor(r() * (A.hi - A.lo + 1)) + bonus;
-    const pot = Math.max(ovr + 6, A.potLo + Math.floor(r() * (A.potHi - A.potLo + 1)) + bonus);
-    return { id: 30000 + (st.division * 100) + Math.floor(r() * 900), name: F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)], pos: POS[Math.floor(r() * POS.length)], ovr, pot, age: 16 + Math.floor(r() * 4), youth: true, fresh: true, scouted: true };
-  }
-  synergy(xi) {
-    const nat = {}, labels = [];
-    xi.forEach((p) => { const n = this.profile(p).nat || '—'; nat[n] = (nat[n] || 0) + 1; });
-    let sc = 0;
-    Object.keys(nat).sort((a, b) => nat[b] - nat[a]).forEach((n) => { if (nat[n] >= 3) { sc += (nat[n] - 2) * 0.03; labels.push(n + ' ×' + nat[n]); } });
-    const fit = xi.filter((p) => !p.pen).length; sc += (fit - 9) * 0.014;
-    const form = xi.length ? xi.reduce((a, p) => a + this.profile(p).form, 0) / xi.length : 70;
-    sc += (form - 70) * 0.0035;
-    return { score: Math.max(-0.18, Math.min(0.3, sc)), labels };
-  }
-  finances(st, res) {
-    const base = [0, 700, 520, 380, 260, 180][st.division] + (res === 'w' ? 60 : 0);
-    const gate = Math.round(base * this.STADES()[st.stade || 0].mult);
-    const wages = Math.round(st.squad.reduce((a, p) => a + this.profile(p).salary, 0) / 10 * (st.coach === 'gestionnaire' ? 0.85 : 1)) + this.staffWages();
-    return { gate, wages, net: gate - wages };
-  }
-  marketList() {
-    const s = this.state; if (s.market && s.market.week === s.seasonP + s.division * 10) return s.market.list;
-    const POS = ['GB', 'DEF', 'DEF', 'MIL', 'MIL', 'ATT'], r = this.seedR(s.division * 977 + s.seasonP * 31 + 5);
-    const list = []; const F = ['A.', 'B.', 'C.', 'D.', 'E.', 'G.', 'H.', 'I.', 'J.', 'K.', 'L.', 'M.', 'N.', 'O.', 'R.', 'S.', 'T.', 'V.', 'Y.', 'Z.'];
-    const L = ['Marvello', 'Ducasson', 'Ebongué', 'Halvorsen', 'Quintero', 'Belkadi-Roy', 'Stranieri', 'Okafor-Lemaire', 'Vasquet', 'Nyamsi', 'Gaudrel', 'Petrakis', 'Lindau', 'Moreau-Diaby', 'Castagne-Nil', 'Rivoire', 'Takamura', 'Ferbault', 'Ansaldi', 'Kowalevski', 'Dembrel', 'Soumahé'];
-    for (let i = 0; i < 6; i++) {
-      const ovr = 55 + Math.floor(r() * 12) + (5 - s.division) * 3 + this.staffLv('recruteur') * 2, id = 20000 + s.division * 1000 + s.seasonP * 100 + i;
-      const p = { id, name: F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)], pos: POS[Math.floor(r() * POS.length)], ovr };
-      list.push(Object.assign(p, { scouted: this.staffLv('recruteur') >= 2, price: this.valueOf(Object.assign({}, p, this.profile(p))) }));
-    }
-    return list;
-  }
+    this._styles = {};
+    list.forEach((x) => { this._styles[x.k] = x; });
+    this._styleList = list;
+    return this._styles;
+  },
+
+  matchup(a, b) {
+    const S = this.styles(), A = S[a], B = S[b];
+    if (!A || !B) return 0;
+    let v = (A.beats.includes(b) ? 1 : 0) - (A.weak.includes(b) ? 1 : 0) + (B.weak.includes(a) ? 1 : 0) - (B.beats.includes(a) ? 1 : 0);
+    return Math.max(-2, Math.min(2, v));
+  },
+
   formCoords(f) {
     return {
       '4-3-3': { GB: [[50, 88]], DEF: [[14, 68], [38, 73], [62, 73], [86, 68]], MIL: [[26, 49], [50, 54], [74, 49]], ATT: [[20, 24], [50, 17], [80, 24]] },
@@ -1955,13 +1976,15 @@ class Club {
       '3-5-2': { GB: [[50, 88]], DEF: [[25, 72], [50, 75], [75, 72]], MIL: [[9, 46], [30, 52], [50, 42], [70, 52], [91, 46]], ATT: [[36, 19], [64, 19]] },
       '5-3-2': { GB: [[50, 88]], DEF: [[8, 64], [29, 72], [50, 75], [71, 72], [92, 64]], MIL: [[26, 48], [50, 52], [74, 48]], ATT: [[36, 20], [64, 20]] }
     }[f];
-  }
+  },
+
   penalty(pos, line) {
     if (pos === line) return 0;
     if (pos === 'GB' || line === 'GB') return 30;
     const o = { DEF: 0, MIL: 1, ATT: 2 };
     return Math.abs(o[pos] - o[line]) === 1 ? 6 : 13;
-  }
+  },
+
   pickXI(formation, lineup) {
     const s = this.state; lineup = lineup || s.lineup || {};
     const need = { '4-3-3': [1, 4, 3, 3], '4-4-2': [1, 4, 4, 2], '4-2-3-1': [1, 4, 5, 1], '3-5-2': [1, 3, 5, 2], '5-3-2': [1, 5, 3, 2] }[formation];
@@ -1980,8 +2003,10 @@ class Club {
       const p = asg[sl.slot], pen = this.penalty(p.pos, sl.line);
       return Object.assign({}, p, { line: sl.line, slot: sl.slot, base: p.ovr, pen, ovr: Math.max(30, p.ovr - pen) });
     });
-  }
-  benchOf(xi) { const ids = new Set(xi.map((p) => p.id)); return this.state.squad.filter((p) => !ids.has(p.id) && !p.inj).sort((a, b) => b.ovr - a.ovr).slice(0, 7); }
+  },
+
+  benchOf(xi) { const ids = new Set(xi.map((p) => p.id)); return this.state.squad.filter((p) => !ids.has(p.id) && !p.inj).sort((a, b) => b.ovr - a.ovr).slice(0, 7); },
+
   ROLE_OPTS(line, slot, formation) {
     if (line === 'GB') return ['Gardien classique', 'Gardien libéro'];
     if (line === 'DEF') {
@@ -1992,7 +2017,8 @@ class Club {
     }
     if (line === 'MIL') return ['Milieu central', 'Récupérateur', 'Meneur reculé', 'Box-to-box', 'Mezzala', 'Meneur avancé', 'Ailier'];
     return ['Avant-centre', 'Renard des surfaces', 'Faux 9', 'Pivot', 'Ailier inversé', 'Attaquant de pointe'];
-  }
+  },
+
   metrics(xi) {
     const s = this.state, t = s.tac, m = s.mentality - 3;
     const ovr = xi.reduce((a, p) => a + p.ovr, 0) / xi.length;
@@ -2028,7 +2054,8 @@ class Club {
       if (r === 'Gardien libéro') ctrl += 0.3;
     });
     return { ovr, atk, def, ctrl, press, fat: Math.max(0, fat) };
-  }
+  },
+
   baseShape(formation, side) {
     const C = this.formCoords(formation), out = [];
     ['GB', 'DEF', 'MIL', 'ATT'].forEach((l) => (C[l] || []).forEach(([x, y]) => {
@@ -2036,7 +2063,8 @@ class Club {
       out.push(side === 'H' ? { x, y: hy, line: l } : { x: 100 - x, y: 100 - hy, line: l });
     }));
     return out;
-  }
+  },
+
   engineCfg(opp, xi, oxi, obench) {
     const s = this.state, S = this.styles(), st = S[opp.style] || S.equilibre;
     const coordsFrom = (form) => { const C = this.formCoords(form), out = []; ['GB', 'DEF', 'MIL', 'ATT'].forEach((l) => (C[l] || []).forEach(([fx, fy]) => out.push({ fx, fy, line: l }))); return out; };
@@ -2048,7 +2076,92 @@ class Club {
     const A = { club: opp.club, tac: st.tac, ment: st.m, adv: -adv, coords: coordsFrom(st.form), players: oxi.map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p), skills: this.skillsOf(p), foot: this.profile(p).foot, wf: this.profile(p).wf })), bench: (obench || []).map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p) })) };
     return { sides: { H, A } };
   }
+};
+
+// LinkFoot : état du club et règles du manager. Aucune dépendance au DOM ni à React.
+// Le même code que l'interface utilise, sorti de la page pour tourner dans une app ou sur un serveur.
+
+
+
+
+
+
+
+
+
+
+class Club {
+  constructor(state) {
+    this.state = Object.assign({}, INITIAL_STATE(), state || {});
+    this._listeners = [];
+  }
+  // --- compatibilité avec le code de l'interface : setState fusionne, buzz et later ne font rien ici
+  setState(patch) {
+    Object.assign(this.state, typeof patch === 'function' ? patch(this.state) : patch);
+    this._listeners.forEach((fn) => fn(this.state));
+    return this.state;
+  }
+  onChange(fn) { this._listeners.push(fn); return () => { this._listeners = this._listeners.filter((f) => f !== fn); }; }
+  buzz() {}
+  later(fn) { return setTimeout(fn, 0); }
+  makeEngine(cfg) { return makeEngine(cfg); }
+
+  // --- un match complet, sans interface : construit le moteur, le déroule, applique les suites
+  playMatch(opp, opts) {
+    const s = this.state, o = opts || {};
+    const xi = this.pickXI(s.formation).map((p) => Object.assign({}, p, { energy: p.fit != null ? p.fit : 100, yc: 0, red: false }));
+    const styles = this.styles(), oppForm = (styles[opp.style] || {}).form || '4-4-2';
+    const shapeA = this.baseShape(oppForm, 'A'), rnd = this.seedR(o.seed != null ? o.seed : Date.now() % 100000);
+    const oxi = shapeA.map((b, i) => ({ id: 9000 + i, name: 'J' + i, pos: b.line, line: b.line, ovr: Math.round(opp.ovr + (rnd() - 0.5) * 8), energy: 100, yc: 0, red: false }));
+    const obench = ['MIL', 'ATT', 'DEF'].map((pos, i) => ({ id: 9500 + i, name: 'B' + i, pos, ovr: Math.round(opp.ovr - 2) }));
+    const E = makeEngine(Object.assign(this.engineCfg(opp, xi, oxi, obench), { rnd }));
+    E.finish();
+    const f = E.state();
+    const hs = f.score.H, as = f.score.A;
+    const res = hs > as ? 'w' : hs === as ? 'd' : 'l', reward = res === 'w' ? 120 : res === 'd' ? 50 : 20;
+    const mt = { opp, oxi, bench: this.benchOf(xi), hs, as, st: f.st, rat: f.rat, res, reward, done: true, ended: true,
+      log: E.log.map((l) => ({ m: l.m, text: l.text, k: l.k, s: l.s })),
+      xi: f.en ? xi.map((p, i) => Object.assign({}, p, { energy: f.en[i], yc: f.cards[i][0], red: f.cards[i][1] })) : xi };
+    const record = Object.assign({}, s.record, { [res]: s.record[res] + 1 });
+    const base = Object.assign({}, this.state, { balance: s.balance + reward, record });
+    const patch = this.afterMatch(mt, base);
+    this.setState(Object.assign({ record }, patch));
+    return { score: [hs, as], res, reward, stats: f.st, log: mt.log, patch };
+  }
+  rand(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+  seedR(seed) { let x = (seed * 2654435761) % 4294967296; return () => { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; }; }
+
+  COACHES() {
+    return [
+      { id: 'tacticien', label: 'Tacticien', tactique: 88, motivation: 62, gestion: 74, dev: 66, desc: 'Bonus tactique en match, adaptation fine au score' },
+      { id: 'motivateur', label: 'Motivateur', tactique: 64, motivation: 90, gestion: 80, dev: 62, desc: 'Moral et forme remontent plus vite, meilleure fin de match' },
+      { id: 'defensif', label: 'Défensif', tactique: 80, motivation: 66, gestion: 72, dev: 64, desc: 'Bloc plus solide, moins de buts encaissés' },
+      { id: 'offensif', label: 'Offensif', tactique: 78, motivation: 74, gestion: 66, dev: 66, desc: 'Plus d’occasions créées, défense plus exposée' },
+      { id: 'formateur', label: 'Formateur', tactique: 66, motivation: 70, gestion: 70, dev: 92, desc: 'Les jeunes progressent deux fois plus vite à l’entraînement' },
+      { id: 'gestionnaire', label: 'Gestionnaire', tactique: 70, motivation: 72, gestion: 92, dev: 72, desc: 'Moins de blessures, salaires mieux négociés' }
+    ];
+  }
+
+  // ================= CARTES : RARETÉS, CATALOGUE, PACKS (§56 à §65) =================
+  // Les taux sont centralisés ici. Changer une valeur change le jeu partout.
+
+  // Catalogue fixe de 500 cartes : des identifiants stables, donc des doublons réels et une collection qui a du sens.
+
+  // Tirage d'une carte selon la table de raretés d'un pack (poids multiplicatifs).
+
+  // Probabilités réelles d'un pack, affichées au joueur (§58).
+
+  // §71 vendre un joueur : 75 % de sa valeur, interdit si l'effectif tombe sous 12
+
+  // §70 une saison de plus : tout le monde prend un an, les anciens déclinent, les jeunes progressent
+
+  // §60 à §63 niveaux de carte : les fragments issus des doublons servent à faire monter une carte.
+   // index = niveau visé moins 1
+
 }
+
+// §80 : chaque domaine vit dans son fichier et vient se mélanger ici.
+Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics);
 
 // LinkFoot : sauvegarde. Sérialise l'état du club, le relit, et le range
 // où tu veux : mémoire, navigateur, ou ton serveur.
@@ -2171,5 +2284,207 @@ class SaveManager {
   stop() { clearTimeout(this._t); if (this._off) { this._off(); this._off = null; } return this; }
 }
 
-root.LinkFoot = { makeEngine, Club, INITIAL_STATE, serialize, deserialize, SAVE_VERSION, MemoryStore, LocalStore, HttpStore, SaveManager };
+// LinkFoot : classements et calendriers (§72, §75).
+// Pure logique, aucune dépendance : le même code sert pour une division solo,
+// une ligue entre amis ou un classement national.
+
+const POINTS = { win: 3, draw: 1, loss: 0 };
+
+// Une ligne de classement vierge.
+function emptyRow(id, name) {
+  return { id, name, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 };
+}
+
+// Applique un résultat aux deux lignes concernées. Les lignes sont créées si besoin.
+function applyResult(rows, homeId, awayId, hs, as) {
+  const get = (id) => {
+    let r = rows.find((x) => x.id === id);
+    if (!r) { r = emptyRow(id, String(id)); rows.push(r); }
+    return r;
+  };
+  const H = get(homeId), A = get(awayId);
+  H.p++; A.p++; H.gf += hs; H.ga += as; A.gf += as; A.ga += hs;
+  if (hs > as) { H.w++; A.l++; H.pts += POINTS.win; A.pts += POINTS.loss; }
+  else if (hs < as) { A.w++; H.l++; A.pts += POINTS.win; H.pts += POINTS.loss; }
+  else { H.d++; A.d++; H.pts += POINTS.draw; A.pts += POINTS.draw; }
+  return rows;
+}
+
+// Tri officiel : points, puis différence de buts, puis buts marqués, puis victoires, puis nom.
+function standings(rows) {
+  return rows.slice()
+    .map((r) => Object.assign({}, r, { gd: r.gf - r.ga }))
+    .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || b.w - a.w || String(a.name).localeCompare(String(b.name)))
+    .map((r, i) => Object.assign(r, { rank: i + 1 }));
+}
+
+// Calendrier toutes rondes (méthode du cercle). `rounds` = 1 pour aller simple, 2 pour aller-retour.
+function schedule(teamIds, rounds) {
+  const t = teamIds.slice();
+  if (t.length % 2) t.push(null);                 // exempt
+  const n = t.length, half = n / 2, out = [];
+  let arr = t.slice();
+  for (let r = 0; r < (n - 1) * (rounds || 1); r++) {
+    const day = [];
+    for (let i = 0; i < half; i++) {
+      const a = arr[i], b = arr[n - 1 - i];
+      if (a == null || b == null) continue;
+      day.push(r % 2 === 0 ? { home: a, away: b } : { home: b, away: a });
+    }
+    out.push(day);
+    arr = [arr[0]].concat([arr[n - 1]], arr.slice(1, n - 1));   // rotation
+  }
+  return out;
+}
+
+// Promotion et relégation d'une division (§72).
+function movements(table, opts) {
+  const o = opts || {};
+  const up = o.up != null ? o.up : 2, down = o.down != null ? o.down : 1;
+  return {
+    promoted: table.slice(0, up).map((r) => r.id),
+    relegated: down ? table.slice(table.length - down).map((r) => r.id) : []
+  };
+}
+
+// LinkFoot : tournois (§73, §74, §76).
+// 8, 16, 32 ou 64 participants, élimination directe ou groupes puis élimination.
+// L'architecture des récompenses en argent existe, mais les paiements sont désactivés :
+// rien dans ce fichier ne déclenche de transaction.
+
+const SIZES = [8, 16, 32, 64];
+
+// §76 architecture des récompenses. `cash` est décrit mais jamais versé ici.
+// Tant que `payouts.enabled` est false, seules les récompenses en jetons sont distribuées.
+const PAYOUTS = {
+  enabled: false,
+  reason: 'Paiements désactivés tant que le cadre juridique, l’âge, la géolocalisation et les règles des plateformes ne sont pas validés.',
+  currency: 'EUR'
+};
+
+function prizePool(size, entryTokens) {
+  const pot = size * (entryTokens || 0);
+  return {
+    tokens: { 1: Math.round(pot * 0.45), 2: Math.round(pot * 0.25), 4: Math.round(pot * 0.1), 8: Math.round(pot * 0.025) },
+    cash: null,             // rempli seulement si PAYOUTS.enabled devient true côté serveur
+    rake: Math.round(pot * 0.1)
+  };
+}
+
+const shuffle = (arr, rnd) => {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor((rnd || Math.random)() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+};
+
+// Crée un tournoi. `format` : 'knockout' ou 'groups'.
+// En mode groupes : des poules de 4, les deux premiers qualifiés, puis élimination directe.
+function createTournament(opts) {
+  const o = opts || {};
+  const size = SIZES.indexOf(o.size) >= 0 ? o.size : 16;
+  const entrants = (o.entrants || []).slice(0, size);
+  if (entrants.length !== size) throw new Error('il faut exactement ' + size + ' participants');
+  const seeded = o.seeded ? entrants.slice() : shuffle(entrants, o.rnd);
+  const format = o.format === 'groups' ? 'groups' : 'knockout';
+  const T = {
+    id: o.id || 'tr_' + Math.random().toString(36).slice(2, 10),
+    name: o.name || 'Tournoi LinkFoot',
+    size, format, entrants: seeded,
+    entry: o.entry || 0,
+    prizes: prizePool(size, o.entry || 0),
+    payouts: { enabled: PAYOUTS.enabled, currency: PAYOUTS.currency },
+    stage: format === 'groups' ? 'groups' : 'ko',
+    groups: [], rounds: [], champion: null, done: false
+  };
+  if (format === 'groups') {
+    for (let i = 0; i < size; i += 4) {
+      const g = seeded.slice(i, i + 4);
+      T.groups.push({ id: 'G' + (T.groups.length + 1), teams: g, rows: [], matches: pairsOf(g) });
+    }
+  } else {
+    T.rounds.push(buildRound(seeded, 1));
+  }
+  return T;
+}
+
+const pairsOf = (g) => {
+  const out = [];
+  for (let i = 0; i < g.length; i++) for (let j = i + 1; j < g.length; j++) out.push({ home: g[i].id, away: g[j].id, hs: null, as: null });
+  return out;
+};
+
+const roundName = (n) => ({ 2: 'Finale', 4: 'Demi-finales', 8: 'Quarts de finale', 16: 'Huitièmes de finale', 32: 'Seizièmes de finale', 64: 'Trente-deuxièmes' })[n] || (n + ' équipes');
+
+function buildRound(teams, no) {
+  const ties = [];
+  for (let i = 0; i < teams.length; i += 2) ties.push({ home: teams[i], away: teams[i + 1], hs: null, as: null, pso: null, winner: null });
+  return { no, name: roundName(teams.length), ties };
+}
+
+// Les rencontres à jouer maintenant, sous la forme { home, away, ref } à passer au moteur.
+function pendingMatches(T) {
+  if (T.done) return [];
+  if (T.stage === 'groups') {
+    const out = [];
+    T.groups.forEach((g) => g.matches.forEach((m, i) => { if (m.hs == null) out.push({ group: g.id, idx: i, home: find(T, m.home), away: find(T, m.away) }); }));
+    return out;
+  }
+  const r = T.rounds[T.rounds.length - 1];
+  return r.ties.map((t, i) => (t.winner ? null : { round: r.no, idx: i, home: t.home, away: t.away })).filter(Boolean);
+}
+
+const find = (T, id) => T.entrants.find((e) => e.id === id);
+
+// Enregistre un résultat. `pso` = { H, A } quand la rencontre s'est jouée aux tirs au but.
+function reportResult(T, ref, hs, as, pso) {
+  if (T.stage === 'groups') {
+    const g = T.groups.find((x) => x.id === ref.group);
+    const m = g.matches[ref.idx];
+    m.hs = hs; m.as = as;
+    g.rows = [];
+    g.matches.forEach((x) => { if (x.hs != null) applyResult(g.rows, x.home, x.away, x.hs, x.as); });
+    if (T.groups.every((x) => x.matches.every((m2) => m2.hs != null))) {
+      const qualified = [];
+      T.groups.forEach((x) => standings(x.rows).slice(0, 2).forEach((r) => qualified.push(find(T, r.id))));
+      T.stage = 'ko';
+      T.rounds.push(buildRound(qualified, 1));
+    }
+    return T;
+  }
+  const r = T.rounds.find((x) => x.no === ref.round), t = r.ties[ref.idx];
+  t.hs = hs; t.as = as; t.pso = pso || null;
+  t.winner = hs > as ? t.home : hs < as ? t.away : (pso && pso.H > pso.A ? t.home : pso ? t.away : null);
+  if (!t.winner) throw new Error('match nul sans séance de tirs au but : il faut départager');
+  if (r.ties.every((x) => x.winner)) {
+    const winners = r.ties.map((x) => x.winner);
+    if (winners.length === 1) { T.champion = winners[0]; T.done = true; }
+    else T.rounds.push(buildRound(winners, r.no + 1));
+  }
+  return T;
+}
+
+// Classement final : champion, finaliste, demi-finalistes, puis les éliminés par tour.
+function finalRanking(T) {
+  const out = [];
+  if (T.champion) out.push({ rank: 1, team: T.champion });
+  for (let i = T.rounds.length - 1; i >= 0; i--) {
+    const r = T.rounds[i];
+    const losers = r.ties.filter((t) => t.winner).map((t) => (t.winner.id === t.home.id ? t.away : t.home));
+    losers.forEach((l) => { if (!out.some((x) => x.team.id === l.id)) out.push({ rank: out.length + 1, team: l }); });
+  }
+  return out;
+}
+
+// Récompenses en jetons d'un classement final. Jamais d'argent réel ici.
+function rewards(T) {
+  const rank = finalRanking(T), P = T.prizes.tokens, out = [];
+  rank.forEach((r) => {
+    const tier = r.rank === 1 ? 1 : r.rank === 2 ? 2 : r.rank <= 4 ? 4 : r.rank <= 8 ? 8 : null;
+    if (tier && P[tier]) out.push({ team: r.team, rank: r.rank, tokens: P[tier] });
+  });
+  return { tokens: out, cash: PAYOUTS.enabled ? null : { paid: false, reason: PAYOUTS.reason } };
+}
+
+root.LinkFoot = { makeEngine, Club, INITIAL_STATE, serialize, deserialize, SAVE_VERSION, MemoryStore, LocalStore, HttpStore, SaveManager,
+  standings, schedule, applyResult, emptyRow, movements, createTournament, pendingMatches, reportResult, finalRanking, rewards, PAYOUTS };
 })(typeof window !== 'undefined' ? window : globalThis);
