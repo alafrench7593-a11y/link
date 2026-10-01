@@ -135,7 +135,7 @@ export function makeEngine(cfg) {
     const clockLabel = (c, h) => { const m = Math.floor(c / 60), hh = h || W.half; if (hh === 1 && m >= 45) return "45+" + (m - 44) + "'"; if (hh === 2 && m >= 90) return "90+" + (m - 89) + "'"; return Math.max(1, m + 1) + "'"; };
     const mark = (e) => curEv.push(e);
     const com = (text) => { W.com = text; W.comT = W.t; mark({ k: 'com', text }); };
-    const banner = (text, sub, color, dur) => mark({ k: 'banner', text, sub: sub || '', color: color || '#F2F5F3', dur: dur || 1.6 });
+    const banner = (text, sub, color, dur) => mark({ k: 'banner', text, sub: sub || '', color: color || '#F2F4F7', dur: dur || 1.6 });
     const possPct = () => { const tot = W.pt.H + W.pt.A; return tot ? Math.round(W.pt.H / tot * 100) : 50; };
     const snap = () => hist.push({ t: W.t, m: W.clk, score: { H: W.score.H, A: W.score.A }, st: { H: Object.assign({}, W.st.H), A: Object.assign({}, W.st.A) }, rat: { H: TM.H.ps.map((p) => p.rat), A: TM.A.ps.map((p) => p.rat) }, en: TM.H.ps.map((p) => p.energy), cards: TM.H.ps.map((p) => [p.yc, p.red]), poss: possPct() });
     const logE = (text, color, k, s) => { log.push({ t: W.t, text: clockLabel(W.clk) + ' ' + text, color, k, s, m: Math.min(90, Math.floor(W.clk / 60)) }); snap(); };
@@ -346,7 +346,7 @@ export function makeEngine(cfg) {
       gain(q, 'int'); com('Interception de ' + q.short);
     };
     const offsideCall = (q) => {
-      W.st[q.s].off++; banner('HORS-JEU', q.short, '#F2F5F3', 1.4); com('Hors-jeu de ' + q.short + ', le drapeau se lève'); logE('Hors-jeu de ' + q.name + ' signalé', '#B4C0BA', 'O', q.s);
+      W.st[q.s].off++; banner('HORS-JEU', q.short, '#F2F4F7', 1.4); com('Hors-jeu de ' + q.short + ', le drapeau se lève'); logE('Hors-jeu de ' + q.name + ' signalé', '#9AA3B0', 'O', q.s);
       setPiece('fk', OT[q.s], q.x, q.y, 'off');
     };
     const flightStep = () => {
@@ -419,7 +419,7 @@ export function makeEngine(cfg) {
         const SAV = dbl ? 'DOUBLE ARRÊT !' : f.xg > 0.35 ? 'ARRÊT RÉFLEXE !' : f.sv === 'lob' ? 'LE GARDIEN SE DÉTEND' : f.sv === 'rasSol' || f.sv === 'ferme' ? 'ARRÊT DU PIED' : f.head ? 'CLAQUETTE !' : 'ARRÊT !';
         const SAVC = dbl ? gk.short + ' repousse une deuxième fois, incroyable !' : f.xg > 0.35 ? 'Réflexe énorme de ' + gk.short + ' !' : f.sv === 'lob' ? gk.short + ' se détend et capte le ballon piqué' : f.sv === 'rasSol' || f.sv === 'ferme' ? gk.short + ' sort le pied, superbe' : f.head ? gk.short + ' claque la tête de ' + p.short + ' sur sa barre' : 'Parade de ' + gk.short + ' devant ' + p.short + ' !';
         W.lastSaveT = W.t; W.lastSaveGk = gk.code;
-        banner(SAV, gk.short, '#F2F5F3', 1.4); com(SAVC);
+        banner(SAV, gk.short, '#F2F4F7', 1.4); com(SAVC);
         if (f.xg > 0.22 && !f.pen) logE('Grosse parade de ' + gk.name + ' devant ' + p.name, s === 'H' ? '#BDEBC9' : '#F2B6B6', 'save', s);
         const r = R(), cp = cl(0.44 + (gk.han - 65) / 70 - f.xg * 0.25, 0.2, 0.78);
         if (r < cp) { gkHold(gk); return; }
@@ -428,19 +428,19 @@ export function makeEngine(cfg) {
       }
       if (f.res === 'miss') {
         if (f.post) { banner('POTEAU !', p.short, '#FFE14D', 1.4); com('Sur le poteau !'); b.vx = (R() - 0.5) * 8; b.vy = (s === 'H' ? 1 : -1) * (5 + R() * 6); W.owner = null; W.last = s; return; }
-        banner('À CÔTÉ', p.short, '#F2F5F3', 1.1); com(p.short + ' manque le cadre'); setPiece('gk', o, b.x, b.y); return;
+        banner('À CÔTÉ', p.short, '#F2F4F7', 1.1); com(p.short + ' manque le cadre'); setPiece('gk', o, b.x, b.y); return;
       }
       const bl = f.blocker;
       if (aOf(s, bl.y) > 92 && Math.abs(bl.x - 34) < 9 && R() < 0.012) { ownGoal(bl, p); return; }
-      rt(bl, 0.06); W.st[o].tk++; banner('CONTRÉ !', bl.short, '#F2F5F3', 1.1); com('Frappe contrée par ' + bl.short);
+      rt(bl, 0.06); W.st[o].tk++; banner('CONTRÉ !', bl.short, '#F2F4F7', 1.1); com('Frappe contrée par ' + bl.short);
       if (aOf(s, bl.y) > 95 && R() < 0.35) { outBehind(o, bl.x); return; }
       b.x = bl.x; b.y = bl.y; b.vx = (R() - 0.5) * 11; b.vy = (s === 'H' ? 1 : -1) * (2 + R() * 7) * (R() < 0.35 ? -1 : 1); b.z = 0; W.owner = null; W.last = o;
     };
     const ownGoal = (bl, shooter) => {
       const s = shooter.s, o = bl.s; W.score[s]++; rt(bl, -0.9); const b = W.ball; b.x = 34; b.y = yOf(s, PL + 1.3); b.z = 0.3;
-      mark({ k: 'goal', s, c: bl.code, name: bl.short }); banner('CSC !', bl.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#86EBA0' : '#FF8A8A', 2.8);
+      mark({ k: 'goal', s, c: bl.code, name: bl.short }); banner('CSC !', bl.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#2ECC71' : '#FF4757', 2.8);
       com('Malheureux ' + bl.short + ' : la frappe de ' + shooter.short + ' est déviée dans son propre but !');
-      logE('BUT ! ' + bl.name + ' contre son camp, frappe déviée de ' + shooter.name + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#8BFFA8' : '#FF8A8A', 'G', s);
+      logE('BUT ! ' + bl.name + ' contre son camp, frappe déviée de ' + shooter.name + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#48E08B' : '#FF4757', 'G', s);
       key(100, s, 'goal'); W.celK = 'calme'; W.cel = W.t + 3.2; W.celS = s; W.scorer = shooter; W.owner = null; W.fl = null;
     };
     const goalScored = (p, f) => {
@@ -478,9 +478,9 @@ export function makeEngine(cfg) {
       const BAN = { pen: ['PENALTY TRANSFORMÉ', 'BUT !'], fk: ['COUP FRANC MAGISTRAL', 'QUEL COUP FRANC !'], head: ['BUT DE LA TÊTE !', 'BUT !'], lob: ['LOB SOMPTUEUX', 'QUEL BUT !'], long: ['GOLAZO !', 'QUELLE FRAPPE !', 'MISSILE !'], volley: ['QUELLE REPRISE !', 'BUT !'], through: ['BUT !', 'PROFONDEUR !'], counter: ['CONTRE ÉCLAIR', 'BUT !'], solo: ['EXPLOIT INDIVIDUEL', 'QUEL BUT !'], close: ['BUT !', 'RENARD DES SURFACES'], pass: ['BUT !', 'BUUUT !'] };
       const COM = { pen: ['Sans trembler : {p} transforme le penalty.', '{p} prend le gardien à contre-pied !'], fk: ['Coup franc de {p}, le ballon file dans la lucarne !', '{p} passe au-dessus du mur, imparable !'], head: ['{p} s’élève plus haut que tout le monde !', 'Tête rageuse de {p}, le gardien ne peut rien faire !'], lob: ['{p} voit le gardien avancé et le lobe !', 'Pichenette de génie de {p} !'], long: ['Frappe de loin de {p}, quel missile !', '{p} arme de 25 mètres, lucarne opposée !', 'Personne ne l’attendait : {p} tente et ça rentre !'], volley: ['Reprise de volée de {p}, magnifique !', '{p} reprend le centre en une touche !'], through: ['{p} file seul au but et conclut !', 'Lancé dans la profondeur, {p} ne tremble pas !'], counter: ['Contre éclair conclu par {p} !', 'En trois passes, {p} punit la défense !'], solo: ['{p} efface tout le monde et marque !', 'Exploit personnel de {p}, quel slalom !'], close: ['{p} pousse le ballon au fond, à bout portant !', 'Cafouillage dans la surface, {p} en profite !'], pass: ['{p} croise sa frappe, le ballon fait trembler les filets !', 'Frappe placée de {p}, petit filet !', '{p} trouve la faille !'] };
       const excl = f.xg < 0.1 ? ' Une frappe à ' + Math.round(f.xg * 100) + ' % de chance : du grand art.' : '';
-      mark({ k: 'goal', s, c: p.code, name: p.short }); banner(pick(BAN[kind]), p.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#86EBA0' : '#FF8A8A', 2.8);
+      mark({ k: 'goal', s, c: p.code, name: p.short }); banner(pick(BAN[kind]), p.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#2ECC71' : '#FF4757', 2.8);
       com(pick(COM[kind]).replace('{p}', p.short) + excl);
-      logE('BUT ! ' + p.name + ' ' + how + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#8BFFA8' : '#FF8A8A', 'G', s);
+      logE('BUT ! ' + p.name + ' ' + how + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#48E08B' : '#FF4757', 'G', s);
       key(100, s, 'goal');
       W.celK = pickCeleb(p, s); W.cel = W.t + (W.celK === 'ballon' ? 1.9 : W.celK === 'calme' ? 3.2 : 4.4); W.celS = s; W.scorer = p; W.owner = null;
       com(CELEB_TXT[W.celK].replace('{p}', p.short));
@@ -513,7 +513,7 @@ export function makeEngine(cfg) {
       const dead = { throw: 18, gk: 26, corner: 32, fk: 26, fkd: 48, fkc: 34, pen: 60, ko: 0 }[sub] * (TM[s].tac.timewaste && W.score[s] > W.score[OT[s]] ? 1.6 : 1);
       W.set = { kind: sub, s, x: bx, y: by, t0: W.t, ready: W.t + setup, taker, wall: [] };
       W.clk += dead;
-      if (sub === 'corner') { W.st[s].cor++; banner('CORNER', club(s), s === 'H' ? '#D4F76B' : '#F2F5F3', 1.3); com('Corner pour ' + club(s)); logE('Corner pour ' + club(s), '#B4C0BA', 'C', s); key(18, s, 'corner'); }
+      if (sub === 'corner') { W.st[s].cor++; banner('CORNER', club(s), s === 'H' ? '#2ECC71' : '#F2F4F7', 1.3); com('Corner pour ' + club(s)); logE('Corner pour ' + club(s), '#9AA3B0', 'C', s); key(18, s, 'corner'); }
       if (sub === 'fkd') { com('Coup franc bien placé pour ' + club(s) + '. ' + taker.short + ' s’en charge'); key(34, s, 'fkd'); }
       if (sub === 'fkc') { com('Coup franc à centrer pour ' + club(s)); key(22, s, 'fkc'); }
       if (sub === 'throw') com('Touche pour ' + club(s));
@@ -760,12 +760,12 @@ export function makeEngine(cfg) {
       let card = null; const r = R(); if (r < prr) card = 'R'; else if (r < prr + py) card = 'Y';
       if (card === 'Y') { fr.yc++; W.st[o].yc++; rt(fr, -0.35); if (fr.yc >= 2) card = 'R2'; }
       vic.fall = 1.3; W.owner = null; W.fl = null; W.last = o;
-      if (card) mark({ k: 'card', c: fr.code, col: card === 'Y' ? '#FFD23F' : '#E5484D' });
-      banner(pen ? 'PENALTY !' : card === 'Y' ? 'CARTON JAUNE' : card ? 'CARTON ROUGE' : 'FAUTE', card ? fr.short : 'Coup franc pour ' + club(s), card === 'Y' ? '#FFD23F' : card ? '#E5484D' : pen ? '#FF8A5C' : '#F2F5F3', pen || card ? 2 : 1.2);
+      if (card) mark({ k: 'card', c: fr.code, col: card === 'Y' ? '#FFD23F' : '#FF4757' });
+      banner(pen ? 'PENALTY !' : card === 'Y' ? 'CARTON JAUNE' : card ? 'CARTON ROUGE' : 'FAUTE', card ? fr.short : 'Coup franc pour ' + club(s), card === 'Y' ? '#FFD23F' : card ? '#FF4757' : pen ? '#FF4757' : '#F2F4F7', pen || card ? 2 : 1.2);
       com((pen ? 'PENALTY ! ' : '') + 'Faute de ' + fr.short + ' sur ' + vic.short + (card === 'Y' ? ' · carton jaune' : card === 'R2' ? ' · deuxième jaune, expulsé !' : card ? ' · carton rouge direct !' : ''));
       const cardTxt = card === 'Y' ? ' · carton jaune' : card === 'R' ? ' · CARTON ROUGE' : card === 'R2' ? ' · 2e jaune, expulsé !' : '';
       if (pen || card) logE((pen ? 'PENALTY ! Faute de ' : 'Faute de ') + fr.name + ' sur ' + vic.name + cardTxt, '#F2E27C', card === 'Y' ? 'Y' : card ? 'R' : 'P', o);
-      else if (aOf(o, vic.y) > 68) logE('Coup franc dangereux pour ' + club(o) + ' · faute de ' + fr.name, '#B4C0BA', 'F', o);
+      else if (aOf(o, vic.y) > 68) logE('Coup franc dangereux pour ' + club(o) + ' · faute de ' + fr.name, '#9AA3B0', 'F', o);
       if (card === 'R' || card === 'R2') { W.st[o].rc++; rt(fr, -1.2); fr.red = true; fr.x = -9; key(85, s, 'red'); }
       else if (card === 'Y') key(28, s, 'card');
       else key(a > 72 ? 20 : 5, s, 'foul');
@@ -791,7 +791,7 @@ export function makeEngine(cfg) {
       if (!gk.red && gk.fall <= 0 && W.t >= gk.tkT && hy(gk.x - c.x, gk.y - c.y) < 2.2 && inBox(aOf(s, c.y), c.x)) {
         gk.tkT = W.t + 0.4;
         const r = R(), pw = cl(0.5 + (gk.div - c.dri) / 90, 0.25, 0.8);
-        if (r < pw) { rt(gk, 0.15); com(gk.short + ' plonge dans les pieds de ' + c.short + ' !'); banner('ARRÊT !', gk.short, '#F2F5F3', 1.2); gkHold(gk); return; }
+        if (r < pw) { rt(gk, 0.15); com(gk.short + ' plonge dans les pieds de ' + c.short + ' !'); banner('ARRÊT !', gk.short, '#F2F4F7', 1.2); gkHold(gk); return; }
         if (r < pw + 0.008) { foul(gk, c, 'gk'); return; }
       }
       for (const d of LV[o]) {
@@ -1164,7 +1164,7 @@ export function makeEngine(cfg) {
       const cand = pool.sort((a2, b2) => (b2.yc - a2.yc) * 60 + (a2.energy - b2.energy))[0]; if (!cand) return;
       const d = T.bench.shift(); W.oppSubs++;
       api.sub('A', cand.i, Object.assign({}, d, { role: cand.role, duty: cand.duty }));
-      logE('Changement pour ' + club('A') + ' : ' + d.name + ' remplace ' + cand.name, '#8FB8FF', 'sub', 'A');
+      logE('Changement pour ' + club('A') + ' : ' + d.name + ' remplace ' + cand.name, '#4FA8E8', 'sub', 'A');
     };
     // ============ CONTRÔLE DIRECT ============
     // gestes techniques : palier selon dribble + agilité, du plus simple au plus rare
@@ -1203,7 +1203,7 @@ export function makeEngine(cfg) {
         p.carry = { x: cl(p.x + ux * 7 - uy * side * 2.5, 1, PW - 1), y: cl(p.y + uy * 7 + ux * side * 2.5, 1, PL - 1), until: W.t + 1.1, drib: true };
         com(p.short + ' : ' + g.lab + ' sur ' + d2.short + ' !');
         mark({ k: 'skill', c: p.code, tier: g.tier });   // §28 à §31 le rendu suit le tier du geste
-        if (g.min >= 80) { banner('QUEL GESTE !', p.short, '#C8F56B', 1.2); logE(p.short + ' élimine ' + d2.short + ' d’' + (g.n === 'pont' ? 'un petit pont' : 'une ' + g.lab), '#C8F56B', 'drib', p.s); }
+        if (g.min >= 80) { banner('QUEL GESTE !', p.short, '#2ECC71', 1.2); logE(p.short + ' élimine ' + d2.short + ' d’' + (g.n === 'pont' ? 'un petit pont' : 'une ' + g.lab), '#2ECC71', 'drib', p.s); }
         key(g.min >= 80 ? 30 : 14, p.s, 'drib');
       } else {
         com(g.lab + ' raté de ' + p.short); rt(p, -0.1);
@@ -1248,13 +1248,13 @@ export function makeEngine(cfg) {
       // mi-temps / fin
       const calm = !W.fl && W.cel <= 0 && (W.set || !W.owner || aOf(W.owner.s, W.owner.y) < 68);
       if (W.half === 1 && W.clk >= 2700 + W.stop1 && (calm || W.clk >= 2700 + W.stop1 + 40)) {
-        logE('Mi-temps : ' + W.score.H + '-' + W.score.A + ' · possession ' + possPct() + '%', '#8FB8FF', 'HT');
+        logE('Mi-temps : ' + W.score.H + '-' + W.score.A + ' · possession ' + possPct() + '%', '#4FA8E8', 'HT');
         W.cut = true; W.htDo = true; W.owner = null; W.fl = null; W.set = null;
       } else if (W.half === 2 && W.clk >= 5400 + W.stop2 && (calm || W.clk >= 5400 + W.stop2 + 40)) {
-        W.ended = true; W.cut = true; banner('FIN DU MATCH', W.score.H + ' - ' + W.score.A, '#F2F5F3', 3);
+        W.ended = true; W.cut = true; banner('FIN DU MATCH', W.score.H + ' - ' + W.score.A, '#F2F4F7', 3);
         const res = W.score.H > W.score.A ? 'H' : W.score.A > W.score.H ? 'A' : null;
         ['H', 'A'].forEach((s) => { TM[s].ps.forEach((p) => { rt(p, res === s ? 0.3 : res ? -0.2 : 0); if (W.score[OT[s]] === 0 && (p.line === 'GB' || p.line === 'DEF')) rt(p, 0.5); }); });
-        logE('Coup de sifflet final : ' + W.score.H + '-' + W.score.A, '#8FB8FF', 'FT');
+        logE('Coup de sifflet final : ' + W.score.H + '-' + W.score.A, '#4FA8E8', 'FT');
       }
     };
     // ---------- enregistrement ----------
@@ -1348,7 +1348,7 @@ export function makeEngine(cfg) {
           const ok = R() < cl(base, 0.45, 0.94);
           if (ok) sc[sd]++;
           kicks.push({ s: sd, name: t.name, ok });
-          logE((ok ? 'But de ' : 'Tir manqué de ') + t.name + ' · ' + sc.H + '-' + sc.A, ok ? (sd === 'H' ? '#8BFFA8' : '#FF8A8A') : '#B4C0BA', 'pso', sd);
+          logE((ok ? 'But de ' : 'Tir manqué de ') + t.name + ' · ' + sc.H + '-' + sc.A, ok ? (sd === 'H' ? '#48E08B' : '#FF4757') : '#9AA3B0', 'pso', sd);
           rt(t, ok ? 0.2 : -0.3); if (!ok) rt(g, 0.25);
           return ok;
         };
@@ -1366,7 +1366,7 @@ export function makeEngine(cfg) {
         while (sc.H === sc.A && i < 20) { const a2 = shootOne('H', i, 1.4), b2 = shootOne('A', i, 1.4); if (a2 !== b2) break; i++; }
         const win = sc.H > sc.A ? 'H' : 'A';
         logE('Séance remportée par ' + club(win) + ' ' + sc.H + '-' + sc.A, '#F2E27C', 'pso', win);
-        banner('TIRS AU BUT', sc.H + ' - ' + sc.A, win === 'H' ? '#86EBA0' : '#FF8A8A', 3);
+        banner('TIRS AU BUT', sc.H + ' - ' + sc.A, win === 'H' ? '#2ECC71' : '#FF4757', 3);
         return { H: sc.H, A: sc.A, win, kicks };
       }
     };
