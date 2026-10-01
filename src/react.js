@@ -37,8 +37,8 @@ export function createClubHooks(React) {
     return { club, state: club.state, ready, playMatch, act, save: () => (mgr ? mgr.save() : Promise.resolve(false)), lastSavedAt: mgr ? mgr.lastSavedAt : null };
   }
 
-  // Pilote un match en temps réel : une image toutes les 100 ms de temps moteur,
-  // accélérée par `speed`. Rends `frame` avec ton propre canvas ou tes composants.
+  // Déroule un match en temps réel pour l'affichage : une image toutes les 100 ms de temps
+  // moteur, accélérée par `speed`. Rends `frame` avec ton propre canvas ou tes composants.
   function useLiveMatch(club, cfg, opts) {
     const o = opts || {};
     const [frame, setFrame] = useState(null);
@@ -64,12 +64,7 @@ export function createClubHooks(React) {
       return () => { if (raf.current) { if (typeof cancelAnimationFrame !== 'undefined') cancelAnimationFrame(raf.current); else clearTimeout(raf.current); } };
     }, [cfg]);
 
-    return {
-      frame, ended, engine: eng.current,
-      control: (i) => eng.current && eng.current.setHuman(i),
-      switchPlayer: () => eng.current && eng.current.setHuman(eng.current.bestSwitch()),
-      state: () => (eng.current ? eng.current.state() : null)
-    };
+    return { frame, ended, engine: eng.current, state: () => (eng.current ? eng.current.state() : null) };
   }
 
   return { useClub, useLiveMatch };

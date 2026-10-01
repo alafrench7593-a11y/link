@@ -14,8 +14,8 @@ JavaScript ordinaire, donc sérialisable, donc persistable où tu veux.
 
 ```
 src/engine.js   moteur de match : 11 contre 11, physique du ballon, décisions des joueurs,
-                dribbles, tacles, hors-jeu, coups de pied arrêtés, cartons, remplacements,
-                contrôle direct au joystick. ~1 300 lignes, zéro dépendance.
+                dribbles, tacles, hors-jeu, coups de pied arrêtés, cartons, remplacements.
+                ~1 250 lignes, zéro dépendance.
 src/club.js     classe Club : le noyau, qui mélange les modules de domaine ci-dessous.
 src/players.js  fiches joueurs : statistiques, note globale, profil.
 src/skills.js   compétences procédurales (§32 à §36).
@@ -124,9 +124,8 @@ E.finish();                  // joue les 90 minutes d'un coup
 const f = E.state();         // score, statistiques, notes, énergie, cartons
 ```
 
-Pour le temps réel, utilise `E.step()` image par image, `E.frame()` pour l'état à
-afficher, `E.setHuman(i)` pour prendre le contrôle d'un joueur, et passe les entrées
-par `cfg.input()`.
+Pour le temps réel, utilise `E.step()` image par image et `E.frame()` pour l'état à
+afficher. Le moteur joue le match tout seul : il n'y a pas de contrôle direct.
 
 ## Dans une app React ou React Native
 
@@ -316,7 +315,7 @@ en intégration continue avant de toucher au moteur.
 
 ## Limites connues
 
-- `playMatch` joue un match entier d'un coup. Pour le mode « Je joue », il faut piloter
+- `playMatch` joue un match entier d'un coup. Pour suivre un match en direct, pilote
   `E.step()` depuis une boucle d'animation, comme le fait l'écran Mon Club.
 - Les tournois, les ligues entre amis et le classement général ne sont pas ici :
   ils supposent un serveur et un appariement entre joueurs.

@@ -1,6 +1,6 @@
 // LinkFoot : moteur de match. Aucune dépendance, aucun DOM.
 // Entrée : une configuration { sides: { H, A } } produite par Club.engineCfg().
-// Sortie : une API { next, finish, state, step, frame, sub, card, shout, setHuman, ... }.
+// Sortie : une API { next, finish, state, step, frame, sub, card, shout, shootout, ... }.
 
 export function makeEngine(cfg) {
     const R = cfg.rnd || Math.random;
@@ -1099,13 +1099,6 @@ export function makeEngine(cfg) {
         if (!c.carry) { const fy = c.s === 'H' ? -1 : 1; setTW(c, c.x + (34 - c.x) * 0.03, c.y + fy * 0.6, 0.25); }
       }
       for (const p of ALL) { const tl = p.tl; if (!tl) continue; p.tx = cl(xl(p.s, tl.x), 0.5, PW - 0.5); p.ty = cl(yOf(p.s, tl.a), -0.5, PL + 0.5); p.urg = tl.urg; }
-      const hp2 = HUM(), i2 = hp2 ? IN() : null;
-      if (hp2 && i2) {
-        const m = hy(i2.dx, i2.dy);
-        if (m > 0.12) { hp2.tx = cl(hp2.x + i2.dx / m * 9, 0.5, PW - 0.5); hp2.ty = cl(hp2.y + i2.dy / m * 9, -0.5, PL + 0.5); hp2.urg = i2.sprint ? 1 : 0.82; hp2.carry = null; }
-        else if (W.owner === hp2) { hp2.tx = hp2.x; hp2.ty = hp2.y; hp2.urg = 0.12; }
-        else { const b = W.ball; const d = hy(b.x - hp2.x, b.y - hp2.y); if (d < 16) { hp2.tx = b.x; hp2.ty = b.y; hp2.urg = 0.75; } }
-      }
     };
     const move = () => {
       const A2 = all();
@@ -1174,8 +1167,6 @@ export function makeEngine(cfg) {
       logE('Changement pour ' + club('A') + ' : ' + d.name + ' remplace ' + cand.name, '#8FB8FF', 'sub', 'A');
     };
     // ============ CONTRÔLE DIRECT ============
-    const HUM = () => (W.hum != null && TM.H.ps[W.hum] && !TM.H.ps[W.hum].red ? TM.H.ps[W.hum] : null);
-    const IN = () => (cfg.input ? cfg.input() : null);
     // gestes techniques : palier selon dribble + agilité, du plus simple au plus rare
     // §31 cinq tiers de gestes : 1 basique, 2 intermédiaire, 3 avancé, 4 élite, 5 exceptionnel.
     // Le tier conditionne l'accès au geste et pilote le rendu : plus le tier est haut, plus l'effet visuel est marqué.
@@ -1232,28 +1223,6 @@ export function makeEngine(cfg) {
       else if (slide && R() < 0.5) { p.fall = 0.8; foul(p, c, 'tackle'); }
       else { p.beat = 0.5; com(c.short + ' résiste au retour de ' + p.short); }
     };
-    const humanAct = (p, act) => {
-      if (!act) return false;
-      const s = p.s, o = OT[s], fwd = { x: p.x + p.fx * 22, y: p.y + p.fy * 22 };
-      const mates = LV[s].filter((q) => q !== p && q.line !== 'GB');
-      const aimed = mates.map((q) => ({ q, sc: (q.x - p.x) * p.fx + (q.y - p.y) * p.fy - hy(q.x - p.x, q.y - p.y) * 0.32 })).sort((a2, b2) => b2.sc - a2.sc)[0];
-      const T = TM[s];
-      if (act === 'shoot') { if (aOf(s, p.y) < 55) { const q2 = aimed && aimed.q; if (q2) { kick(p, q2.x, q2.y, 'long', q2, { aerial: true }); W.st[s].pa++; com('Long ballon de ' + p.short); return true; } } shoot(p, false, null); return true; }
-      if (act === 'pass' || act === 'through' || act === 'cross') {
-        if (!aimed) return false;
-        let q = aimed.q, tx = q.x, ty = q.y, aerial = act === 'cross', kind = act === 'through' ? 'through' : act === 'cross' ? 'cross' : 'pass';
-        if (act === 'through') { const ahead = mates.filter((m) => aOf(s, m.y) > aOf(s, p.y) + 3).sort((a2, b2) => aOf(s, b2.y) - aOf(s, a2.y))[0]; if (ahead) { q = ahead; tx = ahead.x + ahead.vx * 1.6; ty = yOf(s, Math.min(aOf(s, ahead.y) + 11, offA[s] - 0.5)); } }
-        if (act === 'cross') { const box = mates.filter((m) => aOf(s, m.y) > 84).sort((a2, b2) => Math.abs(a2.x - 34) - Math.abs(b2.x - 34))[0]; if (box) { q = box; tx = box.x; ty = box.y; } else { tx = 34; ty = yOf(s, 95); } }
-        const sd = hy(tx - p.x, ty - p.y) * (0.012 + 0.09 * Math.max(0, 1 - (p.pas + T.bonus) / 100)) * (nearestOpp(p).d < 2 ? 1.5 : 1) * (aerial ? 1.5 : 1);
-        const f = kick(p, tx + gauss() * sd, ty + gauss() * sd, kind, q, { aerial });
-        W.st[s].pa++; if (isOffPos(q)) f.offside = q;
-        if (act === 'through') { q.run = { x: tx, y: ty, until: W.t + f.dur + 1.5, free: true }; com('Passe en profondeur de ' + p.short + ' pour ' + q.short + ' !'); key(18, s, 'through'); }
-        else if (act === 'cross') { W.boxRun = { tx, ty, until: W.t + f.dur + 0.3, s }; com('Centre de ' + p.short + '…'); key(16, s, 'cross'); }
-        return true;
-      }
-      if (act === 'skill') { doSkill(p, true); return true; }
-      return false;
-    };
     const tick = () => {
       if (lastMin < 0) { lastMin = 0; applySkills(); }
       refreshLV();
@@ -1262,10 +1231,7 @@ export function makeEngine(cfg) {
       offA.H = calcOff('H'); offA.A = calcOff('A');
       if (W.set && W.t >= W.set.ready) execSet();
       else if (!W.set && W.cel <= 0) {
-        const hp = HUM(), inp = hp ? IN() : null;
-        if (hp && inp && inp.act) { if (W.owner === hp && W.t >= hp.ctrlT) { if (humanAct(hp, inp.act)) { hp.nextDec = W.t + 0.35; if (cfg.ack) cfg.ack(); } } else if (inp.act === 'tackle') { doTackle(hp); if (cfg.ack) cfg.ack(); } else if (inp.act === 'switch') { if (cfg.ack) cfg.ack(); } else if (cfg.ack) cfg.ack(); }
-        if (W.owner && W.owner !== hp && W.t >= W.owner.ctrlT && (W.t >= W.owner.nextDec || (nearestOpp(W.owner).d < 1.6 && W.t - W.owner.rcvT > 0.25 && W.t >= W.owner.nextDec - 0.2))) decide(W.owner);
-        if (W.owner === hp && hp && W.t >= hp.ctrlT + 2.6 && W.t >= hp.nextDec) { decide(hp); }
+        if (W.owner && W.t >= W.owner.ctrlT && (W.t >= W.owner.nextDec || (nearestOpp(W.owner).d < 1.6 && W.t - W.owner.rcvT > 0.25 && W.t >= W.owner.nextDec - 0.2))) decide(W.owner);
         if (W.owner) duels();
       }
       W.tn = (W.tn || 0) + 1; if (W.tn % 2 === 0 || W.dirty || W.set) { W.dirty = false; targets(); }
@@ -1275,7 +1241,7 @@ export function makeEngine(cfg) {
       else { const b = W.ball; b.x = W.set.x; b.y = W.set.y; b.z = 0; }
       if (W.owner || W.fl) { const ps = W.owner ? W.owner.s : W.fl.from ? W.fl.from.s : W.poss; W.pt[ps] += DT; }
       rec();
-      W.t += DT; W.clk += DT * (W.live ? 10 : 1);   // en mode « Je joue », le chrono défile comme dans un jeu d'arcade
+      W.t += DT; W.clk += DT;
       if (Math.floor(W.clk / 60) !== lastMin) { lastMin = Math.floor(W.clk / 60); ['H', 'A'].forEach((sd) => { const T = TM[sd]; if (T.boost && W.clk / 60 > T.boost.until) { T.boost = null; setTP(T); } adaptToSituation(T); }); applySkills(); }
       if (Math.floor(W.clk / 60) !== Math.floor((W.clk - DT) / 60)) snap();
       oppSubs();
@@ -1361,19 +1327,8 @@ export function makeEngine(cfg) {
         if (C.fn) C.fn(); T.boost = { attr: C.attr, until: C.until, bonus: C.bonus || 0 }; if (C.tac) { T.tac = Object.assign({}, T.tac, C.tac); } setTP(T); applySkills(); return true;
       },
       phase(side) { return TM[side].phase || 'ATTACK'; },
-      setHuman(i) { W.hum = i; },
-      human() { return W.hum; },
-      bestSwitch() {
-        const b = W.ball, c = W.owner;
-        const pool = LV.H.filter((p) => p.line !== 'GB');
-        if (c && c.s === 'H') return c.i;
-        const sc = pool.map((p) => ({ i: p.i, v: -hy(p.x - b.x, p.y - b.y) - (p.line === 'GB' ? 40 : 0) })).sort((x, y) => y.v - x.v);
-        return sc.length ? sc[0].i : 10;
-      },
       step() { if (W.ended) return false; tick(); keys.length = 0; return !W.ended; },
       frame() { return ring[ring.length - 1] || null; },
-      live() { return W.live; },
-      setLive(v) { W.live = !!v; },
       intents(side) { return TM[side].ps.map((p) => p.intent || ''); },
       situation() { const T = TM.H; return { min: Math.floor(W.clk / 60), diff: W.score.H - W.score.A, tired: T.ps.map((p, i) => ({ i, e: p.energy, red: p.red, line: p.line })).filter((p) => !p.red && p.e < 45), poss: W.poss, subs: T.subs, phase: T.phase }; },
       setTac(side, tac, ment) { TM[side].tac = Object.assign({}, tac); if (ment != null) TM[side].ment = ment; setTP(TM[side]); },
