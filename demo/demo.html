@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LinkFoot · moteur et sauvegarde</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 24px 16px 40px; background: #0B1210; color: #EEF3EF;
+         font: 15px/1.5 "Sora", system-ui, -apple-system, sans-serif; }
+  main { max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  h1 { font-size: 20px; margin: 0; }
+  p { margin: 0; color: #8C9A92; font-size: 13px; }
+  section { padding: 16px; border-radius: 18px; background: #121916;
+            border: 1px solid rgba(255,255,255,0.07); display: flex; flex-direction: column; gap: 10px; }
+  h2 { font-size: 13px; margin: 0; letter-spacing: 0.06em; text-transform: uppercase; color: #8C9A92; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  button { min-height: 40px; padding: 0 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.14);
+           background: rgba(255,255,255,0.04); color: #EEF3EF; font: inherit; font-weight: 700; font-size: 13px; cursor: pointer; }
+  button.primary { border-color: transparent; color: #0B1210;
+                   background: linear-gradient(135deg, #D8F86F 0%, #8BEAA6 60%, #4FDCC4 100%); }
+  button:disabled { opacity: 0.45; cursor: default; }
+  dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 13px; }
+  dt { color: #8C9A92; }
+  dd { margin: 0; font-weight: 600; }
+  pre { margin: 0; padding: 12px; border-radius: 12px; background: #0F130F; font-size: 12px;
+        line-height: 1.6; max-height: 260px; overflow: auto; white-space: pre-wrap; }
+  code { background: #0F130F; padding: 2px 6px; border-radius: 6px; font-size: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>LinkFoot : moteur et sauvegarde</h1>
+  <p>Le même moteur que l'écran Mon Club, sorti de la page. Joue des matchs, puis recharge l'onglet : le club est toujours là.</p>
+
+  <section>
+    <h2>Club</h2>
+    <dl>
+      <dt>Division</dt><dd id="div">-</dd>
+      <dt>Saison</dt><dd id="season">-</dd>
+      <dt>Bilan</dt><dd id="rec">-</dd>
+      <dt>Solde</dt><dd id="bal">-</dd>
+      <dt>Effectif</dt><dd id="squad">-</dd>
+      <dt>Staff</dt><dd id="staff">-</dd>
+      <dt>Stade</dt><dd id="stade">-</dd>
+      <dt>Centre</dt><dd id="aca">-</dd>
+      <dt>Sauvegarde</dt><dd id="save">-</dd>
+    </dl>
+    <div class="row">
+      <button class="primary" id="play">Jouer un match</button>
+      <button id="play10">Jouer 10 matchs</button>
+      <button id="hire">Recruter un adjoint (400)</button>
+      <button id="reset">Nouveau club</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Derniers matchs</h2>
+    <pre id="log">Aucun match joué.</pre>
+  </section>
+
+  <section>
+    <h2>Brancher ton backend</h2>
+    <p>Remplace <code>LocalStore</code> par <code>HttpStore</code> et la sauvegarde part sur ton serveur :</p>
+    <pre>const store = new LinkFoot.HttpStore({
+  url: 'https://api.linkfoot.app/clubs/' + userId + '/save',
+  headers: { Authorization: 'Bearer ' + token }
+});
+const mgr = new LinkFoot.SaveManager(club, store, { delay: 1500 }).start();
+await mgr.load();</pre>
+  </section>
+</main>
+
+<script src="../dist/linkfoot.js"></script>
+<script>
+const { Club, LocalStore, SaveManager } = window.LinkFoot;
+const OPPS = [
+  { club: 'Auteuil United', ovr: 72, style: 'tiki' }, { club: 'Kop Bleu FC', ovr: 67, style: 'contre' },
+  { club: 'Olympique Vieux-Port', ovr: 75, style: 'gegen' }, { club: 'Sporting Yoyo', ovr: 70, style: 'blocbas' },
+  { club: 'Real Canal FC', ovr: 64, style: 'direct' }, { club: 'Calcio Brindille', ovr: 71, style: 'catenaccio' }
+];
+const club = new Club();
+const store = new LocalStore('linkfoot.demo');
+const mgr = new SaveManager(club, store, { delay: 300 });
+let lines = [];
+
+const $ = (id) => document.getElementById(id);
+function paint() {
+  const s = club.state;
+  $('div').textContent = 'D' + s.division;
+  $('season').textContent = 'match ' + (s.seasonP + 1) + ' / 5';
+  $('rec').textContent = s.record.w + 'V ' + s.record.d + 'N ' + s.record.l + 'D';
+  $('bal').textContent = s.balance + ' jetons';
+  $('squad').textContent = s.squad.length + ' joueurs · note ' + Math.round(club.metrics(club.pickXI(s.formation)).ovr);
+  $('staff').textContent = club.STAFF_DEFS().map((d) => d.label.split(' ')[0].toLowerCase() + ' ' + club.staffLv(d.id)).join(', ');
+  $('stade').textContent = club.STADES()[s.stade || 0].name;
+  $('aca').textContent = club.ACADEMIES()[s.academy || 0].name;
+  $('save').textContent = mgr.lastSavedAt ? 'enregistrée à ' + new Date(mgr.lastSavedAt).toLocaleTimeString('fr-FR') : 'en attente';
+  $('log').textContent = lines.length ? lines.slice(0, 12).join('\n') : 'Aucun match joué.';
+  $('hire').disabled = club.staffLv('adjoint') >= 3 || s.balance < 400;
+}
+function one() {
+  const s = club.state;
+  const o = OPPS[Math.floor(Math.random() * OPPS.length)];
+  const opp = Object.assign({}, o, { ovr: o.ovr - 5 + (4 - s.division) * 3 });
+  const r = club.playMatch(opp, { seed: Math.floor(Math.random() * 1e6) });
+  const goals = r.log.filter((l) => l.k === 'G').map((l) => l.m + "'").join(' ');
+  lines.unshift('FC TonPseudo ' + r.score[0] + ' - ' + r.score[1] + ' ' + opp.club + '  (' + opp.ovr + ')' + (goals ? '  buts : ' + goals : ''));
+}
+$('play').onclick = () => { one(); paint(); };
+$('play10').onclick = () => { for (let i = 0; i < 10; i++) one(); paint(); };
+$('hire').onclick = () => { club.hireStaff('adjoint'); paint(); };
+$('reset').onclick = async () => { await store.clear(); location.reload(); };
+
+(async () => {
+  const loaded = await mgr.load();
+  mgr.start();
+  club.onChange(() => setTimeout(paint, 400));
+  if (!loaded) lines = [];
+  paint();
+})();
+</script>
+</body>
+</html>

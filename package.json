@@ -1,0 +1,43 @@
+{
+  "name": "linkfoot-engine",
+  "version": "1.0.0",
+  "description": "Moteur de match et règles manager de LinkFoot, sans DOM ni framework.",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./react": "./src/react.js",
+    "./server": "./server/index.js",
+    "./bundle": "./dist/linkfoot.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "server",
+    "types",
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node test/sim.js 200",
+    "demo": "node server/demo-server.mjs"
+  },
+  "license": "UNLICENSED",
+  "types": "types/index.d.ts",
+  "engines": {
+    "node": ">=18"
+  },
+  "sideEffects": false,
+  "keywords": [
+    "football",
+    "manager",
+    "moteur",
+    "simulation",
+    "linkfoot"
+  ]
+}
