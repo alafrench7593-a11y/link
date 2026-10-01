@@ -68,7 +68,13 @@ const clubs = {};
   ok(local.score[0] === v.body.score[0] && local.score[1] === v.body.score[1],
     '§26 : le client rejoue exactement le même match', 'serveur ' + v.body.score.join('-') + ' · client ' + local.score.join('-'));
   ok(local.log.length > 10, 'avec le même rapport minute par minute', local.log.length + ' événements');
-  ok(typeof v.body.elo === 'number' && v.body.delta !== 0, 'le classement bouge', 'Elo ' + v.body.elo + ' (' + (v.body.delta > 0 ? '+' : '') + v.body.delta + ')');
+  // Pas « l'Elo change » : un nul entre deux clubs au même classement donne zéro, et
+  // c'est juste. Ce qu'il faut vérifier, c'est que le serveur a bien enregistré la
+  // rencontre et renvoyé un classement cohérent avec le résultat.
+  const attendu = v.body.res === 'd' ? 0 : v.body.res === 'h' ? 1 : -1;
+  ok(typeof v.body.elo === 'number' && Math.sign(v.body.delta || 0) === attendu,
+    'le classement suit le résultat',
+    'match ' + v.body.score.join('-') + ' · Elo ' + v.body.elo + ' (' + (v.body.delta > 0 ? '+' : '') + v.body.delta + ')');
   ok(v.body.tokens && v.body.tokens.given > 0, 'les jetons sont versés par le serveur', '+' + v.body.tokens.given);
 
   console.log('\n§29 un faux score est démenti');

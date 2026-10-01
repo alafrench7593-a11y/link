@@ -16,7 +16,7 @@
 //    tant que le cadre juridique n'est pas validé : une demande d'activation est refusée
 //    par le serveur, pas seulement masquée dans l'écran (§76).
 import { Club } from '../src/club.js';
-import { playVersus, verifyResult } from '../src/versus.js';
+import { playVersus, verifyResult, verifierEquipe } from '../src/versus.js';
 import { applyResult, standings, schedule } from '../src/league.js';
 import { createTournament, pendingMatches, reportResult, finalRanking, rewards, PAYOUTS } from '../src/tournament.js';
 
@@ -157,7 +157,11 @@ export function onlineRoutes(opts) {
 
     // Publie son équipe pour que les autres puissent jouer contre elle, même hors ligne.
     'PUT /team': async (uid, body) => {
-      if (!body || !Array.isArray(body.xi) || body.xi.length !== 11) return [400, { error: 'équipe invalide' }];
+      // On refuse à la porte, avec la raison. Avant, une équipe sans tactique passait
+      // ici et faisait tomber le match en 500 : le serveur était donc à la merci du
+      // premier client incomplet ou bricolé (§29).
+      const faute = verifierEquipe(body);
+      if (faute) return [400, { error: 'équipe invalide : ' + faute }];
       await storage.put(K.team(uid), Object.assign({}, body, { uid, at: now() }));
       return [204, null];
     },

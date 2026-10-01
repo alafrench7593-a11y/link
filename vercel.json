@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/online.js": { "maxDuration": 30, "memory": 1024 }
+  },
+  "rewrites": [
+    { "source": "/api/online/:chemin*", "destination": "/api/online" }
+  ]
+}

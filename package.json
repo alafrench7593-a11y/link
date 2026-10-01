@@ -37,6 +37,7 @@
     "test:kiosque": "node test/kiosque.js",
     "test:traits": "node test/traits.js 12",
     "test:tournoi": "node test/tournament.js 16",
+    "test:serveur": "node test/serveur-http.js",
     "test:online": "node test/online.js",
     "test:e2e": "node test/e2e-online.mjs"
   },

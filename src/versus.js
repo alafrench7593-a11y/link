@@ -42,7 +42,56 @@ export function teamSnapshot(club) {
 
 // Construit la configuration du moteur depuis deux instantanés d'équipe.
 // Aucune des deux équipes n'est « l'IA » : les deux sont de vrais effectifs.
-export function versusCfg(home, away, seed) {
+// Les réglages par défaut d'une équipe. Une équipe publiée par un client peut arriver
+// incomplète : ancienne version, client bricolé, champ oublié. Sans ces valeurs, le
+// moteur calculait sur `undefined`, les positions devenaient NaN et le serveur
+// répondait 500 — autrement dit, n'importe qui pouvait le faire tomber en publiant une
+// équipe sans tactique (§29). On complète ici, une fois, pour les deux camps.
+function completer(t) {
+  const ref = new Club();
+  const form = t && t.formation && ref.formCoords(t.formation) ? t.formation : '4-3-3';
+  const preset = (t && t.preset) || (t && t.style) || 'equilibre';
+  const style = ref.styles()[preset] || ref.styles().equilibre;
+  const tac = {};
+  Object.keys(style.tac).forEach((k) => {
+    const v = t && t.tac ? t.tac[k] : undefined;
+    tac[k] = Number.isFinite(v) ? v : style.tac[k];
+  });
+  const ment = Number.isFinite(t && t.mentality) ? t.mentality : style.m;
+  return Object.assign({}, t, { formation: form, preset, tac, mentality: ment,
+    roles: (t && t.roles) || {}, duties: (t && t.duties) || {},
+    xi: ((t && t.xi) || []).map((p) => Object.assign({}, p, {
+      ovr: Number.isFinite(p.ovr) ? p.ovr : 60,
+      energy: Number.isFinite(p.energy) ? p.energy : 100,
+      form: Number.isFinite(p.form) ? p.form : 70,
+      morale: Number.isFinite(p.morale) ? p.morale : 72,
+      wf: Number.isFinite(p.wf) ? p.wf : 3
+    })) });
+}
+
+// Ce qu'une équipe publiée doit contenir pour être jouable. Le serveur s'en sert pour
+// refuser à la porte, avec une raison lisible, plutôt que de planter en plein match :
+// un 500 ne dit rien au joueur et laisse le serveur à la merci du premier client
+// bricolé (§29).
+export function verifierEquipe(t) {
+  if (!t || typeof t !== 'object') return 'équipe absente';
+  if (!Array.isArray(t.xi) || t.xi.length !== 11) return 'il faut exactement onze joueurs';
+  const LIGNES = ['GB', 'DEF', 'MIL', 'ATT'];
+  for (let i = 0; i < t.xi.length; i++) {
+    const p = t.xi[i];
+    if (!p || typeof p !== 'object') return 'joueur ' + (i + 1) + ' absent';
+    if (!p.name || typeof p.name !== 'string') return 'joueur ' + (i + 1) + ' sans nom';
+    if (LIGNES.indexOf(p.line) < 0) return 'joueur ' + (i + 1) + ' : ligne inconnue';
+    if (!Number.isFinite(p.ovr) || p.ovr < 1 || p.ovr > 99) return 'joueur ' + (i + 1) + ' : note hors limites';
+  }
+  if (t.xi.filter((p) => p.line === 'GB').length !== 1) return 'il faut exactement un gardien';
+  const ref = new Club();
+  if (t.formation && !ref.formCoords(t.formation)) return 'formation inconnue : ' + t.formation;
+  return null;
+}
+
+export function versusCfg(home0, away0, seed) {
+  const home = completer(home0), away = completer(away0);
   const ref = new Club();
   const coordsFrom = (form) => {
     const C = ref.formCoords(form), out = [];
@@ -71,6 +120,11 @@ export function versusCfg(home, away, seed) {
 // Joue la rencontre. Le même appel, avec la même graine, rend exactement le même
 // résultat sur le serveur et chez les deux joueurs.
 export function playVersus(home, away, seed, opts) {
+  // Une équipe injouable doit se voir ici, avec son nom et sa raison, pas trois cents
+  // lignes plus bas sous la forme d'un NaN.
+  const eh = verifierEquipe(home), ea = verifierEquipe(away);
+  if (eh) throw new Error('équipe à domicile invalide : ' + eh);
+  if (ea) throw new Error('équipe à l’extérieur invalide : ' + ea);
   const E = makeEngine(versusCfg(home, away, seed));
   E.finish();
   const f = E.state();
