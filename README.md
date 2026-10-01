@@ -194,11 +194,19 @@ des moyennes de championnat réelles :
 | Mesure | Cible | Mesuré |
 | --- | --- | --- |
 | Buts par match (total) | 2,5 à 3,0 | 2,4 à 2,9 |
-| Tirs par match (total) | 24 à 30 | 26 à 28 |
+| Tirs par match (total) | 24 à 30 | 25 à 28 |
 | Tirs cadrés | 9 à 12 | 10 à 11 |
 | xG par match | 2,4 à 3,0 | 2,4 à 2,9 |
+| Fautes par match | 20 à 24 | 16 à 18 |
+| Cartons jaunes | 3,5 à 4,5 | 3,2 |
+| Cartons rouges | 0,05 à 0,10 | 0,07 |
 | Penalties par match | 0,2 à 0,4 | 0,3 |
 
+Un joueur déjà averti lève le pied : sa probabilité de faute tombe à 22 % et il
+tacle moins. C'est ce qui ramène les expulsions au niveau réel, et au passage ce
+qui a fait disparaître la plupart des scores aberrants.
+
+Compte au moins 100 matchs : en dessous, deux matchs à 7 buts suffisent à fausser la moyenne.
 Le test échoue si le total sort de la fourchette, ce qui en fait un garde-fou utile
 en intégration continue avant de toucher au moteur.
 
