@@ -49,17 +49,54 @@ export declare class Club {
   finances(state: ClubState, res: 'w' | 'd' | 'l'): { gate: number; wages: number; net: number };
   train(id: string): void;
   marketList(): Array<Player & { price: number }>;
-  hireStaff(id: 'adjoint' | 'physique' | 'recruteur' | 'kine'): void;
+  hireStaff(id: 'adjoint' | 'physique' | 'recruteur' | 'kine'): ActionResult;
   staffLv(id: string): number;
   staffWages(): number;
-  upgradeStade(): void;
-  upgradeAcademy(): void;
+  upgradeStade(): ActionResult;
+  upgradeAcademy(): ActionResult;
   engineCfg(opp: Opponent, xi: Player[], oxi: Player[], obench: Player[]): unknown;
   STAFF_DEFS(): Array<{ id: string; label: string; cost: number[]; wage: number[]; eff: string[] }>;
   STADES(): Array<{ name: string; cap: number; mult: number; cost: number }>;
   ACADEMIES(): Array<{ name: string; note: string; cost: number }>;
   COACHES(): Array<{ id: string; label: string; desc: string; [k: string]: unknown }>;
   TRAININGS(): Array<{ id: string; label: string; desc: string; [k: string]: unknown }>;
+
+  // Progression : une seule échelle de raretés, un seul axe de niveaux (src/tracks.js).
+  RARITY(): Rarity[];
+  rarityOf(id: string): Rarity;
+  rarityFor(p: Player): Rarity;
+  GATES(): { card: number[]; staff: number[]; stade: number[]; academy: number[]; pack: Record<string, number> };
+  gateOf(kind: 'card' | 'staff' | 'stade' | 'academy', lvl: number): number;
+  lockOf(need: number): { locked: boolean; need: number; why: string };
+  progressBoard(): Track[];
+  trackLine(t: Track): string;
+  unlocksAt(level: number): string[];
+  PACK_DEFS(): PackDef[];
+  packState(def: PackDef): { locked: boolean; need: number; can: boolean; why: string };
+  packByKey(key: string): PackDef;
+  packName(key: string): string;
+  packOdds(def: PackDef): Array<{ id: string; label: string; color: string; pct: number }>;
+  drawCard(packWeights?: Record<string, number>, rnd?: () => number): Card;
+  CARD_POOL(): Card[];
+  collection(): { have: number; total: number };
+  cardLevel(p: Player): number;
+  upgradeInfo(p: Player): { lvl: number; max: boolean; cost: number; rar: string; rarLabel: string; locked: boolean; need: number; can: boolean; why: string };
+  levelUpPlayer(id: number): { ok: boolean; why?: string; lvl?: number };
+  levelNeed(level: number): number;
+}
+
+/** Le résultat commun à toutes les actions qui peuvent refuser : la raison est toujours dite. */
+export interface ActionResult { ok: boolean; why?: string; lvl?: number; }
+
+export interface Rarity { id: string; label: string; rate: number; lo: number; hi: number; shards: number; tint: string; color: string; ink: string; }
+export interface Card { id: number; name: string; pos: string; ovr: number; rar: string; }
+export interface PackDef { key: string; name: string; n: number; cost: number; req: number; w: Record<string, number>; color: string; fx: string; }
+
+/** Une ligne du tableau de progression : la même forme pour toutes les pistes. */
+export interface Track {
+  key: string; label: string; lvl: number; max: number; pct: number;
+  nextLabel: string | null; cost: number; currency: 'xp' | 'rang' | 'tokens' | 'shards' | 'cartes';
+  locked: boolean; can: boolean; why: string; [k: string]: unknown;
 }
 
 export interface MatchEngine {
@@ -69,9 +106,6 @@ export interface MatchEngine {
   frame(): unknown;
   state(): { score: { H: number; A: number }; st: { H: SideStats; A: SideStats }; [k: string]: unknown };
   log: Array<{ m: number; text: string; k?: string; s?: 'H' | 'A'; color?: string }>;
-  setHuman(i: number): void;
-  human(): number | undefined;
-  bestSwitch(): number;
   setLive(v: boolean): void;
   sub(side: 'H' | 'A', i: number, player: Player): void;
   shout(k: string): void;

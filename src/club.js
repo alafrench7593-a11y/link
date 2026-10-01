@@ -10,6 +10,7 @@ import { Training } from './training.js';
 import { Transfer } from './transfer.js';
 import { Progression } from './progression.js';
 import { Tactics } from './tactics.js';
+import { Tracks } from './tracks.js';
 
 export class Club {
   constructor(state) {
@@ -82,4 +83,4 @@ export class Club {
 }
 
 // §80 : chaque domaine vit dans son fichier et vient se mélanger ici.
-Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics);
+Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks);

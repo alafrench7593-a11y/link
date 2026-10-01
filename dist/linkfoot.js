@@ -1449,7 +1449,8 @@ const Players = {
   }
 };
 
-// LinkFoot : Compétences procédurales : 20 effets x 14 conditions x 6 raretés x 5 niveaux (§32 à §36).
+// LinkFoot : Compétences procédurales : 20 effets x 14 conditions x 7 raretés x 5 niveaux (§32 à §36).
+// Les 7 raretés sont celles des cartes (cards.js) : une seule échelle dans tout le jeu.
 // Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
 const Skills = {
   SKILL_DEF() {
@@ -1482,7 +1483,9 @@ const Skills = {
       ['tired', 'quand son énergie passe sous 55 %', 1.5], ['home', 'à domicile', 1.25], ['counter', 'en phase de contre', 1.6], ['box', 'dans une surface de réparation', 1.5],
       ['setpiece', 'sur coup de pied arrêté', 1.6], ['pressed', 'quand l’équipe subit le pressing', 1.5], ['derby', 'contre un adversaire mieux classé', 1.4], ['second', 'en seconde période', 1.2]
     ];
-    const RAR = [['commune', 'Commune', 0.55, '#9AA3B0'], ['normale', 'Normale', 0.75, '#F2F4F7'], ['rare', 'Rare', 1.0, '#4FA8E8'], ['elite', 'Élite', 1.25, '#C39BFF'], ['mythique', 'Mythique', 1.5, '#FFC24A'], ['legendaire', 'Légendaire', 1.8, '#FF4757']];
+    // une seule échelle de raretés dans tout le jeu : celle des cartes (cards.js).
+    // Les compétences, les packs et les joueurs parlent donc le même langage.
+    const RAR = this.RARITY().map((r, i) => [r.id, r.label, 0.55 + i * 0.21, r.tint]);
     const POSOK = { GB: ['gk_reflex', 'gk_mains', 'calme', 'leader', 'acier', 'moteur'], DEF: ['mur', 'gladiateur', 'aerien', 'leader', 'calme', 'moteur', 'grinta', 'pressing', 'laser', 'sprinter', 'acier'], MIL: ['visionnaire', 'laser', 'chef', 'meneur', 'moteur', 'pressing', 'dribbleur', 'calme', 'grinta', 'clutch', 'gladiateur', 'sprinter'], ATT: ['tueur', 'renard', 'sprinter', 'dribbleur', 'clutch', 'aerien', 'grinta', 'acier', 'gladiateur', 'visionnaire'] };
     return (this._skill = { E, C, RAR, POSOK, LVL: ['I', 'II', 'III', 'IV', 'V'] });
   },
@@ -1501,9 +1504,13 @@ const Skills = {
     if (p.skills) return p.skills;
     const D = this.SKILL_DEF(), r = this.seedR((p.id || 1) * 104729 + 3), pool = D.POSOK[p.pos] || D.POSOK.MIL;
     const n = p.ovr >= 80 ? 3 : p.ovr >= 68 ? 2 : 1, out = [];
+    // la rareté d'une compétence se tire sur les taux des cartes, pas sur une échelle à part.
+    // Un joueur ne peut pas porter une compétence plus rare que sa propre carte.
+    const R = this.RARITY(), capRar = Math.max(0, R.findIndex((x) => x.id === this.rarityFor(p).id));
     for (let i = 0; i < n; i++) {
-      const q = r(), rar = q < 0.42 ? 0 : q < 0.7 ? 1 : q < 0.87 ? 2 : q < 0.95 ? 3 : q < 0.99 ? 4 : 5;
-      out.push(this.makeSkill(pool[Math.floor(r() * pool.length)], Math.floor(r() * D.C.length), Math.min(rar, p.ovr >= 75 ? 5 : 3), Math.min(4, Math.floor(r() * 2 + (p.ovr - 55) / 12)), null));
+      let q = r(), rar = 0;
+      for (let k = 0; k < R.length; k++) { q -= R[k].rate; if (q <= 0) { rar = k; break; } }
+      out.push(this.makeSkill(pool[Math.floor(r() * pool.length)], Math.floor(r() * D.C.length), Math.min(rar, capRar), Math.min(4, Math.floor(r() * 2 + (p.ovr - 55) / 12)), null));
     }
     return out;
   }
@@ -1514,13 +1521,13 @@ const Skills = {
 const Cards = {
   RARITY() {
     return [
-      { id: 'normal', label: 'Normal', rate: 0.55, lo: 48, hi: 64, shards: 1, color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', ink: '#171B21' },
-      { id: 'common', label: 'Commun', rate: 0.25, lo: 56, hi: 70, shards: 2, color: 'linear-gradient(135deg, #CFE0D4, #8FA89A)', ink: '#171B21' },
-      { id: 'rare', label: 'Rare', rate: 0.12, lo: 64, hi: 77, shards: 5, color: 'linear-gradient(135deg, #4FA8E8, #2F8FE0)', ink: '#06101F' },
-      { id: 'epic', label: 'Épique', rate: 0.05, lo: 71, hi: 83, shards: 12, color: 'linear-gradient(135deg, #C39BFF, #7B4FD8)', ink: '#120A24' },
-      { id: 'elite', label: 'Élite', rate: 0.02, lo: 77, hi: 88, shards: 30, color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', ink: '#04201C' },
-      { id: 'gold', label: 'Or', rate: 0.009, lo: 82, hi: 92, shards: 80, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', ink: '#241703' },
-      { id: 'legendary', label: 'Légendaire', rate: 0.001, lo: 86, hi: 95, shards: 200, color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', ink: '#2A0812' }
+      { id: 'normal', label: 'Normal', rate: 0.55, lo: 48, hi: 64, shards: 1, tint: '#9AA3B0', color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', ink: '#171B21' },
+      { id: 'common', label: 'Commun', rate: 0.25, lo: 56, hi: 70, shards: 2, tint: '#CFE0D4', color: 'linear-gradient(135deg, #CFE0D4, #8FA89A)', ink: '#171B21' },
+      { id: 'rare', label: 'Rare', rate: 0.12, lo: 64, hi: 77, shards: 5, tint: '#4FA8E8', color: 'linear-gradient(135deg, #4FA8E8, #2F8FE0)', ink: '#06101F' },
+      { id: 'epic', label: 'Épique', rate: 0.05, lo: 71, hi: 83, shards: 12, tint: '#C39BFF', color: 'linear-gradient(135deg, #C39BFF, #7B4FD8)', ink: '#120A24' },
+      { id: 'elite', label: 'Élite', rate: 0.02, lo: 77, hi: 88, shards: 30, tint: '#2ECC71', color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', ink: '#04201C' },
+      { id: 'gold', label: 'Or', rate: 0.009, lo: 82, hi: 92, shards: 80, tint: '#FFC24A', color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', ink: '#241703' },
+      { id: 'legendary', label: 'Légendaire', rate: 0.001, lo: 86, hi: 95, shards: 200, tint: '#FF4757', color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', ink: '#2A0812' }
     ];
   },
 
@@ -1556,13 +1563,28 @@ const Cards = {
 
   PACK_DEFS() {
     return [
-      { key: 'basic', name: 'Pack Basic', n: 3, cost: 150, w: {}, color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', fx: 'bronze' },
-      { key: 'premium', name: 'Pack Premium', n: 4, cost: 400, w: { normal: 0.4, common: 1.2, rare: 2.2, epic: 2.5, elite: 2, gold: 1.6, legendary: 1.4 }, color: 'linear-gradient(135deg, #F2F6F4, #AEB9C2)', fx: 'silver' },
-      { key: 'elite', name: 'Pack Élite', n: 3, cost: 900, w: { normal: 0.1, common: 0.5, rare: 2, epic: 4, elite: 5, gold: 3, legendary: 2.5 }, color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', fx: 'silver' },
-      { key: 'gold', name: 'Pack Or', n: 3, cost: 2000, w: { normal: 0, common: 0.2, rare: 1.2, epic: 4, elite: 8, gold: 9, legendary: 6 }, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', fx: 'gold' },
-      { key: 'special', name: 'Pack Spécial', n: 2, cost: 1200, w: { normal: 0, common: 0, rare: 2, epic: 5, elite: 6, gold: 5, legendary: 4 }, color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', fx: 'gold' }
+      { key: 'basic', name: 'Pack Basic', n: 3, cost: 150, req: 0, w: {}, color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', fx: 'bronze' },
+      { key: 'premium', name: 'Pack Premium', n: 4, cost: 400, req: 3, w: { normal: 0.4, common: 1.2, rare: 2.2, epic: 2.5, elite: 2, gold: 1.6, legendary: 1.4 }, color: 'linear-gradient(135deg, #F2F6F4, #AEB9C2)', fx: 'silver' },
+      { key: 'elite', name: 'Pack Élite', n: 3, cost: 900, req: 7, w: { normal: 0.1, common: 0.5, rare: 2, epic: 4, elite: 5, gold: 3, legendary: 2.5 }, color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', fx: 'silver' },
+      { key: 'gold', name: 'Pack Or', n: 3, cost: 2000, req: 12, w: { normal: 0, common: 0.2, rare: 1.2, epic: 4, elite: 8, gold: 9, legendary: 6 }, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', fx: 'gold' },
+      { key: 'special', name: 'Pack Spécial', n: 2, cost: 1200, req: 10, w: { normal: 0, common: 0, rare: 2, epic: 5, elite: 6, gold: 5, legendary: 4 }, color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', fx: 'gold' }
     ];
   },
+
+  // État d'un pack : la même réponse pour l'affichage et pour l'ouverture.
+  // Un pack verrouillé dit pourquoi : aucun bouton muet (§81).
+  packState(def) {
+    const s = this.state, lock = this.lockOf(def.req || 0);
+    const poor = s.balance < def.cost;
+    return { locked: lock.locked, need: lock.need, can: !lock.locked && !poor,
+      why: lock.locked ? lock.why : poor ? 'Il te manque ' + (def.cost - s.balance) + ' jetons' : '' };
+  },
+
+  // Les packs offerts (quotidien, série, niveau, promotion) tirent dans la même liste
+  // que les packs achetés : plus de clé inventée qui ne correspond à aucun pack.
+  packByKey(key) { return this.PACK_DEFS().find((d) => d.key === key) || this.PACK_DEFS()[0]; },
+
+  packName(key) { return this.packByKey(key).name; },
 
   packOdds(def) {
     const R = this.RARITY(), w = R.map((x) => x.rate * ((def.w || {})[x.id] != null ? def.w[x.id] : 1));
@@ -1581,18 +1603,31 @@ const Cards = {
 
   cardLevel(p) { return p.lvl || 1; },
 
+  // Monter une carte coûte plus cher si elle est rare : la rareté de la carte
+  // et son niveau parlent le même langage que les fragments qu'elle rapporte.
   upgradeInfo(p) {
     const lvl = this.cardLevel(p), max = lvl >= 5;
-    const cost = max ? 0 : this.UPGRADE_COST()[lvl];
-    return { lvl, max, cost, can: !max && (this.state.shards || 0) >= cost };
+    const R = this.RARITY(), ri = Math.max(0, R.findIndex((x) => x.id === (p.rar || this.rarityFor(p).id)));
+    const cost = max ? 0 : Math.round(this.UPGRADE_COST()[lvl] * (1 + ri * 0.35));
+    const lock = this.lockOf(this.gateOf('card', lvl + 1));
+    const poor = (this.state.shards || 0) < cost;
+    return { lvl, max, cost, rar: R[ri].id, rarLabel: R[ri].label, locked: lock.locked && !max, need: lock.need,
+      can: !max && !lock.locked && !poor,
+      why: max ? 'Niveau maximum' : lock.locked ? lock.why : poor ? 'Il te manque ' + (cost - (this.state.shards || 0)) + ' fragments' : '' };
+  },
+
+  // La rareté d'un joueur de l'effectif, déduite de sa note quand la carte n'en porte pas.
+  rarityFor(p) {
+    const R = this.RARITY();
+    for (let i = R.length - 1; i >= 0; i--) if (p.ovr >= R[i].lo) return R[i];
+    return R[0];
   },
 
   levelUpPlayer(id) {
     const s = this.state, p = s.squad.find((x) => x.id === id);
     if (!p) return { ok: false, why: 'Joueur introuvable' };
     const info = this.upgradeInfo(p);
-    if (info.max) return { ok: false, why: 'Niveau maximum' };
-    if (!info.can) return { ok: false, why: 'Il te manque ' + (info.cost - (s.shards || 0)) + ' fragments' };
+    if (!info.can) return { ok: false, why: info.why };
     const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; });
     const w = this.statW(p.pos), keys = Object.keys(w).sort((a, b) => w[b] - w[a]).slice(0, 2);
     keys.forEach((k) => { if (st[k] != null && st[k] < 99) st[k] += 2; });
@@ -1642,11 +1677,18 @@ const Staff = {
 
   staffWages() { return this.STAFF_DEFS().reduce((a, d) => a + d.wage[this.staffLv(d.id)], 0); },
 
+  // Les trois montées (staff, stade, centre) refusent de la même façon et disent pourquoi.
   hireStaff(id) {
     const s = this.state, d = this.STAFF_DEFS().find((x) => x.id === id), lv = this.staffLv(id);
-    if (!d || lv >= 3) return; const cost = d.cost[lv]; if (s.balance < cost) return;
+    if (!d) return { ok: false, why: 'Poste inconnu' };
+    if (lv >= 3) return { ok: false, why: 'Niveau maximum' };
+    const lock = this.lockOf(this.gateOf('staff', lv + 1));
+    if (lock.locked) { this.setState({ staffLog: d.label + ' : ' + lock.why }); return { ok: false, why: lock.why }; }
+    const cost = d.cost[lv];
+    if (s.balance < cost) { const why = 'Il te manque ' + (cost - s.balance) + ' jetons'; this.setState({ staffLog: d.label + ' : ' + why }); return { ok: false, why }; }
     this.buzz([25, 25, 50]);
-    this.setState({ balance: s.balance - cost, staff: Object.assign({}, s.staff, { [id]: lv + 1 }), staffLog: d.label + ' niveau ' + (lv + 1) + ' recruté' });
+    this.setState({ balance: s.balance - cost, staff: Object.assign({}, s.staff, { [id]: lv + 1 }), staffLog: d.label + ' niveau ' + (lv + 1) + ' recruté · ' + d.eff[lv + 1] });
+    return { ok: true, lvl: lv + 1 };
   },
 
   STADES() {
@@ -1660,9 +1702,15 @@ const Staff = {
   },
 
   upgradeStade() {
-    const s = this.state, L = this.STADES(), lv = s.stade || 0; if (lv >= L.length - 1) return;
-    const cost = L[lv + 1].cost; if (s.balance < cost) return;
-    this.buzz([25, 25, 60]); this.setState({ balance: s.balance - cost, stade: lv + 1, staffLog: L[lv + 1].name + ' construit' });
+    const s = this.state, L = this.STADES(), lv = s.stade || 0;
+    if (lv >= L.length - 1) return { ok: false, why: 'Niveau maximum' };
+    const lock = this.lockOf(this.gateOf('stade', lv + 1));
+    if (lock.locked) { this.setState({ staffLog: 'Stade : ' + lock.why }); return { ok: false, why: lock.why }; }
+    const cost = L[lv + 1].cost;
+    if (s.balance < cost) { const why = 'Il te manque ' + (cost - s.balance) + ' jetons'; this.setState({ staffLog: 'Stade : ' + why }); return { ok: false, why }; }
+    this.buzz([25, 25, 60]);
+    this.setState({ balance: s.balance - cost, stade: lv + 1, staffLog: L[lv + 1].name + ' construit · ' + L[lv + 1].cap + ' places' });
+    return { ok: true, lvl: lv + 1 };
   },
 
   ACADEMIES() {
@@ -1675,9 +1723,15 @@ const Staff = {
   },
 
   upgradeAcademy() {
-    const s = this.state, A = this.ACADEMIES(), lv = s.academy || 0; if (lv >= A.length - 1) return;
-    const cost = A[lv + 1].cost; if (s.balance < cost) return;
-    this.buzz([25, 25, 60]); this.setState({ balance: s.balance - cost, academy: lv + 1, staffLog: A[lv + 1].name + ' ouvert' });
+    const s = this.state, A = this.ACADEMIES(), lv = s.academy || 0;
+    if (lv >= A.length - 1) return { ok: false, why: 'Niveau maximum' };
+    const lock = this.lockOf(this.gateOf('academy', lv + 1));
+    if (lock.locked) { this.setState({ staffLog: 'Centre : ' + lock.why }); return { ok: false, why: lock.why }; }
+    const cost = A[lv + 1].cost;
+    if (s.balance < cost) { const why = 'Il te manque ' + (cost - s.balance) + ' jetons'; this.setState({ staffLog: 'Centre : ' + why }); return { ok: false, why }; }
+    this.buzz([25, 25, 60]);
+    this.setState({ balance: s.balance - cost, academy: lv + 1, staffLog: A[lv + 1].name + ' ouvert' });
+    return { ok: true, lvl: lv + 1 };
   },
 
   youthPlayer(st) {
@@ -1805,8 +1859,28 @@ const Progression = {
 
   addXp(st, gain) {
     let xp = st.xp + gain, level = st.level, bal = 0, queue = st.freeQueue.slice(), ups = [];
-    while (xp >= this.levelNeed(level)) { xp -= this.levelNeed(level); level++; const pack = level % 5 === 0; bal += 100 + level * 20; if (pack) queue.push('or'); ups.push({ level, text: '+' + (100 + level * 20) + ' jetons' + (pack ? ' + Pack Or offert' : '') }); }
+    while (xp >= this.levelNeed(level)) {
+      xp -= this.levelNeed(level); level++;
+      bal += 100 + level * 20;
+      // un pack offert tous les 5 niveaux, pris dans la vraie liste des packs
+      const key = level % 5 === 0 ? (level >= 15 ? 'gold' : level >= 10 ? 'elite' : 'premium') : null;
+      if (key) queue.push(key);
+      // ce que ce niveau débloque, dit une seule fois, au moment où ça arrive
+      const opened = this.unlocksAt(level);
+      ups.push({ level, text: '+' + (100 + level * 20) + ' jetons' + (key ? ' + ' + this.packName(key) + ' offert' : '') + (opened.length ? ' · débloque ' + opened.join(', ') : '') });
+    }
     return { xp, level, bonusBal: bal, freeQueue: queue, ups };
+  },
+
+  // Ce que le niveau `l` ouvre : lu dans les paliers, jamais écrit en dur deux fois.
+  unlocksAt(l) {
+    const G = this.GATES(), out = [];
+    G.card.forEach((n, i) => { if (n === l && i > 1) out.push('niveau de carte ' + i); });
+    G.staff.forEach((n, i) => { if (n === l && i > 0) out.push('staff niveau ' + i); });
+    G.stade.forEach((n, i) => { if (n === l && i > 0) out.push(this.STADES()[i].name); });
+    G.academy.forEach((n, i) => { if (n === l && i > 0) out.push(this.ACADEMIES()[i].name); });
+    this.PACK_DEFS().forEach((d) => { if ((d.req || 0) === l) out.push(d.name); });
+    return out;
   },
 
   bumpMission(ms, id, n) { return ms.map((m) => (m.id === id && !m.claimed ? Object.assign({}, m, { prog: Math.min(m.goal, m.prog + n) }) : m)); },
@@ -1846,7 +1920,7 @@ const Progression = {
       const yg = this.youthPlayer(st);
       let ygTxt = '';
       if (yg) { patch.squad = (patch.squad || st.squad).concat([yg]); patch.youth = (st.youth || []).concat([yg.id]); ygTxt = ' Le centre sort ' + yg.name + ' (' + yg.pos + ' ' + yg.ovr + ', potentiel ' + yg.pot + ').'; }
-      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; patch.freeQueue = patch.freeQueue.concat(['or']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un Pack Or. Les adversaires seront plus forts.' + ygTxt }; }
+      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; patch.freeQueue = patch.freeQueue.concat(['gold']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un Pack Or. Les adversaires seront plus forts.' + ygTxt }; }
       else if (rank === last && st.division < 5) { patch.division = st.division + 1; over = { title: 'RELÉGUÉ EN DIVISION ' + patch.division, sub: 'Fin de saison : ' + rank + 'e sur ' + last + '. Les adversaires seront plus faibles, mais la recette du match baisse.' + ygTxt }; }
       else over = over || { title: 'FIN DE SAISON', sub: rank + 'e de la division ' + st.division + '. Termine dans les 2 premiers pour monter, évite la dernière place.' + ygTxt };
       patch.seasonP = 0; patch.record = { w: 0, d: 0, l: 0 };
@@ -2045,6 +2119,7 @@ const Tactics = {
 
 
 
+
 class Club {
   constructor(state) {
     this.state = Object.assign({}, INITIAL_STATE(), state || {});
@@ -2116,7 +2191,7 @@ class Club {
 }
 
 // §80 : chaque domaine vit dans son fichier et vient se mélanger ici.
-Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics);
+Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks);
 
 // LinkFoot : sauvegarde. Sérialise l'état du club, le relit, et le range
 // où tu veux : mémoire, navigateur, ou ton serveur.

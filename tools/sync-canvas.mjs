@@ -66,8 +66,8 @@ const METHODS = ['rand', 'seedR', 'statW', 'ovrOf', 'genStats', 'cardStats', 'pr
   'MATCH_CARDS', 'UPGRADE_CARDS', 'useUpgrade', 'STAFF_DEFS', 'staffLv', 'staffWages', 'hireStaff',
   'STADES', 'upgradeStade', 'ACADEMIES', 'upgradeAcademy', 'youthPlayer', 'synergy', 'finances',
   'marketList', 'formCoords', 'penalty', 'pickXI', 'benchOf', 'ROLE_OPTS', 'metrics', 'baseShape', 'engineCfg',
-  'RARITY', 'rarityOf', 'CARD_POOL', 'drawCard', 'PACK_DEFS', 'packOdds', 'collection', 'sellPlayer', 'ageSquad', 'UPGRADE_COST', 'cardLevel', 'upgradeInfo', 'levelUpPlayer'];
-const SOURCES = ['club.js', 'players.js', 'skills.js', 'cards.js', 'staff.js', 'training.js', 'transfer.js', 'progression.js', 'tactics.js'];
+  'RARITY', 'rarityOf', 'CARD_POOL', 'drawCard', 'PACK_DEFS', 'packOdds', 'collection', 'sellPlayer', 'ageSquad', 'UPGRADE_COST', 'cardLevel', 'upgradeInfo', 'rarityFor', 'levelUpPlayer', 'packState', 'packByKey', 'packName', 'GATES', 'gateOf', 'lockOf', 'progressBoard', 'trackLine', 'unlocksAt'];
+const SOURCES = ['club.js', 'players.js', 'skills.js', 'cards.js', 'staff.js', 'training.js', 'transfer.js', 'progression.js', 'tactics.js', 'tracks.js'];
 const club = SOURCES.map((f) => read('src/' + f)).join('\n');
 for (const name of METHODS) {
   const from = findMethod(club, name);

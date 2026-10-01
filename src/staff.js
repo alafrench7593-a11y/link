@@ -14,11 +14,18 @@ export const Staff = {
 
   staffWages() { return this.STAFF_DEFS().reduce((a, d) => a + d.wage[this.staffLv(d.id)], 0); },
 
+  // Les trois montées (staff, stade, centre) refusent de la même façon et disent pourquoi.
   hireStaff(id) {
     const s = this.state, d = this.STAFF_DEFS().find((x) => x.id === id), lv = this.staffLv(id);
-    if (!d || lv >= 3) return; const cost = d.cost[lv]; if (s.balance < cost) return;
+    if (!d) return { ok: false, why: 'Poste inconnu' };
+    if (lv >= 3) return { ok: false, why: 'Niveau maximum' };
+    const lock = this.lockOf(this.gateOf('staff', lv + 1));
+    if (lock.locked) { this.setState({ staffLog: d.label + ' : ' + lock.why }); return { ok: false, why: lock.why }; }
+    const cost = d.cost[lv];
+    if (s.balance < cost) { const why = 'Il te manque ' + (cost - s.balance) + ' jetons'; this.setState({ staffLog: d.label + ' : ' + why }); return { ok: false, why }; }
     this.buzz([25, 25, 50]);
-    this.setState({ balance: s.balance - cost, staff: Object.assign({}, s.staff, { [id]: lv + 1 }), staffLog: d.label + ' niveau ' + (lv + 1) + ' recruté' });
+    this.setState({ balance: s.balance - cost, staff: Object.assign({}, s.staff, { [id]: lv + 1 }), staffLog: d.label + ' niveau ' + (lv + 1) + ' recruté · ' + d.eff[lv + 1] });
+    return { ok: true, lvl: lv + 1 };
   },
 
   STADES() {
@@ -32,9 +39,15 @@ export const Staff = {
   },
 
   upgradeStade() {
-    const s = this.state, L = this.STADES(), lv = s.stade || 0; if (lv >= L.length - 1) return;
-    const cost = L[lv + 1].cost; if (s.balance < cost) return;
-    this.buzz([25, 25, 60]); this.setState({ balance: s.balance - cost, stade: lv + 1, staffLog: L[lv + 1].name + ' construit' });
+    const s = this.state, L = this.STADES(), lv = s.stade || 0;
+    if (lv >= L.length - 1) return { ok: false, why: 'Niveau maximum' };
+    const lock = this.lockOf(this.gateOf('stade', lv + 1));
+    if (lock.locked) { this.setState({ staffLog: 'Stade : ' + lock.why }); return { ok: false, why: lock.why }; }
+    const cost = L[lv + 1].cost;
+    if (s.balance < cost) { const why = 'Il te manque ' + (cost - s.balance) + ' jetons'; this.setState({ staffLog: 'Stade : ' + why }); return { ok: false, why }; }
+    this.buzz([25, 25, 60]);
+    this.setState({ balance: s.balance - cost, stade: lv + 1, staffLog: L[lv + 1].name + ' construit · ' + L[lv + 1].cap + ' places' });
+    return { ok: true, lvl: lv + 1 };
   },
 
   ACADEMIES() {
@@ -47,9 +60,15 @@ export const Staff = {
   },
 
   upgradeAcademy() {
-    const s = this.state, A = this.ACADEMIES(), lv = s.academy || 0; if (lv >= A.length - 1) return;
-    const cost = A[lv + 1].cost; if (s.balance < cost) return;
-    this.buzz([25, 25, 60]); this.setState({ balance: s.balance - cost, academy: lv + 1, staffLog: A[lv + 1].name + ' ouvert' });
+    const s = this.state, A = this.ACADEMIES(), lv = s.academy || 0;
+    if (lv >= A.length - 1) return { ok: false, why: 'Niveau maximum' };
+    const lock = this.lockOf(this.gateOf('academy', lv + 1));
+    if (lock.locked) { this.setState({ staffLog: 'Centre : ' + lock.why }); return { ok: false, why: lock.why }; }
+    const cost = A[lv + 1].cost;
+    if (s.balance < cost) { const why = 'Il te manque ' + (cost - s.balance) + ' jetons'; this.setState({ staffLog: 'Centre : ' + why }); return { ok: false, why }; }
+    this.buzz([25, 25, 60]);
+    this.setState({ balance: s.balance - cost, academy: lv + 1, staffLog: A[lv + 1].name + ' ouvert' });
+    return { ok: true, lvl: lv + 1 };
   },
 
   youthPlayer(st) {

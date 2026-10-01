@@ -3,13 +3,13 @@
 export const Cards = {
   RARITY() {
     return [
-      { id: 'normal', label: 'Normal', rate: 0.55, lo: 48, hi: 64, shards: 1, color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', ink: '#171B21' },
-      { id: 'common', label: 'Commun', rate: 0.25, lo: 56, hi: 70, shards: 2, color: 'linear-gradient(135deg, #CFE0D4, #8FA89A)', ink: '#171B21' },
-      { id: 'rare', label: 'Rare', rate: 0.12, lo: 64, hi: 77, shards: 5, color: 'linear-gradient(135deg, #4FA8E8, #2F8FE0)', ink: '#06101F' },
-      { id: 'epic', label: 'Épique', rate: 0.05, lo: 71, hi: 83, shards: 12, color: 'linear-gradient(135deg, #C39BFF, #7B4FD8)', ink: '#120A24' },
-      { id: 'elite', label: 'Élite', rate: 0.02, lo: 77, hi: 88, shards: 30, color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', ink: '#04201C' },
-      { id: 'gold', label: 'Or', rate: 0.009, lo: 82, hi: 92, shards: 80, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', ink: '#241703' },
-      { id: 'legendary', label: 'Légendaire', rate: 0.001, lo: 86, hi: 95, shards: 200, color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', ink: '#2A0812' }
+      { id: 'normal', label: 'Normal', rate: 0.55, lo: 48, hi: 64, shards: 1, tint: '#9AA3B0', color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', ink: '#171B21' },
+      { id: 'common', label: 'Commun', rate: 0.25, lo: 56, hi: 70, shards: 2, tint: '#CFE0D4', color: 'linear-gradient(135deg, #CFE0D4, #8FA89A)', ink: '#171B21' },
+      { id: 'rare', label: 'Rare', rate: 0.12, lo: 64, hi: 77, shards: 5, tint: '#4FA8E8', color: 'linear-gradient(135deg, #4FA8E8, #2F8FE0)', ink: '#06101F' },
+      { id: 'epic', label: 'Épique', rate: 0.05, lo: 71, hi: 83, shards: 12, tint: '#C39BFF', color: 'linear-gradient(135deg, #C39BFF, #7B4FD8)', ink: '#120A24' },
+      { id: 'elite', label: 'Élite', rate: 0.02, lo: 77, hi: 88, shards: 30, tint: '#2ECC71', color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', ink: '#04201C' },
+      { id: 'gold', label: 'Or', rate: 0.009, lo: 82, hi: 92, shards: 80, tint: '#FFC24A', color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', ink: '#241703' },
+      { id: 'legendary', label: 'Légendaire', rate: 0.001, lo: 86, hi: 95, shards: 200, tint: '#FF4757', color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', ink: '#2A0812' }
     ];
   },
 
@@ -45,13 +45,28 @@ export const Cards = {
 
   PACK_DEFS() {
     return [
-      { key: 'basic', name: 'Pack Basic', n: 3, cost: 150, w: {}, color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', fx: 'bronze' },
-      { key: 'premium', name: 'Pack Premium', n: 4, cost: 400, w: { normal: 0.4, common: 1.2, rare: 2.2, epic: 2.5, elite: 2, gold: 1.6, legendary: 1.4 }, color: 'linear-gradient(135deg, #F2F6F4, #AEB9C2)', fx: 'silver' },
-      { key: 'elite', name: 'Pack Élite', n: 3, cost: 900, w: { normal: 0.1, common: 0.5, rare: 2, epic: 4, elite: 5, gold: 3, legendary: 2.5 }, color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', fx: 'silver' },
-      { key: 'gold', name: 'Pack Or', n: 3, cost: 2000, w: { normal: 0, common: 0.2, rare: 1.2, epic: 4, elite: 8, gold: 9, legendary: 6 }, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', fx: 'gold' },
-      { key: 'special', name: 'Pack Spécial', n: 2, cost: 1200, w: { normal: 0, common: 0, rare: 2, epic: 5, elite: 6, gold: 5, legendary: 4 }, color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', fx: 'gold' }
+      { key: 'basic', name: 'Pack Basic', n: 3, cost: 150, req: 0, w: {}, color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', fx: 'bronze' },
+      { key: 'premium', name: 'Pack Premium', n: 4, cost: 400, req: 3, w: { normal: 0.4, common: 1.2, rare: 2.2, epic: 2.5, elite: 2, gold: 1.6, legendary: 1.4 }, color: 'linear-gradient(135deg, #F2F6F4, #AEB9C2)', fx: 'silver' },
+      { key: 'elite', name: 'Pack Élite', n: 3, cost: 900, req: 7, w: { normal: 0.1, common: 0.5, rare: 2, epic: 4, elite: 5, gold: 3, legendary: 2.5 }, color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', fx: 'silver' },
+      { key: 'gold', name: 'Pack Or', n: 3, cost: 2000, req: 12, w: { normal: 0, common: 0.2, rare: 1.2, epic: 4, elite: 8, gold: 9, legendary: 6 }, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', fx: 'gold' },
+      { key: 'special', name: 'Pack Spécial', n: 2, cost: 1200, req: 10, w: { normal: 0, common: 0, rare: 2, epic: 5, elite: 6, gold: 5, legendary: 4 }, color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', fx: 'gold' }
     ];
   },
+
+  // État d'un pack : la même réponse pour l'affichage et pour l'ouverture.
+  // Un pack verrouillé dit pourquoi : aucun bouton muet (§81).
+  packState(def) {
+    const s = this.state, lock = this.lockOf(def.req || 0);
+    const poor = s.balance < def.cost;
+    return { locked: lock.locked, need: lock.need, can: !lock.locked && !poor,
+      why: lock.locked ? lock.why : poor ? 'Il te manque ' + (def.cost - s.balance) + ' jetons' : '' };
+  },
+
+  // Les packs offerts (quotidien, série, niveau, promotion) tirent dans la même liste
+  // que les packs achetés : plus de clé inventée qui ne correspond à aucun pack.
+  packByKey(key) { return this.PACK_DEFS().find((d) => d.key === key) || this.PACK_DEFS()[0]; },
+
+  packName(key) { return this.packByKey(key).name; },
 
   packOdds(def) {
     const R = this.RARITY(), w = R.map((x) => x.rate * ((def.w || {})[x.id] != null ? def.w[x.id] : 1));
@@ -70,18 +85,31 @@ export const Cards = {
 
   cardLevel(p) { return p.lvl || 1; },
 
+  // Monter une carte coûte plus cher si elle est rare : la rareté de la carte
+  // et son niveau parlent le même langage que les fragments qu'elle rapporte.
   upgradeInfo(p) {
     const lvl = this.cardLevel(p), max = lvl >= 5;
-    const cost = max ? 0 : this.UPGRADE_COST()[lvl];
-    return { lvl, max, cost, can: !max && (this.state.shards || 0) >= cost };
+    const R = this.RARITY(), ri = Math.max(0, R.findIndex((x) => x.id === (p.rar || this.rarityFor(p).id)));
+    const cost = max ? 0 : Math.round(this.UPGRADE_COST()[lvl] * (1 + ri * 0.35));
+    const lock = this.lockOf(this.gateOf('card', lvl + 1));
+    const poor = (this.state.shards || 0) < cost;
+    return { lvl, max, cost, rar: R[ri].id, rarLabel: R[ri].label, locked: lock.locked && !max, need: lock.need,
+      can: !max && !lock.locked && !poor,
+      why: max ? 'Niveau maximum' : lock.locked ? lock.why : poor ? 'Il te manque ' + (cost - (this.state.shards || 0)) + ' fragments' : '' };
+  },
+
+  // La rareté d'un joueur de l'effectif, déduite de sa note quand la carte n'en porte pas.
+  rarityFor(p) {
+    const R = this.RARITY();
+    for (let i = R.length - 1; i >= 0; i--) if (p.ovr >= R[i].lo) return R[i];
+    return R[0];
   },
 
   levelUpPlayer(id) {
     const s = this.state, p = s.squad.find((x) => x.id === id);
     if (!p) return { ok: false, why: 'Joueur introuvable' };
     const info = this.upgradeInfo(p);
-    if (info.max) return { ok: false, why: 'Niveau maximum' };
-    if (!info.can) return { ok: false, why: 'Il te manque ' + (info.cost - (s.shards || 0)) + ' fragments' };
+    if (!info.can) return { ok: false, why: info.why };
     const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; });
     const w = this.statW(p.pos), keys = Object.keys(w).sort((a, b) => w[b] - w[a]).slice(0, 2);
     keys.forEach((k) => { if (st[k] != null && st[k] < 99) st[k] += 2; });

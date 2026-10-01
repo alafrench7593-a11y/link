@@ -5,8 +5,28 @@ export const Progression = {
 
   addXp(st, gain) {
     let xp = st.xp + gain, level = st.level, bal = 0, queue = st.freeQueue.slice(), ups = [];
-    while (xp >= this.levelNeed(level)) { xp -= this.levelNeed(level); level++; const pack = level % 5 === 0; bal += 100 + level * 20; if (pack) queue.push('or'); ups.push({ level, text: '+' + (100 + level * 20) + ' jetons' + (pack ? ' + Pack Or offert' : '') }); }
+    while (xp >= this.levelNeed(level)) {
+      xp -= this.levelNeed(level); level++;
+      bal += 100 + level * 20;
+      // un pack offert tous les 5 niveaux, pris dans la vraie liste des packs
+      const key = level % 5 === 0 ? (level >= 15 ? 'gold' : level >= 10 ? 'elite' : 'premium') : null;
+      if (key) queue.push(key);
+      // ce que ce niveau débloque, dit une seule fois, au moment où ça arrive
+      const opened = this.unlocksAt(level);
+      ups.push({ level, text: '+' + (100 + level * 20) + ' jetons' + (key ? ' + ' + this.packName(key) + ' offert' : '') + (opened.length ? ' · débloque ' + opened.join(', ') : '') });
+    }
     return { xp, level, bonusBal: bal, freeQueue: queue, ups };
+  },
+
+  // Ce que le niveau `l` ouvre : lu dans les paliers, jamais écrit en dur deux fois.
+  unlocksAt(l) {
+    const G = this.GATES(), out = [];
+    G.card.forEach((n, i) => { if (n === l && i > 1) out.push('niveau de carte ' + i); });
+    G.staff.forEach((n, i) => { if (n === l && i > 0) out.push('staff niveau ' + i); });
+    G.stade.forEach((n, i) => { if (n === l && i > 0) out.push(this.STADES()[i].name); });
+    G.academy.forEach((n, i) => { if (n === l && i > 0) out.push(this.ACADEMIES()[i].name); });
+    this.PACK_DEFS().forEach((d) => { if ((d.req || 0) === l) out.push(d.name); });
+    return out;
   },
 
   bumpMission(ms, id, n) { return ms.map((m) => (m.id === id && !m.claimed ? Object.assign({}, m, { prog: Math.min(m.goal, m.prog + n) }) : m)); },
@@ -46,7 +66,7 @@ export const Progression = {
       const yg = this.youthPlayer(st);
       let ygTxt = '';
       if (yg) { patch.squad = (patch.squad || st.squad).concat([yg]); patch.youth = (st.youth || []).concat([yg.id]); ygTxt = ' Le centre sort ' + yg.name + ' (' + yg.pos + ' ' + yg.ovr + ', potentiel ' + yg.pot + ').'; }
-      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; patch.freeQueue = patch.freeQueue.concat(['or']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un Pack Or. Les adversaires seront plus forts.' + ygTxt }; }
+      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; patch.freeQueue = patch.freeQueue.concat(['gold']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un Pack Or. Les adversaires seront plus forts.' + ygTxt }; }
       else if (rank === last && st.division < 5) { patch.division = st.division + 1; over = { title: 'RELÉGUÉ EN DIVISION ' + patch.division, sub: 'Fin de saison : ' + rank + 'e sur ' + last + '. Les adversaires seront plus faibles, mais la recette du match baisse.' + ygTxt }; }
       else over = over || { title: 'FIN DE SAISON', sub: rank + 'e de la division ' + st.division + '. Termine dans les 2 premiers pour monter, évite la dernière place.' + ygTxt };
       patch.seasonP = 0; patch.record = { w: 0, d: 0, l: 0 };

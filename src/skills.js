@@ -1,4 +1,5 @@
-// LinkFoot : Compétences procédurales : 20 effets x 14 conditions x 6 raretés x 5 niveaux (§32 à §36).
+// LinkFoot : Compétences procédurales : 20 effets x 14 conditions x 7 raretés x 5 niveaux (§32 à §36).
+// Les 7 raretés sont celles des cartes (cards.js) : une seule échelle dans tout le jeu.
 // Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
 export const Skills = {
   SKILL_DEF() {
@@ -31,7 +32,9 @@ export const Skills = {
       ['tired', 'quand son énergie passe sous 55 %', 1.5], ['home', 'à domicile', 1.25], ['counter', 'en phase de contre', 1.6], ['box', 'dans une surface de réparation', 1.5],
       ['setpiece', 'sur coup de pied arrêté', 1.6], ['pressed', 'quand l’équipe subit le pressing', 1.5], ['derby', 'contre un adversaire mieux classé', 1.4], ['second', 'en seconde période', 1.2]
     ];
-    const RAR = [['commune', 'Commune', 0.55, '#9AA3B0'], ['normale', 'Normale', 0.75, '#F2F4F7'], ['rare', 'Rare', 1.0, '#4FA8E8'], ['elite', 'Élite', 1.25, '#C39BFF'], ['mythique', 'Mythique', 1.5, '#FFC24A'], ['legendaire', 'Légendaire', 1.8, '#FF4757']];
+    // une seule échelle de raretés dans tout le jeu : celle des cartes (cards.js).
+    // Les compétences, les packs et les joueurs parlent donc le même langage.
+    const RAR = this.RARITY().map((r, i) => [r.id, r.label, 0.55 + i * 0.21, r.tint]);
     const POSOK = { GB: ['gk_reflex', 'gk_mains', 'calme', 'leader', 'acier', 'moteur'], DEF: ['mur', 'gladiateur', 'aerien', 'leader', 'calme', 'moteur', 'grinta', 'pressing', 'laser', 'sprinter', 'acier'], MIL: ['visionnaire', 'laser', 'chef', 'meneur', 'moteur', 'pressing', 'dribbleur', 'calme', 'grinta', 'clutch', 'gladiateur', 'sprinter'], ATT: ['tueur', 'renard', 'sprinter', 'dribbleur', 'clutch', 'aerien', 'grinta', 'acier', 'gladiateur', 'visionnaire'] };
     return (this._skill = { E, C, RAR, POSOK, LVL: ['I', 'II', 'III', 'IV', 'V'] });
   },
@@ -50,9 +53,13 @@ export const Skills = {
     if (p.skills) return p.skills;
     const D = this.SKILL_DEF(), r = this.seedR((p.id || 1) * 104729 + 3), pool = D.POSOK[p.pos] || D.POSOK.MIL;
     const n = p.ovr >= 80 ? 3 : p.ovr >= 68 ? 2 : 1, out = [];
+    // la rareté d'une compétence se tire sur les taux des cartes, pas sur une échelle à part.
+    // Un joueur ne peut pas porter une compétence plus rare que sa propre carte.
+    const R = this.RARITY(), capRar = Math.max(0, R.findIndex((x) => x.id === this.rarityFor(p).id));
     for (let i = 0; i < n; i++) {
-      const q = r(), rar = q < 0.42 ? 0 : q < 0.7 ? 1 : q < 0.87 ? 2 : q < 0.95 ? 3 : q < 0.99 ? 4 : 5;
-      out.push(this.makeSkill(pool[Math.floor(r() * pool.length)], Math.floor(r() * D.C.length), Math.min(rar, p.ovr >= 75 ? 5 : 3), Math.min(4, Math.floor(r() * 2 + (p.ovr - 55) / 12)), null));
+      let q = r(), rar = 0;
+      for (let k = 0; k < R.length; k++) { q -= R[k].rate; if (q <= 0) { rar = k; break; } }
+      out.push(this.makeSkill(pool[Math.floor(r() * pool.length)], Math.floor(r() * D.C.length), Math.min(rar, capRar), Math.min(4, Math.floor(r() * 2 + (p.ovr - 55) / 12)), null));
     }
     return out;
   }
