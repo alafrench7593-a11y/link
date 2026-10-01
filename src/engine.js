@@ -673,6 +673,16 @@ export function makeEngine(cfg) {
         const prog = tA - a0;
         if (counter) ev *= prog > 5 ? 1.25 : prog < -3 ? 0.55 : 1;
         if (T.tac.pass === 0 && e.d > 26) ev *= 0.85; if (T.tac.pass === 2 && prog > 12) ev *= 1.15;
+        // §42 Jeu court ou jeu long. Les deux lignes au-dessus ne jugeaient que la
+        // distance et la progression, jamais le BALLON joué : une équipe réglée en jeu
+        // direct envoyait exactement autant de ballons aériens qu'une équipe de
+        // possession, donc le curseur ne se voyait pas sur le terrain. Une passe en
+        // l'air est un pari : le jeu court le refuse, le jeu direct le prend.
+        // Attention au signe : une espérance peut être négative (une passe qui coûte
+        // plus qu'elle ne rapporte). La multiplier par 0,7 la rendrait MOINS mauvaise,
+        // donc plus attirante, soit l'inverse de ce qu'on veut. On agit sur l'ampleur
+        // en gardant le sens : favoriser, c'est grandir le gain et réduire la perte.
+        if (aerial) { const k = [0.7, 1, 1.4][T.tac.pass] || 1; ev = ev > 0 ? ev * k : ev / k; }
         // §14 la Passe laser joue entre les lignes : les passes difficiles deviennent
         // une option raisonnable, et le receveur rapide est davantage servi dans la profondeur.
         const tp = TR(p, 'pass');
@@ -757,7 +767,12 @@ export function makeEngine(cfg) {
       // Ils servent au garde-fou test/traits.js, qui vérifie qu'une compétence change
       // le comportement et pas seulement les chiffres affichés.
       W.cnt = W.cnt || {}; W.cnt.dec = (W.cnt.dec || 0) + 1;
-      W.cnt['act_' + ch.k + (ch.k === 'pass' ? '_' + ch.kind : '')] = (W.cnt['act_' + ch.k + (ch.k === 'pass' ? '_' + ch.kind : '')] || 0) + 1;
+      // Une passe aérienne EST un long ballon : deux lignes plus bas, exec l'envoie à
+      // kick() avec le type 'long'. Le compteur disait 'pass', donc une équipe en jeu
+      // direct semblait jouer court. On compte ce que le moteur fait, pas ce que
+      // l'option s'appelait au moment du choix.
+      const sousType = ch.k !== 'pass' ? '' : '_' + (ch.kind === 'pass' && ch.aerial ? 'long' : ch.kind);
+      W.cnt['act_' + ch.k + sousType] = (W.cnt['act_' + ch.k + sousType] || 0) + 1;
       exec(p, ch, counter);
     };
     const exec = (p, ch, counter) => {

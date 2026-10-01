@@ -962,6 +962,21 @@ button:disabled{cursor:default}
 </span>
 <span style="flex-shrink: 0; font-family: 'Sora', sans-serif; font-weight: 800; font-size: 34px; color: #2ECC71">{{motmRate}}</span>
 </div>
+<sc-if value="{{hasImpact}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 9px; padding: 14px; border-radius: 10px; background: linear-gradient(105deg, rgba(46,204,113,0.12) 0%, rgba(46,204,113,0.03) 50%, #1E232B 85%); border: 1px solid rgba(46,204,113,0.32)">
+<span style="font-size: 14px; font-weight: 800">Ce que tes décisions ont fait</span>
+<span style="font-size: 10.5px; color: #79828F; line-height: 1.45">{{impactLine}}. Seuls les réglages que tu as changés sont listés, avec ce qu’ils ont donné dans ce match.</span>
+<sc-for list="{{impact}}" as="im" hint-placeholder-count="5">
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 9px 11px; border-radius: 9px; background: rgba(11,18,16,0.45)">
+<span style="font-size: 12px; font-weight: 700">{{im.titre}}</span>
+<span style="font-size: 10.5px; color: #AEB6C2; line-height: 1.4">{{im.valeur}}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{noImpact}}" hint-placeholder-val="{{false}}">
+<div style="padding: 12px 14px; border-radius: 10px; background: rgba(245,200,76,0.09); border: 1px dashed rgba(245,200,76,0.35); font-size: 11.5px; color: #F5C84C; line-height: 1.45">Tu n’as changé aucun réglage avant ce match : l’équipe a joué par défaut. Formation, mentalité, consignes, compétences, réunion : chacun de ces choix change vraiment le jeu, et le prochain rapport te dira ce qu’il a donné.</div>
+</sc-if>
 <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
 <sc-for list="{{repStats}}" as="rs" hint-placeholder-count="7">
 <div style="display: flex; flex-direction: column; gap: 5px">
@@ -2330,7 +2345,12 @@ class Component extends DCLogic {
     const oxi = shapeA.map((b, i) => ({ id: 5000 + seed * 13 + i, name: FN[Math.floor(rnd() * FN.length)] + ' ' + LN[Math.floor(rnd() * LN.length)], pos: b.line, line: b.line, ovr: Math.round(opp.ovr + (rnd() - 0.5) * 8), energy: 100, yc: 0, red: false }));
     const obench = ['MIL', 'ATT', 'DEF'].map((pos, i) => ({ id: 6000 + seed * 13 + i, name: FN[Math.floor(rnd() * FN.length)] + ' ' + LN[Math.floor(rnd() * LN.length)], pos, ovr: Math.round(opp.ovr - 2 + (rnd() - 0.5) * 6) }));
     const Z = () => ({ sh: 0, on: 0, xg: 0, cor: 0, fou: 0, yc: 0, rc: 0 });
+    // §47 : les décisions sont photographiées AVANT le coup d'envoi. Certaines se
+    // consomment pendant la rencontre (le plan tactique ne vaut qu'un match), donc
+    // l'état d'après ne saurait plus dire ce qui avait été préparé.
+    const plan = this.matchPlan();
     const mt = { opp, friendly: !!opp.friendly, M, minute: 0, clock: "1'", hs: 0, as: 0, showH: 0, showA: 0, shotsH: 0, shotsA: 0, possAcc: 0, possNow: 50, events: [], shout: null, done: false, ended: false, xi, bench, oxi, subs: 0, subsOpen: false, subOut: null, warned: false,
+      plan, cnt: {},
       rat: { H: xi.map(() => 6.0), A: oxi.map(() => 6.0) }, st: { H: Z(), A: Z() }, marks: [], oppForm, ball: { x: 50, y: 50 }, poss: 'H', flash: null, comment: 'Coup d’envoi', weather: null };
     this.eng = this.makeEngine(Object.assign(this.engineCfg(opp, xi, oxi, obench), {}));
     mt.weather = this.eng.weather();
@@ -2410,6 +2430,7 @@ class Component extends DCLogic {
     const logs = E.log.slice(this.pb ? this.pb.logI : 0);   // après la séance, pour que ses lignes arrivent dans le fil
     const bal = this.state.balance + reward, rec = mt.friendly ? this.state.record : Object.assign({}, this.state.record, { [res]: this.state.record[res] + 1 });
     const fm = Object.assign({}, mt, { done: true, ended: true, hs, as, showH: hs, showA: as, res, reward, pso, minute: 90, clock: 'FIN', st: fin.st, rat: fin.rat, shotsH: fin.st.H.sh, shotsA: fin.st.A.sh, possNow: fin.poss, possAcc: fin.poss * 90,
+      cnt: fin.cnt || {}, poss: fin.poss,
       xi: mt.xi.map((p, i) => Object.assign({}, p, { energy: fin.en[i], yc: fin.cards[i][0], red: fin.cards[i][1] })),
       events: mt.events.concat(logs.map((l) => ({ text: l.text, color: l.color }))), marks: mt.marks.concat(logs.filter((l) => l.k === 'G' || l.k === 'Y' || l.k === 'R').map((l) => ({ m: l.m, k: l.k, s: l.s }))), flash: 'FIN DU MATCH' });
     if (this.pb) { this.pb.logI = E.log.length; this.pb.trans = 0; }
@@ -3104,6 +3125,16 @@ class Component extends DCLogic {
         const prog = tA - a0;
         if (counter) ev *= prog > 5 ? 1.25 : prog < -3 ? 0.55 : 1;
         if (T.tac.pass === 0 && e.d > 26) ev *= 0.85; if (T.tac.pass === 2 && prog > 12) ev *= 1.15;
+        // §42 Jeu court ou jeu long. Les deux lignes au-dessus ne jugeaient que la
+        // distance et la progression, jamais le BALLON joué : une équipe réglée en jeu
+        // direct envoyait exactement autant de ballons aériens qu'une équipe de
+        // possession, donc le curseur ne se voyait pas sur le terrain. Une passe en
+        // l'air est un pari : le jeu court le refuse, le jeu direct le prend.
+        // Attention au signe : une espérance peut être négative (une passe qui coûte
+        // plus qu'elle ne rapporte). La multiplier par 0,7 la rendrait MOINS mauvaise,
+        // donc plus attirante, soit l'inverse de ce qu'on veut. On agit sur l'ampleur
+        // en gardant le sens : favoriser, c'est grandir le gain et réduire la perte.
+        if (aerial) { const k = [0.7, 1, 1.4][T.tac.pass] || 1; ev = ev > 0 ? ev * k : ev / k; }
         // §14 la Passe laser joue entre les lignes : les passes difficiles deviennent
         // une option raisonnable, et le receveur rapide est davantage servi dans la profondeur.
         const tp = TR(p, 'pass');
@@ -3188,7 +3219,12 @@ class Component extends DCLogic {
       // Ils servent au garde-fou test/traits.js, qui vérifie qu'une compétence change
       // le comportement et pas seulement les chiffres affichés.
       W.cnt = W.cnt || {}; W.cnt.dec = (W.cnt.dec || 0) + 1;
-      W.cnt['act_' + ch.k + (ch.k === 'pass' ? '_' + ch.kind : '')] = (W.cnt['act_' + ch.k + (ch.k === 'pass' ? '_' + ch.kind : '')] || 0) + 1;
+      // Une passe aérienne EST un long ballon : deux lignes plus bas, exec l'envoie à
+      // kick() avec le type 'long'. Le compteur disait 'pass', donc une équipe en jeu
+      // direct semblait jouer court. On compte ce que le moteur fait, pas ce que
+      // l'option s'appelait au moment du choix.
+      const sousType = ch.k !== 'pass' ? '' : '_' + (ch.kind === 'pass' && ch.aerial ? 'long' : ch.kind);
+      W.cnt['act_' + ch.k + sousType] = (W.cnt['act_' + ch.k + sousType] || 0) + 1;
       exec(p, ch, counter);
     };
     const exec = (p, ch, counter) => {
@@ -5184,6 +5220,125 @@ class Component extends DCLogic {
     return { n: k.length, open: k.filter((x) => x.can).length,
       cheapest: k.reduce((a, x) => (a == null || x.cost < a ? x.cost : a), null) };
   }
+  matchPlan() {
+    const s = this.state, xi = this.pickXI(s.formation);
+    const duty = {};
+    xi.forEach((p) => { const d = s.duties[p.slot] || 'Soutien'; duty[d] = (duty[d] || 0) + 1; });
+    const portees = xi.reduce((a, p) => a + (this.equippedOn ? this.equippedOn(p.id).length : 0), 0);
+    return {
+      formation: s.formation, mentality: s.mentality, preset: s.preset,
+      tac: Object.assign({}, s.tac),
+      adv: s.nextAdv || 0, coh: s.cohBonus || 0,
+      adjoint: this.staffLv('adjoint'), duty, portees,
+      moral: Math.round(xi.reduce((a, p) => a + this.profile(p).morale, 0) / (xi.length || 1)),
+      fraicheur: Math.round(xi.reduce((a, p) => a + (p.fit != null ? p.fit : 100), 0) / (xi.length || 1))
+    };
+  }
+
+  MENTALITES() { return ['Très défensive', 'Défensive', 'Prudente', 'Équilibrée', 'Positive', 'Offensive', 'Très offensive']; }
+  IMPACT_DEFS() {
+    const n1 = (v) => (Math.round(v * 10) / 10).toString().replace('.', ',');
+    return [
+      { id: 'mentalite',
+        quand: (p) => p.mentality !== 3,
+        titre: (p) => 'Mentalité ' + (this.MENTALITES()[p.mentality] || '').toLowerCase(),
+        mesure: (m) => m.sh + ' frappes tentées, ' + m.advSh + ' concédées' },
+
+      { id: 'formation',
+        quand: (p) => p.formation !== '4-3-3',
+        titre: (p) => 'Formation en ' + p.formation,
+        mesure: (m) => m.advSh + ' tirs concédés, ' + m.tk + ' ballons récupérés' },
+
+      { id: 'style',
+        quand: (p) => p.preset && p.preset !== 'perso' && p.preset !== 'equilibre',
+        titre: (p) => { const st = this.styles()[p.preset]; return 'Style ' + (st ? st.name : p.preset); },
+        mesure: (m) => m.poss + ' % de possession' },
+
+      { id: 'passe',
+        quand: (p) => p.tac.pass !== 1,
+        titre: (p) => (p.tac.pass === 0 ? 'Jeu court imposé' : 'Jeu direct imposé'),
+        mesure: (m) => n1(m.pm('act_pass_long')) + ' longs ballons pour mille, contre '
+          + n1(m.pm('act_pass_pass')) + ' passes au sol' },
+
+      { id: 'pressing',
+        quand: (p) => p.tac.press !== 1 || p.tac.engage !== 1,
+        titre: (p) => (p.tac.press >= 2 ? 'Pressing haut' : p.tac.press === 0 ? 'Bloc en retrait' : 'Pressing réglé'),
+        mesure: (m) => m.tk + ' tacles, ' + m.fou + ' fautes, ' + m.yc + ' carton(s) jaune(s)' },
+
+      { id: 'ligne',
+        quand: (p) => p.tac.line !== 1,
+        titre: (p) => (p.tac.line === 2 ? 'Ligne défensive haute' : 'Ligne défensive basse'),
+        mesure: (m) => m.advOff + ' hors-jeu provoqués, ' + m.advSh + ' tirs concédés' },
+
+      { id: 'couloirs',
+        quand: (p) => p.tac.cross !== 1 || p.tac.width !== 1,
+        titre: (p) => (p.tac.cross >= 2 ? 'Attaque par les couloirs' : 'Jeu resserré dans l’axe'),
+        mesure: (m) => m.cross + ' centres, ' + m.cor + ' corners' },
+
+      { id: 'consignes',
+        quand: (p) => (p.duty.Attaque || 0) + (p.duty['Défense'] || 0) > 0,
+        titre: (p) => (p.duty.Attaque || 0) + ' en consigne Attaque, ' + (p.duty['Défense'] || 0) + ' en Défense',
+        mesure: (m) => n1(m.pm('boxRcv')) + ' ballons reçus dans la surface pour mille' },
+
+      { id: 'plan',
+        quand: (p) => p.adv > 0,
+        titre: (p) => 'Plan tactique préparé, +' + p.adv + ' d’avantage',
+        mesure: (m) => n1(m.xg) + ' de danger créé (xG), ' + m.on + ' frappes cadrées' },
+
+      { id: 'reunion',
+        quand: (p) => p.coh > 0,
+        titre: (p) => 'Réunion tenue, cohésion +' + Math.round(p.coh * 100) + ' %',
+        mesure: (m) => m.precision + ' % de passes réussies, sur ' + m.pa + ' tentées' },
+
+      { id: 'competences',
+        quand: (p) => p.portees > 0,
+        titre: (p) => p.portees + ' compétence(s) équipée(s) sur le onze',
+        mesure: (m) => m.drib + ' dribbles tentés, ' + m.dribOk + ' réussis, '
+          + m.gestes + ' gestes de haut niveau' },
+
+      { id: 'adjoint',
+        quand: (p) => p.adjoint > 0,
+        titre: (p) => 'Adjoint niveau ' + p.adjoint,
+        mesure: (m) => m.precision + ' % de passes réussies' },
+
+      { id: 'fraicheur',
+        quand: (p) => p.fraicheur < 85,
+        titre: (p) => 'Onze à ' + p.fraicheur + ' % de fraîcheur',
+        mesure: (m) => m.tk + ' ballons récupérés, ' + n1(m.pm('act_shot')) + ' frappes pour mille' },
+
+      { id: 'moral',
+        quand: (p) => p.moral >= 80 || p.moral <= 55,
+        titre: (p) => 'Effectif au moral ' + (p.moral >= 80 ? 'haut' : 'bas') + ' (' + p.moral + ')',
+        mesure: (m) => n1(m.xg) + ' de danger créé (xG)' }
+    ];
+  }
+  impactFigures(mt) {
+    const H = (mt.st && mt.st.H) || {}, A = (mt.st && mt.st.A) || {}, cnt = mt.cnt || {};
+    const dec = cnt.dec || 0;
+    const gestes = [3, 4, 5].reduce((a, t) => a + (cnt['g' + t] || 0), 0);
+    return {
+      sh: H.sh || 0, on: H.on || 0, xg: H.xg || 0, cor: H.cor || 0, fou: H.fou || 0,
+      yc: H.yc || 0, pa: H.pa || 0, pc: H.pc || 0, tk: H.tk || 0,
+      advSh: A.sh || 0, advOff: A.off || 0,
+      poss: mt.poss != null ? mt.poss : (mt.possNow != null ? mt.possNow : 50),
+      cross: cnt.cross || 0, drib: cnt.drib || 0, dribOk: cnt.dribOk || 0, gestes,
+      precision: H.pa ? Math.round(H.pc / H.pa * 100) : 0,
+      dec, pm: (k) => (dec ? (cnt[k] || 0) / dec * 1000 : 0)
+    };
+  }
+  impactReport(mt) {
+    if (!mt) return [];
+    const plan = mt.plan || this.matchPlan();
+    const m = this.impactFigures(mt);
+    if (!m.dec && !m.sh && !m.pa) return [];        // match pas encore joué : rien à dire
+    return this.IMPACT_DEFS()
+      .filter((d) => { try { return d.quand(plan); } catch (e) { return false; } })
+      .map((d) => ({ id: d.id, titre: d.titre(plan), valeur: d.mesure(m) }));
+  }
+  impactLine(mt) {
+    const n = this.impactReport(mt).length;
+    return n ? n + ' de tes décisions ont pesé sur ce match' : 'Aucun réglage changé : l’équipe a joué par défaut';
+  }
   renderVals() {
     const s = this.state, t = s.tac;
     const color = (o) => (o >= 80 ? 'linear-gradient(135deg, #FFE59A, #E9A93A)' : o >= 70 ? 'linear-gradient(135deg, #F2F6F4, #AEB9C2)' : 'linear-gradient(135deg, #E8B585, #B7773F)');
@@ -5321,6 +5476,13 @@ class Component extends DCLogic {
           tag: p.inj ? 'BLESSÉ ' + p.inj + 'M' : p.fresh ? 'NOUVEAU' : tit ? 'TITULAIRE' : bn ? 'BANC' : 'TRIBUNE', tagBg: p.inj ? '#FF4757' : p.fresh ? '#2ECC71' : tit ? 'rgba(165,216,96,0.16)' : bn ? 'rgba(255,255,255,0.07)' : 'transparent', tagFg: p.fresh ? '#0E1116' : tit ? '#2ECC71' : bn ? '#C9D0CA' : '#6B736C' }; }),
       showReport: !!(s.showReport && mtc && mtc.done), openReport: () => this.setState({ showReport: true }), closeReport: () => this.setState({ showReport: false }),
       repScore: mtc ? mtc.hs + ' - ' + mtc.as : '', repOpp: mtc ? mtc.opp.club : '',
+      // §47 : ce que chaque décision a produit, lu dans les chiffres du match qui
+      // vient d'être joué. Une ligne n'apparaît que si le réglage a vraiment été
+      // changé, et aucune ne compare à un match imaginaire qu'on n'a pas joué.
+      impact: mtc && mtc.done ? this.impactReport(mtc) : [],
+      impactLine: mtc && mtc.done ? this.impactLine(mtc) : '',
+      hasImpact: !!(mtc && mtc.done && this.impactReport(mtc).length),
+      noImpact: !!(mtc && mtc.done && !this.impactReport(mtc).length),
       repStats: mtc && mtc.st ? [['Tirs', 'sh'], ['Tirs cadrés', 'on'], ['xG (qualité des occasions)', 'xg'], ['Possession', 'poss'], ['Corners', 'cor'], ['Fautes', 'fou'], ['Cartons jaunes', 'yc'], ['Cartons rouges', 'rc'], ['Hors-jeu', 'off']].map(([l, k2]) => {
         const h = k2 === 'poss' ? Math.round(mtc.possAcc / Math.max(1, mtc.minute)) : mtc.st.H[k2], a = k2 === 'poss' ? 100 - h : mtc.st.A[k2];
         const fm2 = (v) => (k2 === 'xg' ? v.toFixed(2) : k2 === 'poss' ? v + '%' : String(v));

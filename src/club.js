@@ -17,6 +17,7 @@ import { Creation } from './creation.js';
 import { OnlineUI } from './onlineui.js';
 import { TrainPack } from './trainpack.js';
 import { Packs } from './packs.js';
+import { Impact } from './impact.js';
 import { News } from './news.js';
 
 export class Club {
@@ -43,6 +44,7 @@ export class Club {
     const shapeA = this.baseShape(oppForm, 'A'), rnd = this.seedR(o.seed != null ? o.seed : Date.now() % 100000);
     const oxi = shapeA.map((b, i) => ({ id: 9000 + i, name: 'J' + i, pos: b.line, line: b.line, ovr: Math.round(opp.ovr + (rnd() - 0.5) * 8), energy: 100, yc: 0, red: false }));
     const obench = ['MIL', 'ATT', 'DEF'].map((pos, i) => ({ id: 9500 + i, name: 'B' + i, pos, ovr: Math.round(opp.ovr - 2) }));
+    const plan = this.matchPlan();   // figé AVANT le coup d'envoi : le plan tactique se consomme
     const E = makeEngine(Object.assign(this.engineCfg(opp, xi, oxi, obench), { rnd }));
     E.finish();
     const f = E.state();
@@ -57,14 +59,18 @@ export class Club {
         else if (l.text.indexOf('servi par ' + p.name) >= 0 || l.text.indexOf('sur un centre de ' + p.name) >= 0) assisters.push(p.id);
       });
     });
-    const mt = { opp, oxi, bench: this.benchOf(xi), hs, as, st: f.st, rat: f.rat, res, reward, done: true, ended: true,
+    const mt = { opp, oxi, bench: this.benchOf(xi), hs, as, st: f.st, rat: f.rat, res, reward, done: true, ended: true, plan,
       poss: f.poss, scorers, assisters, assists: assisters.length, cnt: f.cnt || {}, log: logs,
       xi: f.en ? xi.map((p, i) => Object.assign({}, p, { energy: f.en[i], yc: f.cards[i][0], red: f.cards[i][1] })) : xi };
     const record = Object.assign({}, s.record, { [res]: s.record[res] + 1 });
     const base = Object.assign({}, this.state, { balance: s.balance + reward, record });
     const patch = this.afterMatch(mt, base);
     this.setState(Object.assign({ record }, patch));
-    return { score: [hs, as], res, reward, stats: f.st, cnt: f.cnt || {}, log: mt.log, patch };
+    // poss : la vraie possession, en temps de ballon, pas en nombre de passes.
+    // playVersus la renvoyait déjà ; elle manquait ici, donc rien hors de l'écran ne
+    // pouvait vérifier qu'un style de possession garde effectivement le ballon.
+    return { score: [hs, as], res, reward, stats: f.st, poss: f.poss, cnt: f.cnt || {}, log: mt.log, patch,
+      impact: this.impactReport(mt) };
   }
   rand(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
   seedR(seed) { let x = (seed * 2654435761) % 4294967296; return () => { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; }; }
@@ -99,4 +105,4 @@ export class Club {
 }
 
 // §80 : chaque domaine vit dans son fichier et vient se mélanger ici.
-Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs, News);
+Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs, News, Impact);

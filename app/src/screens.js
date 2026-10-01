@@ -182,11 +182,30 @@ export function MatchScreen({ club, state, act }) {
       {res ? (
         <Card tint={C.green}>
           <Text style={st.score}>{res.score[0]} - {res.score[1]}</Text>
-          <Text style={st.hint}>{res.log.filter((l) => l.k === 'G').length} but(s) · {res.stats.H.sh} tirs</Text>
+          <Text style={st.hint}>{res.log.filter((l) => l.k === 'G').length} but(s) · {res.stats.H.sh} tirs · {res.poss} % de possession</Text>
           {res.log.slice(-6).reverse().map((l, i) => (
             <Text key={i} style={st.hint}>{l.text}</Text>
           ))}
           <Btn label="Fermer" tone="ghost" small onPress={() => setRes(null)} />
+        </Card>
+      ) : null}
+
+      {/* §47 : ce que chaque décision a produit. Une ligne seulement pour les réglages
+          vraiment changés, et le chiffre vient de ce match, pas d'une estimation. */}
+      {res && res.impact && res.impact.length ? (
+        <Card tint="rgba(46,204,113,0.35)">
+          <Text style={st.lbl}>CE QUE TES DÉCISIONS ONT FAIT</Text>
+          {res.impact.map((im) => (
+            <View key={im.id}>
+              <Text style={st.body}>{im.titre}</Text>
+              <Text style={st.hint}>{im.valeur}</Text>
+            </View>
+          ))}
+        </Card>
+      ) : null}
+      {res && res.impact && !res.impact.length ? (
+        <Card tint="rgba(245,200,76,0.35)">
+          <Text style={st.hint}>Tu n’as changé aucun réglage avant ce match : l’équipe a joué par défaut. Formation, mentalité, consignes, compétences, réunion : chacun change vraiment le jeu.</Text>
         </Card>
       ) : null}
 

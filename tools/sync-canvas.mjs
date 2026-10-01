@@ -80,8 +80,9 @@ const METHODS = ['rand', 'seedR', 'statW', 'ovrOf', 'genStats', 'cardStats', 'pr
   'COACH_PACK', 'COACH_ITEMS', 'coachPackOdds', 'coachPackState', 'openCoachPack', 'commitCoachPack',
   'meetings', 'holdMeeting', 'plansLeft', 'usePlan', 'styleList',
   'CAPS', 'logMoney', 'dayKey', 'earn', 'spend', 'PRONO_DEFS', 'MAX_STAKE', 'placeProno', 'settlePronos', 'QUEST_DEFS', 'activeQuests', 'rollQuests', 'bumpQuest', 'claimQuest', 'questsAfterMatch',
+  'matchPlan', 'MENTALITES', 'IMPACT_DEFS', 'impactFigures', 'impactReport', 'impactLine',
   'isOnline', 'onlineSummary', 'onlineActions', 'NEWS_SECTIONS', 'buildNews', 'newsBySection', 'onlineSlides', 'demoFeed', 'CREATION_STEPS', 'COUNTRIES', 'starterSquad', 'starterRare', 'canEquipRaw', 'genStatsFor', 'createClub', 'creationSummary'];
-const SOURCES = ['club.js', 'players.js', 'skills.js', 'cards.js', 'staff.js', 'training.js', 'transfer.js', 'progression.js', 'tactics.js', 'tracks.js', 'playerxp.js', 'quests.js', 'creation.js', 'onlineui.js', 'trainpack.js', 'packs.js', 'news.js'];
+const SOURCES = ['club.js', 'players.js', 'skills.js', 'cards.js', 'staff.js', 'training.js', 'transfer.js', 'progression.js', 'tactics.js', 'tracks.js', 'playerxp.js', 'quests.js', 'creation.js', 'onlineui.js', 'trainpack.js', 'packs.js', 'news.js', 'impact.js'];
 const club = SOURCES.map((f) => read('src/' + f)).join('\n');
 for (const name of METHODS) {
   const from = findMethod(club, name);
