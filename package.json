@@ -13,7 +13,8 @@
     "./react": "./src/react.js",
     "./server": "./server/index.js",
     "./bundle": "./dist/linkfoot.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./online": "./src/online.js"
   },
   "files": [
     "src",
@@ -27,10 +28,11 @@
     "test": "node test/sim.js 200",
     "demo": "node server/demo-server.mjs",
     "sync": "node tools/sync-canvas.mjs",
-    "check": "node tools/sync-canvas.mjs --check && node test/progression.js && node test/traits.js 12 && node test/sim.js 100",
+    "check": "node tools/sync-canvas.mjs --check && node test/progression.js && node test/online.js && node test/traits.js 12 && node test/sim.js 100",
     "test:progression": "node test/progression.js",
     "test:traits": "node test/traits.js 12",
-    "test:tournoi": "node test/tournament.js 16"
+    "test:tournoi": "node test/tournament.js 16",
+    "test:online": "node test/online.js"
   },
   "license": "UNLICENSED",
   "types": "types/index.d.ts",

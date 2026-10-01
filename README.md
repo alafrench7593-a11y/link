@@ -30,6 +30,8 @@ src/tracks.js   la colonne vertébrale de la progression du club : un seul axe, 
 src/playerxp.js niveau et XP d'un joueur, courbe exponentielle, attributs cachés (§5, §6).
 src/quests.js   quêtes et économie encadrée : plafonds par source, journal (§7, §8, §29).
 src/creation.js création du club, effectif normal de départ et joueur rare offert (§2, §3).
+src/versus.js   match entre deux vrais clubs, rejouable à l'identique depuis une graine.
+src/online.js   le client en ligne : il parle au serveur et rejoue, il ne décide rien.
 src/state.js    état de départ d'un club.
 src/save.js     sérialisation versionnée et stockages (mémoire, navigateur, HTTP).
 src/league.js   classements, calendriers, montées et descentes (§72, §75).
@@ -396,6 +398,64 @@ L'effectif de départ fait 14 joueurs **normaux**, note moyenne 51, potentiel mo
 **un joueur rare offert** (note 66 à 70, potentiel supérieur, une compétence spéciale) qui
 aide sans gagner les matchs tout seul (§2, §3, §4).
 
+## Jouer contre de vraies personnes (§26, §29)
+
+Le moteur est **déterministe** : à graine égale, le match est identique partout. Le serveur
+ne stocke donc pas un film de match, seulement `(club A, club B, graine)`. Il rejoue la
+rencontre pour en connaître le score, et les deux joueurs la rejouent chez eux à l'identique,
+avec les mêmes buts aux mêmes minutes.
+
+```js
+const r = await online.versus('bob');          // le serveur joue et rend la graine
+const match = playVersus(monEquipe, sonEquipe, r.replay.seed);   // je rejoue le même match
+// match.score est forcément égal à r.score
+```
+
+C'est aussi ce qui rend la triche inutile : `verifyResult(a, b, graine, scoreAnnoncé)`
+rejoue la rencontre et dément un client qui prétendrait avoir gagné 9-0.
+
+| Route | Ce qu'elle fait |
+| --- | --- |
+| `PUT /team` | publie son équipe pour qu'on puisse jouer contre elle, même hors ligne |
+| `POST /versus/:id` | un match classé : le serveur joue, met l'Elo à jour et verse les jetons |
+| `POST /verify` | rejoue une rencontre pour vérifier un score annoncé |
+| `GET /ladder` | le classement général, trié par Elo |
+| `POST /leagues` · `/join` · `/:id/start` · `/:id/play` | les ligues entre amis, avec un code à six caractères |
+| `POST /challenges` · `/:id/accept` | les défis entre amis |
+| `POST /tournaments` · `/:id/play` | les tournois, joués entre de vrais clubs, tirs au but compris |
+| `POST /pack` | l'ouverture d'un pack, tirée par le serveur |
+| `GET /wallet` · `GET /balance` | ce qui a été versé, ce qu'il reste pour la journée |
+
+### Ce que le serveur refuse (§29)
+
+Rien de tout cela n'est une vérification côté client : ce sont des refus du serveur,
+avec leur raison.
+
+| Garde-fou | Valeur |
+| --- | --- |
+| Matchs classés par jour | 40 |
+| Délai minimum entre deux matchs | 20 s |
+| Packs par jour | 30 |
+| Plafond de gains par source | quêtes 900 · pronostics 400 · missions 600 · classés 1 200 · tournois 1 500 |
+| Plafond toutes sources | 3 600 par jour |
+| Récompenses en argent réel | refusées par le serveur, pas seulement masquées (§76) |
+
+Les probabilités du pack sont appliquées côté serveur et renvoyées avec le résultat :
+un client modifié ne peut ni les changer, ni rejouer un tirage jusqu'à obtenir ce qu'il veut.
+
+```js
+import { onlineRoutes, FileStorage } from 'linkfoot-engine/server';
+app.use('/online', onlineRoutes({
+  storage: new FileStorage('./saves'),
+  auth: async (req) => (await session(req)).userId     // ton système de comptes, et lui seul
+}));
+```
+
+```bash
+node test/online.js      # 41 vérifications, serveur monté en mémoire, aucun port ouvert
+npm run demo             # le serveur de démonstration sert aussi /online
+```
+
 ## Une seule échelle
 
 Tout ce qui monte dans le jeu parle le même langage, et `src/tracks.js` en est la seule source.
@@ -454,8 +514,9 @@ en intégration continue avant de toucher au moteur.
 
 - `playMatch` joue un match entier d'un coup. Pour suivre un match en direct, pilote
   `E.step()` depuis une boucle d'animation, comme le fait l'écran Mon Club.
-- Les tournois, les ligues entre amis et le classement général ne sont pas ici :
-  ils supposent un serveur et un appariement entre joueurs.
+- Les ligues entre amis, les défis, le classement et les tournois entre vraies personnes
+  demandent le serveur (`server/online-routes.js`). Sans lui, le jeu reste jouable en solo,
+  mais ces écrans n'ont personne en face.
 - Un match prend environ 1,5 seconde en simulation complète sur un poste de bureau.
   Pour simuler une saison entière côté serveur, mets les matchs en file plutôt que
   de bloquer une requête.

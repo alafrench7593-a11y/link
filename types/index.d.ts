@@ -219,3 +219,57 @@ export declare class SaveManager {
   start(): this;
   stop(): this;
 }
+
+
+// ---------- jouer contre de vraies personnes (§26, §29) ----------
+
+/** L'instantané d'équipe envoyé au serveur : l'équipe, rien d'autre. */
+export interface TeamSnapshot {
+  club: string; division: number; level: number; ovr: number;
+  formation: string; preset: string; tac: Record<string, number>; mentality: number;
+  coach: string | null; staffAdjoint: number; cohBonus: number;
+  roles: Record<string, string>; duties: Record<string, string>;
+  xi: Array<Record<string, unknown>>; bench: Array<Record<string, unknown>>;
+}
+
+export interface VersusResult {
+  seed: number; home: string; away: string;
+  score: [number, number];
+  pso: { H: number; A: number; kicks: unknown[] } | null;
+  res: 'h' | 'a' | 'd';
+  st: Record<string, SideStats>; rat: Record<string, number[]>; poss: number;
+  log: Array<{ m: number; text: string; k?: string; s?: 'H' | 'A' }>;
+}
+
+export declare function teamSnapshot(club: Club): TeamSnapshot;
+export declare function versusCfg(home: TeamSnapshot, away: TeamSnapshot, seed: number): unknown;
+export declare function playVersus(home: TeamSnapshot, away: TeamSnapshot, seed: number, opts?: { shootout?: boolean }): VersusResult;
+export declare function verifyResult(home: TeamSnapshot, away: TeamSnapshot, seed: number, claimed: [number, number]): { ok: boolean; real: [number, number]; claimed: [number, number] | null };
+
+export interface OnlineReply { ok: boolean; status?: number; why?: string; [k: string]: unknown; }
+
+export declare class OnlineClient {
+  constructor(opts: { url: string; headers?: Record<string, string>; fetch?: typeof fetch; onError?: (e: unknown) => void });
+  call(method: string, path: string, body?: unknown): Promise<OnlineReply>;
+  publishTeam(club: Club): Promise<OnlineReply>;
+  team(id: string): Promise<OnlineReply>;
+  versus(id: string): Promise<OnlineReply>;
+  openPack(free?: boolean): Promise<OnlineReply>;
+  balance(): Promise<OnlineReply>;
+  ladder(): Promise<OnlineReply>;
+  wallet(): Promise<OnlineReply>;
+  createLeague(name: string, rounds?: number): Promise<OnlineReply>;
+  joinLeague(code: string): Promise<OnlineReply>;
+  startLeague(id: string): Promise<OnlineReply>;
+  playLeagueDay(id: string): Promise<OnlineReply>;
+  league(id: string): Promise<OnlineReply>;
+  myLeagues(): Promise<OnlineReply>;
+  challenge(to: string, msg?: string): Promise<OnlineReply>;
+  myChallenges(): Promise<OnlineReply>;
+  acceptChallenge(id: string): Promise<OnlineReply>;
+  createTournament(opts: unknown): Promise<OnlineReply>;
+  playTournament(id: string): Promise<OnlineReply>;
+  tournament(id: string): Promise<OnlineReply>;
+}
+
+export declare function connectOnline(club: Club, online: OnlineClient): Club;
