@@ -31,6 +31,7 @@ src/playerxp.js niveau et XP d'un joueur, courbe exponentielle, attributs caché
 src/quests.js   quêtes et économie encadrée : plafonds par source, journal (§7, §8, §29).
 src/creation.js création du club, effectif normal de départ et joueur rare offert (§2, §3).
 src/trainpack.js le Pack Entraînement et les séances : l'entraînement est limité (§6, §10).
+src/packs.js    le registre des quatre packs, plus le Pack Compétence et le Pack Entraîneur.
 src/versus.js   match entre deux vrais clubs, rejouable à l'identique depuis une graine.
 src/online.js   le client en ligne : il parle au serveur et rejoue, il ne décide rien.
 src/onlineui.js ce que l'écran affiche du multijoueur, y compris quand il n'y a pas de serveur.
@@ -380,6 +381,19 @@ Avant chaque match, trois pronostics au maximum, mise plafonnée, cotes calculé
 l'écart de niveau. Ils portent sur le match du jeu, jamais sur un match réel, et les gains
 passent par `earn('prono')`, donc par le plafond quotidien.
 
+### Quatre packs, une famille chacun (§10)
+
+La règle qui les rend lisibles : **un pack ne donne qu'une seule famille de choses**.
+S'il en donnait deux, personne ne saurait lequel ouvrir, et c'est exactement ce que
+le §10 voulait éviter.
+
+| Pack | Coût | Il répond à | Il donne |
+| --- | --- | --- | --- |
+| LinkFoot Pack | 250 | « il me faut des joueurs » | des cartes du catalogue |
+| Pack Compétence | 320 | « il me faut des compétences » | des compétences, aucun joueur |
+| Pack Entraînement | 180 | « il me faut du temps » | des séances et des cartes d'amélioration |
+| Pack Entraîneur | 260 | « il me faut des idées » | causeries, ateliers, plans tactiques |
+
 ### L'entraînement est limité (§6)
 
 Chaque séance consomme **une séance en stock**. On en reçoit deux par jour, vingt au
@@ -398,6 +412,27 @@ confusion (§10). Ses taux suivent les six raretés du jeu.
 | Séance spécialisée | Élite | 5 % | +3 séances et une carte |
 | Stage de pré-saison | Gold | 1,8 % | +60 XP à tout l'effectif |
 | Masterclass | Legendary | 0,2 % | +150 XP à tout l'effectif et trois cartes |
+
+### La réunion d'équipe (§24)
+
+Le Pack Entraîneur donne du matériel que le directeur sportif utilise entre deux matchs,
+et chaque objet a un effet réel, pas un chiffre affiché :
+
+| Objet | Rareté | Taux | Effet |
+| --- | --- | --- | --- |
+| Causerie d'avant-match | Normal | 44 % | moral +8 pour tout l'effectif |
+| Séance vidéo | Rare | 28 % | +1 d'avantage tactique au prochain match |
+| Atelier tactique | Épique | 17 % | cohésion +4 %, durable |
+| Plan tactique | Élite | 8 % | applique un style et donne +2 d'avantage au prochain match |
+| Réunion de groupe | Gold | 2,6 % | moral +15, cohésion +6 %, +40 XP à tout l'effectif |
+| Plan de campagne | Legendary | 0,4 % | trois plans, moral +20, cohésion +8 % |
+
+L'avantage préparé ne vaut que pour **un** match : il retombe à zéro au coup de sifflet
+final. C'est ce qui donne du poids à la préparation sans la rendre permanente.
+
+L'écran d'entraînement ne propose que ce qui est faisable avec ce qu'on a en réserve :
+les séances collectives quand il reste des séances, les séances ciblées quand on a la
+carte correspondante. Chaque ligne dit ce qu'elle coûte, ou ce qui manque.
 
 ### L'économie
 

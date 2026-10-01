@@ -103,6 +103,24 @@ export declare class Club {
   openTrainPack(opts?: { free?: boolean; rnd?: () => number }): { ok: boolean; why?: string; def?: PackDef; got?: TrainLot[]; free?: boolean };
   commitTrainPack(res: unknown): { ok: boolean; sessions?: number; xp?: number; cards?: string[] };
   trainPackState(): { can: boolean; why: string; cost: number };
+  trainingOptions(): Array<{ id: string; label: string; desc: string; cost: string; kind: 'squad' | 'card'; stat?: string; n?: number; can: boolean; why: string }>;
+  PACK_REGISTRY(): Array<PackDef & { family: string; question: string; view: string }>;
+  SKILL_PACK(): PackDef;
+  skillPackOdds(): Array<{ id: string; label: string; color: string; pct: number }>;
+  skillPackState(): { can: boolean; why: string; cost: number };
+  openSkillPack(opts?: { free?: boolean; rnd?: () => number }): { ok: boolean; why?: string; def?: PackDef; got?: unknown[]; free?: boolean };
+  commitSkillPack(res: unknown): { ok: boolean; added?: number };
+  COACH_PACK(): PackDef;
+  COACH_ITEMS(): CoachItem[];
+  coachPackOdds(): Array<{ id: string; label: string; rarLabel: string; color: string; pct: number; desc: string }>;
+  coachPackState(): { can: boolean; why: string; cost: number };
+  openCoachPack(opts?: { free?: boolean; rnd?: () => number }): { ok: boolean; why?: string; def?: PackDef; got?: CoachItem[]; free?: boolean };
+  commitCoachPack(res: unknown): { ok: boolean; added?: string[] };
+  meetings(): Array<CoachItem & { n: number; can: boolean; why: string }>;
+  holdMeeting(id: string): { ok: boolean; why?: string; text?: string };
+  plansLeft(): number;
+  usePlan(styleKey: string): { ok: boolean; why?: string; style?: string };
+  styleList(): Array<{ k: string; name: string; [key: string]: unknown }>;
   UPGRADE_CARDS(): Array<[string, string]>;
   useUpgrade(playerId: number, stat: string): { ok: boolean; why?: string; ovr?: number };
   TRAININGS(): Array<{ id: string; label: string; desc: string; [k: string]: unknown }>;
@@ -177,6 +195,12 @@ export interface HiddenAttrs {
 export interface TrainLot {
   id: string; rar: string; rate: number; label: string; desc: string;
   sessions?: number; up?: number; squadXp?: number; stat?: string | null; stats?: string[] | null;
+}
+
+/** Un objet du Pack Entraîneur : une causerie, un atelier, un plan tactique. */
+export interface CoachItem {
+  id: string; rar: string; rate: number; label: string; kind: 'meeting' | 'plan'; desc: string;
+  morale?: number; coh?: number; adv?: number; squadXp?: number; plans?: number;
 }
 
 export interface Quest { id: string; kind: string; goal: number; label: string; reward: number; xp: number; tier: number; prog?: number; claimed?: boolean; }

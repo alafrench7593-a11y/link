@@ -24,7 +24,7 @@ function INITIAL_STATE() {
       // §7, §29 : l'économie encadrée. `caps` compte les gains du jour par source,
       // `ledger` garde le journal des transactions.
       // §6 : l'entraînement se paie en séances, gagnées dans les Packs Entraînement
-      sessions: 3,
+      sessions: 3, coachInv: {}, nextAdv: 0,
       shards: 0, caps: {}, ledger: [], quests: null, clubName: 'FC TonPseudo', country: 'fr', created: true,
       kit: { c1: '#2ECC71', c2: '#0C1210', pat: 'uni', collar: 'rond', sponsor: true }, showKit: false, cam: '2d',
       xp: 340, level: 7, dayStreak: 3, dayClaimed: false, winStreak: 0, showHub: false, levelUp: null, now: Date.now(), freePackAt: Date.now() + 90000, freeQueue: [],
@@ -2261,7 +2261,7 @@ const Progression = {
     // (il coûte du temps réel), mais il est tracé comme le reste.
     this.logMoney(F.net, 'Match : recette ' + F.gate + ', salaires −' + F.wages);
     if (bonus) this.logMoney(bonus, 'Série de ' + winStreak + ' victoires');
-    const patch = { winStreak, missions, squad, inv, lastFin: 'Recette ' + F.gate + ' · salaires −' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net + ' jetons', coachAdvice: null, xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: st.balance + bonus + L.bonusBal + F.net,
+    const patch = { nextAdv: 0, winStreak, missions, squad, inv, lastFin: 'Recette ' + F.gate + ' · salaires −' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net + ' jetons', coachAdvice: null, xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: st.balance + bonus + L.bonusBal + F.net,
       lastGain: '+' + xpGain + ' XP' + (bonus ? ' · série de ' + winStreak + ' victoires x' + mult + ' (+' + bonus + ' jetons)' : '') + (prog ? ' · ' + prog : '') };
     let over = L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : null;
     const seasonP = st.seasonP + 1;
@@ -2347,6 +2347,9 @@ const Tactics = {
     this._styleList = list;
     return this._styles;
   },
+
+  // La liste des styles, dans l'ordre d'affichage.
+  styleList() { this.styles(); return this._styleList; },
 
   matchup(a, b) {
     const S = this.styles(), A = S[a], B = S[b];
@@ -2456,7 +2459,9 @@ const Tactics = {
     const s = this.state, S = this.styles(), st = S[opp.style] || S.equilibre;
     const coordsFrom = (form) => { const C = this.formCoords(form), out = []; ['GB', 'DEF', 'MIL', 'ATT'].forEach((l) => (C[l] || []).forEach(([fx, fy]) => out.push({ fx, fy, line: l }))); return out; };
     const statsOf = (p) => { const o = {}; this.cardStats(p).forEach((q) => { o[q.l] = Math.max(25, q.v - Math.round((p.pen || 0) * 0.6)); }); return o; };
-    const adv = s.preset === 'perso' ? 0 : this.matchup(s.preset, opp.style);
+    // §24 : l'avantage tactique préparé (plan, séance vidéo) s'ajoute pour UN match,
+    // puis disparaît. C'est ce qui donne du poids à la préparation.
+    const adv = (s.preset === 'perso' ? 0 : this.matchup(s.preset, opp.style)) + (s.nextAdv || 0);
     const syn = this.synergy(xi);
     const coh = Math.min(1.2, Math.max(0.7, 1 - xi.filter((p) => p.pen).length * 0.06 - (s.preset === 'perso' ? 0.04 : 0) - xi.filter((p) => p.fresh).length * 0.03 + (s.cohBonus || 0) + syn.score));
     const H = { club: 'FC TonPseudo', sbonus: this.staffLv('adjoint') * 0.8, coach: this.COACHES().find((c) => c.id === (s.coach || 'tacticien')), coh, tac: s.tac, ment: s.mentality, adv, coords: coordsFrom(s.formation), home: true, players: xi.map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p), energy: p.energy, form: p.form != null ? p.form : 70, morale: p.morale != null ? p.morale : 72, skills: this.skillsOf(p), foot: this.profile(p).foot, wf: this.profile(p).wf, role: s.roles[p.slot] || this.ROLE_OPTS(p.line, p.slot, s.formation)[0], duty: s.duties[p.slot] || 'Soutien' })) };
@@ -2467,6 +2472,7 @@ const Tactics = {
 
 // LinkFoot : état du club et règles du manager. Aucune dépendance au DOM ni à React.
 // Le même code que l'interface utilise, sorti de la page pour tourner dans une app ou sur un serveur.
+
 
 
 
@@ -2563,12 +2569,12 @@ class Club {
 }
 
 // §80 : chaque domaine vit dans son fichier et vient se mélanger ici.
-Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack);
+Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs);
 
 // LinkFoot : sauvegarde. Sérialise l'état du club, le relit, et le range
 // où tu veux : mémoire, navigateur, ou ton serveur.
 
-const SAVE_VERSION = 5;
+const SAVE_VERSION = 6;
 
 // Ce qui est conservé d'une session à l'autre. Tout le reste (vue courante, match en cours,
 // animation de pack, horodatages d'affichage) est volatil et recalculé au chargement.
@@ -2579,7 +2585,7 @@ const PERSIST = [
   'staff', 'stade', 'academy', 'youth', 'inv', 'coach', 'coachMode', 'cohBonus', 'trainDone',
   // directeur sportif : inventaire de compétences, économie encadrée, quêtes, identité du club
   'skillInv', 'nextSkillUid', 'collected', 'seenPlayers', 'shards',
-  'caps', 'ledger', 'quests', 'clubName', 'country', 'created', 'pronos', 'sessions'
+  'caps', 'ledger', 'quests', 'clubName', 'country', 'created', 'pronos', 'sessions', 'coachInv', 'nextAdv'
 ];
 
 function serialize(club) {
@@ -2612,7 +2618,9 @@ const MIGRATIONS = {
   3: (st) => Object.assign({}, st, { pronos: st.pronos || [] }),
   // v4 : avant que l'entraînement ne coûte des séances (§6). Les anciennes parties
   // repartent avec trois séances en stock, de quoi reprendre sans se sentir puni.
-  4: (st) => Object.assign({}, st, { sessions: st.sessions != null ? st.sessions : 3 })
+  4: (st) => Object.assign({}, st, { sessions: st.sessions != null ? st.sessions : 3 }),
+  // v5 : avant le Pack Entraîneur et son matériel tactique (§24).
+  5: (st) => Object.assign({}, st, { coachInv: st.coachInv || {}, nextAdv: 0 })
 };
 
 function deserialize(data) {

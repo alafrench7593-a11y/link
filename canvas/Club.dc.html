@@ -115,6 +115,7 @@ button:disabled{cursor:default}
 </sc-if>
 <sc-if value="{{isSquad}}" hint-placeholder-val="{{true}}">
 <div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 2px 16px 18px; display: flex; flex-direction: column; gap: 14px">
+<sc-if value="{{pickingCard}}" hint-placeholder-val="{{false}}"><div style="display: flex; align-items: center; gap: 10px; margin: 0 16px; padding: 11px 13px; border-radius: 10px; background: rgba(245,200,76,0.12); border: 1px solid rgba(245,200,76,0.4)"><span style="flex-grow: 1; font-size: 12px; font-weight: 600; color: #F5C84C; line-height: 1.35">{{pickCardLine}}</span><button onClick="{{cancelPick}}" style="flex-shrink: 0; min-height: 30px; padding: 0 11px; border-radius: 15px; border: 1px solid rgba(245,200,76,0.5); background: transparent; color: #F5C84C; font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer">Annuler</button></div></sc-if>
 <button onClick="{{openKit}}" style="position: relative; overflow: hidden; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; border: 1px solid rgba(189,235,115,0.24); background: linear-gradient(105deg, #3E5D27 0%, #2A3F1E 45%, #182116 100%); color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08)">
 <span style="width: 46px; height: 46px; flex-shrink: 0; box-sizing: border-box; border-radius: 23px; background: radial-gradient(circle at 40% 35%, rgba(46,204,113,0.34) 0%, rgba(46,204,113,0.08) 72%); border: 1px solid rgba(46,204,113,0.4); display: flex; align-items: center; justify-content: center"><img sc-camel-src="{{kitImg}}" alt="" style="width: 30px; height: 33px"></span>
 <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
@@ -347,6 +348,32 @@ button:disabled{cursor:default}
 </span>
 <span style="font-size: 11.5px; font-weight: 700; color: #2ECC71">{{skillWorn}}</span>
 </div>
+<div style="position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 10px; background: linear-gradient(105deg, rgba(195,155,255,0.16) 0%, rgba(195,155,255,0.04) 45%, #1E232B 80%); border: 1px solid rgba(195,155,255,0.4)">
+<div style="display: flex; align-items: center; gap: 14px">
+<div style="position: relative; overflow: hidden; width: 62px; height: 82px; flex-shrink: 0; border-radius: 12px; background: {{sp.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #0E1116; box-shadow: 0 8px 18px rgba(0,0,0,0.45), inset 0 0 0 1.5px rgba(255,255,255,0.45)">
+<span class="lf-shine" style="position: absolute; top: -20px; left: 0; width: 24px; height: 130px; background: rgba(255,255,255,0.45)"></span>
+<span style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 28px; line-height: 1">{{sp.count}}</span>
+<span style="font-size: 7.5px; font-weight: 800; letter-spacing: 0.6px">TIRAGES</span>
+</div>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<span style="font-weight: 700; font-size: 15px">{{sp.name}}</span>
+<span style="font-size: 11px; color: #79828F; line-height: 1.4">{{sp.desc}}</span>
+<sc-if value="{{sp.hasWhy}}" hint-placeholder-val="{{false}}"><span style="font-size: 10.5px; font-weight: 600; color: #F5C84C">{{sp.packWhy}}</span></sc-if>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 11px 12px; border-radius: 9px; background: rgba(11,18,16,0.5)">
+<span style="font-size: 10px; font-weight: 800; letter-spacing: 0.5px; color: #79828F">PROBABILITÉS PAR TIRAGE</span>
+<sc-for list="{{sp.odds}}" as="so" hint-placeholder-count="6">
+<div style="display: flex; align-items: center; gap: 9px">
+<span style="width: 74px; flex-shrink: 0; font-size: 11px; font-weight: 600">{{so.label}}</span>
+<span style="flex-grow: 1; display: block; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.07)"><span style="display: block; height: 5px; width: {{so.w}}; border-radius: 3px; background: {{so.color}}"></span></span>
+<span style="width: 46px; flex-shrink: 0; text-align: right; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums">{{so.pct}}</span>
+</div>
+</sc-for>
+</div>
+<button onClick="{{sp.open}}" disabled="{{sp.locked}}" style="width: 100%; min-height: 44px; border-radius: 22px; border: none; background: {{sp.btnBg}}; color: {{sp.btnFg}}; font-family: inherit; font-weight: 800; font-size: 13.5px; cursor: pointer">OUVRIR LE PACK COMPÉTENCE · {{sp.price}}</button>
+<sc-if value="{{sp.hasGot}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; color: #2ECC71; line-height: 1.4">{{sp.gotLine}}</span></sc-if>
+</div>
 <sc-if value="{{hasSkills}}" hint-placeholder-val="{{true}}">
 <sc-for list="{{skillInv}}" as="sk" hint-placeholder-count="3">
 <div style="display: flex; flex-direction: column; gap: 8px; padding: 13px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
@@ -556,7 +583,41 @@ button:disabled{cursor:default}
 <div style="padding: 12px 14px; border-radius: 10px; background: rgba(245,200,76,0.1); border: 1px solid rgba(245,200,76,0.35); font-size: 11.5px; line-height: 1.45; color: #F5C84C">{{tp.why}}</div>
 </sc-if>
 <div style="padding: 12px 14px; border-radius: 10px; background: rgba(46,204,113,0.08); border: 1px solid rgba(46,204,113,0.3); font-size: 12px; line-height: 1.4">{{trainLog}}</div>
-<sc-for list="{{trainings}}" as="t" hint-placeholder-count="6"><button onClick="{{t.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 700">{{t.label}}</span><span style="font-size: 11px; color: #79828F">{{t.desc}}</span></span><span style="flex-shrink: 0; height: 34px; display: flex; align-items: center; padding: 0 14px; border-radius: 17px; background: #2ECC71; color: #171B21; font-size: 12px; font-weight: 800">Lancer</span></button></sc-for>
+<sc-for list="{{trainings}}" as="t" hint-placeholder-count="6">
+<button onClick="{{t.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid {{t.bd}}; box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer">
+<span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 14px; font-weight: 700">{{t.label}}</span>
+<span style="font-size: 11px; color: #79828F; line-height: 1.35">{{t.desc}}</span>
+<span style="font-size: 10.5px; font-weight: 600; color: {{t.costFg}}">{{t.costLine}}</span>
+</span>
+<span style="flex-shrink: 0; height: 34px; display: flex; align-items: center; padding: 0 14px; border-radius: 17px; background: {{t.bg}}; color: {{t.fg}}; font-size: 12px; font-weight: 800">{{t.cta}}</span>
+</button>
+</sc-for>
+<div style="display: flex; flex-direction: column; gap: 9px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<span style="font-size: 14px; font-weight: 700">Réunion d’équipe</span>
+<span style="font-size: 11px; color: #79828F">{{cm.planLine}}</span>
+</div>
+<span style="font-size: 11px; color: #79828F; line-height: 1.45">Une causerie, une séance vidéo ou un atelier : ça se gagne dans le Pack Entraîneur et ça change vraiment le match suivant.</span>
+<sc-for list="{{cm.list}}" as="mt2" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12.5px; font-weight: 700">{{mt2.label}}</span>
+<span style="font-size: 10.5px; color: {{mt2.subFg}}; line-height: 1.35">{{mt2.sub}}</span>
+</span>
+<button onClick="{{mt2.go}}" style="flex-shrink: 0; min-height: 34px; padding: 0 13px; border-radius: 17px; border: none; background: {{mt2.bg}}; color: {{mt2.fg}}; font-family: inherit; font-size: 11.5px; font-weight: 800; cursor: pointer">{{mt2.cta}}</button>
+</div>
+</sc-for>
+<sc-if value="{{cm.hasPlan}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #79828F; padding-top: 4px">PRÉPARER UN PLAN TACTIQUE</span>
+<span style="font-size: 10.5px; color: #79828F; line-height: 1.4">Choisis le style que tu prépares : il devient ta tactique et te donne +2 d’avantage au prochain match.</span>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{cm.plans}}" as="pl2" hint-placeholder-count="6">
+<button onClick="{{pl2.go}}" style="min-height: 32px; padding: 0 11px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.14); background: transparent; color: #F2F4F7; font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer">{{pl2.label}}</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
 <div style="position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 10px; background: linear-gradient(105deg, rgba(92,200,255,0.16) 0%, rgba(92,200,255,0.04) 45%, #1E232B 80%); border: 1px solid rgba(92,200,255,0.4)">
 <div style="display: flex; align-items: center; gap: 14px">
 <div style="position: relative; overflow: hidden; width: 62px; height: 82px; flex-shrink: 0; border-radius: 12px; background: {{tp.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #0E1116; box-shadow: 0 8px 18px rgba(0,0,0,0.45), inset 0 0 0 1.5px rgba(255,255,255,0.45)">
@@ -587,6 +648,35 @@ button:disabled{cursor:default}
 <sc-if value="{{tp.hasGot}}" hint-placeholder-val="{{false}}">
 <span style="font-size: 11px; color: #2ECC71; line-height: 1.4">{{tp.gotLine}}</span>
 </sc-if>
+</div>
+<div style="position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 10px; background: linear-gradient(105deg, rgba(242,198,107,0.16) 0%, rgba(242,198,107,0.04) 45%, #1E232B 80%); border: 1px solid rgba(242,198,107,0.4)">
+<div style="display: flex; align-items: center; gap: 14px">
+<div style="position: relative; overflow: hidden; width: 62px; height: 82px; flex-shrink: 0; border-radius: 12px; background: {{cp.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #0E1116; box-shadow: 0 8px 18px rgba(0,0,0,0.45), inset 0 0 0 1.5px rgba(255,255,255,0.45)">
+<span class="lf-shine" style="position: absolute; top: -20px; left: 0; width: 24px; height: 130px; background: rgba(255,255,255,0.45)"></span>
+<span style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 28px; line-height: 1">{{cp.count}}</span>
+<span style="font-size: 7.5px; font-weight: 800; letter-spacing: 0.6px">TIRAGES</span>
+</div>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<span style="font-weight: 700; font-size: 15px">{{cp.name}}</span>
+<span style="font-size: 11px; color: #79828F; line-height: 1.4">{{cp.desc}}</span>
+<sc-if value="{{cp.hasWhy}}" hint-placeholder-val="{{false}}"><span style="font-size: 10.5px; font-weight: 600; color: #F5C84C">{{cp.packWhy}}</span></sc-if>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 11px 12px; border-radius: 9px; background: rgba(11,18,16,0.5)">
+<span style="font-size: 10px; font-weight: 800; letter-spacing: 0.5px; color: #79828F">CONTENU ET PROBABILITÉS</span>
+<sc-for list="{{cp.odds}}" as="co" hint-placeholder-count="6">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; align-items: center; gap: 9px">
+<span style="flex-grow: 1; min-width: 0; font-size: 11.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{co.label}}</span>
+<span style="flex-shrink: 0; padding: 1px 7px; border-radius: 8px; font-size: 9px; font-weight: 800; color: #0B1210; background: {{co.color}}">{{co.rar}}</span>
+<span style="width: 42px; flex-shrink: 0; text-align: right; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums">{{co.pct}}</span>
+</div>
+<span style="font-size: 10px; color: #6B736C; line-height: 1.3">{{co.desc}}</span>
+</div>
+</sc-for>
+</div>
+<button onClick="{{cp.open}}" disabled="{{cp.locked}}" style="width: 100%; min-height: 44px; border-radius: 22px; border: none; background: {{cp.btnBg}}; color: {{cp.btnFg}}; font-family: inherit; font-weight: 800; font-size: 13.5px; cursor: pointer">OUVRIR LE PACK ENTRAÎNEUR · {{cp.price}}</button>
+<sc-if value="{{cp.hasGot}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; color: #2ECC71; line-height: 1.4">{{cp.gotLine}}</span></sc-if>
 </div>
 <sc-if value="{{tp.hasCards}}" hint-placeholder-val="{{true}}">
 <div style="display: flex; flex-direction: column; gap: 7px; padding: 13px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
@@ -1440,7 +1530,7 @@ class Component extends DCLogic {
     // (il coûte du temps réel), mais il est tracé comme le reste.
     this.logMoney(F.net, 'Match : recette ' + F.gate + ', salaires −' + F.wages);
     if (bonus) this.logMoney(bonus, 'Série de ' + winStreak + ' victoires');
-    const patch = { winStreak, missions, squad, inv, lastFin: 'Recette ' + F.gate + ' · salaires −' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net + ' jetons', coachAdvice: null, xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: st.balance + bonus + L.bonusBal + F.net,
+    const patch = { nextAdv: 0, winStreak, missions, squad, inv, lastFin: 'Recette ' + F.gate + ' · salaires −' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net + ' jetons', coachAdvice: null, xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: st.balance + bonus + L.bonusBal + F.net,
       lastGain: '+' + xpGain + ' XP' + (bonus ? ' · série de ' + winStreak + ' victoires x' + mult + ' (+' + bonus + ' jetons)' : '') + (prog ? ' · ' + prog : '') };
     let over = L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : null;
     const seasonP = st.seasonP + 1;
@@ -2271,11 +2361,14 @@ class Component extends DCLogic {
     this.setState({ match: mt, missions: ms, lastGain: null, showReport: false, cam: '2d' });
     this.startClock();
   }
+
   engineCfg(opp, xi, oxi, obench) {
     const s = this.state, S = this.styles(), st = S[opp.style] || S.equilibre;
     const coordsFrom = (form) => { const C = this.formCoords(form), out = []; ['GB', 'DEF', 'MIL', 'ATT'].forEach((l) => (C[l] || []).forEach(([fx, fy]) => out.push({ fx, fy, line: l }))); return out; };
     const statsOf = (p) => { const o = {}; this.cardStats(p).forEach((q) => { o[q.l] = Math.max(25, q.v - Math.round((p.pen || 0) * 0.6)); }); return o; };
-    const adv = s.preset === 'perso' ? 0 : this.matchup(s.preset, opp.style);
+    // §24 : l'avantage tactique préparé (plan, séance vidéo) s'ajoute pour UN match,
+    // puis disparaît. C'est ce qui donne du poids à la préparation.
+    const adv = (s.preset === 'perso' ? 0 : this.matchup(s.preset, opp.style)) + (s.nextAdv || 0);
     const syn = this.synergy(xi);
     const coh = Math.min(1.2, Math.max(0.7, 1 - xi.filter((p) => p.pen).length * 0.06 - (s.preset === 'perso' ? 0.04 : 0) - xi.filter((p) => p.fresh).length * 0.03 + (s.cohBonus || 0) + syn.score));
     const H = { club: 'FC TonPseudo', sbonus: this.staffLv('adjoint') * 0.8, coach: this.COACHES().find((c) => c.id === (s.coach || 'tacticien')), coh, tac: s.tac, ment: s.mentality, adv, coords: coordsFrom(s.formation), home: true, players: xi.map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p), energy: p.energy, form: p.form != null ? p.form : 70, morale: p.morale != null ? p.morale : 72, skills: this.skillsOf(p), foot: this.profile(p).foot, wf: this.profile(p).wf, role: s.roles[p.slot] || this.ROLE_OPTS(p.line, p.slot, s.formation)[0], duty: s.duties[p.slot] || 'Soutien' })) };
@@ -4718,6 +4811,191 @@ class Component extends DCLogic {
     st[stat] = Math.min(99, st[stat] + 2); inv[key]--; this.buzz(30);
     this.setState({ inv, squad: s.squad.map((q) => (q.id === pid ? Object.assign({}, q, { st, ovr: Math.max(q.ovr, this.ovrOf(q.pos, st)) }) : q)) });
   }
+  trainingOptions() {
+    const ti = this.trainInfo(), inv = this.state.inv || {};
+    const base = this.TRAININGS().map((t) => ({
+      id: t.id, label: t.label, desc: t.desc, cost: '1 séance', kind: 'squad',
+      can: ti.can, why: ti.can ? '' : ti.why
+    }));
+    // les cartes d'amélioration ouvrent des séances ciblées : on ne les propose
+    // que si on en possède, et on dit sur quelle statistique elles portent
+    const cards = this.UPGRADE_CARDS()
+      .map(([k, label]) => ({ k, label, n: inv['up_' + k] || 0 }))
+      .filter((x) => x.n > 0)
+      .map((x) => ({
+        id: 'up_' + x.k, label: 'Séance ciblée ' + x.label.toLowerCase(), kind: 'card', stat: x.k, n: x.n,
+        desc: '+2 ' + x.k + ' sur le joueur de ton choix, sans consommer de séance',
+        cost: x.n + ' carte' + (x.n > 1 ? 's' : ''), can: true, why: ''
+      }));
+    return base.concat(cards);
+  }
+  PACK_REGISTRY() {
+    return [
+      Object.assign({}, this.THE_PACK(), { family: 'cartes', question: 'Il me faut des joueurs', view: 'packs' }),
+      Object.assign({}, this.SKILL_PACK(), { family: 'compétences', question: 'Il me faut des compétences', view: 'skills' }),
+      Object.assign({}, this.TRAIN_PACK(), { family: 'entraînement', question: 'Il me faut du temps d’entraînement', view: 'train' }),
+      Object.assign({}, this.COACH_PACK(), { family: 'tactique', question: 'Il me faut des idées de jeu', view: 'train' })
+    ];
+  }
+  SKILL_PACK() {
+    return {
+      key: 'skill', name: 'Pack Compétence', n: 2, cost: 320,
+      content: 'compétences uniquement, aucun joueur',
+      color: 'linear-gradient(135deg, #C39BFF, #7B4FD8)', fx: 'silver'
+    };
+  }
+
+  skillPackOdds() {
+    return this.RARITY().map((r) => ({ id: r.id, label: r.label, color: r.tint, pct: r.rate * 100 }));
+  }
+
+  skillPackState() {
+    const def = this.SKILL_PACK(), s = this.state, poor = s.balance < def.cost;
+    return { can: !poor, why: poor ? 'Il te manque ' + (def.cost - s.balance) + ' jetons' : '', cost: def.cost };
+  }
+
+  openSkillPack(opts) {
+    const o = opts || {}, s = this.state, def = this.SKILL_PACK();
+    if (!o.free && s.balance < def.cost) return { ok: false, why: 'Il te manque ' + (def.cost - s.balance) + ' jetons' };
+    const r = o.rnd || Math.random, R = this.RARITY(), got = [];
+    for (let i = 0; i < def.n; i++) {
+      let q = r(), pick = R[0];
+      for (let k = 0; k < R.length; k++) { q -= R[k].rate; if (q <= 0) { pick = R[k]; break; } }
+      const sk = this.rollSkill(pick.id, r);
+      got.push({ kind: 'skill', rar: pick.id, label: pick.label, color: pick.tint, skill: sk, name: sk.name, power: sk.power });
+    }
+    const order = R.map((x) => x.id);
+    got.sort((a, b) => order.indexOf(b.rar) - order.indexOf(a.rar) || b.power - a.power);
+    return { ok: true, def, got, free: !!o.free };
+  }
+
+  commitSkillPack(res) {
+    if (!res || !res.ok) return { ok: false };
+    const s = this.state, def = res.def;
+    const inv = (s.skillInv || []).slice();
+    let uid = s.nextSkillUid || 1;
+    res.got.forEach((g) => inv.push(Object.assign({}, g.skill, { uid: uid++, on: null })));
+    const cost = res.free ? 0 : def.cost;
+    this.setState({ skillInv: inv, nextSkillUid: uid, balance: s.balance - cost,
+      missions: this.bumpMission(s.missions, 'pack', 1) });
+    if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
+    this.bumpQuest('pack', 1);
+    return { ok: true, added: res.got.length };
+  }
+  COACH_PACK() {
+    return {
+      key: 'coach', name: 'Pack Entraîneur', n: 2, cost: 260,
+      content: 'plans tactiques, causeries, séances vidéo',
+      color: 'linear-gradient(135deg, #F2C66B, #E9A93A)', fx: 'silver'
+    };
+  }
+  COACH_ITEMS() {
+    return [
+      { id: 'causerie', rar: 'normal', rate: 0.44, label: 'Causerie d’avant-match', kind: 'meeting',
+        desc: 'Moral +8 pour tout l’effectif, une fois', morale: 8 },
+      { id: 'video', rar: 'rare', rate: 0.28, label: 'Séance vidéo', kind: 'meeting',
+        desc: 'Révèle le style de l’adversaire et donne +1 d’avantage tactique au prochain match', adv: 1 },
+      { id: 'atelier', rar: 'epic', rate: 0.17, label: 'Atelier tactique', kind: 'meeting',
+        desc: 'Cohésion +4 %, durable', coh: 0.04 },
+      { id: 'plan', rar: 'elite', rate: 0.08, label: 'Plan tactique', kind: 'plan',
+        desc: 'Un style de jeu préparé : +2 d’avantage tactique quand tu l’utilises contre le bon adversaire', adv: 2 },
+      { id: 'reunion', rar: 'gold', rate: 0.026, label: 'Réunion de groupe', kind: 'meeting',
+        desc: 'Moral +15, cohésion +6 % et +40 XP à tout l’effectif', morale: 15, coh: 0.06, squadXp: 40 },
+      { id: 'masterplan', rar: 'legendary', rate: 0.004, label: 'Plan de campagne', kind: 'plan',
+        desc: 'Trois plans tactiques, moral +20 et cohésion +8 %', plans: 3, morale: 20, coh: 0.08 }
+    ];
+  }
+
+  coachPackOdds() {
+    const L = this.COACH_ITEMS(), R = this.RARITY();
+    const t = L.reduce((a, x) => a + x.rate, 0) || 1;
+    return L.map((x) => {
+      const r = R.find((y) => y.id === x.rar) || R[0];
+      return { id: x.id, label: x.label, rarLabel: r.label, color: r.tint, pct: x.rate / t * 100, desc: x.desc };
+    });
+  }
+
+  coachPackState() {
+    const def = this.COACH_PACK(), s = this.state, poor = s.balance < def.cost;
+    return { can: !poor, why: poor ? 'Il te manque ' + (def.cost - s.balance) + ' jetons' : '', cost: def.cost };
+  }
+
+  openCoachPack(opts) {
+    const o = opts || {}, s = this.state, def = this.COACH_PACK();
+    if (!o.free && s.balance < def.cost) return { ok: false, why: 'Il te manque ' + (def.cost - s.balance) + ' jetons' };
+    const r = o.rnd || Math.random, L = this.COACH_ITEMS(), tot = L.reduce((a, x) => a + x.rate, 0), got = [];
+    for (let i = 0; i < def.n; i++) {
+      let q = r() * tot, pick = L[0];
+      for (const x of L) { q -= x.rate; if (q <= 0) { pick = x; break; } }
+      got.push(pick);
+    }
+    const order = this.RARITY().map((x) => x.id);
+    got.sort((a, b) => order.indexOf(b.rar) - order.indexOf(a.rar));
+    return { ok: true, def, got, free: !!o.free };
+  }
+
+  commitCoachPack(res) {
+    if (!res || !res.ok) return { ok: false };
+    const s = this.state, def = res.def;
+    const coach = Object.assign({}, s.coachInv || {});
+    res.got.forEach((g) => {
+      coach[g.id] = (coach[g.id] || 0) + 1;
+      if (g.plans) coach.plan = (coach.plan || 0) + g.plans - 1;   // le plan de campagne contient trois plans
+    });
+    const cost = res.free ? 0 : def.cost;
+    this.setState({ coachInv: coach, balance: s.balance - cost });
+    if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
+    this.bumpQuest('pack', 1);
+    return { ok: true, added: res.got.map((g) => g.label) };
+  }
+  meetings() {
+    const s = this.state, inv = s.coachInv || {};
+    return this.COACH_ITEMS().filter((x) => x.kind === 'meeting').map((x) => {
+      const n = inv[x.id] || 0;
+      return Object.assign({}, x, {
+        n, can: n > 0,
+        why: n > 0 ? '' : 'Aucun(e) ' + x.label.toLowerCase() + ' en réserve. Ouvre un ' + this.COACH_PACK().name + '.'
+      });
+    });
+  }
+  holdMeeting(id) {
+    const s = this.state, item = this.COACH_ITEMS().find((x) => x.id === id);
+    if (!item || item.kind !== 'meeting') return { ok: false, why: 'Réunion inconnue' };
+    const inv = Object.assign({}, s.coachInv || {});
+    if (!(inv[id] > 0)) return { ok: false, why: 'Aucun(e) ' + item.label.toLowerCase() + ' en réserve' };
+    inv[id]--;
+    const patch = { coachInv: inv };
+    let txt = item.label;
+    if (item.morale) {
+      patch.squad = s.squad.map((p) => {
+        const pr = this.profile(p);
+        return Object.assign({}, p, { morale: Math.min(99, pr.morale + item.morale) });
+      });
+      txt += ' · moral +' + item.morale;
+    }
+    if (item.coh) { patch.cohBonus = Math.min(0.16, (s.cohBonus || 0) + item.coh); txt += ' · cohésion +' + Math.round(item.coh * 100) + ' %'; }
+    if (item.adv) { patch.nextAdv = (s.nextAdv || 0) + item.adv; txt += ' · +' + item.adv + ' d’avantage au prochain match'; }
+    patch.trainLog = txt;
+    this.buzz([25, 25, 50]);
+    this.setState(patch);
+    if (item.squadXp) this.state.squad.forEach((p) => this.grantPlayerXp(p.id, item.squadXp, item.label));
+    return { ok: true, text: txt };
+  }
+  plansLeft() { return (this.state.coachInv || {}).plan || 0; }
+
+  usePlan(styleKey) {
+    const s = this.state, inv = Object.assign({}, s.coachInv || {});
+    if (!(inv.plan > 0)) return { ok: false, why: 'Aucun plan tactique en réserve. Ouvre un ' + this.COACH_PACK().name + '.' };
+    const S = this.styles();
+    if (!S[styleKey]) return { ok: false, why: 'Style inconnu' };
+    inv.plan--;
+    this.setState({ coachInv: inv, preset: styleKey, tac: Object.assign({}, S[styleKey].tac), mentality: S[styleKey].m,
+      nextAdv: (s.nextAdv || 0) + 2,
+      trainLog: 'Plan tactique préparé : ' + S[styleKey].name + ' · +2 d’avantage au prochain match' });
+    this.buzz([25, 25, 60]);
+    return { ok: true, style: S[styleKey].name };
+  }
+  styleList() { this.styles(); return this._styleList; }
   renderVals() {
     const s = this.state, t = s.tac;
     const color = (o) => (o >= 80 ? 'linear-gradient(135deg, #FFE59A, #E9A93A)' : o >= 70 ? 'linear-gradient(135deg, #F2F6F4, #AEB9C2)' : 'linear-gradient(135deg, #E8B585, #B7773F)');
@@ -4852,7 +5130,12 @@ class Component extends DCLogic {
       kitC2: SWATCH.map((c) => ({ c, label: 'Couleur ' + c, on: s.kit.c2 === c, ring: s.kit.c2 === c ? '#FFFFFF' : 'rgba(255,255,255,0.1)', pick: () => this.setState({ kit: Object.assign({}, s.kit, { c2: c }) }) })),
       kitCollars: [['rond', 'Rond'], ['v', 'En V'], ['polo', 'Polo']].map(([k2, l]) => { const on = s.kit.collar === k2; return { label: l, on, bg: SEG(on).bg, fg: SEG(on).fg, bd: SEG(on).bd, pick: () => this.setState({ kit: Object.assign({}, s.kit, { collar: k2 }) }) }; }),
       toggleSponsor: () => this.setState({ kit: Object.assign({}, s.kit, { sponsor: !s.kit.sponsor }) }), sponsorBg: s.kit.sponsor ? '#2ECC71' : '#2E352F', sponsorJust: s.kit.sponsor ? 'flex-end' : 'flex-start',
-      cards: s.squad.slice().sort((a, b) => b.ovr - a.ovr).map((p) => { const T = p.ovr >= 80 ? 'or' : p.ovr >= 70 ? 'ar' : 'br'; const open = () => this.setState({ showPlayer: p.id }); const fitV = p.fit != null ? p.fit : 100; const tit = inXI.has(p.id), bn = benchList.some((b) => b.id === p.id);
+      cards: s.squad.slice().sort((a, b) => b.ovr - a.ovr).map((p) => { const T = p.ovr >= 80 ? 'or' : p.ovr >= 70 ? 'ar' : 'br'; // §19 : quand une séance ciblée attend un destinataire, le clic applique la carte
+        // au lieu d'ouvrir la fiche. On sort du mode dès que c'est fait.
+        const open = () => {
+          if (s.pickCard) { const r = this.useUpgrade(p.id, s.pickCard); this.setState({ pickCard: null, view: 'train', trainLog: r.ok ? this.state.trainLog : r.why }); return; }
+          this.setState({ showPlayer: p.id });
+        }; const fitV = p.fit != null ? p.fit : 100; const tit = inXI.has(p.id), bn = benchList.some((b) => b.id === p.id);
         return { ovr: p.ovr, pos: p.pos, name: p.name, short: p.name.split(' ').slice(1).join(' '), face: this.faceSvg(p, s.kit), kitImg: kitSmall, stats: this.cardStats(p),
           bg: T === 'or' ? 'linear-gradient(165deg, rgba(245,200,76,0.34) 0%, rgba(245,200,76,0.07) 45%, #1E232B 78%)' : T === 'ar' ? 'linear-gradient(165deg, rgba(213,221,227,0.28) 0%, rgba(213,221,227,0.06) 45%, #1E232B 78%)' : 'linear-gradient(165deg, rgba(222,154,98,0.32) 0%, rgba(222,154,98,0.07) 45%, #1E232B 78%)',
           fg: '#F2F4F7', bd: T === 'or' ? 'rgba(245,200,76,0.55)' : T === 'ar' ? 'rgba(213,221,227,0.40)' : 'rgba(222,154,98,0.45)', tierC: tierC(p.ovr), glow: T === 'or' ? 'rgba(245,200,76,0.16)' : 'rgba(0,0,0,0.35)', line: 'rgba(255,255,255,0.08)',
@@ -4907,6 +5190,27 @@ class Component extends DCLogic {
       matchCards: this.MATCH_CARDS().map((c) => { const n = (s.inv || {})[c.id] || 0, ok = n > 0 && !!mtc && !mtc.done; return { label: c.label, desc: c.desc, icon: c.icon, n: 'x' + n, use: () => this.useMatchCard(c.id), bg: ok ? 'rgba(46,204,113,0.12)' : '#242A33', bd: ok ? 'rgba(46,204,113,0.45)' : 'rgba(255,255,255,0.06)', fg: ok ? '#2ECC71' : '#5E6672' }; }),
       upCards: this.UPGRADE_CARDS().map(([k, label]) => { const n = (s.inv || {})['up_' + k] || 0;
         return { label, n: 'x' + n, k, bg: n > 0 ? 'rgba(46,204,113,0.12)' : 'rgba(255,255,255,0.04)', fg: n > 0 ? '#2ECC71' : '#5E6672', bd: n > 0 ? 'rgba(46,204,113,0.4)' : 'rgba(255,255,255,0.06)' }; }),
+      // §10 : le Pack Entraîneur. Il ne donne ni joueur ni compétence, seulement
+      // des idées de jeu : causeries, séances vidéo, ateliers, plans tactiques.
+      cp: (() => {
+        const def = this.COACH_PACK(), st2 = this.coachPackState();
+        return {
+          name: def.name, desc: def.n + ' tirages · ' + def.content, count: def.n, color: def.color,
+          price: def.cost + ' jetons', locked: !st2.can, hasWhy: !!st2.why, packWhy: st2.why,
+          btnBg: st2.can ? ORANGE : '#242A33', btnFg: st2.can ? ON_ORANGE : '#5E6672',
+          odds: this.coachPackOdds().map((o) => ({ label: o.label, rar: o.rarLabel, color: o.color, desc: o.desc,
+            pct: (o.pct >= 10 ? o.pct.toFixed(0) : o.pct.toFixed(1).replace('.', ',')) + ' %' })),
+          hasGot: !!s.lastCoachPack, gotLine: s.lastCoachPack || '',
+          open: () => {
+            if (!st2.can) { this.setState({ trainLog: st2.why }); return; }
+            const res = this.openCoachPack({});
+            if (!res.ok) { this.setState({ trainLog: res.why }); return; }
+            const got = this.commitCoachPack(res);
+            this.buzz([30, 30, 60]);
+            this.setState({ lastCoachPack: got.added.join(' · ') + ' → en réserve, utilisables ci-dessus' });
+          }
+        };
+      })(),
       // §6 et §10 : les séances en stock et le Pack Entraînement. L'entraînement devient
       // une décision : avec trois séances, on choisit qui on fait progresser.
       tp: (() => {
@@ -4948,7 +5252,38 @@ class Component extends DCLogic {
       roleLine: 'Directeur sportif · ' + (s.clubName || 'FC TonPseudo'),
       skillHubLine: (() => { const inv = this.skillInventory(), q = this.activeQuests().filter((x) => x.prog >= x.goal && !x.claimed).length;
         return (inv.length ? inv.filter((k) => k.onName).length + ' équipée(s) · ' + inv.filter((k) => !k.onName).length + ' en réserve' : 'Aucune compétence en réserve') + (q ? ' · ' + q + ' quête(s) à récupérer' : ''); })(),
-      trainings: this.TRAININGS().map((t) => ({ label: t.label, desc: t.desc, pick: () => { const r = this.train(t.id); if (r && !r.ok) this.setState({ trainLog: r.why }); } })), trainLog: s.trainLog || 'Aucune séance cette semaine.', trainDone: (s.trainDone || 0) + ' séance' + ((s.trainDone || 0) > 1 ? 's' : '') + ' cette saison',
+      // §19 : on ne propose que ce qui est faisable avec ce qu'on a, et on dit le coût.
+      trainings: this.trainingOptions().map((t) => ({
+        label: t.label, desc: t.desc, cta: t.can ? (t.kind === 'card' ? 'Utiliser' : 'Lancer') : 'Indisponible',
+        costLine: t.can ? 'Coûte ' + t.cost : t.why,
+        costFg: t.can ? '#79828F' : '#F5C84C',
+        bg: t.can ? '#2ECC71' : '#242A33', fg: t.can ? '#171B21' : '#5E6672',
+        bd: t.can ? 'rgba(255,255,255,0.06)' : 'rgba(245,200,76,0.3)',
+        pick: () => {
+          if (!t.can) { this.setState({ trainLog: t.why }); return; }
+          if (t.kind === 'card') { this.setState({ pickCard: t.stat, view: 'squad', trainLog: 'Choisis le joueur qui reçoit la carte ' + t.stat }); return; }
+          const r = this.train(t.id); if (r && !r.ok) this.setState({ trainLog: r.why });
+        }
+      })),
+      // §24 : la réunion d'équipe et les plans tactiques, alimentés par le Pack Entraîneur
+      cm: (() => {
+        const list = this.meetings(), plans = this.plansLeft();
+        return {
+          planLine: plans ? plans + ' plan' + (plans > 1 ? 's' : '') + ' tactique' + (plans > 1 ? 's' : '') + ' en réserve' : 'Aucun plan en réserve',
+          hasPlan: plans > 0,
+          list: list.map((x) => ({
+            label: x.label, sub: x.can ? x.desc + ' · x' + x.n : x.why,
+            subFg: x.can ? '#79828F' : '#F5C84C',
+            cta: x.can ? 'Tenir' : 'Aucune',
+            bg: x.can ? ORANGE : '#242A33', fg: x.can ? ON_ORANGE : '#5E6672',
+            go: () => { const r = this.holdMeeting(x.id); if (r && !r.ok) this.setState({ trainLog: r.why }); }
+          })),
+          plans: this.styleList().slice(0, 8).map((st2) => ({
+            label: st2.name,
+            go: () => { const r = this.usePlan(st2.k); if (r && !r.ok) this.setState({ trainLog: r.why }); }
+          }))
+        };
+      })(), trainLog: s.trainLog || 'Aucune séance cette semaine.', trainDone: (s.trainDone || 0) + ' séance' + ((s.trainDone || 0) > 1 ? 's' : '') + ' cette saison',
       cohLabel: Math.round(Math.min(1.08, Math.max(0.7, 1 - xi.filter((p) => p.pen).length * 0.06 - (s.preset === 'perso' ? 0.04 : 0) - xi.filter((p) => p.fresh).length * 0.03 + (s.cohBonus || 0))) * 100) + ' %',
       cohHint: (xi.filter((p) => p.pen).length ? xi.filter((p) => p.pen).length + ' hors poste · ' : '') + (s.preset === 'perso' ? 'tactique perso · ' : '') + (xi.filter((p) => p.fresh).length ? xi.filter((p) => p.fresh).length + ' nouveau · ' : '') + 'collectif +' + Math.round((s.cohBonus || 0) * 100) + ' %',
       injuredCount: s.squad.filter((p) => p.inj).length, fitAvg: Math.round(s.squad.reduce((a, p) => a + (p.fit != null ? p.fit : 100), 0) / s.squad.length) + ' %',
@@ -4980,6 +5315,9 @@ class Component extends DCLogic {
       isHome: s.view === 'home', notHome: s.view !== 'home', goHome: () => this.setState({ view: 'home', sel: null }), nextOpp: opps[0].club, nextOppSub: opps[0].styleName + ' · note ' + opps[0].ovr, kitHero: this.kitSvg(s.kit, 96), squadCountLabel: s.squad.length + ' joueurs',
       nav: Object.fromEntries(['squad', 'tactic', 'packs', 'match', 'league'].map((id) => { const on = s.view === id; return [id, { on, pick: () => this.setState({ view: id }), fg: on ? '#F2F4F7' : '#79828F', fw: on ? 700 : 500, dash: on ? '#2ECC71' : 'transparent' }]; })),
       showLevelBar: !(s.view === 'match' && mtc && !mtc.done), goLeague: () => this.setState({ view: 'league' }), divShort: 'D' + s.division,
+      pickingCard: !!s.pickCard,
+      pickCardLine: s.pickCard ? 'Choisis le joueur qui reçoit la carte ' + s.pickCard + ' (+2)' : '',
+      cancelPick: () => this.setState({ pickCard: null, view: 'train' }),
       isSquad: s.view === 'squad', isTactic: s.view === 'tactic', isPacks: s.view === 'packs', isMatch: s.view === 'match', isLeague: s.view === 'league',
       // §26 : le bloc multijoueur. Hors ligne, il dit ce qui manque au lieu d'afficher
       // des boutons morts, et les actions refusent avec leur raison (§81).
@@ -5097,6 +5435,27 @@ class Component extends DCLogic {
         act: () => { if (k.onName) this.unequipSkill(k.uid); else if (k.fitCount) this.equipSkill(k.uid, k.fits[0].id); }
       })),
       hasSkills: this.skillInventory().length > 0, noSkills: this.skillInventory().length === 0,
+      // §10 : le Pack Compétence. Il ne contient que des compétences, aux taux du §11.
+      sp: (() => {
+        const def = this.SKILL_PACK(), st2 = this.skillPackState();
+        return {
+          name: def.name, desc: def.n + ' tirages · ' + def.content, count: def.n, color: def.color,
+          price: def.cost + ' jetons', locked: !st2.can, hasWhy: !!st2.why, packWhy: st2.why,
+          btnBg: st2.can ? ORANGE : '#242A33', btnFg: st2.can ? ON_ORANGE : '#5E6672',
+          odds: this.skillPackOdds().map((o) => ({ label: o.label, color: o.color,
+            pct: (o.pct >= 10 ? o.pct.toFixed(0) : o.pct.toFixed(1).replace('.', ',')) + ' %',
+            w: Math.max(2, Math.round(Math.pow(o.pct, 0.45) * 11)) + '%' })),
+          hasGot: !!s.lastSkillPack, gotLine: s.lastSkillPack || '',
+          open: () => {
+            if (!st2.can) { this.setState({ onlineError: null, trainLog: st2.why }); return; }
+            const res = this.openSkillPack({});
+            if (!res.ok) return;
+            this.commitSkillPack(res);
+            this.buzz([30, 30, 60]);
+            this.setState({ lastSkillPack: res.got.map((g) => g.name + ' (' + g.label + ')').join(' · ') + ' → en réserve' });
+          }
+        };
+      })(),
       skillEmpty: 'Aucune compétence en réserve. Ouvre un ' + this.THE_PACK().name + ' pour en obtenir.',
       skillTotal: this.skillCount().toLocaleString('fr-FR') + ' combinaisons possibles',
       skillWorn: this.skillInventory().filter((k) => k.onName).length + ' équipée(s) sur ' + this.skillInventory().length,

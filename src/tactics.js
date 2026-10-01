@@ -32,6 +32,9 @@ export const Tactics = {
     return this._styles;
   },
 
+  // La liste des styles, dans l'ordre d'affichage.
+  styleList() { this.styles(); return this._styleList; },
+
   matchup(a, b) {
     const S = this.styles(), A = S[a], B = S[b];
     if (!A || !B) return 0;
@@ -140,7 +143,9 @@ export const Tactics = {
     const s = this.state, S = this.styles(), st = S[opp.style] || S.equilibre;
     const coordsFrom = (form) => { const C = this.formCoords(form), out = []; ['GB', 'DEF', 'MIL', 'ATT'].forEach((l) => (C[l] || []).forEach(([fx, fy]) => out.push({ fx, fy, line: l }))); return out; };
     const statsOf = (p) => { const o = {}; this.cardStats(p).forEach((q) => { o[q.l] = Math.max(25, q.v - Math.round((p.pen || 0) * 0.6)); }); return o; };
-    const adv = s.preset === 'perso' ? 0 : this.matchup(s.preset, opp.style);
+    // §24 : l'avantage tactique préparé (plan, séance vidéo) s'ajoute pour UN match,
+    // puis disparaît. C'est ce qui donne du poids à la préparation.
+    const adv = (s.preset === 'perso' ? 0 : this.matchup(s.preset, opp.style)) + (s.nextAdv || 0);
     const syn = this.synergy(xi);
     const coh = Math.min(1.2, Math.max(0.7, 1 - xi.filter((p) => p.pen).length * 0.06 - (s.preset === 'perso' ? 0.04 : 0) - xi.filter((p) => p.fresh).length * 0.03 + (s.cohBonus || 0) + syn.score));
     const H = { club: 'FC TonPseudo', sbonus: this.staffLv('adjoint') * 0.8, coach: this.COACHES().find((c) => c.id === (s.coach || 'tacticien')), coh, tac: s.tac, ment: s.mentality, adv, coords: coordsFrom(s.formation), home: true, players: xi.map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p), energy: p.energy, form: p.form != null ? p.form : 70, morale: p.morale != null ? p.morale : 72, skills: this.skillsOf(p), foot: this.profile(p).foot, wf: this.profile(p).wf, role: s.roles[p.slot] || this.ROLE_OPTS(p.line, p.slot, s.formation)[0], duty: s.duties[p.slot] || 'Soutien' })) };

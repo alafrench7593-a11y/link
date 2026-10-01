@@ -131,6 +131,53 @@ const u = tc.useUpgrade(pU.id, anyCard);
 ok(u.ok, 'une carte d’amélioration s’utilise sur un joueur', anyCard + ' : note ' + ovrAvant + ' → ' + u.ovr);
 ok(tc.useUpgrade(pU.id, anyCard).ok === false, 'et elle est bien consommée');
 
+console.log('§10 les quatre packs, une famille chacun');
+const reg = tc.PACK_REGISTRY();
+ok(reg.length === 4, 'quatre packs', reg.map((r) => r.name).join(' · '));
+ok(new Set(reg.map((r) => r.family)).size === 4, 'chacun donne une seule famille, et une famille différente',
+  reg.map((r) => r.family).join(', '));
+ok(new Set(reg.map((r) => r.key)).size === 4, 'chacun a sa propre clé');
+tc.setState({ balance: 5000, skillInv: [], coachInv: {} });
+const sp2 = tc.openSkillPack({});
+ok(sp2.ok && sp2.got.every((g) => g.kind === 'skill'), 'le Pack Compétence ne donne QUE des compétences',
+  sp2.got.map((g) => g.label).join(', '));
+tc.commitSkillPack(sp2);
+ok(tc.state.skillInv.length === sp2.got.length, 'elles arrivent dans l’inventaire');
+ok(Math.abs(tc.skillPackOdds().reduce((a, x) => a + x.pct, 0) - 100) < 1e-6, 'ses probabilités font 100 %');
+const ci = tc.COACH_ITEMS();
+ok(Math.abs(ci.reduce((a, x) => a + x.rate, 0) - 1) < 1e-9, 'les taux du Pack Entraîneur font 100 %');
+ok(ci.every((x) => !x.player && !x.skill && !x.sessions), 'il ne donne ni joueur, ni compétence, ni séance');
+const cp2 = tc.openCoachPack({});
+ok(cp2.ok && cp2.got.length === 2, 'il s’ouvre', cp2.got.map((g) => g.label).join(', '));
+tc.commitCoachPack(cp2);
+ok(Object.keys(tc.state.coachInv).length > 0, 'son contenu arrive en réserve', JSON.stringify(tc.state.coachInv));
+
+console.log('§24 réunion d’équipe et plan tactique');
+tc.setState({ coachInv: { causerie: 1, reunion: 1, plan: 1 }, cohBonus: 0 });
+const moAv = Math.round(tc.state.squad.reduce((a, p) => a + tc.profile(p).morale, 0) / tc.state.squad.length);
+const hm = tc.holdMeeting('causerie');
+const moAp = Math.round(tc.state.squad.reduce((a, p) => a + tc.profile(p).morale, 0) / tc.state.squad.length);
+ok(hm.ok && moAp > moAv, 'une causerie remonte vraiment le moral', moAv + ' → ' + moAp);
+ok(tc.holdMeeting('causerie').ok === false, 'et elle est consommée');
+const hr = tc.holdMeeting('reunion');
+ok(hr.ok && tc.state.cohBonus > 0, 'une réunion de groupe améliore la cohésion', Math.round(tc.state.cohBonus * 100) + ' %');
+const up = tc.usePlan('gegen');
+ok(up.ok && tc.state.nextAdv === 2, 'un plan tactique donne un avantage pour le match suivant', 'avantage ' + tc.state.nextAdv);
+ok(tc.state.preset === 'gegen', 'et applique vraiment le style préparé');
+tc.playMatch({ club: 'Adversaire', ovr: 60, style: 'tiki' }, { seed: 2 });
+ok(tc.state.nextAdv === 0, 'l’avantage ne vaut que pour ce match');
+ok(tc.usePlan('tiki').ok === false, 'sans plan en réserve, on ne prépare rien');
+
+console.log('§19 l’entraînement suit ce qu’on possède');
+tc.setState({ sessions: 0, caps: { day: tc.dayKey() }, inv: { up_VIT: 1 } });
+const opts = tc.trainingOptions();
+const sq = opts.filter((o) => o.kind === 'squad'), cd = opts.filter((o) => o.kind === 'card');
+ok(sq.length && sq.every((o) => !o.can), 'sans séance, les séances collectives sont refusées');
+ok(cd.length === 1 && cd[0].can, 'mais la carte en réserve reste utilisable', cd[0].label);
+ok(sq[0].why.length > 0 && cd[0].cost.indexOf('carte') >= 0, 'chaque ligne dit ce qu’elle coûte ou ce qui manque');
+tc.setState({ inv: {} });
+ok(tc.trainingOptions().filter((o) => o.kind === 'card').length === 0, 'une carte utilisée disparaît de la liste');
+
 console.log('§7 et §29 économie encadrée');
 const c2 = new Club(); c2.createClub({ name: 'FC Eco', seed: 5 });
 let total = 0;

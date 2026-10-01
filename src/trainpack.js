@@ -154,6 +154,28 @@ export const TrainPack = {
     return { ok: true, sessions: add, xp, cards };
   },
 
+  // §19 : l'écran d'entraînement ne propose que ce que le directeur sportif peut
+  // réellement faire AUJOURD'HUI, avec ce qu'il a en réserve. Chaque ligne dit ce
+  // qu'elle consomme et, si elle refuse, ce qui manque (§81).
+  trainingOptions() {
+    const ti = this.trainInfo(), inv = this.state.inv || {};
+    const base = this.TRAININGS().map((t) => ({
+      id: t.id, label: t.label, desc: t.desc, cost: '1 séance', kind: 'squad',
+      can: ti.can, why: ti.can ? '' : ti.why
+    }));
+    // les cartes d'amélioration ouvrent des séances ciblées : on ne les propose
+    // que si on en possède, et on dit sur quelle statistique elles portent
+    const cards = this.UPGRADE_CARDS()
+      .map(([k, label]) => ({ k, label, n: inv['up_' + k] || 0 }))
+      .filter((x) => x.n > 0)
+      .map((x) => ({
+        id: 'up_' + x.k, label: 'Séance ciblée ' + x.label.toLowerCase(), kind: 'card', stat: x.k, n: x.n,
+        desc: '+2 ' + x.k + ' sur le joueur de ton choix, sans consommer de séance',
+        cost: x.n + ' carte' + (x.n > 1 ? 's' : ''), can: true, why: ''
+      }));
+    return base.concat(cards);
+  },
+
   trainPackState() {
     const def = this.TRAIN_PACK(), s = this.state;
     const poor = s.balance < def.cost;

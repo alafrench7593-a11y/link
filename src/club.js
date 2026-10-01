@@ -16,6 +16,7 @@ import { Quests } from './quests.js';
 import { Creation } from './creation.js';
 import { OnlineUI } from './onlineui.js';
 import { TrainPack } from './trainpack.js';
+import { Packs } from './packs.js';
 
 export class Club {
   constructor(state) {
@@ -97,4 +98,4 @@ export class Club {
 }
 
 // §80 : chaque domaine vit dans son fichier et vient se mélanger ici.
-Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack);
+Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs);

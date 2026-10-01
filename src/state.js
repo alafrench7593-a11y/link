@@ -21,7 +21,7 @@ export function INITIAL_STATE() {
       // §7, §29 : l'économie encadrée. `caps` compte les gains du jour par source,
       // `ledger` garde le journal des transactions.
       // §6 : l'entraînement se paie en séances, gagnées dans les Packs Entraînement
-      sessions: 3,
+      sessions: 3, coachInv: {}, nextAdv: 0,
       shards: 0, caps: {}, ledger: [], quests: null, clubName: 'FC TonPseudo', country: 'fr', created: true,
       kit: { c1: '#2ECC71', c2: '#0C1210', pat: 'uni', collar: 'rond', sponsor: true }, showKit: false, cam: '2d',
       xp: 340, level: 7, dayStreak: 3, dayClaimed: false, winStreak: 0, showHub: false, levelUp: null, now: Date.now(), freePackAt: Date.now() + 90000, freeQueue: [],
