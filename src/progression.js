@@ -9,8 +9,8 @@ export const Progression = {
       xp -= this.levelNeed(level); level++;
       bal += 100 + level * 20;
       // un pack offert tous les 5 niveaux, pris dans la vraie liste des packs
-      const key = level % 5 === 0 ? (level >= 15 ? 'gold' : level >= 10 ? 'elite' : 'premium') : null;
-      if (key) queue.push(key);
+      const key = level % 5 === 0 ? 'linkfoot' : null;   // §10 : un seul pack
+      if (key) queue.push('linkfoot');
       // ce que ce niveau débloque, dit une seule fois, au moment où ça arrive
       const opened = this.unlocksAt(level);
       ups.push({ level, text: '+' + (100 + level * 20) + ' jetons' + (key ? ' + ' + this.packName(key) + ' offert' : '') + (opened.length ? ' · débloque ' + opened.join(', ') : '') });
@@ -21,11 +21,14 @@ export const Progression = {
   // Ce que le niveau `l` ouvre : lu dans les paliers, jamais écrit en dur deux fois.
   unlocksAt(l) {
     const G = this.GATES(), out = [];
-    G.card.forEach((n, i) => { if (n === l && i > 1) out.push('niveau de carte ' + i); });
     G.staff.forEach((n, i) => { if (n === l && i > 0) out.push('staff niveau ' + i); });
     G.stade.forEach((n, i) => { if (n === l && i > 0) out.push(this.STADES()[i].name); });
     G.academy.forEach((n, i) => { if (n === l && i > 0) out.push(this.ACADEMIES()[i].name); });
-    this.PACK_DEFS().forEach((d) => { if ((d.req || 0) === l) out.push(d.name); });
+    this.PACK_DEFS().forEach((d) => { if ((d.req || 0) === l && l > 0) out.push(d.name); });
+    // §8 : certains paliers de club ouvrent des quêtes plus ambitieuses
+    if (l === 5) out.push('quêtes de palier 3');
+    if (l === 10) out.push('quêtes de palier 4');
+    if (l === 15) out.push('quêtes de palier 5');
     return out;
   },
 
@@ -41,21 +44,33 @@ export const Progression = {
     if (win) missions = this.bumpMission(missions, 'win', 1);
     if (mt.hs) missions = this.bumpMission(missions, 'goals', mt.hs);
     let squad = st.squad, prog = '';
-    if (win || mt.hs >= 2) {
-      const c = mt.xi.filter((p) => p.line !== 'GB'); let pk = c[this.rand(0, c.length - 1)]; if (mt.rat) { let bi = 0; mt.rat.H.forEach((v, k) => { if (v > mt.rat.H[bi]) bi = k; }); if (mt.xi[bi]) pk = mt.xi[bi]; }
-      const cur = squad.find((p) => p.id === pk.id);
-      if (cur && cur.ovr < 99) {
-        const st = {}; this.cardStats(cur).forEach((q) => { st[q.l] = q.v; }); const w = this.statW(cur.pos), keys = Object.keys(w).sort((a2, b2) => w[b2] - w[a2]), gains = {};
-        let ovr = this.ovrOf(cur.pos, st), guard = 0;
-        while (ovr <= cur.ovr && guard++ < 20) { const k = keys[this.rand(0, 2)]; if (st[k] < 99) { st[k]++; gains[k] = (gains[k] || 0) + 1; } ovr = this.ovrOf(cur.pos, st); }
-        squad = squad.map((p) => (p.id === pk.id ? Object.assign({}, p, { st, ovr: Math.max(ovr, cur.ovr) }) : p));
-        prog = cur.name + ' progresse ' + cur.ovr + ' → ' + Math.max(ovr, cur.ovr) + ' (' + Object.keys(gains).map((k) => '+' + gains[k] + ' ' + k).join(', ') + ')';
-      }
-    }
+    // §6, §19, §20 : chaque joueur du onze gagne de l'XP selon son temps de jeu et
+    // sa performance. C'est le seul chemin de progression d'un joueur : jouer.
+    // L'argent ne peut pas remplacer ces lignes.
+    const grown = [];
+    squad = squad.map((p) => {
+      const i = mt.xi.findIndex((x) => x.id === p.id);
+      if (i < 0) return p;
+      const stat = {
+        min: 90,
+        goals: (mt.scorers || []).filter((id) => id === p.id).length,
+        assists: (mt.assisters || []).filter((id) => id === p.id).length,
+        rating: mt.rat && mt.rat.H ? mt.rat.H[i] : 6
+      };
+      const gain = this.matchXp(p, stat);
+      const up = this.addPlayerXp(p, gain);
+      if (up.ups.length) grown.push(p.name + ' niveau ' + up.plv + (up.ups[up.ups.length - 1].capped ? ' (potentiel atteint)' : ''));
+      return Object.assign({}, p, { plv: up.plv, pxp: up.pxp, st: up.st, ovr: up.ovr });
+    });
+    if (grown.length) prog = grown.slice(0, 2).join(' · ');
     squad = this.applyFitness(squad, mt, null);
     const F = this.finances(st, res); const inv = Object.assign({}, st.inv || {}); if (win) { const drop = ['energie', 'motivation', 'pressing', 'bloc', 'contre', 'finition', 'up_VIT', 'up_TIR', 'up_PAS', 'up_DÉF'][this.rand(0, 9)]; inv[drop] = (inv[drop] || 0) + 1; }
     const L = this.addXp(st, xpGain);
-    const patch = { winStreak, missions, squad, inv, lastFin: 'Recette ' + F.gate + ' · salaires −' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net + ' jetons', coachAdvice: null, xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: st.balance + bonus + L.bonusBal + this.finances(st, res).net,
+    // §7, §29 : tout ce qui entre passe par le journal. Le match n'est pas plafonné
+    // (il coûte du temps réel), mais il est tracé comme le reste.
+    this.logMoney(F.net, 'Match : recette ' + F.gate + ', salaires −' + F.wages);
+    if (bonus) this.logMoney(bonus, 'Série de ' + winStreak + ' victoires');
+    const patch = { winStreak, missions, squad, inv, lastFin: 'Recette ' + F.gate + ' · salaires −' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net + ' jetons', coachAdvice: null, xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: st.balance + bonus + L.bonusBal + F.net,
       lastGain: '+' + xpGain + ' XP' + (bonus ? ' · série de ' + winStreak + ' victoires x' + mult + ' (+' + bonus + ' jetons)' : '') + (prog ? ' · ' + prog : '') };
     let over = L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : null;
     const seasonP = st.seasonP + 1;
@@ -66,12 +81,15 @@ export const Progression = {
       const yg = this.youthPlayer(st);
       let ygTxt = '';
       if (yg) { patch.squad = (patch.squad || st.squad).concat([yg]); patch.youth = (st.youth || []).concat([yg.id]); ygTxt = ' Le centre sort ' + yg.name + ' (' + yg.pos + ' ' + yg.ovr + ', potentiel ' + yg.pot + ').'; }
-      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; patch.freeQueue = patch.freeQueue.concat(['gold']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un Pack Or. Les adversaires seront plus forts.' + ygTxt }; }
+      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; patch.freeQueue = patch.freeQueue.concat(['linkfoot']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un LinkFoot Pack. Les adversaires seront plus forts.' + ygTxt }; }
       else if (rank === last && st.division < 5) { patch.division = st.division + 1; over = { title: 'RELÉGUÉ EN DIVISION ' + patch.division, sub: 'Fin de saison : ' + rank + 'e sur ' + last + '. Les adversaires seront plus faibles, mais la recette du match baisse.' + ygTxt }; }
       else over = over || { title: 'FIN DE SAISON', sub: rank + 'e de la division ' + st.division + '. Termine dans les 2 premiers pour monter, évite la dernière place.' + ygTxt };
       patch.seasonP = 0; patch.record = { w: 0, d: 0, l: 0 };
     } else patch.seasonP = seasonP;
     if (over) { patch.levelUp = over; this.buzz([60, 40, 60, 40, 200]); }
+    // §8, §19 : le match fait avancer les quêtes. Elles lisent les mêmes chiffres que le rapport.
+    this.questsAfterMatch(mt, Object.assign({}, st, { squad: patch.squad || squad, winStreak: st.winStreak }));
+    if (patch.division && patch.division < st.division) this.bumpQuest('division', 1);
     return patch;
   },
 

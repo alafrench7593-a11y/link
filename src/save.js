@@ -1,7 +1,7 @@
 // LinkFoot : sauvegarde. Sérialise l'état du club, le relit, et le range
 // où tu veux : mémoire, navigateur, ou ton serveur.
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 // Ce qui est conservé d'une session à l'autre. Tout le reste (vue courante, match en cours,
 // animation de pack, horodatages d'affichage) est volatil et recalculé au chargement.
@@ -9,7 +9,10 @@ const PERSIST = [
   'formation', 'balance', 'preset', 'mentality', 'tac', 'roles', 'duties', 'lineup',
   'squad', 'nextId', 'record', 'kit', 'xp', 'level', 'dayStreak', 'dayClaimed',
   'winStreak', 'freePackAt', 'freeQueue', 'division', 'seasonP', 'missions',
-  'staff', 'stade', 'academy', 'youth', 'inv', 'coach', 'coachMode', 'cohBonus', 'trainDone'
+  'staff', 'stade', 'academy', 'youth', 'inv', 'coach', 'coachMode', 'cohBonus', 'trainDone',
+  // directeur sportif : inventaire de compétences, économie encadrée, quêtes, identité du club
+  'skillInv', 'nextSkillUid', 'collected', 'seenPlayers', 'shards',
+  'caps', 'ledger', 'quests', 'clubName', 'country', 'created'
 ];
 
 export function serialize(club) {
@@ -24,6 +27,19 @@ const MIGRATIONS = {
   1: (st) => Object.assign({}, st, {
     staff: st.staff || { adjoint: 0, physique: 0, recruteur: 0, kine: 0 },
     stade: st.stade || 0, academy: st.academy || 0, youth: st.youth || []
+  }),
+  // v2 : avant l'inventaire de compétences, les quêtes et le journal des transactions.
+  // Les anciennes parties repartent avec un effectif au niveau 1 et aucune compétence
+  // en réserve ; rien n'est perdu, les joueurs gardent leurs statistiques.
+  2: (st) => Object.assign({}, st, {
+    skillInv: st.skillInv || [], nextSkillUid: st.nextSkillUid || 1,
+    collected: st.collected || [], seenPlayers: st.seenPlayers || [],
+    shards: st.shards || 0, caps: st.caps || {}, ledger: st.ledger || [],
+    quests: st.quests || null, clubName: st.clubName || 'FC TonPseudo',
+    country: st.country || 'fr', created: st.created !== false,
+    squad: (st.squad || []).map((p) => Object.assign({ plv: 1, pxp: 0 }, p)),
+    // les anciennes clés de packs n'existent plus : tout devient le pack unique
+    freeQueue: (st.freeQueue || []).map(() => 'linkfoot')
   })
 };
 

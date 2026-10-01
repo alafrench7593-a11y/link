@@ -25,8 +25,11 @@ src/training.js entraînement, forme, énergie, blessures (§68, §69).
 src/transfer.js valeur, marché, vente (§71).
 src/progression.js niveaux, missions, suites de match, saison, vieillissement (§70, §72).
 src/tactics.js  tactiques, formations, rôles, composition, passerelle vers le moteur (§40 à §43).
-src/tracks.js   la colonne vertébrale de la progression : un seul axe, le niveau de club,
-                commande les paliers des cartes, du staff, du stade, du centre et des packs.
+src/tracks.js   la colonne vertébrale de la progression du club : un seul axe, le niveau,
+                commande les paliers du staff, du stade, du centre et du pack.
+src/playerxp.js niveau et XP d'un joueur, courbe exponentielle, attributs cachés (§5, §6).
+src/quests.js   quêtes et économie encadrée : plafonds par source, journal (§7, §8, §29).
+src/creation.js création du club, effectif normal de départ et joueur rare offert (§2, §3).
 src/state.js    état de départ d'un club.
 src/save.js     sérialisation versionnée et stockages (mémoire, navigateur, HTTP).
 src/league.js   classements, calendriers, montées et descentes (§72, §75).
@@ -288,23 +291,99 @@ les fonctions de `MIGRATIONS` dans `save.js`. Quand tu ajoutes un champ persista
 
 Les anciennes parties continuent de se charger.
 
+## Directeur sportif
+
+Le joueur n'incarne pas un footballeur : il dirige un club. Pendant le match il ne touche
+à rien, les 22 joueurs sont pilotés par l'IA. Il agit avant et autour : composition,
+formation, tactique, compétences équipées, entraînement, fatigue, remplacements, recrutement.
+
+```
+LinkFoot Pack → inventaire → joueur compatible → IA → décision → action → statistique → progression
+```
+
+Chaque flèche existe dans le code, et `test/progression.js` échoue si l'une d'elles se casse.
+
+### Le pack
+
+Un seul pack dans tout le jeu, le **LinkFoot Pack** : 250 jetons, 3 tirages, probabilités
+affichées avant l'ouverture et calculées côté système (§10, §11, §28, §29).
+
+| Rareté | Taux | Puissance d'une compétence | Combinaisons |
+| --- | --- | --- | --- |
+| Normal | 70 % | 0 à 19 | 8 749 |
+| Rare | 20 % | 20 à 39 | 1 873 |
+| Épique | 7 % | 40 à 59 | 383 |
+| Élite | 2 % | 60 à 74 | 97 |
+| Gold | 0,9 % | 75 à 89 | 51 |
+| Legendary | 0,1 % | 90 à 100 | 47 |
+
+La rareté n'est jamais écrite à la main : elle **découle** de la puissance calculée de la
+compétence (§16, §17). Une compétence très forte est donc rare dans le catalogue *et* rare
+au tirage. Les six raretés servent aussi aux cartes de joueurs.
+
+### Les compétences
+
+11 200 combinaisons (20 effets x 14 conditions x 5 niveaux x 8 grades), générées à la
+demande. Chacune porte un effet lu par le moteur de match : aucune n'est décorative (§14).
+
+Chaque compétence a des prérequis (poste, statistiques, niveau du joueur) et un joueur ne
+peut en porter qu'un nombre limité, qui augmente avec son niveau : 1 emplacement, 2 au
+niveau 6, 3 au niveau 15, 4 au niveau 25. Un refus nomme toujours ce qui manque (§15).
+
+### Le niveau d'un joueur
+
+Un seul niveau par joueur, monté par l'XP des matchs. L'entraînement en fragments accélère
+mais reste plafonné à 6 séances par jour : **l'argent n'achète pas une superstar** (§6).
+
+| Palier | XP | Environ |
+| --- | --- | --- |
+| 1 → 2 | 60 | 1 match |
+| 5 → 6 | 112 | 2 matchs |
+| 10 → 11 | 247 | 5 matchs |
+| 20 → 21 | 1 185 | 24 matchs |
+| 30 → 31 | 5 696 | 115 matchs |
+
+Chaque joueur porte aussi sept caractéristiques cachées (potentiel réel, régularité, grands
+matchs, sang-froid, progression, risque de blessure, adaptation tactique). Elles ne
+s'affichent pas comme des statistiques, mais `hiddenMods()` les traduit en effets réels
+pendant le match, et la fiche du joueur les résume en mots dans le rapport du recruteur (§5).
+
+### L'économie
+
+Tout gain passe par `earn(montant, source)`, qui applique un plafond quotidien par source
+et un plafond global, puis écrit une ligne dans le journal des transactions. Aucune source
+ne peut produire une quantité infinie d'argent (§7, §29).
+
+| Source | Plafond par jour |
+| --- | --- |
+| Quêtes | 900 |
+| Missions | 600 |
+| Pronostics | 400 |
+| Matchs, packs, ventes | non plafonnés |
+| Toutes sources | 2 600 |
+
+### La création du club
+
+L'effectif de départ fait 14 joueurs **normaux**, note moyenne 51, potentiel moyen 69, plus
+**un joueur rare offert** (note 66 à 70, potentiel supérieur, une compétence spéciale) qui
+aide sans gagner les matchs tout seul (§2, §3, §4).
+
 ## Une seule échelle
 
 Tout ce qui monte dans le jeu parle le même langage, et `src/tracks.js` en est la seule source.
 
 | Piste | Niveaux | Ouverte par |
 | --- | --- | --- |
-| Niveau de club | 1 → ∞ | XP des matchs et des missions |
+| Niveau de club | 1 → ∞ | XP des matchs, des missions et des quêtes |
 | Division | D5 → D1 | classement de fin de saison |
-| Carte de joueur | 1 → 5 | club 2, 5, 9, 14 · fragments, coût indexé sur la rareté |
+| Niveau d'un joueur | 1 → 40+ | XP de match, entraînement plafonné |
+| Compétences portées | 1 → 4 emplacements | niveau du joueur : 1, 6, 15, 25 |
 | Staff (x4) | 0 → 3 | club 2, 6, 11 · jetons |
 | Stade | 0 → 4 | club 3, 7, 12, 18 · jetons |
 | Centre de formation | 0 → 3 | club 4, 9, 15 · jetons |
-| Packs | Basic → Or | club 0, 3, 7, 10, 12 · jetons |
 
-Les 7 raretés (Normal, Commun, Rare, Épique, Élite, Or, Légendaire) servent aux cartes,
-aux compétences et aux probabilités des packs : une seule table, dans `cards.js`.
-Un joueur ne porte jamais une compétence plus rare que sa propre carte.
+Les six raretés servent aux cartes, aux compétences et aux probabilités du pack :
+une seule table, dans `cards.js`.
 
 `club.progressBoard()` rend ces pistes sous une forme unique
 (`{ key, label, lvl, max, pct, nextLabel, cost, locked, can, why }`), ce qui permet à

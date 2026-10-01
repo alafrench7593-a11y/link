@@ -3,7 +3,9 @@
 'use strict';
 // LinkFoot : état de départ d'un club. Tout l'état du jeu tient dans cet objet,
 // ce qui le rend sérialisable tel quel (voir save.js).
-const P = (id, name, pos, ovr) => ({ id, name, pos, ovr });
+// Un joueur de l'effectif de démonstration. Son niveau découle de sa note :
+// un joueur à 66 est déjà construit, un joueur à 58 débute (§6).
+const P = (id, name, pos, ovr) => ({ id, name, pos, ovr, plv: Math.max(1, Math.round((ovr - 46) / 3.5)), pxp: 0 });
 
 function INITIAL_STATE() {
   return {
@@ -16,6 +18,12 @@ function INITIAL_STATE() {
         P(10, 'K. Rouvière', 'ATT', 69), P(11, 'B. Adebanjo', 'ATT', 64), P(12, 'E. Castellane', 'ATT', 62), P(13, 'R. Moulinet', 'GB', 58), P(14, 'I. Tavares', 'DEF', 59)
       ],
       nextId: 100, pack: null, match: null, record: { w: 1, d: 1, l: 0 },
+      // §12, §19 : l'inventaire de compétences. Une compétence obtenue dans un pack
+      // arrive ici, puis s'équipe sur un joueur compatible, puis agit dans le match.
+      skillInv: [], nextSkillUid: 1, collected: [], seenPlayers: [],
+      // §7, §29 : l'économie encadrée. `caps` compte les gains du jour par source,
+      // `ledger` garde le journal des transactions.
+      shards: 0, caps: {}, ledger: [], quests: null, clubName: 'FC TonPseudo', country: 'fr', created: true,
       kit: { c1: '#2ECC71', c2: '#0C1210', pat: 'uni', collar: 'rond', sponsor: true }, showKit: false, cam: '2d',
       xp: 340, level: 7, dayStreak: 3, dayClaimed: false, winStreak: 0, showHub: false, levelUp: null, now: Date.now(), freePackAt: Date.now() + 90000, freeQueue: [],
       division: 4, seasonP: 2, lastGain: null,
@@ -1449,86 +1457,299 @@ const Players = {
   }
 };
 
-// LinkFoot : Compétences procédurales : 20 effets x 14 conditions x 7 raretés x 5 niveaux (§32 à §36).
-// Les 7 raretés sont celles des cartes (cards.js) : une seule échelle dans tout le jeu.
-// Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
+// LinkFoot : SkillEngine (§12 à §20).
+// 20 effets x 14 conditions x 6 raretés x 5 niveaux = plus de 10 000 combinaisons,
+// générées à la demande, jamais stockées en dur.
+//
+// Trois règles tiennent tout le module :
+//   1. une compétence a une PUISSANCE calculée, et sa RARETÉ en découle (§16, §17) :
+//      une compétence très forte ne peut pas tomber souvent.
+//   2. une compétence a des PRÉREQUIS (poste, statistiques, niveau) : elle n'est pas
+//      équipable sur n'importe qui (§15).
+//   3. une compétence équipée change le comportement du joueur dans le moteur (§14) :
+//      ses effets sont lus par tactics.js puis par engine.js. Rien de décoratif.
 const Skills = {
   SKILL_DEF() {
     if (this._skill) return this._skill;
+    // [id, nom, catégorie, effets, description, prérequis]
+    // `req` : statistiques minimum à la rareté Élite, mises à l'échelle selon la rareté.
     const E = [
-      ['tueur', 'Tueur', 'Attaque', { sht: 6 }, 'finition sur les grosses occasions'],
-      ['visionnaire', 'Visionnaire', 'Passe', { pas: 5, dec: 4 }, 'passes qui créent le danger'],
-      ['laser', 'Passe laser', 'Passe', { pas: 7 }, 'précision des passes longues'],
-      ['chef', 'Chef d’orchestre', 'Tactique', { dec: 6, pas: 3 }, 'contrôle du rythme'],
-      ['renard', 'Renard des surfaces', 'Attaque', { sht: 4, dec: 4 }, 'déplacements dans la surface'],
-      ['sprinter', 'Sprinter', 'Physique', { pace: 7 }, 'exploitation des espaces en contre'],
-      ['pressing', 'Pressing fou', 'Défense', { def: 4, pace: 3, drain: 1.25 }, 'pressing plus intense, plus fatigant'],
-      ['gladiateur', 'Gladiateur', 'Physique', { phy: 7 }, 'duels physiques'],
-      ['calme', 'Calme absolu', 'Mental', { dec: 6, pas: 2 }, 'moins d’erreurs sous pression'],
-      ['mur', 'Mur', 'Défense', { def: 8 }, 'interventions dans sa surface'],
-      ['acier', 'Mental d’acier', 'Mental', { dec: 5, sht: 2 }, 'résiste à la pression des grands moments'],
-      ['dribbleur', 'Funambule', 'Dribble', { dri: 7 }, 'dribbles réussis'],
-      ['aerien', 'Tour de contrôle', 'Coup de pied arrêté', { phy: 5, def: 3, sht: 2 }, 'jeu de tête'],
-      ['moteur', 'Moteur', 'Physique', { drain: 0.8, pace: 2 }, 'endurance, fatigue plus lente'],
-      ['leader', 'Leader', 'Leadership', { team: { dec: 2 } }, 'concentration des coéquipiers'],
-      ['meneur', 'Meneur', 'Collectif', { team: { pas: 2 } }, 'jeu collectif autour de lui'],
-      ['grinta', 'Grinta', 'Mental', { phy: 5, def: 3, pace: 3, team: { phy: 1 } }, 'agressivité et pressing quand l’équipe est menée'],
-      ['clutch', 'Clutch', 'Spécial', { sht: 5, dec: 5 }, 'dernières minutes d’un match serré'],
-      ['gk_reflex', 'Réflexes félins', 'Gardien', { ref: 7 }, 'parades réflexes'],
-      ['gk_mains', 'Mains sûres', 'Gardien', { han: 7 }, 'ballons captés, pas de rebond']
+      ['tueur', 'Tueur', 'Attaque', { sht: 6 }, 'finition sur les grosses occasions', { TIR: 72, ATQ: 66 }],
+      ['visionnaire', 'Visionnaire', 'Passe', { pas: 5, dec: 4 }, 'passes qui créent le danger', { PAS: 72 }],
+      ['laser', 'Passe laser', 'Passe', { pas: 7 }, 'précision des passes longues', { PAS: 75 }],
+      ['chef', 'Chef d’orchestre', 'Tactique', { dec: 6, pas: 3 }, 'contrôle du rythme', { PAS: 68 }],
+      ['renard', 'Renard des surfaces', 'Attaque', { sht: 4, dec: 4 }, 'déplacements dans la surface', { ATQ: 70 }],
+      ['sprinter', 'Sprinter', 'Physique', { pace: 7 }, 'exploitation des espaces en contre', { VIT: 75 }],
+      ['pressing', 'Pressing fou', 'Défense', { def: 4, pace: 3, drain: 1.25 }, 'pressing plus intense, plus fatigant', { PHY: 68, VIT: 64 }],
+      ['gladiateur', 'Gladiateur', 'Physique', { phy: 7 }, 'duels physiques', { PHY: 75 }],
+      ['calme', 'Calme absolu', 'Mental', { dec: 6, pas: 2 }, 'moins d’erreurs sous pression', {}],
+      ['mur', 'Mur', 'Défense', { def: 8 }, 'interventions dans sa surface', { 'DÉF': 75 }],
+      ['acier', 'Mental d’acier', 'Mental', { dec: 5, sht: 2 }, 'résiste à la pression des grands moments', {}],
+      ['dribbleur', 'Funambule', 'Dribble', { dri: 7 }, 'dribbles réussis', { DRI: 75 }],
+      ['aerien', 'Tour de contrôle', 'Coup de pied arrêté', { phy: 5, def: 3, sht: 2 }, 'jeu de tête', { PHY: 70 }],
+      ['moteur', 'Moteur', 'Physique', { drain: 0.8, pace: 2 }, 'endurance, fatigue plus lente', { PHY: 64 }],
+      ['leader', 'Leader', 'Leadership', { team: { dec: 2 } }, 'concentration des coéquipiers', {}],
+      ['meneur', 'Meneur', 'Collectif', { team: { pas: 2 } }, 'jeu collectif autour de lui', { PAS: 66 }],
+      ['grinta', 'Grinta', 'Mental', { phy: 5, def: 3, pace: 3, team: { phy: 1 } }, 'agressivité et pressing quand l’équipe est menée', { PHY: 66 }],
+      ['clutch', 'Clutch', 'Spécial', { sht: 5, dec: 5 }, 'dernières minutes d’un match serré', { TIR: 66 }],
+      ['gk_reflex', 'Réflexes félins', 'Gardien', { ref: 7 }, 'parades réflexes', { 'RÉF': 72 }],
+      ['gk_mains', 'Mains sûres', 'Gardien', { han: 7 }, 'ballons captés, pas de rebond', { MAI: 72 }]
     ];
+    // [id, libellé, multiplicateur, raccourci]
+    // Plus la condition est étroite, plus l'effet est fort quand elle se produit.
     const C = [
-      ['always', 'en permanence', 1.0], ['trail70', 'quand l’équipe est menée après la 70e', 1.9], ['closeLate', 'dans les 15 dernières minutes d’un match serré', 1.8],
-      ['leading', 'quand l’équipe mène', 1.3], ['first15', 'dans le premier quart d’heure', 1.4], ['momentum', 'pendant 6 minutes après une action décisive', 1.7],
-      ['tired', 'quand son énergie passe sous 55 %', 1.5], ['home', 'à domicile', 1.25], ['counter', 'en phase de contre', 1.6], ['box', 'dans une surface de réparation', 1.5],
-      ['setpiece', 'sur coup de pied arrêté', 1.6], ['pressed', 'quand l’équipe subit le pressing', 1.5], ['derby', 'contre un adversaire mieux classé', 1.4], ['second', 'en seconde période', 1.2]
+      ['always', 'en permanence', 1.0, ''], ['trail70', 'quand l’équipe est menée après la 70e', 1.9, 'grinta'], ['closeLate', 'dans les 15 dernières minutes d’un match serré', 1.8, 'clutch'],
+      ['leading', 'quand l’équipe mène', 1.3, 'dominant'], ['first15', 'dans le premier quart d’heure', 1.4, 'précoce'], ['momentum', 'pendant 6 minutes après une action décisive', 1.7, 'momentum'],
+      ['tired', 'quand son énergie passe sous 55 %', 1.5, 'increvable'], ['home', 'à domicile', 1.25, 'local'], ['counter', 'en phase de contre', 1.6, 'contre'], ['box', 'dans une surface de réparation', 1.5, 'surface'],
+      ['setpiece', 'sur coup de pied arrêté', 1.6, 'CPA'], ['pressed', 'quand l’équipe subit le pressing', 1.5, 'sous pression'], ['derby', 'contre un adversaire mieux classé', 1.4, 'outsider'], ['second', 'en seconde période', 1.2, '2e MT']
     ];
-    // une seule échelle de raretés dans tout le jeu : celle des cartes (cards.js).
-    // Les compétences, les packs et les joueurs parlent donc le même langage.
-    const RAR = this.RARITY().map((r, i) => [r.id, r.label, 0.55 + i * 0.21, r.tint]);
-    const POSOK = { GB: ['gk_reflex', 'gk_mains', 'calme', 'leader', 'acier', 'moteur'], DEF: ['mur', 'gladiateur', 'aerien', 'leader', 'calme', 'moteur', 'grinta', 'pressing', 'laser', 'sprinter', 'acier'], MIL: ['visionnaire', 'laser', 'chef', 'meneur', 'moteur', 'pressing', 'dribbleur', 'calme', 'grinta', 'clutch', 'gladiateur', 'sprinter'], ATT: ['tueur', 'renard', 'sprinter', 'dribbleur', 'clutch', 'aerien', 'grinta', 'acier', 'gladiateur', 'visionnaire'] };
-    return (this._skill = { E, C, RAR, POSOK, LVL: ['I', 'II', 'III', 'IV', 'V'] });
+    const POSOK = {
+      GB: ['gk_reflex', 'gk_mains', 'calme', 'leader', 'acier', 'moteur'],
+      DEF: ['mur', 'gladiateur', 'aerien', 'leader', 'calme', 'moteur', 'grinta', 'pressing', 'laser', 'sprinter', 'acier'],
+      MIL: ['visionnaire', 'laser', 'chef', 'meneur', 'moteur', 'pressing', 'dribbleur', 'calme', 'grinta', 'clutch', 'gladiateur', 'sprinter'],
+      ATT: ['tueur', 'renard', 'sprinter', 'dribbleur', 'clutch', 'aerien', 'grinta', 'acier', 'gladiateur', 'visionnaire']
+    };
+    return (this._skill = { E, C, POSOK, LVL: ['I', 'II', 'III', 'IV', 'V'] });
   },
 
-  skillCount() { const D = this.SKILL_DEF(); let n = 0; for (const pos in D.POSOK) n += D.POSOK[pos].length; return n * D.C.length * D.RAR.length * D.LVL.length; },
-
-  makeSkill(eid, cid, rar, lvl, cond) {
-    const D = this.SKILL_DEF(), e = D.E.find((x) => x[0] === eid), c = D.C[cid], R2 = D.RAR[rar];
-    const mult = R2[2] * (0.7 + lvl * 0.15) * c[2] * 0.55;
-    const eff = {}; for (const k in e[3]) eff[k] = k === 'drain' ? e[3][k] : k === 'team' ? Object.fromEntries(Object.entries(e[3][k]).map(([a, v]) => [a, v * mult])) : e[3][k] * mult;
-    const name = e[1] + (lvl ? ' ' + D.LVL[lvl] : '') + (c[0] === 'always' ? '' : ' · ' + ['', 'grinta', 'clutch', 'dominant', 'précoce', 'momentum', 'increvable', 'local', 'contre', 'surface', 'CPA', 'sous pression', 'outsider', '2e MT'][cid]);
-    return { id: eid + ':' + cid + ':' + rar + ':' + lvl, eid, cid: c[0], name, cat: e[2], rar: R2[0], rarLabel: R2[1], color: R2[3], lvl: lvl + 1, eff, desc: e[4] + (c[0] === 'always' ? '' : ', ' + c[1]) + '.' };
+  // Le nombre réel de combinaisons : l'objectif du §12 est de dépasser 10 000.
+  skillCount() {
+    const D = this.SKILL_DEF();
+    return D.E.length * D.C.length * D.LVL.length * this.GRADES();
   },
 
+  // §17 : la puissance réelle d'une compétence, de 0 à 100.
+  // Elle se calcule à partir de l'effet, de l'étroitesse de la condition, du niveau
+  // et du grade du tirage. La RARETÉ EN DÉCOULE : elle n'entre jamais dans le calcul,
+  // sinon le raisonnement tourne en rond. C'est la règle du §16 et du §17.
+  GRADES() { return 8; },
+
+  rawPower(eid, cid, lvl, grade) {
+    const D = this.SKILL_DEF(), e = D.E.find((x) => x[0] === eid), c = D.C[cid];
+    if (!e || !c) return 0;
+    let raw = 0;
+    for (const k in e[3]) {
+      if (k === 'drain') raw += Math.abs(1 - e[3][k]) * 16;
+      else if (k === 'team') for (const t in e[3][k]) raw += e[3][k][t] * 3.4;   // un effet collectif pèse lourd
+      else raw += e[3][k];
+    }
+    return raw * c[2] * (0.6 + lvl * 0.2) * (0.7 + grade * 0.1);
+  },
+
+  // Mise à l'échelle sur 0-100. L'exposant étale volontairement le haut du spectre :
+  // très peu de combinaisons atteignent Gold et Legendary, ce qui est exactement
+  // ce que demande le §18.
+  skillPower(eid, cid, lvl, grade) {
+    const raw = this.rawPower(eid, cid, lvl, grade);
+    // l'échelle est calée pour que la combinaison la plus forte du jeu atteigne 100
+    // sans que rien ne s'y empile : chaque rareté est plus étroite que la précédente.
+    return Math.max(0, Math.min(100, Math.round(100 * Math.pow(raw / 38.5, 1.9))));
+  },
+
+  // L'index des combinaisons, rangées par rareté. Construit une fois, à la demande.
+  // C'est lui qui garantit qu'un tirage Legendary tire vraiment dans les compétences
+  // les plus puissantes du jeu, et pas dans une approximation.
+  SKILL_INDEX() {
+    if (this._skIdx) return this._skIdx;
+    const D = this.SKILL_DEF(), G = this.GRADES(), R = this.RARITY();
+    const by = {}; R.forEach((r) => { by[r.id] = []; });
+    for (let ei = 0; ei < D.E.length; ei++) {
+      for (let ci = 0; ci < D.C.length; ci++) {
+        for (let l = 0; l < D.LVL.length; l++) {
+          for (let g = 0; g < G; g++) {
+            const pw = this.skillPower(D.E[ei][0], ci, l, g);
+            by[this.rarityOfPower(pw).id].push([D.E[ei][0], ci, l, g, pw]);
+          }
+        }
+      }
+    }
+    return (this._skIdx = by);
+  },
+
+  // §15 : ce qu'une compétence exige du joueur qui la porte.
+  // L'exigence suit la PUISSANCE : une compétence forte demande un joueur fort.
+  skillReq(eid, lvl, grade, power) {
+    const D = this.SKILL_DEF(), e = D.E.find((x) => x[0] === eid);
+    if (!e) return { pos: [], stats: {}, lvl: 1 };
+    const pw = power != null ? power : this.skillPower(eid, 0, lvl, grade);
+    const scale = 0.74 + pw / 100 * 0.42;            // 0,74 au plus faible, 1,16 au plus fort
+    const stats = {};
+    for (const k in e[5]) stats[k] = Math.round(e[5][k] * scale);
+    const pos = [];
+    for (const p2 in D.POSOK) if (D.POSOK[p2].indexOf(eid) >= 0) pos.push(p2);
+    // le niveau exigé suit la puissance : les compétences Normal les plus modestes
+    // sont portables dès le départ, les Legendary demandent un joueur construit.
+    return { pos, stats, lvl: 1 + Math.round(pw / 5.5), power: pw };
+  },
+
+  // §15 : ce joueur peut-il porter cette compétence ? La réponse dit toujours pourquoi.
+  canEquip(p, sk) {
+    if (!p || !sk) return { ok: false, why: 'Compétence ou joueur introuvable' };
+    const req = sk.req || this.skillReq(sk.eid, sk.lvlIdx || sk.lvl - 1, sk.grade || 0, sk.power);
+    if (req.pos.indexOf(p.pos) < 0) return { ok: false, why: 'Réservée aux ' + req.pos.join(', ') };
+    const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; });
+    for (const k in req.stats) {
+      if ((st[k] || 0) < req.stats[k]) return { ok: false, why: k + ' ' + (st[k] || 0) + ' sur ' + req.stats[k] + ' requis' };
+    }
+    const lvl = this.playerLevel(p);
+    if (lvl < req.lvl) return { ok: false, why: 'Joueur niveau ' + lvl + ', il en faut ' + req.lvl };
+    const worn = this.equippedOn(p.id).length;
+    if (worn >= this.skillSlots(p)) return { ok: false, why: 'Emplacements pleins (' + worn + ' sur ' + this.skillSlots(p) + ')' };
+    return { ok: true, why: '' };
+  },
+
+  // Le nombre de compétences qu'un joueur peut porter : il augmente avec son niveau.
+  skillSlots(p) { const l = this.playerLevel(p); return l >= 25 ? 4 : l >= 15 ? 3 : l >= 6 ? 2 : 1; },
+
+  equippedOn(id) { return (this.state.skillInv || []).filter((k) => k.on === id); },
+
+  makeSkill(eid, cid, lvl, grade) {
+    const D = this.SKILL_DEF(), e = D.E.find((x) => x[0] === eid), c = D.C[cid];
+    const g = grade || 0;
+    const power = this.skillPower(eid, cid, lvl, g);
+    const R = this.rarityOfPower(power), rarIdx = this.RARITY().findIndex((x) => x.id === R.id);
+    // l'effet réel appliqué par le moteur suit la même échelle que la puissance
+    const mult = (0.46 + power / 100 * 1.05) * 0.62;
+    const eff = {};
+    for (const k in e[3]) eff[k] = k === 'drain' ? e[3][k] : k === 'team' ? Object.fromEntries(Object.entries(e[3][k]).map(([a, v]) => [a, v * mult])) : e[3][k] * mult;
+    const name = e[1] + (lvl ? ' ' + D.LVL[lvl] : '') + (c[3] ? ' · ' + c[3] : '');
+    return {
+      id: eid + ':' + cid + ':' + lvl + ':' + g, eid, cid: c[0], cidx: cid, lvlIdx: lvl, grade: g,
+      name, cat: e[2], rar: R.id, rarIdx, rarLabel: R.label, color: R.tint, lvl: lvl + 1, power, eff,
+      req: this.skillReq(eid, lvl, g, power),
+      desc: e[4] + (c[0] === 'always' ? '' : ', ' + c[1]) + '.'
+    };
+  },
+
+  // §17 : tirer une compétence d'une rareté, c'est tirer uniformément parmi les
+  // combinaisons dont la puissance tombe dans la bande de cette rareté. Aucune
+  // compétence très puissante ne peut donc sortir à un taux élevé.
+  rollSkill(rarId, rnd) {
+    const r = rnd || Math.random, idx = this.SKILL_INDEX();
+    let list = idx[rarId];
+    if (!list || !list.length) {
+      // bande vide : on descend d'un cran plutôt que de rendre n'importe quoi
+      const R = this.RARITY(); let i = Math.max(0, R.findIndex((x) => x.id === rarId));
+      while (i > 0 && (!idx[R[i].id] || !idx[R[i].id].length)) i--;
+      list = idx[R[i].id];
+    }
+    const pick = list[Math.floor(r() * list.length)];
+    return this.makeSkill(pick[0], pick[1], pick[2], pick[3]);
+  },
+
+  // Les compétences d'un joueur pendant un match : celles qu'on lui a équipées,
+  // plus celles qu'il porte de naissance. Le moteur ne lit que cette liste (§19).
   skillsOf(p) {
-    if (p.skills) return p.skills;
-    const D = this.SKILL_DEF(), r = this.seedR((p.id || 1) * 104729 + 3), pool = D.POSOK[p.pos] || D.POSOK.MIL;
-    const n = p.ovr >= 80 ? 3 : p.ovr >= 68 ? 2 : 1, out = [];
-    // la rareté d'une compétence se tire sur les taux des cartes, pas sur une échelle à part.
-    // Un joueur ne peut pas porter une compétence plus rare que sa propre carte.
-    const R = this.RARITY(), capRar = Math.max(0, R.findIndex((x) => x.id === this.rarityFor(p).id));
+    const worn = this.state && this.state.skillInv ? this.equippedOn(p.id) : [];
+    if (p.skills) return p.skills.concat(worn);
+    return this.innateSkills(p).concat(worn);
+  },
+
+  // Les compétences innées : ce avec quoi un joueur arrive. Un joueur normal en a peu
+  // et de faible rareté : c'est au directeur sportif de le construire (§4, §27).
+  innateSkills(p) {
+    const r = this.seedR((p.id || 1) * 104729 + 3), R = this.RARITY();
+    const pool = this.SKILL_DEF().POSOK[p.pos] || this.SKILL_DEF().POSOK.MIL;
+    const n = p.ovr >= 82 ? 2 : p.ovr >= 68 ? 1 : 0;
+    const capIdx = Math.max(0, R.findIndex((x) => x.id === this.rarityFor(p).id));
+    const idx = this.SKILL_INDEX(), out = [];
     for (let i = 0; i < n; i++) {
-      let q = r(), rar = 0;
-      for (let k = 0; k < R.length; k++) { q -= R[k].rate; if (q <= 0) { rar = k; break; } }
-      out.push(this.makeSkill(pool[Math.floor(r() * pool.length)], Math.floor(r() * D.C.length), Math.min(rar, capRar), Math.min(4, Math.floor(r() * 2 + (p.ovr - 55) / 12)), null));
+      let q = r(), ri = 0;
+      for (let k = 0; k < R.length; k++) { q -= R[k].rate; if (q <= 0) { ri = k; break; } }
+      ri = Math.min(ri, capIdx);
+      // une compétence innée reste compatible avec le poste du joueur
+      const band = (idx[R[ri].id] || []).filter((x) => pool.indexOf(x[0]) >= 0);
+      const list = band.length ? band : (idx[R[0].id] || []).filter((x) => pool.indexOf(x[0]) >= 0);
+      if (!list.length) continue;
+      const pick = list[Math.floor(r() * list.length)];
+      out.push(this.makeSkill(pick[0], pick[1], pick[2], pick[3]));
     }
     return out;
+  },
+
+  // §19 : équiper change immédiatement le joueur, donc le moteur, donc le match.
+  equipSkill(uid, playerId) {
+    const s = this.state, inv = (s.skillInv || []).slice();
+    const i = inv.findIndex((k) => k.uid === uid);
+    if (i < 0) return { ok: false, why: 'Compétence introuvable' };
+    const p = s.squad.find((x) => x.id === playerId);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    const chk = this.canEquip(p, inv[i]);
+    if (!chk.ok) return { ok: false, why: 'COMPÉTENCE INCOMPATIBLE · ' + chk.why };
+    inv[i] = Object.assign({}, inv[i], { on: playerId });
+    this.buzz([25, 25, 50]);
+    this.setState({ skillInv: inv, trainLog: p.name + ' apprend ' + inv[i].name });
+    this.bumpQuest('equip', 1);
+    return { ok: true };
+  },
+
+  unequipSkill(uid) {
+    const s = this.state, inv = (s.skillInv || []).slice();
+    const i = inv.findIndex((k) => k.uid === uid);
+    if (i < 0) return { ok: false, why: 'Compétence introuvable' };
+    inv[i] = Object.assign({}, inv[i], { on: null });
+    this.setState({ skillInv: inv });
+    return { ok: true };
+  },
+
+  // L'inventaire tel que l'écran Compétences l'affiche : pour chaque compétence,
+  // qui la porte et, sinon, qui pourrait la porter.
+  skillInventory() {
+    const s = this.state, inv = s.skillInv || [];
+    return inv.map((k) => {
+      const on = k.on ? s.squad.find((p) => p.id === k.on) : null;
+      const fits = s.squad.filter((p) => this.canEquip(p, k).ok);
+      // §81 : quand personne ne peut la porter, on dit ce qui manque, pas « incompatible ».
+      let miss = '';
+      if (!fits.length && !on) {
+        const req = k.req || this.skillReq(k.eid, k.lvlIdx || k.lvl - 1, k.grade || 0, k.power);
+        const cands = s.squad.filter((p) => req.pos.indexOf(p.pos) >= 0);
+        if (!cands.length) miss = 'Aucun ' + req.pos.join(' ni ') + ' dans ton effectif';
+        else {
+          const best = cands.map((p) => this.canEquip(p, k)).find((x) => x.why);
+          const closest = cands.sort((a, b2) => this.playerLevel(b2) - this.playerLevel(a))[0];
+          miss = this.canEquip(closest, k).why + ' (ton meilleur candidat : ' + closest.name + ')';
+          if (!miss && best) miss = best.why;
+        }
+      }
+      return Object.assign({}, k, {
+        onName: on ? on.name : null,
+        fitCount: fits.length,
+        fits: fits.map((p) => ({ id: p.id, name: p.name, pos: p.pos, ovr: p.ovr })),
+        miss,
+        reqLine: this.reqLine(k)
+      });
+    });
+  },
+
+  reqLine(k) {
+    const req = k.req || this.skillReq(k.eid, k.lvlIdx || k.lvl - 1, k.grade || 0, k.power);
+    const st = Object.keys(req.stats).map((x) => x + ' ' + req.stats[x]);
+    return [req.pos.join('/'), st.join(', '), 'niveau ' + req.lvl].filter(Boolean).join(' · ');
   }
 };
 
 // LinkFoot : Cartes : raretés, catalogue de 500, packs, collection, fragments et niveaux (§56 à §65).
 // Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
 const Cards = {
+  // §11 et §16 : six raretés, taux exacts du cahier des charges, affichés avant l'ouverture.
+  // `pw` est la bande de puissance d'une compétence qui tombe dans cette rareté (§17) :
+  // plus une compétence est forte, plus elle est rare, et plus son taux de drop est faible.
   RARITY() {
     return [
-      { id: 'normal', label: 'Normal', rate: 0.55, lo: 48, hi: 64, shards: 1, tint: '#9AA3B0', color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', ink: '#171B21' },
-      { id: 'common', label: 'Commun', rate: 0.25, lo: 56, hi: 70, shards: 2, tint: '#CFE0D4', color: 'linear-gradient(135deg, #CFE0D4, #8FA89A)', ink: '#171B21' },
-      { id: 'rare', label: 'Rare', rate: 0.12, lo: 64, hi: 77, shards: 5, tint: '#4FA8E8', color: 'linear-gradient(135deg, #4FA8E8, #2F8FE0)', ink: '#06101F' },
-      { id: 'epic', label: 'Épique', rate: 0.05, lo: 71, hi: 83, shards: 12, tint: '#C39BFF', color: 'linear-gradient(135deg, #C39BFF, #7B4FD8)', ink: '#120A24' },
-      { id: 'elite', label: 'Élite', rate: 0.02, lo: 77, hi: 88, shards: 30, tint: '#2ECC71', color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', ink: '#04201C' },
-      { id: 'gold', label: 'Or', rate: 0.009, lo: 82, hi: 92, shards: 80, tint: '#FFC24A', color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', ink: '#241703' },
-      { id: 'legendary', label: 'Légendaire', rate: 0.001, lo: 86, hi: 95, shards: 200, tint: '#FF4757', color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', ink: '#2A0812' }
+      { id: 'normal', label: 'Normal', rate: 0.70, lo: 48, hi: 64, pw: [0, 19], shards: 1, tint: '#9AA3B0', color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', ink: '#171B21' },
+      { id: 'rare', label: 'Rare', rate: 0.20, lo: 62, hi: 74, pw: [20, 39], shards: 4, tint: '#4FA8E8', color: 'linear-gradient(135deg, #4FA8E8, #2F8FE0)', ink: '#06101F' },
+      { id: 'epic', label: 'Épique', rate: 0.07, lo: 71, hi: 81, pw: [40, 59], shards: 12, tint: '#C39BFF', color: 'linear-gradient(135deg, #C39BFF, #7B4FD8)', ink: '#120A24' },
+      { id: 'elite', label: 'Élite', rate: 0.02, lo: 78, hi: 87, pw: [60, 74], shards: 30, tint: '#2ECC71', color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', ink: '#04201C' },
+      { id: 'gold', label: 'Gold', rate: 0.009, lo: 84, hi: 92, pw: [75, 89], shards: 80, tint: '#FFC24A', color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', ink: '#241703' },
+      { id: 'legendary', label: 'Legendary', rate: 0.001, lo: 88, hi: 96, pw: [90, 100], shards: 200, tint: '#FF4757', color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', ink: '#2A0812' }
     ];
+  },
+
+  // La rareté d'une compétence se déduit de sa puissance réelle (§17), jamais l'inverse.
+  rarityOfPower(pw) {
+    const R = this.RARITY(), v = Math.max(0, Math.min(100, pw));
+    return R.find((x) => v >= x.pw[0] && v <= x.pw[1]) || R[0];
   },
 
   rarityOf(id) { return this.RARITY().find((r) => r.id === id) || this.RARITY()[0]; },
@@ -1561,18 +1782,18 @@ const Cards = {
     return pool[Math.floor((rnd || Math.random)() * pool.length)];
   },
 
+  // §10 : UN SEUL PACK. Pas de catalogue de packs à comprendre, un seul bouton.
+  // §28 : son coût, son contenu possible et ses probabilités sont affichés avant l'ouverture.
   PACK_DEFS() {
     return [
-      { key: 'basic', name: 'Pack Basic', n: 3, cost: 150, req: 0, w: {}, color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', fx: 'bronze' },
-      { key: 'premium', name: 'Pack Premium', n: 4, cost: 400, req: 3, w: { normal: 0.4, common: 1.2, rare: 2.2, epic: 2.5, elite: 2, gold: 1.6, legendary: 1.4 }, color: 'linear-gradient(135deg, #F2F6F4, #AEB9C2)', fx: 'silver' },
-      { key: 'elite', name: 'Pack Élite', n: 3, cost: 900, req: 7, w: { normal: 0.1, common: 0.5, rare: 2, epic: 4, elite: 5, gold: 3, legendary: 2.5 }, color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', fx: 'silver' },
-      { key: 'gold', name: 'Pack Or', n: 3, cost: 2000, req: 12, w: { normal: 0, common: 0.2, rare: 1.2, epic: 4, elite: 8, gold: 9, legendary: 6 }, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', fx: 'gold' },
-      { key: 'special', name: 'Pack Spécial', n: 2, cost: 1200, req: 10, w: { normal: 0, common: 0, rare: 2, epic: 5, elite: 6, gold: 5, legendary: 4 }, color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', fx: 'gold' }
+      { key: 'linkfoot', name: 'LinkFoot Pack', n: 3, cost: 250, req: 0, w: {},
+        color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', fx: 'gold',
+        content: 'joueur, compétence ou fragments' }
     ];
   },
 
-  // État d'un pack : la même réponse pour l'affichage et pour l'ouverture.
-  // Un pack verrouillé dit pourquoi : aucun bouton muet (§81).
+  THE_PACK() { return this.PACK_DEFS()[0]; },
+
   packState(def) {
     const s = this.state, lock = this.lockOf(def.req || 0);
     const poor = s.balance < def.cost;
@@ -1599,44 +1820,87 @@ const Cards = {
     return { have, total: pool.length };
   },
 
-  UPGRADE_COST() { return [0, 25, 60, 140, 320]; },
+  // §10 : le contenu d'un pack. Un tirage = une rareté (taux du §11), puis le lot :
+  // un joueur, une compétence de cette rareté, ou des fragments si le lot est un doublon.
+  // Tirage côté système, jamais côté affichage (§29).
+  PACK_SLOTS() { return [{ kind: 'player', w: 0.45 }, { kind: 'skill', w: 0.55 }]; },
 
-  cardLevel(p) { return p.lvl || 1; },
+  drawSlot(rnd) {
+    const S = this.PACK_SLOTS(), q = (rnd || Math.random)();
+    let a = 0; for (const x of S) { a += x.w; if (q <= a) return x.kind; }
+    return S[S.length - 1].kind;
+  },
 
-  // Monter une carte coûte plus cher si elle est rare : la rareté de la carte
-  // et son niveau parlent le même langage que les fragments qu'elle rapporte.
-  upgradeInfo(p) {
-    const lvl = this.cardLevel(p), max = lvl >= 5;
-    const R = this.RARITY(), ri = Math.max(0, R.findIndex((x) => x.id === (p.rar || this.rarityFor(p).id)));
-    const cost = max ? 0 : Math.round(this.UPGRADE_COST()[lvl] * (1 + ri * 0.35));
-    const lock = this.lockOf(this.gateOf('card', lvl + 1));
-    const poor = (this.state.shards || 0) < cost;
-    return { lvl, max, cost, rar: R[ri].id, rarLabel: R[ri].label, locked: lock.locked && !max, need: lock.need,
-      can: !max && !lock.locked && !poor,
-      why: max ? 'Niveau maximum' : lock.locked ? lock.why : poor ? 'Il te manque ' + (cost - (this.state.shards || 0)) + ' fragments' : '' };
+  // Un tirage complet : rareté, puis joueur ou compétence de cette rareté.
+  drawLot(rnd, owned) {
+    const R = this.RARITY(), r = rnd || Math.random;
+    let q = r(), pick = R[0];
+    for (let i = 0; i < R.length; i++) { q -= R[i].rate; if (q <= 0) { pick = R[i]; break; } }
+    if (this.drawSlot(r) === 'skill') {
+      const sk = this.rollSkill(pick.id, r);
+      return { kind: 'skill', rar: pick.id, skill: sk, name: sk.name, ovr: sk.power, label: pick.label, color: pick.color, shards: pick.shards };
+    }
+    const pool = this.CARD_POOL().filter((c) => c.rar === pick.id);
+    const c = pool[Math.floor(r() * pool.length)];
+    const dup = owned && owned.has(c.id);
+    return dup
+      ? { kind: 'shards', rar: pick.id, name: c.name, ovr: c.ovr, label: pick.label, color: pick.color, dup: true, shards: pick.shards, id: c.id, pos: c.pos }
+      : { kind: 'player', rar: pick.id, name: c.name, ovr: c.ovr, pos: c.pos, id: c.id, label: pick.label, color: pick.color, shards: pick.shards };
+  },
+
+  // L'ouverture complète, côté règles : l'écran ne fait que l'animer.
+  openPack(opts) {
+    const o = opts || {}, s = this.state, def = this.THE_PACK();
+    if (!o.free) { const st2 = this.packState(def); if (!st2.can) return { ok: false, why: st2.why }; }
+    const r = o.rnd || Math.random;
+    const owned = new Set((s.squad || []).map((p) => p.id).concat(s.collected || []));
+    const got = [];
+    let shards = 0;
+    for (let i = 0; i < def.n; i++) {
+      const lot = this.drawLot(r, owned);
+      if (lot.kind === 'player') owned.add(lot.id);
+      if (lot.kind === 'shards') shards += lot.shards;
+      got.push(lot);
+    }
+    const order = this.RARITY().map((x) => x.id);
+    got.sort((a, b) => order.indexOf(b.rar) - order.indexOf(a.rar) || (b.ovr || 0) - (a.ovr || 0));
+    return { ok: true, def, got, shards, free: !!o.free };
+  },
+
+  // Encaisser le pack : les joueurs entrent dans l'effectif, les compétences dans l'inventaire,
+  // les doublons en fragments. §19 : tout est immédiatement disponible partout.
+  commitPack(res) {
+    if (!res || !res.ok) return { ok: false };
+    const s = this.state, def = res.def;
+    const squad = s.squad.slice(), inv = (s.skillInv || []).slice(), collected = (s.collected || []).slice();
+    let uid = s.nextSkillUid || 1;
+    res.got.forEach((g) => {
+      if (g.kind === 'player') { squad.push(this.cardToPlayer(g)); collected.push(g.id); }
+      else if (g.kind === 'skill') { inv.push(Object.assign({}, g.skill, { uid: uid++, on: null })); }
+    });
+    const cost = res.free ? 0 : def.cost;
+    this.setState({ squad, skillInv: inv, collected, nextSkillUid: uid,
+      shards: (s.shards || 0) + res.shards,
+      balance: s.balance - cost,
+      missions: this.bumpMission(s.missions, 'pack', 1),
+      freeQueue: res.free ? s.freeQueue.slice(1) : s.freeQueue });
+    if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
+    this.bumpQuest('pack', 1);
+    return { ok: true };
+  },
+
+  // Une carte du catalogue devient un vrai joueur de l'effectif (§19).
+  cardToPlayer(c) {
+    return { id: c.id, name: c.name, pos: c.pos, ovr: c.ovr, rar: c.rar, fresh: true, scouted: true,
+      plv: 1, pxp: 0, pot: Math.min(97, c.ovr + 4 + Math.floor(Math.random() * 10)) };
   },
 
   // La rareté d'un joueur de l'effectif, déduite de sa note quand la carte n'en porte pas.
   rarityFor(p) {
     const R = this.RARITY();
+    if (p.rar) { const hit = R.find((x) => x.id === p.rar); if (hit) return hit; }
     for (let i = R.length - 1; i >= 0; i--) if (p.ovr >= R[i].lo) return R[i];
     return R[0];
-  },
-
-  levelUpPlayer(id) {
-    const s = this.state, p = s.squad.find((x) => x.id === id);
-    if (!p) return { ok: false, why: 'Joueur introuvable' };
-    const info = this.upgradeInfo(p);
-    if (!info.can) return { ok: false, why: info.why };
-    const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; });
-    const w = this.statW(p.pos), keys = Object.keys(w).sort((a, b) => w[b] - w[a]).slice(0, 2);
-    keys.forEach((k) => { if (st[k] != null && st[k] < 99) st[k] += 2; });
-    const ovr = Math.max(p.ovr, this.ovrOf(p.pos, st));
-    this.buzz([30, 30, 60]);
-    this.setState({ shards: (s.shards || 0) - info.cost,
-      squad: s.squad.map((x) => (x.id === id ? Object.assign({}, x, { st, ovr, lvl: info.lvl + 1 }) : x)),
-      trainLog: p.name + ' passe niveau ' + (info.lvl + 1) + ' · ' + keys.map((k) => '+2 ' + k).join(', ') });
-    return { ok: true, lvl: info.lvl + 1 };
   },
 
   MATCH_CARDS() {
@@ -1818,11 +2082,31 @@ const Training = {
 // LinkFoot : Marché des transferts : valeur, offres, vente (§71).
 // Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
 const Transfer = {
+  // §25 : la valeur se calcule, elle n'est pas écrite. Niveau, note, âge, potentiel,
+  // forme, rareté et compétences portées entrent tous dedans. Un joueur normal
+  // longuement développé finit donc par valoir cher : c'est une vraie économie.
   valueOf(p) {
     const age = p.age != null ? p.age : this.profile(p).age, pot = p.pot != null ? p.pot : p.ovr;
     const ageK = age <= 21 ? 1.35 : age <= 25 ? 1.2 : age <= 29 ? 1 : age <= 32 ? 0.7 : 0.45;
     const formK = 0.85 + ((p.form != null ? p.form : 70) - 50) / 200;
-    return Math.round(Math.pow(Math.max(40, p.ovr) / 10, 3.2) * ageK * formK * (1 + Math.max(0, pot - p.ovr) / 40) / 3) * 10;
+    const lvlK = 1 + (this.playerLevel(p) - 1) * 0.035;                 // le travail accompli se paie
+    const rarK = 1 + Math.max(0, this.RARITY().findIndex((x) => x.id === this.rarityFor(p).id)) * 0.07;
+    const skills = this.state && this.state.skillInv ? this.equippedOn(p.id) : [];
+    const skK = 1 + skills.reduce((a, k) => a + k.power / 260, 0);      // une compétence rare vaut cher
+    const base = Math.pow(Math.max(40, p.ovr) / 10, 3.2) * ageK * formK * (1 + Math.max(0, pot - p.ovr) / 40) / 3;
+    return Math.round(base * lvlK * rarK * skK) * 10;
+  },
+
+  // Le détail de la valeur, pour que l'écran puisse l'expliquer plutôt que l'afficher sèchement.
+  valueBreakdown(p) {
+    const skills = this.state && this.state.skillInv ? this.equippedOn(p.id) : [];
+    return {
+      value: this.valueOf(p), lvl: this.playerLevel(p),
+      rar: this.rarityFor(p).label,
+      skills: skills.length,
+      line: 'Niveau ' + this.playerLevel(p) + ' · ' + this.rarityFor(p).label
+        + (skills.length ? ' · ' + skills.length + ' compétence' + (skills.length > 1 ? 's' : '') : '')
+    };
   },
 
   marketList() {
@@ -1846,8 +2130,13 @@ const Transfer = {
     if (!p) return { ok: false, why: 'Joueur introuvable' };
     const price = Math.round(this.profile(p).value * 0.6);
     this.buzz(25);
-    this.setState({ squad: s.squad.filter((x) => x.id !== id), balance: s.balance + price, sel: null,
+    // les compétences du joueur vendu retournent en réserve : elles t'appartiennent (§19)
+    const inv = (s.skillInv || []).map((k) => (k.on === id ? Object.assign({}, k, { on: null }) : k));
+    this.setState({ squad: s.squad.filter((x) => x.id !== id), sel: null, skillInv: inv,
       trainLog: p.name + ' vendu pour ' + price + ' jetons' });
+    this.earn(price, 'vente', 'Vente de ' + p.name);
+    if (p.base != null && price > p.base) this.bumpQuest('sell', 1);
+    else if (price > this.valueOf(Object.assign({}, p, { plv: 1 }))) this.bumpQuest('sell', 1);
     return { ok: true, price };
   }
 };
@@ -1863,8 +2152,8 @@ const Progression = {
       xp -= this.levelNeed(level); level++;
       bal += 100 + level * 20;
       // un pack offert tous les 5 niveaux, pris dans la vraie liste des packs
-      const key = level % 5 === 0 ? (level >= 15 ? 'gold' : level >= 10 ? 'elite' : 'premium') : null;
-      if (key) queue.push(key);
+      const key = level % 5 === 0 ? 'linkfoot' : null;   // §10 : un seul pack
+      if (key) queue.push('linkfoot');
       // ce que ce niveau débloque, dit une seule fois, au moment où ça arrive
       const opened = this.unlocksAt(level);
       ups.push({ level, text: '+' + (100 + level * 20) + ' jetons' + (key ? ' + ' + this.packName(key) + ' offert' : '') + (opened.length ? ' · débloque ' + opened.join(', ') : '') });
@@ -1875,11 +2164,14 @@ const Progression = {
   // Ce que le niveau `l` ouvre : lu dans les paliers, jamais écrit en dur deux fois.
   unlocksAt(l) {
     const G = this.GATES(), out = [];
-    G.card.forEach((n, i) => { if (n === l && i > 1) out.push('niveau de carte ' + i); });
     G.staff.forEach((n, i) => { if (n === l && i > 0) out.push('staff niveau ' + i); });
     G.stade.forEach((n, i) => { if (n === l && i > 0) out.push(this.STADES()[i].name); });
     G.academy.forEach((n, i) => { if (n === l && i > 0) out.push(this.ACADEMIES()[i].name); });
-    this.PACK_DEFS().forEach((d) => { if ((d.req || 0) === l) out.push(d.name); });
+    this.PACK_DEFS().forEach((d) => { if ((d.req || 0) === l && l > 0) out.push(d.name); });
+    // §8 : certains paliers de club ouvrent des quêtes plus ambitieuses
+    if (l === 5) out.push('quêtes de palier 3');
+    if (l === 10) out.push('quêtes de palier 4');
+    if (l === 15) out.push('quêtes de palier 5');
     return out;
   },
 
@@ -1895,21 +2187,33 @@ const Progression = {
     if (win) missions = this.bumpMission(missions, 'win', 1);
     if (mt.hs) missions = this.bumpMission(missions, 'goals', mt.hs);
     let squad = st.squad, prog = '';
-    if (win || mt.hs >= 2) {
-      const c = mt.xi.filter((p) => p.line !== 'GB'); let pk = c[this.rand(0, c.length - 1)]; if (mt.rat) { let bi = 0; mt.rat.H.forEach((v, k) => { if (v > mt.rat.H[bi]) bi = k; }); if (mt.xi[bi]) pk = mt.xi[bi]; }
-      const cur = squad.find((p) => p.id === pk.id);
-      if (cur && cur.ovr < 99) {
-        const st = {}; this.cardStats(cur).forEach((q) => { st[q.l] = q.v; }); const w = this.statW(cur.pos), keys = Object.keys(w).sort((a2, b2) => w[b2] - w[a2]), gains = {};
-        let ovr = this.ovrOf(cur.pos, st), guard = 0;
-        while (ovr <= cur.ovr && guard++ < 20) { const k = keys[this.rand(0, 2)]; if (st[k] < 99) { st[k]++; gains[k] = (gains[k] || 0) + 1; } ovr = this.ovrOf(cur.pos, st); }
-        squad = squad.map((p) => (p.id === pk.id ? Object.assign({}, p, { st, ovr: Math.max(ovr, cur.ovr) }) : p));
-        prog = cur.name + ' progresse ' + cur.ovr + ' → ' + Math.max(ovr, cur.ovr) + ' (' + Object.keys(gains).map((k) => '+' + gains[k] + ' ' + k).join(', ') + ')';
-      }
-    }
+    // §6, §19, §20 : chaque joueur du onze gagne de l'XP selon son temps de jeu et
+    // sa performance. C'est le seul chemin de progression d'un joueur : jouer.
+    // L'argent ne peut pas remplacer ces lignes.
+    const grown = [];
+    squad = squad.map((p) => {
+      const i = mt.xi.findIndex((x) => x.id === p.id);
+      if (i < 0) return p;
+      const stat = {
+        min: 90,
+        goals: (mt.scorers || []).filter((id) => id === p.id).length,
+        assists: (mt.assisters || []).filter((id) => id === p.id).length,
+        rating: mt.rat && mt.rat.H ? mt.rat.H[i] : 6
+      };
+      const gain = this.matchXp(p, stat);
+      const up = this.addPlayerXp(p, gain);
+      if (up.ups.length) grown.push(p.name + ' niveau ' + up.plv + (up.ups[up.ups.length - 1].capped ? ' (potentiel atteint)' : ''));
+      return Object.assign({}, p, { plv: up.plv, pxp: up.pxp, st: up.st, ovr: up.ovr });
+    });
+    if (grown.length) prog = grown.slice(0, 2).join(' · ');
     squad = this.applyFitness(squad, mt, null);
     const F = this.finances(st, res); const inv = Object.assign({}, st.inv || {}); if (win) { const drop = ['energie', 'motivation', 'pressing', 'bloc', 'contre', 'finition', 'up_VIT', 'up_TIR', 'up_PAS', 'up_DÉF'][this.rand(0, 9)]; inv[drop] = (inv[drop] || 0) + 1; }
     const L = this.addXp(st, xpGain);
-    const patch = { winStreak, missions, squad, inv, lastFin: 'Recette ' + F.gate + ' · salaires −' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net + ' jetons', coachAdvice: null, xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: st.balance + bonus + L.bonusBal + this.finances(st, res).net,
+    // §7, §29 : tout ce qui entre passe par le journal. Le match n'est pas plafonné
+    // (il coûte du temps réel), mais il est tracé comme le reste.
+    this.logMoney(F.net, 'Match : recette ' + F.gate + ', salaires −' + F.wages);
+    if (bonus) this.logMoney(bonus, 'Série de ' + winStreak + ' victoires');
+    const patch = { winStreak, missions, squad, inv, lastFin: 'Recette ' + F.gate + ' · salaires −' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net + ' jetons', coachAdvice: null, xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: st.balance + bonus + L.bonusBal + F.net,
       lastGain: '+' + xpGain + ' XP' + (bonus ? ' · série de ' + winStreak + ' victoires x' + mult + ' (+' + bonus + ' jetons)' : '') + (prog ? ' · ' + prog : '') };
     let over = L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : null;
     const seasonP = st.seasonP + 1;
@@ -1920,12 +2224,15 @@ const Progression = {
       const yg = this.youthPlayer(st);
       let ygTxt = '';
       if (yg) { patch.squad = (patch.squad || st.squad).concat([yg]); patch.youth = (st.youth || []).concat([yg.id]); ygTxt = ' Le centre sort ' + yg.name + ' (' + yg.pos + ' ' + yg.ovr + ', potentiel ' + yg.pot + ').'; }
-      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; patch.freeQueue = patch.freeQueue.concat(['gold']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un Pack Or. Les adversaires seront plus forts.' + ygTxt }; }
+      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; patch.freeQueue = patch.freeQueue.concat(['linkfoot']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un LinkFoot Pack. Les adversaires seront plus forts.' + ygTxt }; }
       else if (rank === last && st.division < 5) { patch.division = st.division + 1; over = { title: 'RELÉGUÉ EN DIVISION ' + patch.division, sub: 'Fin de saison : ' + rank + 'e sur ' + last + '. Les adversaires seront plus faibles, mais la recette du match baisse.' + ygTxt }; }
       else over = over || { title: 'FIN DE SAISON', sub: rank + 'e de la division ' + st.division + '. Termine dans les 2 premiers pour monter, évite la dernière place.' + ygTxt };
       patch.seasonP = 0; patch.record = { w: 0, d: 0, l: 0 };
     } else patch.seasonP = seasonP;
     if (over) { patch.levelUp = over; this.buzz([60, 40, 60, 40, 200]); }
+    // §8, §19 : le match fait avancer les quêtes. Elles lisent les mêmes chiffres que le rapport.
+    this.questsAfterMatch(mt, Object.assign({}, st, { squad: patch.squad || squad, winStreak: st.winStreak }));
+    if (patch.division && patch.division < st.division) this.bumpQuest('division', 1);
     return patch;
   },
 
@@ -2120,6 +2427,9 @@ const Tactics = {
 
 
 
+
+
+
 class Club {
   constructor(state) {
     this.state = Object.assign({}, INITIAL_STATE(), state || {});
@@ -2149,8 +2459,17 @@ class Club {
     const f = E.state();
     const hs = f.score.H, as = f.score.A;
     const res = hs > as ? 'w' : hs === as ? 'd' : 'l', reward = res === 'w' ? 120 : res === 'd' ? 50 : 20;
+    const logs = E.log.map((l) => ({ m: l.m, text: l.text, k: l.k, s: l.s }));
+    // §19 : qui a marqué, qui a fait la passe. Les quêtes et l'XP des joueurs en dépendent.
+    const scorers = [], assisters = [];
+    logs.filter((l) => l.k === 'G' && l.s === 'H').forEach((l) => {
+      xi.forEach((p) => {
+        if (l.text.indexOf('BUT ! ' + p.name) >= 0) scorers.push(p.id);
+        else if (l.text.indexOf('servi par ' + p.name) >= 0 || l.text.indexOf('sur un centre de ' + p.name) >= 0) assisters.push(p.id);
+      });
+    });
     const mt = { opp, oxi, bench: this.benchOf(xi), hs, as, st: f.st, rat: f.rat, res, reward, done: true, ended: true,
-      log: E.log.map((l) => ({ m: l.m, text: l.text, k: l.k, s: l.s })),
+      poss: f.poss, scorers, assisters, assists: assisters.length, log: logs,
       xi: f.en ? xi.map((p, i) => Object.assign({}, p, { energy: f.en[i], yc: f.cards[i][0], red: f.cards[i][1] })) : xi };
     const record = Object.assign({}, s.record, { [res]: s.record[res] + 1 });
     const base = Object.assign({}, this.state, { balance: s.balance + reward, record });
@@ -2191,12 +2510,12 @@ class Club {
 }
 
 // §80 : chaque domaine vit dans son fichier et vient se mélanger ici.
-Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks);
+Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation);
 
 // LinkFoot : sauvegarde. Sérialise l'état du club, le relit, et le range
 // où tu veux : mémoire, navigateur, ou ton serveur.
 
-const SAVE_VERSION = 2;
+const SAVE_VERSION = 3;
 
 // Ce qui est conservé d'une session à l'autre. Tout le reste (vue courante, match en cours,
 // animation de pack, horodatages d'affichage) est volatil et recalculé au chargement.
@@ -2204,7 +2523,10 @@ const PERSIST = [
   'formation', 'balance', 'preset', 'mentality', 'tac', 'roles', 'duties', 'lineup',
   'squad', 'nextId', 'record', 'kit', 'xp', 'level', 'dayStreak', 'dayClaimed',
   'winStreak', 'freePackAt', 'freeQueue', 'division', 'seasonP', 'missions',
-  'staff', 'stade', 'academy', 'youth', 'inv', 'coach', 'coachMode', 'cohBonus', 'trainDone'
+  'staff', 'stade', 'academy', 'youth', 'inv', 'coach', 'coachMode', 'cohBonus', 'trainDone',
+  // directeur sportif : inventaire de compétences, économie encadrée, quêtes, identité du club
+  'skillInv', 'nextSkillUid', 'collected', 'seenPlayers', 'shards',
+  'caps', 'ledger', 'quests', 'clubName', 'country', 'created'
 ];
 
 function serialize(club) {
@@ -2219,6 +2541,19 @@ const MIGRATIONS = {
   1: (st) => Object.assign({}, st, {
     staff: st.staff || { adjoint: 0, physique: 0, recruteur: 0, kine: 0 },
     stade: st.stade || 0, academy: st.academy || 0, youth: st.youth || []
+  }),
+  // v2 : avant l'inventaire de compétences, les quêtes et le journal des transactions.
+  // Les anciennes parties repartent avec un effectif au niveau 1 et aucune compétence
+  // en réserve ; rien n'est perdu, les joueurs gardent leurs statistiques.
+  2: (st) => Object.assign({}, st, {
+    skillInv: st.skillInv || [], nextSkillUid: st.nextSkillUid || 1,
+    collected: st.collected || [], seenPlayers: st.seenPlayers || [],
+    shards: st.shards || 0, caps: st.caps || {}, ledger: st.ledger || [],
+    quests: st.quests || null, clubName: st.clubName || 'FC TonPseudo',
+    country: st.country || 'fr', created: st.created !== false,
+    squad: (st.squad || []).map((p) => Object.assign({ plv: 1, pxp: 0 }, p)),
+    // les anciennes clés de packs n'existent plus : tout devient le pack unique
+    freeQueue: (st.freeQueue || []).map(() => 'linkfoot')
   })
 };
 

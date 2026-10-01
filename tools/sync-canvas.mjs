@@ -66,8 +66,16 @@ const METHODS = ['rand', 'seedR', 'statW', 'ovrOf', 'genStats', 'cardStats', 'pr
   'MATCH_CARDS', 'UPGRADE_CARDS', 'useUpgrade', 'STAFF_DEFS', 'staffLv', 'staffWages', 'hireStaff',
   'STADES', 'upgradeStade', 'ACADEMIES', 'upgradeAcademy', 'youthPlayer', 'synergy', 'finances',
   'marketList', 'formCoords', 'penalty', 'pickXI', 'benchOf', 'ROLE_OPTS', 'metrics', 'baseShape', 'engineCfg',
-  'RARITY', 'rarityOf', 'CARD_POOL', 'drawCard', 'PACK_DEFS', 'packOdds', 'collection', 'sellPlayer', 'ageSquad', 'UPGRADE_COST', 'cardLevel', 'upgradeInfo', 'rarityFor', 'levelUpPlayer', 'packState', 'packByKey', 'packName', 'GATES', 'gateOf', 'lockOf', 'progressBoard', 'trackLine', 'unlocksAt'];
-const SOURCES = ['club.js', 'players.js', 'skills.js', 'cards.js', 'staff.js', 'training.js', 'transfer.js', 'progression.js', 'tactics.js', 'tracks.js'];
+  'RARITY', 'rarityOf', 'rarityOfPower', 'CARD_POOL', 'drawCard', 'PACK_DEFS', 'THE_PACK', 'packOdds', 'collection', 'sellPlayer', 'ageSquad', 'valueOf', 'valueBreakdown',
+  'rarityFor', 'packState', 'packByKey', 'packName', 'PACK_SLOTS', 'drawSlot', 'drawLot', 'openPack', 'commitPack', 'cardToPlayer',
+  'GATES', 'gateOf', 'lockOf', 'progressBoard', 'trackLine', 'unlocksAt',
+  'GRADES', 'rawPower', 'skillPower', 'SKILL_INDEX', 'skillReq', 'canEquip', 'skillSlots', 'equippedOn', 'makeSkill', 'rollSkill', 'innateSkills',
+  'equipSkill', 'unequipSkill', 'skillInventory', 'reqLine', 'skillCount',
+  'playerXpNeed', 'playerLevel', 'playerXp', 'playerProgress', 'hiddenOf', 'hiddenMods', 'injuryRisk', 'xpRate', 'matchXp', 'addPlayerXp', 'grantPlayerXp',
+  'SHARD_XP', 'shardTrainInfo', 'shardTrain',
+  'CAPS', 'logMoney', 'dayKey', 'earn', 'spend', 'QUEST_DEFS', 'activeQuests', 'rollQuests', 'bumpQuest', 'claimQuest', 'questsAfterMatch',
+  'CREATION_STEPS', 'COUNTRIES', 'starterSquad', 'starterRare', 'canEquipRaw', 'genStatsFor', 'createClub', 'creationSummary'];
+const SOURCES = ['club.js', 'players.js', 'skills.js', 'cards.js', 'staff.js', 'training.js', 'transfer.js', 'progression.js', 'tactics.js', 'tracks.js', 'playerxp.js', 'quests.js', 'creation.js'];
 const club = SOURCES.map((f) => read('src/' + f)).join('\n');
 for (const name of METHODS) {
   const from = findMethod(club, name);

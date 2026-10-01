@@ -1,16 +1,24 @@
 // LinkFoot : Cartes : raretés, catalogue de 500, packs, collection, fragments et niveaux (§56 à §65).
 // Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
 export const Cards = {
+  // §11 et §16 : six raretés, taux exacts du cahier des charges, affichés avant l'ouverture.
+  // `pw` est la bande de puissance d'une compétence qui tombe dans cette rareté (§17) :
+  // plus une compétence est forte, plus elle est rare, et plus son taux de drop est faible.
   RARITY() {
     return [
-      { id: 'normal', label: 'Normal', rate: 0.55, lo: 48, hi: 64, shards: 1, tint: '#9AA3B0', color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', ink: '#171B21' },
-      { id: 'common', label: 'Commun', rate: 0.25, lo: 56, hi: 70, shards: 2, tint: '#CFE0D4', color: 'linear-gradient(135deg, #CFE0D4, #8FA89A)', ink: '#171B21' },
-      { id: 'rare', label: 'Rare', rate: 0.12, lo: 64, hi: 77, shards: 5, tint: '#4FA8E8', color: 'linear-gradient(135deg, #4FA8E8, #2F8FE0)', ink: '#06101F' },
-      { id: 'epic', label: 'Épique', rate: 0.05, lo: 71, hi: 83, shards: 12, tint: '#C39BFF', color: 'linear-gradient(135deg, #C39BFF, #7B4FD8)', ink: '#120A24' },
-      { id: 'elite', label: 'Élite', rate: 0.02, lo: 77, hi: 88, shards: 30, tint: '#2ECC71', color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', ink: '#04201C' },
-      { id: 'gold', label: 'Or', rate: 0.009, lo: 82, hi: 92, shards: 80, tint: '#FFC24A', color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', ink: '#241703' },
-      { id: 'legendary', label: 'Légendaire', rate: 0.001, lo: 86, hi: 95, shards: 200, tint: '#FF4757', color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', ink: '#2A0812' }
+      { id: 'normal', label: 'Normal', rate: 0.70, lo: 48, hi: 64, pw: [0, 19], shards: 1, tint: '#9AA3B0', color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', ink: '#171B21' },
+      { id: 'rare', label: 'Rare', rate: 0.20, lo: 62, hi: 74, pw: [20, 39], shards: 4, tint: '#4FA8E8', color: 'linear-gradient(135deg, #4FA8E8, #2F8FE0)', ink: '#06101F' },
+      { id: 'epic', label: 'Épique', rate: 0.07, lo: 71, hi: 81, pw: [40, 59], shards: 12, tint: '#C39BFF', color: 'linear-gradient(135deg, #C39BFF, #7B4FD8)', ink: '#120A24' },
+      { id: 'elite', label: 'Élite', rate: 0.02, lo: 78, hi: 87, pw: [60, 74], shards: 30, tint: '#2ECC71', color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', ink: '#04201C' },
+      { id: 'gold', label: 'Gold', rate: 0.009, lo: 84, hi: 92, pw: [75, 89], shards: 80, tint: '#FFC24A', color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', ink: '#241703' },
+      { id: 'legendary', label: 'Legendary', rate: 0.001, lo: 88, hi: 96, pw: [90, 100], shards: 200, tint: '#FF4757', color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', ink: '#2A0812' }
     ];
+  },
+
+  // La rareté d'une compétence se déduit de sa puissance réelle (§17), jamais l'inverse.
+  rarityOfPower(pw) {
+    const R = this.RARITY(), v = Math.max(0, Math.min(100, pw));
+    return R.find((x) => v >= x.pw[0] && v <= x.pw[1]) || R[0];
   },
 
   rarityOf(id) { return this.RARITY().find((r) => r.id === id) || this.RARITY()[0]; },
@@ -43,18 +51,18 @@ export const Cards = {
     return pool[Math.floor((rnd || Math.random)() * pool.length)];
   },
 
+  // §10 : UN SEUL PACK. Pas de catalogue de packs à comprendre, un seul bouton.
+  // §28 : son coût, son contenu possible et ses probabilités sont affichés avant l'ouverture.
   PACK_DEFS() {
     return [
-      { key: 'basic', name: 'Pack Basic', n: 3, cost: 150, req: 0, w: {}, color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', fx: 'bronze' },
-      { key: 'premium', name: 'Pack Premium', n: 4, cost: 400, req: 3, w: { normal: 0.4, common: 1.2, rare: 2.2, epic: 2.5, elite: 2, gold: 1.6, legendary: 1.4 }, color: 'linear-gradient(135deg, #F2F6F4, #AEB9C2)', fx: 'silver' },
-      { key: 'elite', name: 'Pack Élite', n: 3, cost: 900, req: 7, w: { normal: 0.1, common: 0.5, rare: 2, epic: 4, elite: 5, gold: 3, legendary: 2.5 }, color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', fx: 'silver' },
-      { key: 'gold', name: 'Pack Or', n: 3, cost: 2000, req: 12, w: { normal: 0, common: 0.2, rare: 1.2, epic: 4, elite: 8, gold: 9, legendary: 6 }, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', fx: 'gold' },
-      { key: 'special', name: 'Pack Spécial', n: 2, cost: 1200, req: 10, w: { normal: 0, common: 0, rare: 2, epic: 5, elite: 6, gold: 5, legendary: 4 }, color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', fx: 'gold' }
+      { key: 'linkfoot', name: 'LinkFoot Pack', n: 3, cost: 250, req: 0, w: {},
+        color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', fx: 'gold',
+        content: 'joueur, compétence ou fragments' }
     ];
   },
 
-  // État d'un pack : la même réponse pour l'affichage et pour l'ouverture.
-  // Un pack verrouillé dit pourquoi : aucun bouton muet (§81).
+  THE_PACK() { return this.PACK_DEFS()[0]; },
+
   packState(def) {
     const s = this.state, lock = this.lockOf(def.req || 0);
     const poor = s.balance < def.cost;
@@ -81,44 +89,87 @@ export const Cards = {
     return { have, total: pool.length };
   },
 
-  UPGRADE_COST() { return [0, 25, 60, 140, 320]; },
+  // §10 : le contenu d'un pack. Un tirage = une rareté (taux du §11), puis le lot :
+  // un joueur, une compétence de cette rareté, ou des fragments si le lot est un doublon.
+  // Tirage côté système, jamais côté affichage (§29).
+  PACK_SLOTS() { return [{ kind: 'player', w: 0.45 }, { kind: 'skill', w: 0.55 }]; },
 
-  cardLevel(p) { return p.lvl || 1; },
+  drawSlot(rnd) {
+    const S = this.PACK_SLOTS(), q = (rnd || Math.random)();
+    let a = 0; for (const x of S) { a += x.w; if (q <= a) return x.kind; }
+    return S[S.length - 1].kind;
+  },
 
-  // Monter une carte coûte plus cher si elle est rare : la rareté de la carte
-  // et son niveau parlent le même langage que les fragments qu'elle rapporte.
-  upgradeInfo(p) {
-    const lvl = this.cardLevel(p), max = lvl >= 5;
-    const R = this.RARITY(), ri = Math.max(0, R.findIndex((x) => x.id === (p.rar || this.rarityFor(p).id)));
-    const cost = max ? 0 : Math.round(this.UPGRADE_COST()[lvl] * (1 + ri * 0.35));
-    const lock = this.lockOf(this.gateOf('card', lvl + 1));
-    const poor = (this.state.shards || 0) < cost;
-    return { lvl, max, cost, rar: R[ri].id, rarLabel: R[ri].label, locked: lock.locked && !max, need: lock.need,
-      can: !max && !lock.locked && !poor,
-      why: max ? 'Niveau maximum' : lock.locked ? lock.why : poor ? 'Il te manque ' + (cost - (this.state.shards || 0)) + ' fragments' : '' };
+  // Un tirage complet : rareté, puis joueur ou compétence de cette rareté.
+  drawLot(rnd, owned) {
+    const R = this.RARITY(), r = rnd || Math.random;
+    let q = r(), pick = R[0];
+    for (let i = 0; i < R.length; i++) { q -= R[i].rate; if (q <= 0) { pick = R[i]; break; } }
+    if (this.drawSlot(r) === 'skill') {
+      const sk = this.rollSkill(pick.id, r);
+      return { kind: 'skill', rar: pick.id, skill: sk, name: sk.name, ovr: sk.power, label: pick.label, color: pick.color, shards: pick.shards };
+    }
+    const pool = this.CARD_POOL().filter((c) => c.rar === pick.id);
+    const c = pool[Math.floor(r() * pool.length)];
+    const dup = owned && owned.has(c.id);
+    return dup
+      ? { kind: 'shards', rar: pick.id, name: c.name, ovr: c.ovr, label: pick.label, color: pick.color, dup: true, shards: pick.shards, id: c.id, pos: c.pos }
+      : { kind: 'player', rar: pick.id, name: c.name, ovr: c.ovr, pos: c.pos, id: c.id, label: pick.label, color: pick.color, shards: pick.shards };
+  },
+
+  // L'ouverture complète, côté règles : l'écran ne fait que l'animer.
+  openPack(opts) {
+    const o = opts || {}, s = this.state, def = this.THE_PACK();
+    if (!o.free) { const st2 = this.packState(def); if (!st2.can) return { ok: false, why: st2.why }; }
+    const r = o.rnd || Math.random;
+    const owned = new Set((s.squad || []).map((p) => p.id).concat(s.collected || []));
+    const got = [];
+    let shards = 0;
+    for (let i = 0; i < def.n; i++) {
+      const lot = this.drawLot(r, owned);
+      if (lot.kind === 'player') owned.add(lot.id);
+      if (lot.kind === 'shards') shards += lot.shards;
+      got.push(lot);
+    }
+    const order = this.RARITY().map((x) => x.id);
+    got.sort((a, b) => order.indexOf(b.rar) - order.indexOf(a.rar) || (b.ovr || 0) - (a.ovr || 0));
+    return { ok: true, def, got, shards, free: !!o.free };
+  },
+
+  // Encaisser le pack : les joueurs entrent dans l'effectif, les compétences dans l'inventaire,
+  // les doublons en fragments. §19 : tout est immédiatement disponible partout.
+  commitPack(res) {
+    if (!res || !res.ok) return { ok: false };
+    const s = this.state, def = res.def;
+    const squad = s.squad.slice(), inv = (s.skillInv || []).slice(), collected = (s.collected || []).slice();
+    let uid = s.nextSkillUid || 1;
+    res.got.forEach((g) => {
+      if (g.kind === 'player') { squad.push(this.cardToPlayer(g)); collected.push(g.id); }
+      else if (g.kind === 'skill') { inv.push(Object.assign({}, g.skill, { uid: uid++, on: null })); }
+    });
+    const cost = res.free ? 0 : def.cost;
+    this.setState({ squad, skillInv: inv, collected, nextSkillUid: uid,
+      shards: (s.shards || 0) + res.shards,
+      balance: s.balance - cost,
+      missions: this.bumpMission(s.missions, 'pack', 1),
+      freeQueue: res.free ? s.freeQueue.slice(1) : s.freeQueue });
+    if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
+    this.bumpQuest('pack', 1);
+    return { ok: true };
+  },
+
+  // Une carte du catalogue devient un vrai joueur de l'effectif (§19).
+  cardToPlayer(c) {
+    return { id: c.id, name: c.name, pos: c.pos, ovr: c.ovr, rar: c.rar, fresh: true, scouted: true,
+      plv: 1, pxp: 0, pot: Math.min(97, c.ovr + 4 + Math.floor(Math.random() * 10)) };
   },
 
   // La rareté d'un joueur de l'effectif, déduite de sa note quand la carte n'en porte pas.
   rarityFor(p) {
     const R = this.RARITY();
+    if (p.rar) { const hit = R.find((x) => x.id === p.rar); if (hit) return hit; }
     for (let i = R.length - 1; i >= 0; i--) if (p.ovr >= R[i].lo) return R[i];
     return R[0];
-  },
-
-  levelUpPlayer(id) {
-    const s = this.state, p = s.squad.find((x) => x.id === id);
-    if (!p) return { ok: false, why: 'Joueur introuvable' };
-    const info = this.upgradeInfo(p);
-    if (!info.can) return { ok: false, why: info.why };
-    const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; });
-    const w = this.statW(p.pos), keys = Object.keys(w).sort((a, b) => w[b] - w[a]).slice(0, 2);
-    keys.forEach((k) => { if (st[k] != null && st[k] < 99) st[k] += 2; });
-    const ovr = Math.max(p.ovr, this.ovrOf(p.pos, st));
-    this.buzz([30, 30, 60]);
-    this.setState({ shards: (s.shards || 0) - info.cost,
-      squad: s.squad.map((x) => (x.id === id ? Object.assign({}, x, { st, ovr, lvl: info.lvl + 1 }) : x)),
-      trainLog: p.name + ' passe niveau ' + (info.lvl + 1) + ' · ' + keys.map((k) => '+2 ' + k).join(', ') });
-    return { ok: true, lvl: info.lvl + 1 };
   },
 
   MATCH_CARDS() {

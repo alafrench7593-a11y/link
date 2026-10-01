@@ -8,11 +8,10 @@ export const Tracks = {
   // Index = le niveau que l'on veut atteindre. 0 = disponible dès le départ.
   GATES() {
     return {
-      card: [0, 0, 2, 5, 9, 14],                       // niveaux de carte 1 à 5
       staff: [0, 2, 6, 11],                            // niveaux de staff 0 à 3
       stade: [0, 3, 7, 12, 18],                        // niveaux de stade 0 à 4
       academy: [0, 4, 9, 15],                          // niveaux de centre 0 à 3
-      pack: { basic: 0, premium: 3, elite: 7, special: 10, gold: 12 }
+      pack: { linkfoot: 0 }                            // §10 : un seul pack, ouvert dès le départ
     };
   },
 
@@ -61,6 +60,13 @@ export const Tracks = {
     row('stade', 'Stade', sl, L.length - 1, sl < L.length - 1 ? L[sl + 1].name + ' · ' + L[sl + 1].cap + ' places' : null, sl < L.length - 1 ? L[sl + 1].cost : 0, 'tokens', this.gateOf('stade', sl + 1), { name: L[sl].name, cap: L[sl].cap });
     const A = this.ACADEMIES(), al = s.academy || 0;
     row('academy', 'Centre de formation', al, A.length - 1, al < A.length - 1 ? A[al + 1].name : null, al < A.length - 1 ? A[al + 1].cost : 0, 'tokens', this.gateOf('academy', al + 1), { name: A[al].name, note: A[al].note });
+
+    // §12, §19 : la collection de compétences est une piste de progression comme les autres
+    const inv = this.state.skillInv || [];
+    out.push({ key: 'skills', label: 'Compétences', lvl: inv.length, max: Math.max(12, inv.length),
+      pct: Math.min(100, Math.round(inv.length / 12 * 100)),
+      nextLabel: inv.filter((k) => !k.on).length + ' en réserve', cost: 0, currency: 'cartes', locked: false, can: false,
+      why: inv.length ? inv.filter((k) => k.on).length + ' équipées, ' + inv.filter((k) => !k.on).length + ' en réserve' : 'Ouvre un LinkFoot Pack pour en obtenir' });
 
     const col = this.collection();
     out.push({ key: 'collection', label: 'Collection', lvl: col.have, max: col.total, pct: Math.round(col.have / col.total * 100),

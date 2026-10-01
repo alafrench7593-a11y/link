@@ -11,7 +11,9 @@ export interface Tactics {
 export interface Player {
   id: number; name: string; pos: 'GB' | 'DEF' | 'MIL' | 'ATT'; ovr: number;
   st?: Record<string, number>; fit?: number; inj?: number; form?: number; morale?: number;
-  pot?: number; age?: number; youth?: boolean; [k: string]: unknown;
+  pot?: number; age?: number; youth?: boolean;
+  plv?: number; pxp?: number; rar?: string; gift?: boolean; scouted?: boolean;
+  [k: string]: unknown;
 }
 
 export interface Opponent { club: string; ovr: number; style: string; user?: string; color?: string; }
@@ -61,17 +63,77 @@ export declare class Club {
   COACHES(): Array<{ id: string; label: string; desc: string; [k: string]: unknown }>;
   TRAININGS(): Array<{ id: string; label: string; desc: string; [k: string]: unknown }>;
 
+  // Directeur sportif : compétences, niveaux de joueur, quêtes, économie, création.
+  SKILL_DEF(): { E: unknown[]; C: unknown[]; POSOK: Record<string, string[]>; LVL: string[] };
+  skillCount(): number;
+  GRADES(): number;
+  rawPower(eid: string, cid: number, lvl: number, grade: number): number;
+  skillPower(eid: string, cid: number, lvl: number, grade: number): number;
+  SKILL_INDEX(): Record<string, Array<[string, number, number, number, number]>>;
+  makeSkill(eid: string, cid: number, lvl: number, grade: number): Skill;
+  rollSkill(rarityId: string, rnd?: () => number): Skill;
+  innateSkills(p: Player): Skill[];
+  skillsOf(p: Player): Skill[];
+  skillReq(eid: string, lvl: number, grade: number, power?: number): SkillReq;
+  canEquip(p: Player, sk: Skill): { ok: boolean; why: string };
+  skillSlots(p: Player): number;
+  equippedOn(playerId: number): Skill[];
+  equipSkill(uid: number, playerId: number): ActionResult;
+  unequipSkill(uid: number): ActionResult;
+  skillInventory(): Array<Skill & { onName: string | null; fitCount: number; miss: string; reqLine: string }>;
+  reqLine(sk: Skill): string;
+
+  playerXpNeed(level: number): number;
+  playerLevel(p: Player): number;
+  playerXp(p: Player): number;
+  playerProgress(p: Player): { lvl: number; xp: number; need: number; pct: number; slots: number; worn: number };
+  hiddenOf(p: Player): HiddenAttrs;
+  hiddenMods(p: Player, ctx?: { strongerOpp?: boolean; closeLate?: boolean; outOfPos?: boolean }): Record<string, number>;
+  matchXp(p: Player, stat: { min?: number; goals?: number; assists?: number; rating?: number }): number;
+  addPlayerXp(p: Player, gain: number): { plv: number; pxp: number; st: Record<string, number>; ovr: number; ups: unknown[] };
+  grantPlayerXp(id: number, gain: number, why?: string): ActionResult;
+  SHARD_XP(): { cost: number; xp: number; perDay: number };
+  shardTrainInfo(p: Player): { cost: number; xp: number; used: number; perDay: number; can: boolean; why: string };
+  shardTrain(id: number): ActionResult;
+
+  CAPS(): Record<string, number | null>;
+  earn(amount: number, source: string, label?: string): { given: number; asked: number; capped: string[] | null };
+  spend(amount: number, label?: string): ActionResult;
+  logMoney(amount: number, label: string): Array<{ at: number; a: number; l: string }>;
+  QUEST_DEFS(): Quest[];
+  activeQuests(): Quest[];
+  rollQuests(level: number): Quest[];
+  bumpQuest(kind: string, n?: number): Quest[];
+  claimQuest(id: string): { ok: boolean; why?: string; got?: number; xp?: number };
+
+  CREATION_STEPS(): Array<{ id: string; label: string; hint: string }>;
+  COUNTRIES(): Array<{ id: string; label: string; div: number }>;
+  starterSquad(seed?: number): Player[];
+  starterRare(seed?: number): Player;
+  createClub(opts?: { name?: string; country?: string; kit?: unknown; seed?: number }): { ok: boolean; rare: Player; squad: Player[] };
+  creationSummary(): { club: string; count: number; avg: number; pot: number; rare: unknown; line: string };
+
+  valueOf(p: Player): number;
+  valueBreakdown(p: Player): { value: number; lvl: number; rar: string; skills: number; line: string };
+
   // Progression : une seule échelle de raretés, un seul axe de niveaux (src/tracks.js).
   RARITY(): Rarity[];
   rarityOf(id: string): Rarity;
   rarityFor(p: Player): Rarity;
   GATES(): { card: number[]; staff: number[]; stade: number[]; academy: number[]; pack: Record<string, number> };
-  gateOf(kind: 'card' | 'staff' | 'stade' | 'academy', lvl: number): number;
+  gateOf(kind: 'staff' | 'stade' | 'academy', lvl: number): number;
   lockOf(need: number): { locked: boolean; need: number; why: string };
   progressBoard(): Track[];
   trackLine(t: Track): string;
   unlocksAt(level: number): string[];
   PACK_DEFS(): PackDef[];
+  THE_PACK(): PackDef;
+  PACK_SLOTS(): Array<{ kind: string; w: number }>;
+  drawLot(rnd?: () => number, owned?: Set<number>): PackLot;
+  openPack(opts?: { free?: boolean; rnd?: () => number }): { ok: boolean; why?: string; def?: PackDef; got?: PackLot[]; shards?: number; free?: boolean };
+  commitPack(res: unknown): { ok: boolean };
+  cardToPlayer(c: Card): Player;
+  rarityOfPower(power: number): Rarity;
   packState(def: PackDef): { locked: boolean; need: number; can: boolean; why: string };
   packByKey(key: string): PackDef;
   packName(key: string): string;
@@ -79,18 +141,32 @@ export declare class Club {
   drawCard(packWeights?: Record<string, number>, rnd?: () => number): Card;
   CARD_POOL(): Card[];
   collection(): { have: number; total: number };
-  cardLevel(p: Player): number;
-  upgradeInfo(p: Player): { lvl: number; max: boolean; cost: number; rar: string; rarLabel: string; locked: boolean; need: number; can: boolean; why: string };
-  levelUpPlayer(id: number): { ok: boolean; why?: string; lvl?: number };
   levelNeed(level: number): number;
 }
+
+export interface Skill {
+  id: string; eid: string; cid: string; cidx: number; lvlIdx: number; grade: number;
+  name: string; cat: string; rar: string; rarIdx: number; rarLabel: string; color: string;
+  lvl: number; power: number; eff: Record<string, unknown>; req: SkillReq; desc: string;
+  uid?: number; on?: number | null;
+}
+export interface SkillReq { pos: string[]; stats: Record<string, number>; lvl: number; power?: number; }
+export interface HiddenAttrs {
+  potReel: number; regularite: number; grandsMatchs: number; pression: number;
+  progression: number; blessure: number; adaptation: number;
+}
+export interface Quest { id: string; kind: string; goal: number; label: string; reward: number; xp: number; tier: number; prog?: number; claimed?: boolean; }
+export type PackLot =
+  | { kind: 'player'; rar: string; id: number; name: string; pos: string; ovr: number; label: string; color: string; shards: number }
+  | { kind: 'skill'; rar: string; skill: Skill; name: string; ovr: number; label: string; color: string; shards: number }
+  | { kind: 'shards'; rar: string; id: number; name: string; ovr: number; label: string; color: string; dup: true; shards: number; pos: string };
 
 /** Le résultat commun à toutes les actions qui peuvent refuser : la raison est toujours dite. */
 export interface ActionResult { ok: boolean; why?: string; lvl?: number; }
 
-export interface Rarity { id: string; label: string; rate: number; lo: number; hi: number; shards: number; tint: string; color: string; ink: string; }
+export interface Rarity { id: string; label: string; rate: number; lo: number; hi: number; pw: [number, number]; shards: number; tint: string; color: string; ink: string; }
 export interface Card { id: number; name: string; pos: string; ovr: number; rar: string; }
-export interface PackDef { key: string; name: string; n: number; cost: number; req: number; w: Record<string, number>; color: string; fx: string; }
+export interface PackDef { key: string; name: string; n: number; cost: number; req: number; w: Record<string, number>; color: string; fx: string; content?: string; }
 
 /** Une ligne du tableau de progression : la même forme pour toutes les pistes. */
 export interface Track {

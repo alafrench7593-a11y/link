@@ -61,7 +61,7 @@ button:disabled{cursor:default}
 <sc-if value="{{isHome}}" hint-placeholder-val="{{true}}"><a href="Fil.dc.html" aria-label="Retour" style="width: 38px; height: 38px; flex-shrink: 0; box-sizing: border-box; border-radius: 19px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); display: flex; align-items: center; justify-content: center; color: #F2F4F7"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></a></sc-if><sc-if value="{{notHome}}" hint-placeholder-val="{{false}}"><button sc-camel-on-click="{{goHome}}" aria-label="Retour au tableau de bord" style="width: 38px; height: 38px; flex-shrink: 0; box-sizing: border-box; border-radius: 19px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); display: flex; align-items: center; justify-content: center; color: #F2F4F7; cursor: pointer"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button></sc-if>
 <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 1px">
 <span style="font-size: 15px; font-weight: 700; letter-spacing: -0.2px">Mon Club</span>
-<span style="font-size: 11px; color: #79828F">LinkFoot · mini-jeu manager</span>
+<span style="font-size: 11px; color: #79828F">{{roleLine}}</span>
 </div>
 <button sc-camel-on-click="{{openHub}}" aria-label="Récompenses" style="position: relative; width: 38px; height: 38px; flex-shrink: 0; box-sizing: border-box; padding: 0; border-radius: 19px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); display: flex; align-items: center; justify-content: center; color: #2ECC71; cursor: pointer"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="13" rx="2"></rect><path d="M12 8v13M3 12h18M12 8c-2-4-6-4-6-1s6 1 6 1zm0 0c2-4 6-4 6-1s-6 1-6 1z"></path></svg><sc-if value="{{hasClaim}}" hint-placeholder-val="{{true}}"><span class="lf-glowp" style="position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 9px; background: #FF5A4E; border: 2px solid #171B21; color: #FFFFFF; font-size: 9px; font-weight: 800; display: flex; align-items: center; justify-content: center">{{claimCount}}</span></sc-if></button>
 </div>
@@ -110,7 +110,7 @@ button:disabled{cursor:default}
 <button sc-camel-on-click="{{nav.squad.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Équipe</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Note {{teamOvr}} · {{formation}} · {{squadCountLabel}}</span></span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
 <button sc-camel-on-click="{{nav.tactic.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="8" cy="8" r="1.6"></circle><path d="m14.5 6.5 3 3m0-3-3 3"></path><path d="M8 12.5v1.5a3 3 0 0 0 3 3h4.5"></path><path d="m13.5 15 2 2-2 2"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Tactique</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{presetLabel}}</span></span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
 <button sc-camel-on-click="{{nav.packs.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="3" width="12" height="16" rx="2"></rect><path d="M5 6.5v12A2.5 2.5 0 0 0 7.5 21H15"></path><path d="m14 8 1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Packs</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{balance}} jetons disponibles</span></span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
-<button sc-camel-on-click="{{nav.league.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Ligue</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{divLabel}} · match {{seasonLabel}}</span></span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button sc-camel-on-click="{{goTrain}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5h11v11h-11z"></path><path d="M3 9v6M21 9v6M6.5 12h11"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Entraînement</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{trainDone}} · énergie moyenne {{fitAvg}} · {{injuredCount}} blessé(s)</span></span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button sc-camel-on-click="{{goMarket}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18l-2 12H5z"></path><path d="M8 10v2a4 4 0 0 0 8 0v-2"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Marché des transferts</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{balance}} jetons · 6 joueurs disponibles</span></span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button sc-camel-on-click="{{goStaff}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"></circle><path d="M3.5 20a5.5 5.5 0 0 1 11 0"></path><path d="M17 8h4M19 6v4M15.5 20a4 4 0 0 1 6 0"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Staff, cartes et finances</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{coachModeLabel}} · {{finLine}}</span></span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none"><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; font-weight: 700">Cohésion d'équipe</span><span style="font-size: 10.5px; color: #79828F">{{cohHint}}</span></span><span style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 26px; color: #2ECC71">{{cohLabel}}</span></div>
+<button sc-camel-on-click="{{nav.league.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Ligue</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{divLabel}} · match {{seasonLabel}}</span></span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button sc-camel-on-click="{{goSkills}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9z"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Compétences et quêtes</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{skillHubLine}}</span></span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button sc-camel-on-click="{{goTrain}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5h11v11h-11z"></path><path d="M3 9v6M21 9v6M6.5 12h11"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Entraînement</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{trainDone}} · énergie moyenne {{fitAvg}} · {{injuredCount}} blessé(s)</span></span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button sc-camel-on-click="{{goMarket}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18l-2 12H5z"></path><path d="M8 10v2a4 4 0 0 0 8 0v-2"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Marché des transferts</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{balance}} jetons · 6 joueurs disponibles</span></span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button sc-camel-on-click="{{goStaff}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"></circle><path d="M3.5 20a5.5 5.5 0 0 1 11 0"></path><path d="M17 8h4M19 6v4M15.5 20a4 4 0 0 1 6 0"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Staff, cartes et finances</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{coachModeLabel}} · {{finLine}}</span></span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none"><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; font-weight: 700">Cohésion d'équipe</span><span style="font-size: 10.5px; color: #79828F">{{cohHint}}</span></span><span style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 26px; color: #2ECC71">{{cohLabel}}</span></div>
 </div>
 </sc-if>
 <sc-if value="{{isSquad}}" hint-placeholder-val="{{true}}">
@@ -295,35 +295,111 @@ button:disabled{cursor:default}
 <div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 2px 16px 18px; display: flex; flex-direction: column; gap: 12px">
 <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none">
 <span style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
-<span style="font-size: 12.5px; font-weight: 700">Collection</span>
+<span style="font-size: 12.5px; font-weight: 700">Collection de cartes</span>
 <span style="font-size: 10.5px; color: #79828F">{{shardLine}}</span>
 </span>
 <span style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 26px; color: #2ECC71">{{collLine}}</span>
 </div>
 <div style="display: flex; flex-direction: column; gap: 4px">
-<span style="font-size: 15px; font-weight: 700">Packs de joueurs</span>
-<span style="font-size: 12px; color: #79828F; line-height: 1.5">Joueurs 100 % fictifs, sans visage. Mêmes jetons que pour les pronos.</span>
+<span style="font-size: 15px; font-weight: 700">{{freeName}}</span>
+<span style="font-size: 12px; color: #79828F; line-height: 1.5">Un seul pack dans tout le jeu. Joueurs 100 % fictifs. Les probabilités sont affichées avant l’ouverture et ne changent jamais.</span>
 </div>
-<sc-for list="{{packs}}" as="pk" hint-placeholder-count="3">
-<div style="position: relative; overflow: hidden; display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 10px; background: {{pk.cardBg}}; border: 1px solid {{pk.border}}; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05)">
+<sc-for list="{{packs}}" as="pk" hint-placeholder-count="1">
+<div style="position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 10px; background: {{pk.cardBg}}; border: 1px solid {{pk.border}}; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05)">
+<div style="display: flex; align-items: center; gap: 14px">
 <div style="position: relative; overflow: hidden; width: 66px; height: 88px; flex-shrink: 0; border-radius: 12px; background: {{pk.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #0E1116; box-shadow: 0 8px 18px rgba(0,0,0,0.45), inset 0 0 0 1.5px rgba(255,255,255,0.45)">
 <span class="lf-shine" style="position: absolute; top: -20px; left: 0; width: 26px; height: 140px; background: rgba(255,255,255,0.45)"></span>
 <span style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 30px; line-height: 1">{{pk.count}}</span>
-<span style="font-size: 8px; font-weight: 800; letter-spacing: 0.6px">JOUEURS</span>
+<span style="font-size: 8px; font-weight: 800; letter-spacing: 0.6px">TIRAGES</span>
 </div>
 <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
 <span style="font-weight: 700; font-size: 15px">{{pk.name}}</span>
 <span style="font-size: 11px; color: #79828F; line-height: 1.4">{{pk.desc}}</span>
 <sc-if value="{{pk.hasNote}}"><span style="font-size: 10.5px; font-weight: 600; color: {{pk.noteFg}}; line-height: 1.35">{{pk.note}}</span></sc-if>
 </div>
-<button sc-camel-on-click="{{pk.open}}" disabled="{{pk.locked}}" style="flex-shrink: 0; min-height: 40px; padding: 0 14px; border-radius: 20px; border: none; background: {{pk.btnBg}}; color: {{pk.btnFg}}; font-family: inherit; font-weight: 800; font-size: 13px; cursor: pointer; box-shadow: {{pk.btnSh}}">{{pk.price}}</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 11px 12px; border-radius: 9px; background: rgba(11,18,16,0.5)">
+<span style="font-size: 10px; font-weight: 800; letter-spacing: 0.5px; color: #79828F">PROBABILITÉS PAR TIRAGE</span>
+<sc-for list="{{pk.odds}}" as="od" hint-placeholder-count="6">
+<div style="display: flex; align-items: center; gap: 9px">
+<span style="width: 74px; flex-shrink: 0; font-size: 11px; font-weight: 600">{{od.label}}</span>
+<span style="flex-grow: 1; display: block; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.07)"><span style="display: block; height: 5px; width: {{od.w}}; border-radius: 3px; background: {{od.color}}"></span></span>
+<span style="width: 46px; flex-shrink: 0; text-align: right; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums">{{od.pct}}</span>
+</div>
+</sc-for>
+</div>
+<button sc-camel-on-click="{{pk.open}}" disabled="{{pk.locked}}" style="width: 100%; min-height: 46px; border-radius: 23px; border: none; background: {{pk.btnBg}}; color: {{pk.btnFg}}; font-family: inherit; font-weight: 800; font-size: 14px; cursor: pointer; box-shadow: {{pk.btnSh}}">OUVRIR LE PACK · {{pk.price}}</button>
 </div>
 </sc-for>
 <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.12)">
 <span style="width: 34px; height: 34px; flex-shrink: 0; border-radius: 17px; background: rgba(46,204,113,0.12); color: #2ECC71; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="13" rx="2"></rect><path d="M12 8v13M3 12h18M12 8c-2-4-6-4-6-1s6 1 6 1zm0 0c2-4 6-4 6-1s-6 1-6 1z"></path></svg></span>
-<span style="flex-grow: 1; font-size: 11px; color: #79828F; line-height: 1.45">Un Pack Premium gratuit toutes les 4 heures, et des packs offerts avec la connexion quotidienne.</span>
+<span style="flex-grow: 1; font-size: 11px; color: #79828F; line-height: 1.45">Un {{freeName}} gratuit toutes les 4 heures, et des packs offerts avec la connexion quotidienne.</span>
 <button sc-camel-on-click="{{openHub}}" style="flex-shrink: 0; min-height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.14); background: transparent; color: #F2F4F7; font-family: inherit; font-size: 11px; font-weight: 600; cursor: pointer">Voir</button>
 </div>
+</div>
+</sc-if>
+<sc-if value="{{isSkills}}" hint-placeholder-val="{{false}}">
+<div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 2px 16px 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06)">
+<span style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 12.5px; font-weight: 700">Compétences</span>
+<span style="font-size: 10.5px; color: #79828F">{{skillTotal}}</span>
+</span>
+<span style="font-size: 11.5px; font-weight: 700; color: #2ECC71">{{skillWorn}}</span>
+</div>
+<sc-if value="{{hasSkills}}" hint-placeholder-val="{{true}}">
+<sc-for list="{{skillInv}}" as="sk" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 13px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
+<div style="display: flex; align-items: baseline; gap: 9px">
+<span style="flex-grow: 1; min-width: 0; font-size: 14px; font-weight: 700">{{sk.name}}</span>
+<span style="flex-shrink: 0; padding: 2px 8px; border-radius: 9px; font-size: 10px; font-weight: 800; color: #0B1210; background: {{sk.color}}">{{sk.rar}}</span>
+</div>
+<span style="font-size: 11.5px; color: #AEB6C2; line-height: 1.45">{{sk.desc}}</span>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<span style="padding: 3px 8px; border-radius: 8px; background: rgba(255,255,255,0.05); font-size: 10.5px; color: #79828F">{{sk.cat}}</span>
+<span style="padding: 3px 8px; border-radius: 8px; background: rgba(255,255,255,0.05); font-size: 10.5px; color: #79828F">{{sk.power}}</span>
+<span style="padding: 3px 8px; border-radius: 8px; background: rgba(255,255,255,0.05); font-size: 10.5px; color: #79828F">{{sk.req}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex-grow: 1; min-width: 0; font-size: 11.5px; font-weight: 600; color: {{sk.statusFg}}">{{sk.status}}</span>
+<button sc-camel-on-click="{{sk.act}}" disabled="{{sk.locked}}" style="flex-shrink: 0; min-height: 36px; padding: 0 14px; border-radius: 18px; border: none; background: {{sk.btnBg}}; color: {{sk.btnFg}}; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer">{{sk.cta}}</button>
+</div>
+</div>
+</sc-for>
+</sc-if>
+<sc-if value="{{noSkills}}" hint-placeholder-val="{{false}}">
+<div style="padding: 20px 16px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.12); text-align: center">
+<span style="font-size: 12px; color: #79828F; line-height: 1.5">{{skillEmpty}}</span>
+</div>
+</sc-if>
+<div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+<span style="font-size: 15px; font-weight: 700">Quêtes</span>
+<span style="font-size: 11.5px; color: #79828F; line-height: 1.45">{{capLine}}</span>
+</div>
+<sc-for list="{{quests}}" as="qt" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 7px; padding: 13px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
+<div style="display: flex; align-items: baseline; gap: 10px">
+<span style="flex-grow: 1; min-width: 0; font-size: 13px; font-weight: 700">{{qt.label}}</span>
+<span style="flex-shrink: 0; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: #AEB6C2">{{qt.prog}}</span>
+</div>
+<span style="position: relative; display: block; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.07)"><span style="position: absolute; top: 0; left: 0; height: 5px; width: {{qt.pct}}; border-radius: 3px; background: #2ECC71"></span></span>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex-grow: 1; font-size: 11px; color: #79828F">{{qt.reward}}</span>
+<button sc-camel-on-click="{{qt.claim}}" style="flex-shrink: 0; min-height: 34px; padding: 0 14px; border-radius: 17px; border: none; background: {{qt.btnBg}}; color: {{qt.btnFg}}; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer">{{qt.cta}}</button>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{hasLedger}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 7px; padding: 13px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
+<span style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #79828F">JOURNAL DES TRANSACTIONS</span>
+<sc-for list="{{ledger}}" as="lg" hint-placeholder-count="5">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px">
+<span style="flex-grow: 1; min-width: 0; font-size: 11.5px; color: #AEB6C2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{lg.label}}</span>
+<span style="flex-shrink: 0; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: {{lg.fg}}">{{lg.amount}}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
 </div>
 </sc-if>
 <sc-if value="{{isMatch}}" hint-placeholder-val="{{false}}">
@@ -763,7 +839,7 @@ button:disabled{cursor:default}
 <span style="font-size: 14px; font-weight: 700">Cartes d’amélioration</span>
 <div style="display: flex; gap: 6px; flex-wrap: wrap"><sc-for list="{{pl.ups}}" as="u" hint-placeholder-count="7"><button sc-camel-on-click="{{u.use}}" style="display: flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid {{u.bd}}; background: {{u.bg}}; color: {{u.fg}}; font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer">{{u.label}} {{u.n}}</button></sc-for></div>
 <div style="display: flex; justify-content: space-between; font-size: 12px; color: #79828F"><span>{{pl.contract}}</span><span style="color: #F2F4F7; font-weight: 700">Valeur {{pl.value}}</span></div>
-<button sc-camel-on-click="{{pl.lvlUp}}" style="width: 100%; min-height: 40px; border-radius: 10px; border: none; background: {{pl.lvlBg}}; color: {{pl.lvlFg}}; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer; margin-bottom: 8px">{{pl.lvlLabel}}</button><button sc-camel-on-click="{{pl.sell}}" style="height: 46px; border-radius: 10px; border: none; background: {{pl.sellBg}}; color: {{pl.sellFg}}; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer">{{pl.sellLabel}}</button>
+<div style="display: flex; flex-direction: column; gap: 7px; padding: 12px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07); margin-bottom: 10px"><span style="font-size: 11.5px; color: #AEB6C2; line-height: 1.4">{{pl.lvlLabel}}</span><span style="position: relative; display: block; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.07)"><span style="position: absolute; top: 0; left: 0; height: 5px; width: {{pl.lvlPct}}; border-radius: 3px; background: #2ECC71"></span></span><span style="font-size: 10.5px; color: #79828F">{{pl.slotLine}}</span><button sc-camel-on-click="{{pl.lvlUp}}" style="width: 100%; min-height: 38px; border-radius: 10px; border: none; background: {{pl.lvlBg}}; color: {{pl.lvlFg}}; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer">{{pl.lvlCta}}</button></div><div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07); margin-bottom: 8px"><span style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #79828F">RAPPORT DU RECRUTEUR</span><sc-for list="{{pl.hid}}" as="hd" hint-placeholder-count="6"><div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px"><span style="font-size: 11.5px; color: #AEB6C2">{{hd.k}}</span><span style="font-size: 11.5px; font-weight: 700">{{hd.v}}</span></div></sc-for><span style="font-size: 10px; color: #6B736C; line-height: 1.4">Ces qualités ne sont pas des statistiques affichées : elles agissent pendant le match.</span></div><button sc-camel-on-click="{{pl.sell}}" style="height: 46px; border-radius: 10px; border: none; background: {{pl.sellBg}}; color: {{pl.sellFg}}; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer">{{pl.sellLabel}}</button>
 </div>
 </div>
 </sc-if>
@@ -809,8 +885,14 @@ button:disabled{cursor:default}
 <div class="lf-flip" style="position: relative; overflow: hidden; width: 104px; border-radius: 10px 16px 20px 20px; padding: 6px 6px 8px; background: {{r.bg}}; color: #0E1116; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 26px {{r.glow}}, inset 0 0 0 1.5px rgba(255,255,255,0.45); animation-delay: {{r.delay}}">
 <span class="lf-shine" style="position: absolute; top: -20px; left: 0; width: 30px; height: 220px; background: rgba(255,255,255,0.4)"></span>
 <div style="position: absolute; left: 7px; top: 7px; display: flex; flex-direction: column; align-items: center; line-height: 1"><span style="font-family: 'Sora', sans-serif; font-size: 26px; font-weight: 800">{{r.ovr}}</span><span style="font-size: 9px; font-weight: 800">{{r.pos}}</span></div>
+<sc-if value="{{r.isPlayer}}" hint-placeholder-val="{{true}}">
 <img sc-camel-src="{{r.face}}" alt="" style="width: 80px; height: 88px; margin: 2px 0 0 16px">
-<span style="max-width: 100%; font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.short}}</span>
+</sc-if>
+<sc-if value="{{r.isSkill}}" hint-placeholder-val="{{false}}">
+<span style="width: 80px; height: 88px; margin: 2px 0 0 16px; display: flex; align-items: center; justify-content: center"><svg width="46" height="46" sc-camel-view-box="0 0 24 24" fill="none" stroke="#0E1116" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9z"></path></svg></span>
+</sc-if>
+<span style="max-width: 100%; font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.name}}</span>
+<span style="max-width: 100%; font-size: 8px; font-weight: 700; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.sub}}</span>
 <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; margin-top: 3px; text-align: center">
 <sc-for list="{{r.stats}}" as="st" hint-placeholder-count="7"><span style="white-space: nowrap; font-size: 6.5px; display: flex; flex-direction: column; line-height: 1.05"><b style="font-size: 9.5px">{{st.v}}</b>{{st.l}}</span></sc-for>
 </div>
@@ -833,7 +915,9 @@ class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.stageRef = (el) => this.stageMount(el);
-    const P = (id, name, pos, ovr) => ({ id, name, pos, ovr });
+    // Un joueur de l'effectif de démonstration. Son niveau découle de sa note :
+    // un joueur à 66 est déjà construit, un joueur à 58 débute (§6).
+    const P = (id, name, pos, ovr) => ({ id, name, pos, ovr, plv: Math.max(1, Math.round((ovr - 46) / 3.5)), pxp: 0 });
     this.state = {
       speed: 1, view: 'home', formation: '4-3-3', balance: 1000, preset: 'equilibre', mentality: 3,
       tac: { width: 1, tempo: 1, pass: 1, behind: 0, cross: 1, dribble: 0, longshot: 0, patience: 0, line: 1, engage: 1, press: 1, trap: 0, tackle: 1, lost: 1, won: 1, gk: 0, corners: 0, freekicks: 0, mark: 0, fullbacks: 1, overload: 0, ptrap: 0, timewaste: 0 }, famFilter: null,
@@ -844,6 +928,8 @@ class Component extends DCLogic {
         P(10, 'K. Rouvière', 'ATT', 69), P(11, 'B. Adebanjo', 'ATT', 64), P(12, 'E. Castellane', 'ATT', 62), P(13, 'R. Moulinet', 'GB', 58), P(14, 'I. Tavares', 'DEF', 59)
       ],
       nextId: 100, pack: null, match: null, record: { w: 1, d: 1, l: 0 },
+      skillInv: [], nextSkillUid: 1, collected: [], seenPlayers: [],
+      shards: 0, caps: {}, ledger: [], quests: null, clubName: 'FC TonPseudo', country: 'fr', created: true,
       kit: { c1: '#2ECC71', c2: '#0C1210', pat: 'uni', collar: 'rond', sponsor: true }, showKit: false, cam: '2d',
       xp: 340, level: 7, dayStreak: 3, dayClaimed: false, winStreak: 0, showHub: false, levelUp: null, now: Date.now(), freePackAt: Date.now() + 90000, freeQueue: [],
       division: 4, seasonP: 2, lastGain: null,
@@ -891,35 +977,22 @@ class Component extends DCLogic {
   }
   startPack(pk) {
     const s = this.state;
-    const free = !!pk.free;
-    if ((!free && s.balance < pk.cost) || s.pack) return;
-    // §56 à §63 : on tire dans le catalogue de 500 cartes. Une carte déjà possédée devient des fragments.
-    const owned = new Set(s.squad.map((p) => p.id).concat(s.collected || []));
-    const got = [];
-    let shards = 0;
-    for (let i = 0; i < pk.n; i++) {
-      const c = this.drawCard(pk.w);
-      const dup = owned.has(c.id) || got.some((g) => g.id === c.id);
-      const rar = this.rarityOf(c.rar);
-      if (dup) { shards += rar.shards; got.push(Object.assign({}, c, { dup: true, shards: rar.shards })); }
-      else { owned.add(c.id); got.push(Object.assign({}, c, { fresh: true })); }
-    }
-    const order = this.RARITY().map((r) => r.id);
-    got.sort((a, b) => order.indexOf(b.rar) - order.indexOf(a.rar) || b.ovr - a.ovr);
+    if (s.pack) return;
+    // §10, §19 : les règles du tirage sont dans le module (openPack). L'écran anime, c'est tout.
+    const res = this.openPack({ free: !!pk.free });
+    if (!res.ok) { this.setState({ packWhy: res.why }); return; }
     this.buzz(20);
-    this.setState({ missions: this.bumpMission(s.missions, 'pack', 1), freeQueue: free ? s.freeQueue.slice(1) : s.freeQueue,
-      balance: s.balance - (free ? 0 : pk.cost), shards: (s.shards || 0) + shards,
-      pack: { def: pk, got, phase: 'charge', taps: 0, burst: false, walk: 0, shards } });
+    this.setState({ packWhy: null, pack: { def: res.def, got: res.got, phase: 'charge', taps: 0, burst: false, walk: 0, shards: res.shards, free: !!pk.free, res } });
   }
   tapPack() {
     const pk = this.state.pack;
     if (!pk || pk.phase !== 'charge') return;
     const taps = pk.taps + 1;
-    const need = pk.def && pk.def.fx === 'gold' ? 5 : 3;   // §59 une carte Or se mérite
+    const need = 3;   // un seul pack, un seul rythme d'ouverture (§10)
     this.buzz(taps < need ? 25 + taps * 12 : [60, 30, 60, 30, 50, 30, 220]);
     if (taps < need) { this.setState({ pack: Object.assign({}, pk, { taps }) }); return; }
     this.setState({ pack: Object.assign({}, pk, { taps, burst: true }) });
-    const best = pk.got[0].ovr;
+    const best = pk.got[0].kind === 'skill' ? pk.got[0].ovr : pk.got[0].ovr;   // puissance pour une compétence, note pour un joueur
     this.later(() => {
       const p = this.state.pack; if (!p) return;
       if (best >= 75) { this.buzz([60, 40, 60]); this.setState({ pack: Object.assign({}, p, { phase: 'walkout', walk: 1 }) }); }
@@ -935,9 +1008,10 @@ class Component extends DCLogic {
   closePack() {
     const s = this.state, pk = s.pack;
     if (!pk) return;
-    const keep = pk.got.filter((c) => !c.dup);   // les doublons sont déjà convertis en fragments
-    this.setState({ pack: null, squad: s.squad.map((p) => Object.assign({}, p, { fresh: false })).concat(keep),
-      collected: (s.collected || []).concat(pk.got.map((c) => c.id)), view: 'squad' });
+    // §19 : joueurs dans l'effectif, compétences dans l'inventaire, doublons en fragments
+    this.commitPack(pk.res);
+    this.setState({ pack: null, squad: this.state.squad.map((p) => Object.assign({}, p, { fresh: false })),
+      view: pk.res.got.some((g) => g.kind === 'skill') ? 'skills' : 'squad' });
   }
   styles() {
     if (this._styles) return this._styles;
@@ -1215,8 +1289,8 @@ class Component extends DCLogic {
       xp -= this.levelNeed(level); level++;
       bal += 100 + level * 20;
       // un pack offert tous les 5 niveaux, pris dans la vraie liste des packs
-      const key = level % 5 === 0 ? (level >= 15 ? 'gold' : level >= 10 ? 'elite' : 'premium') : null;
-      if (key) queue.push(key);
+      const key = level % 5 === 0 ? 'linkfoot' : null;   // §10 : un seul pack
+      if (key) queue.push('linkfoot');
       // ce que ce niveau débloque, dit une seule fois, au moment où ça arrive
       const opened = this.unlocksAt(level);
       ups.push({ level, text: '+' + (100 + level * 20) + ' jetons' + (key ? ' + ' + this.packName(key) + ' offert' : '') + (opened.length ? ' · débloque ' + opened.join(', ') : '') });
@@ -1242,21 +1316,33 @@ class Component extends DCLogic {
     if (win) missions = this.bumpMission(missions, 'win', 1);
     if (mt.hs) missions = this.bumpMission(missions, 'goals', mt.hs);
     let squad = st.squad, prog = '';
-    if (win || mt.hs >= 2) {
-      const c = mt.xi.filter((p) => p.line !== 'GB'); let pk = c[this.rand(0, c.length - 1)]; if (mt.rat) { let bi = 0; mt.rat.H.forEach((v, k) => { if (v > mt.rat.H[bi]) bi = k; }); if (mt.xi[bi]) pk = mt.xi[bi]; }
-      const cur = squad.find((p) => p.id === pk.id);
-      if (cur && cur.ovr < 99) {
-        const st = {}; this.cardStats(cur).forEach((q) => { st[q.l] = q.v; }); const w = this.statW(cur.pos), keys = Object.keys(w).sort((a2, b2) => w[b2] - w[a2]), gains = {};
-        let ovr = this.ovrOf(cur.pos, st), guard = 0;
-        while (ovr <= cur.ovr && guard++ < 20) { const k = keys[this.rand(0, 2)]; if (st[k] < 99) { st[k]++; gains[k] = (gains[k] || 0) + 1; } ovr = this.ovrOf(cur.pos, st); }
-        squad = squad.map((p) => (p.id === pk.id ? Object.assign({}, p, { st, ovr: Math.max(ovr, cur.ovr) }) : p));
-        prog = cur.name + ' progresse ' + cur.ovr + ' → ' + Math.max(ovr, cur.ovr) + ' (' + Object.keys(gains).map((k) => '+' + gains[k] + ' ' + k).join(', ') + ')';
-      }
-    }
+    // §6, §19, §20 : chaque joueur du onze gagne de l'XP selon son temps de jeu et
+    // sa performance. C'est le seul chemin de progression d'un joueur : jouer.
+    // L'argent ne peut pas remplacer ces lignes.
+    const grown = [];
+    squad = squad.map((p) => {
+      const i = mt.xi.findIndex((x) => x.id === p.id);
+      if (i < 0) return p;
+      const stat = {
+        min: 90,
+        goals: (mt.scorers || []).filter((id) => id === p.id).length,
+        assists: (mt.assisters || []).filter((id) => id === p.id).length,
+        rating: mt.rat && mt.rat.H ? mt.rat.H[i] : 6
+      };
+      const gain = this.matchXp(p, stat);
+      const up = this.addPlayerXp(p, gain);
+      if (up.ups.length) grown.push(p.name + ' niveau ' + up.plv + (up.ups[up.ups.length - 1].capped ? ' (potentiel atteint)' : ''));
+      return Object.assign({}, p, { plv: up.plv, pxp: up.pxp, st: up.st, ovr: up.ovr });
+    });
+    if (grown.length) prog = grown.slice(0, 2).join(' · ');
     squad = this.applyFitness(squad, mt, null);
     const F = this.finances(st, res); const inv = Object.assign({}, st.inv || {}); if (win) { const drop = ['energie', 'motivation', 'pressing', 'bloc', 'contre', 'finition', 'up_VIT', 'up_TIR', 'up_PAS', 'up_DÉF'][this.rand(0, 9)]; inv[drop] = (inv[drop] || 0) + 1; }
     const L = this.addXp(st, xpGain);
-    const patch = { winStreak, missions, squad, inv, lastFin: 'Recette ' + F.gate + ' · salaires −' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net + ' jetons', coachAdvice: null, xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: st.balance + bonus + L.bonusBal + this.finances(st, res).net,
+    // §7, §29 : tout ce qui entre passe par le journal. Le match n'est pas plafonné
+    // (il coûte du temps réel), mais il est tracé comme le reste.
+    this.logMoney(F.net, 'Match : recette ' + F.gate + ', salaires −' + F.wages);
+    if (bonus) this.logMoney(bonus, 'Série de ' + winStreak + ' victoires');
+    const patch = { winStreak, missions, squad, inv, lastFin: 'Recette ' + F.gate + ' · salaires −' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net + ' jetons', coachAdvice: null, xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: st.balance + bonus + L.bonusBal + F.net,
       lastGain: '+' + xpGain + ' XP' + (bonus ? ' · série de ' + winStreak + ' victoires x' + mult + ' (+' + bonus + ' jetons)' : '') + (prog ? ' · ' + prog : '') };
     let over = L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : null;
     const seasonP = st.seasonP + 1;
@@ -1267,12 +1353,15 @@ class Component extends DCLogic {
       const yg = this.youthPlayer(st);
       let ygTxt = '';
       if (yg) { patch.squad = (patch.squad || st.squad).concat([yg]); patch.youth = (st.youth || []).concat([yg.id]); ygTxt = ' Le centre sort ' + yg.name + ' (' + yg.pos + ' ' + yg.ovr + ', potentiel ' + yg.pot + ').'; }
-      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; patch.freeQueue = patch.freeQueue.concat(['gold']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un Pack Or. Les adversaires seront plus forts.' + ygTxt }; }
+      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; patch.freeQueue = patch.freeQueue.concat(['linkfoot']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un LinkFoot Pack. Les adversaires seront plus forts.' + ygTxt }; }
       else if (rank === last && st.division < 5) { patch.division = st.division + 1; over = { title: 'RELÉGUÉ EN DIVISION ' + patch.division, sub: 'Fin de saison : ' + rank + 'e sur ' + last + '. Les adversaires seront plus faibles, mais la recette du match baisse.' + ygTxt }; }
       else over = over || { title: 'FIN DE SAISON', sub: rank + 'e de la division ' + st.division + '. Termine dans les 2 premiers pour monter, évite la dernière place.' + ygTxt };
       patch.seasonP = 0; patch.record = { w: 0, d: 0, l: 0 };
     } else patch.seasonP = seasonP;
     if (over) { patch.levelUp = over; this.buzz([60, 40, 60, 40, 200]); }
+    // §8, §19 : le match fait avancer les quêtes. Elles lisent les mêmes chiffres que le rapport.
+    this.questsAfterMatch(mt, Object.assign({}, st, { squad: patch.squad || squad, winStreak: st.winStreak }));
+    if (patch.division && patch.division < st.division) this.bumpQuest('division', 1);
     return patch;
   }
   seedR(seed) { let x = (seed * 2654435761) % 4294967296; return () => { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; }; }
@@ -1404,68 +1493,83 @@ class Component extends DCLogic {
     const age = p.age != null ? p.age : this.profile(p).age, pot = p.pot != null ? p.pot : p.ovr;
     const ageK = age <= 21 ? 1.35 : age <= 25 ? 1.2 : age <= 29 ? 1 : age <= 32 ? 0.7 : 0.45;
     const formK = 0.85 + ((p.form != null ? p.form : 70) - 50) / 200;
-    return Math.round(Math.pow(Math.max(40, p.ovr) / 10, 3.2) * ageK * formK * (1 + Math.max(0, pot - p.ovr) / 40) / 3) * 10;
+    const lvlK = 1 + (this.playerLevel(p) - 1) * 0.035;                 // le travail accompli se paie
+    const rarK = 1 + Math.max(0, this.RARITY().findIndex((x) => x.id === this.rarityFor(p).id)) * 0.07;
+    const skills = this.state && this.state.skillInv ? this.equippedOn(p.id) : [];
+    const skK = 1 + skills.reduce((a, k) => a + k.power / 260, 0);      // une compétence rare vaut cher
+    const base = Math.pow(Math.max(40, p.ovr) / 10, 3.2) * ageK * formK * (1 + Math.max(0, pot - p.ovr) / 40) / 3;
+    return Math.round(base * lvlK * rarK * skK) * 10;
   }
   // ================= SKILL ENGINE : générateur procédural (catégorie × effet × condition × poste × rareté × niveau) =================
   // 18 effets × 14 conditions × 6 raretés × 5 niveaux × 4 postes ≈ 30 000 compétences cohérentes, chacune avec un effet réel dans le moteur.
   SKILL_DEF() {
     if (this._skill) return this._skill;
+    // [id, nom, catégorie, effets, description, prérequis]
+    // `req` : statistiques minimum à la rareté Élite, mises à l'échelle selon la rareté.
     const E = [
-      ['tueur', 'Tueur', 'Attaque', { sht: 6 }, 'finition sur les grosses occasions'],
-      ['visionnaire', 'Visionnaire', 'Passe', { pas: 5, dec: 4 }, 'passes qui créent le danger'],
-      ['laser', 'Passe laser', 'Passe', { pas: 7 }, 'précision des passes longues'],
-      ['chef', 'Chef d’orchestre', 'Tactique', { dec: 6, pas: 3 }, 'contrôle du rythme'],
-      ['renard', 'Renard des surfaces', 'Attaque', { sht: 4, dec: 4 }, 'déplacements dans la surface'],
-      ['sprinter', 'Sprinter', 'Physique', { pace: 7 }, 'exploitation des espaces en contre'],
-      ['pressing', 'Pressing fou', 'Défense', { def: 4, pace: 3, drain: 1.25 }, 'pressing plus intense, plus fatigant'],
-      ['gladiateur', 'Gladiateur', 'Physique', { phy: 7 }, 'duels physiques'],
-      ['calme', 'Calme absolu', 'Mental', { dec: 6, pas: 2 }, 'moins d’erreurs sous pression'],
-      ['mur', 'Mur', 'Défense', { def: 8 }, 'interventions dans sa surface'],
-      ['acier', 'Mental d’acier', 'Mental', { dec: 5, sht: 2 }, 'résiste à la pression des grands moments'],
-      ['dribbleur', 'Funambule', 'Dribble', { dri: 7 }, 'dribbles réussis'],
-      ['aerien', 'Tour de contrôle', 'Coup de pied arrêté', { phy: 5, def: 3, sht: 2 }, 'jeu de tête'],
-      ['moteur', 'Moteur', 'Physique', { drain: 0.8, pace: 2 }, 'endurance, fatigue plus lente'],
-      ['leader', 'Leader', 'Leadership', { team: { dec: 2 } }, 'concentration des coéquipiers'],
-      ['meneur', 'Meneur', 'Collectif', { team: { pas: 2 } }, 'jeu collectif autour de lui'],
-      ['grinta', 'Grinta', 'Mental', { phy: 5, def: 3, pace: 3, team: { phy: 1 } }, 'agressivité et pressing quand l’équipe est menée'],
-      ['clutch', 'Clutch', 'Spécial', { sht: 5, dec: 5 }, 'dernières minutes d’un match serré'],
-      ['gk_reflex', 'Réflexes félins', 'Gardien', { ref: 7 }, 'parades réflexes'],
-      ['gk_mains', 'Mains sûres', 'Gardien', { han: 7 }, 'ballons captés, pas de rebond']
+      ['tueur', 'Tueur', 'Attaque', { sht: 6 }, 'finition sur les grosses occasions', { TIR: 72, ATQ: 66 }],
+      ['visionnaire', 'Visionnaire', 'Passe', { pas: 5, dec: 4 }, 'passes qui créent le danger', { PAS: 72 }],
+      ['laser', 'Passe laser', 'Passe', { pas: 7 }, 'précision des passes longues', { PAS: 75 }],
+      ['chef', 'Chef d’orchestre', 'Tactique', { dec: 6, pas: 3 }, 'contrôle du rythme', { PAS: 68 }],
+      ['renard', 'Renard des surfaces', 'Attaque', { sht: 4, dec: 4 }, 'déplacements dans la surface', { ATQ: 70 }],
+      ['sprinter', 'Sprinter', 'Physique', { pace: 7 }, 'exploitation des espaces en contre', { VIT: 75 }],
+      ['pressing', 'Pressing fou', 'Défense', { def: 4, pace: 3, drain: 1.25 }, 'pressing plus intense, plus fatigant', { PHY: 68, VIT: 64 }],
+      ['gladiateur', 'Gladiateur', 'Physique', { phy: 7 }, 'duels physiques', { PHY: 75 }],
+      ['calme', 'Calme absolu', 'Mental', { dec: 6, pas: 2 }, 'moins d’erreurs sous pression', {}],
+      ['mur', 'Mur', 'Défense', { def: 8 }, 'interventions dans sa surface', { 'DÉF': 75 }],
+      ['acier', 'Mental d’acier', 'Mental', { dec: 5, sht: 2 }, 'résiste à la pression des grands moments', {}],
+      ['dribbleur', 'Funambule', 'Dribble', { dri: 7 }, 'dribbles réussis', { DRI: 75 }],
+      ['aerien', 'Tour de contrôle', 'Coup de pied arrêté', { phy: 5, def: 3, sht: 2 }, 'jeu de tête', { PHY: 70 }],
+      ['moteur', 'Moteur', 'Physique', { drain: 0.8, pace: 2 }, 'endurance, fatigue plus lente', { PHY: 64 }],
+      ['leader', 'Leader', 'Leadership', { team: { dec: 2 } }, 'concentration des coéquipiers', {}],
+      ['meneur', 'Meneur', 'Collectif', { team: { pas: 2 } }, 'jeu collectif autour de lui', { PAS: 66 }],
+      ['grinta', 'Grinta', 'Mental', { phy: 5, def: 3, pace: 3, team: { phy: 1 } }, 'agressivité et pressing quand l’équipe est menée', { PHY: 66 }],
+      ['clutch', 'Clutch', 'Spécial', { sht: 5, dec: 5 }, 'dernières minutes d’un match serré', { TIR: 66 }],
+      ['gk_reflex', 'Réflexes félins', 'Gardien', { ref: 7 }, 'parades réflexes', { 'RÉF': 72 }],
+      ['gk_mains', 'Mains sûres', 'Gardien', { han: 7 }, 'ballons captés, pas de rebond', { MAI: 72 }]
     ];
+    // [id, libellé, multiplicateur, raccourci]
+    // Plus la condition est étroite, plus l'effet est fort quand elle se produit.
     const C = [
-      ['always', 'en permanence', 1.0], ['trail70', 'quand l’équipe est menée après la 70e', 1.9], ['closeLate', 'dans les 15 dernières minutes d’un match serré', 1.8],
-      ['leading', 'quand l’équipe mène', 1.3], ['first15', 'dans le premier quart d’heure', 1.4], ['momentum', 'pendant 6 minutes après une action décisive', 1.7],
-      ['tired', 'quand son énergie passe sous 55 %', 1.5], ['home', 'à domicile', 1.25], ['counter', 'en phase de contre', 1.6], ['box', 'dans une surface de réparation', 1.5],
-      ['setpiece', 'sur coup de pied arrêté', 1.6], ['pressed', 'quand l’équipe subit le pressing', 1.5], ['derby', 'contre un adversaire mieux classé', 1.4], ['second', 'en seconde période', 1.2]
+      ['always', 'en permanence', 1.0, ''], ['trail70', 'quand l’équipe est menée après la 70e', 1.9, 'grinta'], ['closeLate', 'dans les 15 dernières minutes d’un match serré', 1.8, 'clutch'],
+      ['leading', 'quand l’équipe mène', 1.3, 'dominant'], ['first15', 'dans le premier quart d’heure', 1.4, 'précoce'], ['momentum', 'pendant 6 minutes après une action décisive', 1.7, 'momentum'],
+      ['tired', 'quand son énergie passe sous 55 %', 1.5, 'increvable'], ['home', 'à domicile', 1.25, 'local'], ['counter', 'en phase de contre', 1.6, 'contre'], ['box', 'dans une surface de réparation', 1.5, 'surface'],
+      ['setpiece', 'sur coup de pied arrêté', 1.6, 'CPA'], ['pressed', 'quand l’équipe subit le pressing', 1.5, 'sous pression'], ['derby', 'contre un adversaire mieux classé', 1.4, 'outsider'], ['second', 'en seconde période', 1.2, '2e MT']
     ];
-    // une seule échelle de raretés dans tout le jeu : celle des cartes (cards.js).
-    // Les compétences, les packs et les joueurs parlent donc le même langage.
-    const RAR = this.RARITY().map((r, i) => [r.id, r.label, 0.55 + i * 0.21, r.tint]);
-    const POSOK = { GB: ['gk_reflex', 'gk_mains', 'calme', 'leader', 'acier', 'moteur'], DEF: ['mur', 'gladiateur', 'aerien', 'leader', 'calme', 'moteur', 'grinta', 'pressing', 'laser', 'sprinter', 'acier'], MIL: ['visionnaire', 'laser', 'chef', 'meneur', 'moteur', 'pressing', 'dribbleur', 'calme', 'grinta', 'clutch', 'gladiateur', 'sprinter'], ATT: ['tueur', 'renard', 'sprinter', 'dribbleur', 'clutch', 'aerien', 'grinta', 'acier', 'gladiateur', 'visionnaire'] };
-    return (this._skill = { E, C, RAR, POSOK, LVL: ['I', 'II', 'III', 'IV', 'V'] });
+    const POSOK = {
+      GB: ['gk_reflex', 'gk_mains', 'calme', 'leader', 'acier', 'moteur'],
+      DEF: ['mur', 'gladiateur', 'aerien', 'leader', 'calme', 'moteur', 'grinta', 'pressing', 'laser', 'sprinter', 'acier'],
+      MIL: ['visionnaire', 'laser', 'chef', 'meneur', 'moteur', 'pressing', 'dribbleur', 'calme', 'grinta', 'clutch', 'gladiateur', 'sprinter'],
+      ATT: ['tueur', 'renard', 'sprinter', 'dribbleur', 'clutch', 'aerien', 'grinta', 'acier', 'gladiateur', 'visionnaire']
+    };
+    return (this._skill = { E, C, POSOK, LVL: ['I', 'II', 'III', 'IV', 'V'] });
   }
-  skillCount() { const D = this.SKILL_DEF(); let n = 0; for (const pos in D.POSOK) n += D.POSOK[pos].length; return n * D.C.length * D.RAR.length * D.LVL.length; }
-  makeSkill(eid, cid, rar, lvl, cond) {
-    const D = this.SKILL_DEF(), e = D.E.find((x) => x[0] === eid), c = D.C[cid], R2 = D.RAR[rar];
-    const mult = R2[2] * (0.7 + lvl * 0.15) * c[2] * 0.55;
-    const eff = {}; for (const k in e[3]) eff[k] = k === 'drain' ? e[3][k] : k === 'team' ? Object.fromEntries(Object.entries(e[3][k]).map(([a, v]) => [a, v * mult])) : e[3][k] * mult;
-    const name = e[1] + (lvl ? ' ' + D.LVL[lvl] : '') + (c[0] === 'always' ? '' : ' · ' + ['', 'grinta', 'clutch', 'dominant', 'précoce', 'momentum', 'increvable', 'local', 'contre', 'surface', 'CPA', 'sous pression', 'outsider', '2e MT'][cid]);
-    return { id: eid + ':' + cid + ':' + rar + ':' + lvl, eid, cid: c[0], name, cat: e[2], rar: R2[0], rarLabel: R2[1], color: R2[3], lvl: lvl + 1, eff, desc: e[4] + (c[0] === 'always' ? '' : ', ' + c[1]) + '.' };
+  skillCount() {
+    const D = this.SKILL_DEF();
+    return D.E.length * D.C.length * D.LVL.length * this.GRADES();
   }
 
+  makeSkill(eid, cid, lvl, grade) {
+    const D = this.SKILL_DEF(), e = D.E.find((x) => x[0] === eid), c = D.C[cid];
+    const g = grade || 0;
+    const power = this.skillPower(eid, cid, lvl, g);
+    const R = this.rarityOfPower(power), rarIdx = this.RARITY().findIndex((x) => x.id === R.id);
+    // l'effet réel appliqué par le moteur suit la même échelle que la puissance
+    const mult = (0.46 + power / 100 * 1.05) * 0.62;
+    const eff = {};
+    for (const k in e[3]) eff[k] = k === 'drain' ? e[3][k] : k === 'team' ? Object.fromEntries(Object.entries(e[3][k]).map(([a, v]) => [a, v * mult])) : e[3][k] * mult;
+    const name = e[1] + (lvl ? ' ' + D.LVL[lvl] : '') + (c[3] ? ' · ' + c[3] : '');
+    return {
+      id: eid + ':' + cid + ':' + lvl + ':' + g, eid, cid: c[0], cidx: cid, lvlIdx: lvl, grade: g,
+      name, cat: e[2], rar: R.id, rarIdx, rarLabel: R.label, color: R.tint, lvl: lvl + 1, power, eff,
+      req: this.skillReq(eid, lvl, g, power),
+      desc: e[4] + (c[0] === 'always' ? '' : ', ' + c[1]) + '.'
+    };
+  }
   skillsOf(p) {
-    if (p.skills) return p.skills;
-    const D = this.SKILL_DEF(), r = this.seedR((p.id || 1) * 104729 + 3), pool = D.POSOK[p.pos] || D.POSOK.MIL;
-    const n = p.ovr >= 80 ? 3 : p.ovr >= 68 ? 2 : 1, out = [];
-    // la rareté d'une compétence se tire sur les taux des cartes, pas sur une échelle à part.
-    // Un joueur ne peut pas porter une compétence plus rare que sa propre carte.
-    const R = this.RARITY(), capRar = Math.max(0, R.findIndex((x) => x.id === this.rarityFor(p).id));
-    for (let i = 0; i < n; i++) {
-      let q = r(), rar = 0;
-      for (let k = 0; k < R.length; k++) { q -= R[k].rate; if (q <= 0) { rar = k; break; } }
-      out.push(this.makeSkill(pool[Math.floor(r() * pool.length)], Math.floor(r() * D.C.length), Math.min(rar, capRar), Math.min(4, Math.floor(r() * 2 + (p.ovr - 55) / 12)), null));
-    }
-    return out;
+    const worn = this.state && this.state.skillInv ? this.equippedOn(p.id) : [];
+    if (p.skills) return p.skills.concat(worn);
+    return this.innateSkills(p).concat(worn);
   }
   // ================= FITNESS / INJURY / TRAINING : appliqué après chaque match et à chaque séance =================
   applyFitness(squad, mt, training) {
@@ -3532,13 +3636,12 @@ class Component extends DCLogic {
   }
   RARITY() {
     return [
-      { id: 'normal', label: 'Normal', rate: 0.55, lo: 48, hi: 64, shards: 1, tint: '#9AA3B0', color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', ink: '#171B21' },
-      { id: 'common', label: 'Commun', rate: 0.25, lo: 56, hi: 70, shards: 2, tint: '#CFE0D4', color: 'linear-gradient(135deg, #CFE0D4, #8FA89A)', ink: '#171B21' },
-      { id: 'rare', label: 'Rare', rate: 0.12, lo: 64, hi: 77, shards: 5, tint: '#4FA8E8', color: 'linear-gradient(135deg, #4FA8E8, #2F8FE0)', ink: '#06101F' },
-      { id: 'epic', label: 'Épique', rate: 0.05, lo: 71, hi: 83, shards: 12, tint: '#C39BFF', color: 'linear-gradient(135deg, #C39BFF, #7B4FD8)', ink: '#120A24' },
-      { id: 'elite', label: 'Élite', rate: 0.02, lo: 77, hi: 88, shards: 30, tint: '#2ECC71', color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', ink: '#04201C' },
-      { id: 'gold', label: 'Or', rate: 0.009, lo: 82, hi: 92, shards: 80, tint: '#FFC24A', color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', ink: '#241703' },
-      { id: 'legendary', label: 'Légendaire', rate: 0.001, lo: 86, hi: 95, shards: 200, tint: '#FF4757', color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', ink: '#2A0812' }
+      { id: 'normal', label: 'Normal', rate: 0.70, lo: 48, hi: 64, pw: [0, 19], shards: 1, tint: '#9AA3B0', color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', ink: '#171B21' },
+      { id: 'rare', label: 'Rare', rate: 0.20, lo: 62, hi: 74, pw: [20, 39], shards: 4, tint: '#4FA8E8', color: 'linear-gradient(135deg, #4FA8E8, #2F8FE0)', ink: '#06101F' },
+      { id: 'epic', label: 'Épique', rate: 0.07, lo: 71, hi: 81, pw: [40, 59], shards: 12, tint: '#C39BFF', color: 'linear-gradient(135deg, #C39BFF, #7B4FD8)', ink: '#120A24' },
+      { id: 'elite', label: 'Élite', rate: 0.02, lo: 78, hi: 87, pw: [60, 74], shards: 30, tint: '#2ECC71', color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', ink: '#04201C' },
+      { id: 'gold', label: 'Gold', rate: 0.009, lo: 84, hi: 92, pw: [75, 89], shards: 80, tint: '#FFC24A', color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', ink: '#241703' },
+      { id: 'legendary', label: 'Legendary', rate: 0.001, lo: 88, hi: 96, pw: [90, 100], shards: 200, tint: '#FF4757', color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', ink: '#2A0812' }
     ];
   }
   rarityOf(id) { return this.RARITY().find((r) => r.id === id) || this.RARITY()[0]; }
@@ -3568,14 +3671,11 @@ class Component extends DCLogic {
     const pool = this.CARD_POOL().filter((c) => c.rar === pick.id);
     return pool[Math.floor((rnd || Math.random)() * pool.length)];
   }
-
   PACK_DEFS() {
     return [
-      { key: 'basic', name: 'Pack Basic', n: 3, cost: 150, req: 0, w: {}, color: 'linear-gradient(135deg, #AEB9C2, #5E6672)', fx: 'bronze' },
-      { key: 'premium', name: 'Pack Premium', n: 4, cost: 400, req: 3, w: { normal: 0.4, common: 1.2, rare: 2.2, epic: 2.5, elite: 2, gold: 1.6, legendary: 1.4 }, color: 'linear-gradient(135deg, #F2F6F4, #AEB9C2)', fx: 'silver' },
-      { key: 'elite', name: 'Pack Élite', n: 3, cost: 900, req: 7, w: { normal: 0.1, common: 0.5, rare: 2, epic: 4, elite: 5, gold: 3, legendary: 2.5 }, color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', fx: 'silver' },
-      { key: 'gold', name: 'Pack Or', n: 3, cost: 2000, req: 12, w: { normal: 0, common: 0.2, rare: 1.2, epic: 4, elite: 8, gold: 9, legendary: 6 }, color: 'linear-gradient(135deg, #FFE59A, #E9A93A)', fx: 'gold' },
-      { key: 'special', name: 'Pack Spécial', n: 2, cost: 1200, req: 10, w: { normal: 0, common: 0, rare: 2, epic: 5, elite: 6, gold: 5, legendary: 4 }, color: 'linear-gradient(135deg, #FF9F6B, #FF4F7B)', fx: 'gold' }
+      { key: 'linkfoot', name: 'LinkFoot Pack', n: 3, cost: 250, req: 0, w: {},
+        color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', fx: 'gold',
+        content: 'joueur, compétence ou fragments' }
     ];
   }
   packOdds(def) {
@@ -3589,6 +3689,7 @@ class Component extends DCLogic {
     const have = pool.filter((c) => owned.has(c.id)).length;
     return { have, total: pool.length };
   }
+
   sellPlayer(id) {
     const s = this.state;
     if (s.match && !s.match.done) return { ok: false, why: 'Impossible pendant un match' };
@@ -3597,8 +3698,13 @@ class Component extends DCLogic {
     if (!p) return { ok: false, why: 'Joueur introuvable' };
     const price = Math.round(this.profile(p).value * 0.6);
     this.buzz(25);
-    this.setState({ squad: s.squad.filter((x) => x.id !== id), balance: s.balance + price, sel: null,
+    // les compétences du joueur vendu retournent en réserve : elles t'appartiennent (§19)
+    const inv = (s.skillInv || []).map((k) => (k.on === id ? Object.assign({}, k, { on: null }) : k));
+    this.setState({ squad: s.squad.filter((x) => x.id !== id), sel: null, skillInv: inv,
       trainLog: p.name + ' vendu pour ' + price + ' jetons' });
+    this.earn(price, 'vente', 'Vente de ' + p.name);
+    if (p.base != null && price > p.base) this.bumpQuest('sell', 1);
+    else if (price > this.valueOf(Object.assign({}, p, { plv: 1 }))) this.bumpQuest('sell', 1);
     return { ok: true, price };
   }
   ageSquad(squad) {
@@ -3617,36 +3723,9 @@ class Component extends DCLogic {
       return q;
     });
   }
-  UPGRADE_COST() { return [0, 25, 60, 140, 320]; }
-  cardLevel(p) { return p.lvl || 1; }
-  upgradeInfo(p) {
-    const lvl = this.cardLevel(p), max = lvl >= 5;
-    const R = this.RARITY(), ri = Math.max(0, R.findIndex((x) => x.id === (p.rar || this.rarityFor(p).id)));
-    const cost = max ? 0 : Math.round(this.UPGRADE_COST()[lvl] * (1 + ri * 0.35));
-    const lock = this.lockOf(this.gateOf('card', lvl + 1));
-    const poor = (this.state.shards || 0) < cost;
-    return { lvl, max, cost, rar: R[ri].id, rarLabel: R[ri].label, locked: lock.locked && !max, need: lock.need,
-      can: !max && !lock.locked && !poor,
-      why: max ? 'Niveau maximum' : lock.locked ? lock.why : poor ? 'Il te manque ' + (cost - (this.state.shards || 0)) + ' fragments' : '' };
-  }
-
-  levelUpPlayer(id) {
-    const s = this.state, p = s.squad.find((x) => x.id === id);
-    if (!p) return { ok: false, why: 'Joueur introuvable' };
-    const info = this.upgradeInfo(p);
-    if (!info.can) return { ok: false, why: info.why };
-    const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; });
-    const w = this.statW(p.pos), keys = Object.keys(w).sort((a, b) => w[b] - w[a]).slice(0, 2);
-    keys.forEach((k) => { if (st[k] != null && st[k] < 99) st[k] += 2; });
-    const ovr = Math.max(p.ovr, this.ovrOf(p.pos, st));
-    this.buzz([30, 30, 60]);
-    this.setState({ shards: (s.shards || 0) - info.cost,
-      squad: s.squad.map((x) => (x.id === id ? Object.assign({}, x, { st, ovr, lvl: info.lvl + 1 }) : x)),
-      trainLog: p.name + ' passe niveau ' + (info.lvl + 1) + ' · ' + keys.map((k) => '+2 ' + k).join(', ') });
-    return { ok: true, lvl: info.lvl + 1 };
-  }
   rarityFor(p) {
     const R = this.RARITY();
+    if (p.rar) { const hit = R.find((x) => x.id === p.rar); if (hit) return hit; }
     for (let i = R.length - 1; i >= 0; i--) if (p.ovr >= R[i].lo) return R[i];
     return R[0];
   }
@@ -3661,11 +3740,10 @@ class Component extends DCLogic {
   packName(key) { return this.packByKey(key).name; }
   GATES() {
     return {
-      card: [0, 0, 2, 5, 9, 14],                       // niveaux de carte 1 à 5
       staff: [0, 2, 6, 11],                            // niveaux de staff 0 à 3
       stade: [0, 3, 7, 12, 18],                        // niveaux de stade 0 à 4
       academy: [0, 4, 9, 15],                          // niveaux de centre 0 à 3
-      pack: { basic: 0, premium: 3, elite: 7, special: 10, gold: 12 }
+      pack: { linkfoot: 0 }                            // §10 : un seul pack, ouvert dès le départ
     };
   }
   gateOf(kind, lvl) {
@@ -3707,6 +3785,13 @@ class Component extends DCLogic {
     const A = this.ACADEMIES(), al = s.academy || 0;
     row('academy', 'Centre de formation', al, A.length - 1, al < A.length - 1 ? A[al + 1].name : null, al < A.length - 1 ? A[al + 1].cost : 0, 'tokens', this.gateOf('academy', al + 1), { name: A[al].name, note: A[al].note });
 
+    // §12, §19 : la collection de compétences est une piste de progression comme les autres
+    const inv = this.state.skillInv || [];
+    out.push({ key: 'skills', label: 'Compétences', lvl: inv.length, max: Math.max(12, inv.length),
+      pct: Math.min(100, Math.round(inv.length / 12 * 100)),
+      nextLabel: inv.filter((k) => !k.on).length + ' en réserve', cost: 0, currency: 'cartes', locked: false, can: false,
+      why: inv.length ? inv.filter((k) => k.on).length + ' équipées, ' + inv.filter((k) => !k.on).length + ' en réserve' : 'Ouvre un LinkFoot Pack pour en obtenir' });
+
     const col = this.collection();
     out.push({ key: 'collection', label: 'Collection', lvl: col.have, max: col.total, pct: Math.round(col.have / col.total * 100),
       nextLabel: col.have < col.total ? (col.total - col.have) + ' cartes manquantes' : null, cost: 0, currency: 'cartes', locked: false, can: false,
@@ -3721,12 +3806,566 @@ class Component extends DCLogic {
   }
   unlocksAt(l) {
     const G = this.GATES(), out = [];
-    G.card.forEach((n, i) => { if (n === l && i > 1) out.push('niveau de carte ' + i); });
     G.staff.forEach((n, i) => { if (n === l && i > 0) out.push('staff niveau ' + i); });
     G.stade.forEach((n, i) => { if (n === l && i > 0) out.push(this.STADES()[i].name); });
     G.academy.forEach((n, i) => { if (n === l && i > 0) out.push(this.ACADEMIES()[i].name); });
-    this.PACK_DEFS().forEach((d) => { if ((d.req || 0) === l) out.push(d.name); });
+    this.PACK_DEFS().forEach((d) => { if ((d.req || 0) === l && l > 0) out.push(d.name); });
+    // §8 : certains paliers de club ouvrent des quêtes plus ambitieuses
+    if (l === 5) out.push('quêtes de palier 3');
+    if (l === 10) out.push('quêtes de palier 4');
+    if (l === 15) out.push('quêtes de palier 5');
     return out;
+  }
+  rarityOfPower(pw) {
+    const R = this.RARITY(), v = Math.max(0, Math.min(100, pw));
+    return R.find((x) => v >= x.pw[0] && v <= x.pw[1]) || R[0];
+  }
+
+  THE_PACK() { return this.PACK_DEFS()[0]; }
+  PACK_SLOTS() { return [{ kind: 'player', w: 0.45 }, { kind: 'skill', w: 0.55 }]; }
+
+  drawSlot(rnd) {
+    const S = this.PACK_SLOTS(), q = (rnd || Math.random)();
+    let a = 0; for (const x of S) { a += x.w; if (q <= a) return x.kind; }
+    return S[S.length - 1].kind;
+  }
+  drawLot(rnd, owned) {
+    const R = this.RARITY(), r = rnd || Math.random;
+    let q = r(), pick = R[0];
+    for (let i = 0; i < R.length; i++) { q -= R[i].rate; if (q <= 0) { pick = R[i]; break; } }
+    if (this.drawSlot(r) === 'skill') {
+      const sk = this.rollSkill(pick.id, r);
+      return { kind: 'skill', rar: pick.id, skill: sk, name: sk.name, ovr: sk.power, label: pick.label, color: pick.color, shards: pick.shards };
+    }
+    const pool = this.CARD_POOL().filter((c) => c.rar === pick.id);
+    const c = pool[Math.floor(r() * pool.length)];
+    const dup = owned && owned.has(c.id);
+    return dup
+      ? { kind: 'shards', rar: pick.id, name: c.name, ovr: c.ovr, label: pick.label, color: pick.color, dup: true, shards: pick.shards, id: c.id, pos: c.pos }
+      : { kind: 'player', rar: pick.id, name: c.name, ovr: c.ovr, pos: c.pos, id: c.id, label: pick.label, color: pick.color, shards: pick.shards };
+  }
+  openPack(opts) {
+    const o = opts || {}, s = this.state, def = this.THE_PACK();
+    if (!o.free) { const st2 = this.packState(def); if (!st2.can) return { ok: false, why: st2.why }; }
+    const r = o.rnd || Math.random;
+    const owned = new Set((s.squad || []).map((p) => p.id).concat(s.collected || []));
+    const got = [];
+    let shards = 0;
+    for (let i = 0; i < def.n; i++) {
+      const lot = this.drawLot(r, owned);
+      if (lot.kind === 'player') owned.add(lot.id);
+      if (lot.kind === 'shards') shards += lot.shards;
+      got.push(lot);
+    }
+    const order = this.RARITY().map((x) => x.id);
+    got.sort((a, b) => order.indexOf(b.rar) - order.indexOf(a.rar) || (b.ovr || 0) - (a.ovr || 0));
+    return { ok: true, def, got, shards, free: !!o.free };
+  }
+  commitPack(res) {
+    if (!res || !res.ok) return { ok: false };
+    const s = this.state, def = res.def;
+    const squad = s.squad.slice(), inv = (s.skillInv || []).slice(), collected = (s.collected || []).slice();
+    let uid = s.nextSkillUid || 1;
+    res.got.forEach((g) => {
+      if (g.kind === 'player') { squad.push(this.cardToPlayer(g)); collected.push(g.id); }
+      else if (g.kind === 'skill') { inv.push(Object.assign({}, g.skill, { uid: uid++, on: null })); }
+    });
+    const cost = res.free ? 0 : def.cost;
+    this.setState({ squad, skillInv: inv, collected, nextSkillUid: uid,
+      shards: (s.shards || 0) + res.shards,
+      balance: s.balance - cost,
+      missions: this.bumpMission(s.missions, 'pack', 1),
+      freeQueue: res.free ? s.freeQueue.slice(1) : s.freeQueue });
+    if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
+    this.bumpQuest('pack', 1);
+    return { ok: true };
+  }
+  cardToPlayer(c) {
+    return { id: c.id, name: c.name, pos: c.pos, ovr: c.ovr, rar: c.rar, fresh: true, scouted: true,
+      plv: 1, pxp: 0, pot: Math.min(97, c.ovr + 4 + Math.floor(Math.random() * 10)) };
+  }
+  GRADES() { return 8; }
+
+  rawPower(eid, cid, lvl, grade) {
+    const D = this.SKILL_DEF(), e = D.E.find((x) => x[0] === eid), c = D.C[cid];
+    if (!e || !c) return 0;
+    let raw = 0;
+    for (const k in e[3]) {
+      if (k === 'drain') raw += Math.abs(1 - e[3][k]) * 16;
+      else if (k === 'team') for (const t in e[3][k]) raw += e[3][k][t] * 3.4;   // un effet collectif pèse lourd
+      else raw += e[3][k];
+    }
+    return raw * c[2] * (0.6 + lvl * 0.2) * (0.7 + grade * 0.1);
+  }
+  skillPower(eid, cid, lvl, grade) {
+    const raw = this.rawPower(eid, cid, lvl, grade);
+    // l'échelle est calée pour que la combinaison la plus forte du jeu atteigne 100
+    // sans que rien ne s'y empile : chaque rareté est plus étroite que la précédente.
+    return Math.max(0, Math.min(100, Math.round(100 * Math.pow(raw / 38.5, 1.9))));
+  }
+  SKILL_INDEX() {
+    if (this._skIdx) return this._skIdx;
+    const D = this.SKILL_DEF(), G = this.GRADES(), R = this.RARITY();
+    const by = {}; R.forEach((r) => { by[r.id] = []; });
+    for (let ei = 0; ei < D.E.length; ei++) {
+      for (let ci = 0; ci < D.C.length; ci++) {
+        for (let l = 0; l < D.LVL.length; l++) {
+          for (let g = 0; g < G; g++) {
+            const pw = this.skillPower(D.E[ei][0], ci, l, g);
+            by[this.rarityOfPower(pw).id].push([D.E[ei][0], ci, l, g, pw]);
+          }
+        }
+      }
+    }
+    return (this._skIdx = by);
+  }
+  skillReq(eid, lvl, grade, power) {
+    const D = this.SKILL_DEF(), e = D.E.find((x) => x[0] === eid);
+    if (!e) return { pos: [], stats: {}, lvl: 1 };
+    const pw = power != null ? power : this.skillPower(eid, 0, lvl, grade);
+    const scale = 0.74 + pw / 100 * 0.42;            // 0,74 au plus faible, 1,16 au plus fort
+    const stats = {};
+    for (const k in e[5]) stats[k] = Math.round(e[5][k] * scale);
+    const pos = [];
+    for (const p2 in D.POSOK) if (D.POSOK[p2].indexOf(eid) >= 0) pos.push(p2);
+    // le niveau exigé suit la puissance : les compétences Normal les plus modestes
+    // sont portables dès le départ, les Legendary demandent un joueur construit.
+    return { pos, stats, lvl: 1 + Math.round(pw / 5.5), power: pw };
+  }
+  canEquip(p, sk) {
+    if (!p || !sk) return { ok: false, why: 'Compétence ou joueur introuvable' };
+    const req = sk.req || this.skillReq(sk.eid, sk.lvlIdx || sk.lvl - 1, sk.grade || 0, sk.power);
+    if (req.pos.indexOf(p.pos) < 0) return { ok: false, why: 'Réservée aux ' + req.pos.join(', ') };
+    const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; });
+    for (const k in req.stats) {
+      if ((st[k] || 0) < req.stats[k]) return { ok: false, why: k + ' ' + (st[k] || 0) + ' sur ' + req.stats[k] + ' requis' };
+    }
+    const lvl = this.playerLevel(p);
+    if (lvl < req.lvl) return { ok: false, why: 'Joueur niveau ' + lvl + ', il en faut ' + req.lvl };
+    const worn = this.equippedOn(p.id).length;
+    if (worn >= this.skillSlots(p)) return { ok: false, why: 'Emplacements pleins (' + worn + ' sur ' + this.skillSlots(p) + ')' };
+    return { ok: true, why: '' };
+  }
+  skillSlots(p) { const l = this.playerLevel(p); return l >= 25 ? 4 : l >= 15 ? 3 : l >= 6 ? 2 : 1; }
+
+  equippedOn(id) { return (this.state.skillInv || []).filter((k) => k.on === id); }
+  rollSkill(rarId, rnd) {
+    const r = rnd || Math.random, idx = this.SKILL_INDEX();
+    let list = idx[rarId];
+    if (!list || !list.length) {
+      // bande vide : on descend d'un cran plutôt que de rendre n'importe quoi
+      const R = this.RARITY(); let i = Math.max(0, R.findIndex((x) => x.id === rarId));
+      while (i > 0 && (!idx[R[i].id] || !idx[R[i].id].length)) i--;
+      list = idx[R[i].id];
+    }
+    const pick = list[Math.floor(r() * list.length)];
+    return this.makeSkill(pick[0], pick[1], pick[2], pick[3]);
+  }
+  innateSkills(p) {
+    const r = this.seedR((p.id || 1) * 104729 + 3), R = this.RARITY();
+    const pool = this.SKILL_DEF().POSOK[p.pos] || this.SKILL_DEF().POSOK.MIL;
+    const n = p.ovr >= 82 ? 2 : p.ovr >= 68 ? 1 : 0;
+    const capIdx = Math.max(0, R.findIndex((x) => x.id === this.rarityFor(p).id));
+    const idx = this.SKILL_INDEX(), out = [];
+    for (let i = 0; i < n; i++) {
+      let q = r(), ri = 0;
+      for (let k = 0; k < R.length; k++) { q -= R[k].rate; if (q <= 0) { ri = k; break; } }
+      ri = Math.min(ri, capIdx);
+      // une compétence innée reste compatible avec le poste du joueur
+      const band = (idx[R[ri].id] || []).filter((x) => pool.indexOf(x[0]) >= 0);
+      const list = band.length ? band : (idx[R[0].id] || []).filter((x) => pool.indexOf(x[0]) >= 0);
+      if (!list.length) continue;
+      const pick = list[Math.floor(r() * list.length)];
+      out.push(this.makeSkill(pick[0], pick[1], pick[2], pick[3]));
+    }
+    return out;
+  }
+  equipSkill(uid, playerId) {
+    const s = this.state, inv = (s.skillInv || []).slice();
+    const i = inv.findIndex((k) => k.uid === uid);
+    if (i < 0) return { ok: false, why: 'Compétence introuvable' };
+    const p = s.squad.find((x) => x.id === playerId);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    const chk = this.canEquip(p, inv[i]);
+    if (!chk.ok) return { ok: false, why: 'COMPÉTENCE INCOMPATIBLE · ' + chk.why };
+    inv[i] = Object.assign({}, inv[i], { on: playerId });
+    this.buzz([25, 25, 50]);
+    this.setState({ skillInv: inv, trainLog: p.name + ' apprend ' + inv[i].name });
+    this.bumpQuest('equip', 1);
+    return { ok: true };
+  }
+
+  unequipSkill(uid) {
+    const s = this.state, inv = (s.skillInv || []).slice();
+    const i = inv.findIndex((k) => k.uid === uid);
+    if (i < 0) return { ok: false, why: 'Compétence introuvable' };
+    inv[i] = Object.assign({}, inv[i], { on: null });
+    this.setState({ skillInv: inv });
+    return { ok: true };
+  }
+  skillInventory() {
+    const s = this.state, inv = s.skillInv || [];
+    return inv.map((k) => {
+      const on = k.on ? s.squad.find((p) => p.id === k.on) : null;
+      const fits = s.squad.filter((p) => this.canEquip(p, k).ok);
+      // §81 : quand personne ne peut la porter, on dit ce qui manque, pas « incompatible ».
+      let miss = '';
+      if (!fits.length && !on) {
+        const req = k.req || this.skillReq(k.eid, k.lvlIdx || k.lvl - 1, k.grade || 0, k.power);
+        const cands = s.squad.filter((p) => req.pos.indexOf(p.pos) >= 0);
+        if (!cands.length) miss = 'Aucun ' + req.pos.join(' ni ') + ' dans ton effectif';
+        else {
+          const best = cands.map((p) => this.canEquip(p, k)).find((x) => x.why);
+          const closest = cands.sort((a, b2) => this.playerLevel(b2) - this.playerLevel(a))[0];
+          miss = this.canEquip(closest, k).why + ' (ton meilleur candidat : ' + closest.name + ')';
+          if (!miss && best) miss = best.why;
+        }
+      }
+      return Object.assign({}, k, {
+        onName: on ? on.name : null,
+        fitCount: fits.length,
+        fits: fits.map((p) => ({ id: p.id, name: p.name, pos: p.pos, ovr: p.ovr })),
+        miss,
+        reqLine: this.reqLine(k)
+      });
+    });
+  }
+
+  reqLine(k) {
+    const req = k.req || this.skillReq(k.eid, k.lvlIdx || k.lvl - 1, k.grade || 0, k.power);
+    const st = Object.keys(req.stats).map((x) => x + ' ' + req.stats[x]);
+    return [req.pos.join('/'), st.join(', '), 'niveau ' + req.lvl].filter(Boolean).join(' · ');
+  }
+  playerXpNeed(l) { return Math.round(60 * Math.pow(1.17, Math.max(1, l) - 1)); }
+
+  playerLevel(p) { return p && p.plv ? p.plv : 1; }
+  playerXp(p) { return p && p.pxp ? p.pxp : 0; }
+
+  playerProgress(p) {
+    const lvl = this.playerLevel(p), xp = this.playerXp(p), need = this.playerXpNeed(lvl);
+    return { lvl, xp, need, pct: Math.round(xp / need * 100), slots: this.skillSlots(p), worn: this.equippedOn(p.id).length };
+  }
+  hiddenOf(p) {
+    if (p._hid) return p._hid;
+    const r = this.seedR((p.id || 1) * 15485863 + 29);
+    const pr = { pot: p.pot != null ? p.pot : 0 };
+    const h = {
+      potReel: Math.max(p.ovr, Math.min(99, (pr.pot || p.ovr + 8) + Math.round((r() - 0.5) * 8))),  // plafond réel de progression
+      regularite: Math.round(35 + r() * 60),        // variance de la note de match
+      grandsMatchs: Math.round(30 + r() * 65),      // bonus face à un adversaire mieux classé
+      pression: Math.round(30 + r() * 65),          // bonus dans les 15 dernières minutes serrées
+      progression: Math.round(55 + r() * 70),       // multiplicateur d'XP, 100 = normal
+      blessure: Math.round(20 + r() * 70),          // risque de blessure
+      adaptation: Math.round(35 + r() * 60)         // perte quand il joue hors de son poste
+    };
+    return h;
+  }
+  hiddenMods(p, ctx) {
+    const h = this.hiddenOf(p), c = ctx || {};
+    const n = (v) => (v - 65) / 100;                 // 65 = la moyenne, donc effet nul
+    const m = { dec: 0, sht: 0, pas: 0, phy: 0, def: 0, pace: 0, drain: 1, varia: 1 };
+    m.varia = 1.35 - h.regularite / 150;             // régulier = moins de hauts et de bas
+    if (c.strongerOpp) { m.dec += n(h.grandsMatchs) * 4; m.sht += n(h.grandsMatchs) * 3; }
+    if (c.closeLate) { m.dec += n(h.pression) * 4; m.sht += n(h.pression) * 3; }
+    if (c.outOfPos) { const pen = (1 - h.adaptation / 100) * 5; m.dec -= pen; m.pas -= pen; m.def -= pen; }
+    m.drain = 0.86 + (100 - h.blessure) / 100 * 0.1;
+    return m;
+  }
+
+  injuryRisk(p) { return 0.6 + this.hiddenOf(p).blessure / 100 * 0.9; }
+  xpRate(p) { return this.hiddenOf(p).progression / 100; }
+  matchXp(p, stat) {
+    const s = stat || {};
+    const base = 14 + (s.min || 90) / 90 * 10;
+    const perf = (s.goals || 0) * 9 + (s.assists || 0) * 6 + Math.max(0, ((s.rating || 6) - 6) * 7);
+    return Math.max(1, Math.round((base + perf) * this.xpRate(p)));
+  }
+  addPlayerXp(p, gain) {
+    const h = this.hiddenOf(p);
+    let lvl = this.playerLevel(p), xp = this.playerXp(p) + Math.max(0, Math.round(gain));
+    const ups = [];
+    const stats = {}; this.cardStats(p).forEach((q) => { stats[q.l] = q.v; });
+    let ovr = p.ovr;
+    let guard = 0;
+    while (xp >= this.playerXpNeed(lvl) && guard++ < 60) {
+      xp -= this.playerXpNeed(lvl); lvl++;
+      if (ovr >= h.potReel) { ups.push({ lvl, gain: null, capped: true }); continue; }
+      // la montée fait progresser les statistiques qui comptent pour son poste
+      const w = this.statW(p.pos), keys = Object.keys(w).sort((a, b) => w[b] - w[a]);
+      const k = keys[lvl % 3];
+      if (stats[k] != null && stats[k] < 99) stats[k] += 1;
+      const second = keys[(lvl + 1) % keys.length];
+      if (lvl % 2 === 0 && stats[second] != null && stats[second] < 99) stats[second] += 1;
+      ovr = Math.min(h.potReel, Math.max(ovr, this.ovrOf(p.pos, stats)));
+      ups.push({ lvl, gain: k, capped: false });
+    }
+    return { plv: lvl, pxp: xp, st: stats, ovr, ups };
+  }
+  grantPlayerXp(id, gain, why) {
+    const s = this.state, p = s.squad.find((x) => x.id === id);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    const res = this.addPlayerXp(p, gain);
+    const squad = s.squad.map((x) => (x.id === id ? Object.assign({}, x, { plv: res.plv, pxp: res.pxp, st: res.st, ovr: res.ovr }) : x));
+    const up = res.ups.length;
+    this.setState({ squad, trainLog: p.name + ' +' + Math.round(gain) + ' XP' + (why ? ' (' + why + ')' : '')
+      + (up ? ' · niveau ' + res.plv + (res.ups[up - 1].capped ? ' · potentiel atteint' : '') : '') });
+    if (up) { this.buzz([30, 30, 60]); this.bumpQuest('levelup', up); }
+    return { ok: true, lvl: res.plv, ups: res.ups };
+  }
+  SHARD_XP() { return { cost: 20, xp: 35, perDay: 6 }; }
+
+  shardTrainInfo(p) {
+    const s = this.state, D = this.SHARD_XP();
+    const used = (s.caps && s.caps.shardTrain) || 0;
+    const poor = (s.shards || 0) < D.cost;
+    const capped = used >= D.perDay;
+    return { cost: D.cost, xp: Math.round(D.xp * this.xpRate(p)), used, perDay: D.perDay,
+      can: !poor && !capped,
+      why: capped ? 'Limite du jour atteinte (' + D.perDay + ' séances)' : poor ? 'Il te manque ' + (D.cost - (s.shards || 0)) + ' fragments' : '' };
+  }
+
+  shardTrain(id) {
+    const s = this.state, p = s.squad.find((x) => x.id === id);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    const info = this.shardTrainInfo(p);
+    if (!info.can) return { ok: false, why: info.why };
+    this.setState({ shards: (s.shards || 0) - info.cost, caps: Object.assign({}, s.caps, { shardTrain: info.used + 1 }) });
+    return this.grantPlayerXp(id, info.xp, 'séance intensive');
+  }
+  CAPS() {
+    return { quest: 900, pack: null, match: null, prono: 400, mission: 600, vente: null, total: 2600 };
+  }
+  logMoney(amount, label) {
+    const s = this.state, led = (s.ledger || []).slice(0, 59);
+    led.unshift({ at: Date.now(), a: Math.round(amount), l: label });
+    this.setState({ ledger: led });
+    return led;
+  }
+
+  dayKey() { const d = new Date(); return d.getUTCFullYear() + '-' + (d.getUTCMonth() + 1) + '-' + d.getUTCDate(); }
+  earn(amount, source, label) {
+    const s = this.state, C = this.CAPS();
+    const caps = Object.assign({}, s.caps);
+    if (caps.day !== this.dayKey()) { Object.keys(caps).forEach((k) => { if (k !== 'day') caps[k] = 0; }); caps.day = this.dayKey(); }
+    let give = Math.max(0, Math.round(amount));
+    const capped = [];
+    const lim = C[source];
+    if (lim != null) {
+      const used = caps[source] || 0;
+      if (used + give > lim) { give = Math.max(0, lim - used); capped.push(source); }
+      caps[source] = (caps[source] || 0) + give;
+    }
+    if (C.total != null) {
+      const usedT = caps.total || 0;
+      if (usedT + give > C.total) { give = Math.max(0, C.total - usedT); capped.push('total'); }
+      caps.total = usedT + give;
+    }
+    this.setState({ balance: s.balance + give, caps });
+    if (give) this.logMoney(give, label || source);
+    return { given: give, asked: Math.round(amount), capped: capped.length ? capped : null };
+  }
+  spend(amount, label) {
+    const s = this.state, cost = Math.round(amount);
+    if (s.balance < cost) return { ok: false, why: 'Il te manque ' + (cost - s.balance) + ' jetons' };
+    this.setState({ balance: s.balance - cost });
+    this.logMoney(-cost, label || 'dépense');
+    return { ok: true };
+  }
+  QUEST_DEFS() {
+    return [
+      { id: 'q_win3', kind: 'win', goal: 3, label: 'Gagner 3 matchs', reward: 220, xp: 80, tier: 1 },
+      { id: 'q_assist5', kind: 'assist', goal: 5, label: 'Délivrer 5 passes décisives', reward: 260, xp: 90, tier: 2 },
+      { id: 'q_lowscorer', kind: 'lowGoal', goal: 1, label: 'Marquer avec un joueur de niveau inférieur à 10', reward: 300, xp: 110, tier: 2 },
+      { id: 'q_levelup', kind: 'levelup', goal: 3, label: 'Faire progresser un joueur de 3 niveaux', reward: 280, xp: 100, tier: 2 },
+      { id: 'q_poss60', kind: 'poss60', goal: 1, label: 'Gagner un match avec 60 % de possession', reward: 320, xp: 120, tier: 3 },
+      { id: 'q_streak3', kind: 'streak3', goal: 1, label: 'Remporter 3 matchs consécutifs', reward: 400, xp: 150, tier: 3 },
+      { id: 'q_rotate5', kind: 'rotate', goal: 5, label: 'Faire jouer 5 joueurs différents', reward: 180, xp: 70, tier: 1 },
+      { id: 'q_div', kind: 'division', goal: 1, label: 'Monter d’une division', reward: 700, xp: 300, tier: 4 },
+      { id: 'q_grow20', kind: 'reach20', goal: 1, label: 'Amener un joueur normal au niveau 20', reward: 900, xp: 400, tier: 5 },
+      { id: 'q_pack', kind: 'pack', goal: 3, label: 'Ouvrir 3 LinkFoot Packs', reward: 150, xp: 60, tier: 1 },
+      { id: 'q_equip', kind: 'equip', goal: 2, label: 'Équiper 2 compétences', reward: 200, xp: 80, tier: 1 },
+      { id: 'q_clean', kind: 'clean', goal: 2, label: 'Garder 2 fois sa cage inviolée', reward: 260, xp: 90, tier: 2 },
+      { id: 'q_sell', kind: 'sell', goal: 1, label: 'Vendre un joueur plus cher que sa valeur de départ', reward: 240, xp: 80, tier: 3 },
+      { id: 'q_youth', kind: 'youth', goal: 1, label: 'Faire jouer un joueur du centre de formation', reward: 300, xp: 110, tier: 3 }
+    ];
+  }
+  activeQuests() {
+    const s = this.state;
+    if (s.quests && s.quests.length) return s.quests;
+    return this.rollQuests(s.level || 1);
+  }
+
+  rollQuests(level) {
+    const D = this.QUEST_DEFS(), maxTier = level >= 15 ? 5 : level >= 10 ? 4 : level >= 5 ? 3 : 2;
+    const pool = D.filter((q) => q.tier <= maxTier);
+    const r = this.seedR((level || 1) * 7717 + 3), out = [], taken = {};
+    while (out.length < 4 && out.length < pool.length) {
+      const q = pool[Math.floor(r() * pool.length)];
+      if (taken[q.id]) continue;
+      taken[q.id] = 1;
+      out.push(Object.assign({}, q, { prog: 0, claimed: false }));
+    }
+    return out;
+  }
+
+  bumpQuest(kind, n) {
+    const s = this.state, qs = this.activeQuests();
+    let touched = false;
+    const next = qs.map((q) => {
+      if (q.kind !== kind || q.claimed || q.prog >= q.goal) return q;
+      touched = true;
+      return Object.assign({}, q, { prog: Math.min(q.goal, q.prog + (n || 1)) });
+    });
+    if (touched) this.setState({ quests: next });
+    return next;
+  }
+
+  claimQuest(id) {
+    const s = this.state, qs = this.activeQuests();
+    const q = qs.find((x) => x.id === id);
+    if (!q) return { ok: false, why: 'Quête introuvable' };
+    if (q.claimed) return { ok: false, why: 'Déjà récupérée' };
+    if (q.prog < q.goal) return { ok: false, why: 'Objectif non atteint (' + q.prog + ' sur ' + q.goal + ')' };
+    const got = this.earn(q.reward, 'quest', 'Quête : ' + q.label);
+    const L = this.addXp(this.state, q.xp);
+    // une quête terminée est remplacée : la liste reste à quatre, les gains restent plafonnés
+    const fresh = this.QUEST_DEFS().filter((d) => !qs.some((x) => x.id === d.id) && d.tier <= (this.state.level >= 10 ? 5 : 3));
+    const repl = fresh.length ? Object.assign({}, fresh[Math.floor(Math.random() * fresh.length)], { prog: 0, claimed: false }) : null;
+    const next = qs.map((x) => (x.id === id ? (repl || Object.assign({}, x, { claimed: true })) : x));
+    this.setState({ quests: next, xp: L.xp, level: L.level, freeQueue: L.freeQueue,
+      balance: this.state.balance + L.bonusBal,
+      levelUp: L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : this.state.levelUp });
+    this.buzz([30, 30, 60]);
+    return { ok: true, got: got.given, capped: got.capped, xp: q.xp };
+  }
+  questsAfterMatch(mt, st) {
+    const res = mt.res;
+    if (res === 'w') this.bumpQuest('win', 1);
+    if (mt.as === 0) this.bumpQuest('clean', 1);
+    if (mt.assists) this.bumpQuest('assist', mt.assists);
+    if (mt.poss != null && mt.poss >= 60 && res === 'w') this.bumpQuest('poss60', 1);
+    if (res === 'w' && (st.winStreak || 0) + 1 >= 3) this.bumpQuest('streak3', 1);
+    if (mt.xi) {
+      const seen = new Set((st.seenPlayers || []).concat(mt.xi.map((p) => p.id)));
+      this.setState({ seenPlayers: Array.from(seen).slice(-40) });
+      this.bumpQuest('rotate', 0);
+      const qs = this.activeQuests().map((q) => (q.kind === 'rotate' && !q.claimed ? Object.assign({}, q, { prog: Math.min(q.goal, seen.size) }) : q));
+      this.setState({ quests: qs });
+      if (mt.xi.some((p) => p.youth)) this.bumpQuest('youth', 1);
+      if (mt.scorers) mt.scorers.forEach((id) => {
+        const p = st.squad.find((x) => x.id === id);
+        if (p && this.playerLevel(p) < 10) this.bumpQuest('lowGoal', 1);
+      });
+    }
+    if (st.squad.some((p) => this.playerLevel(p) >= 20 && (p.rar || 'normal') === 'normal')) this.bumpQuest('reach20', 1);
+  }
+  CREATION_STEPS() {
+    return [
+      { id: 'name', label: 'Nom du club', hint: 'Le nom qui s’affichera partout' },
+      { id: 'kit', label: 'Couleurs et maillot', hint: 'Deux couleurs, un motif, un col' },
+      { id: 'logo', label: 'Logo', hint: 'Forme et initiales' },
+      { id: 'stade', label: 'Stade', hint: 'Terrain municipal au départ, agrandissable' },
+      { id: 'pays', label: 'Pays et championnat', hint: 'Détermine la division de départ' }
+    ];
+  }
+
+  COUNTRIES() {
+    return [
+      { id: 'fr', label: 'France', div: 4 }, { id: 'es', label: 'Espagne', div: 4 },
+      { id: 'it', label: 'Italie', div: 4 }, { id: 'en', label: 'Angleterre', div: 4 },
+      { id: 'de', label: 'Allemagne', div: 4 }, { id: 'pt', label: 'Portugal', div: 5 }
+    ];
+  }
+  starterSquad(seed) {
+    const r = this.seedR(seed || 20260101);
+    const plan = [
+      ['GB', 54], ['GB', 48], ['DEF', 55], ['DEF', 53], ['DEF', 51], ['DEF', 49], ['DEF', 47],
+      ['MIL', 56], ['MIL', 54], ['MIL', 51], ['MIL', 48], ['ATT', 55], ['ATT', 52], ['ATT', 49]
+    ];
+    const F = ['A.', 'B.', 'C.', 'D.', 'E.', 'G.', 'H.', 'I.', 'J.', 'K.', 'L.', 'M.', 'N.', 'O.', 'R.', 'S.', 'T.', 'V.', 'Y.', 'Z.'];
+    const L = ['Marvello', 'Ducasson', 'Ebongué', 'Halvorsen', 'Quintero', 'Belkadi-Roy', 'Stranieri', 'Okafor-Lemaire', 'Vasquet', 'Nyamsi', 'Gaudrel', 'Petrakis', 'Lindau', 'Moreau-Diaby', 'Castagne-Nil', 'Rivoire', 'Takamura', 'Ferbault', 'Ansaldi', 'Kowalevski', 'Dembrel', 'Soumahé'];
+    return plan.map(([pos, ovr], i) => {
+      const o = ovr + Math.round((r() - 0.5) * 4);
+      const age = 17 + Math.floor(r() * 6);
+      // un joueur normal jeune a du potentiel : c'est tout l'intérêt de le développer
+      const pot = Math.min(88, o + 10 + Math.floor(r() * 18));
+      return { id: i + 1, name: F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)],
+        pos, ovr: o, pot, age, rar: 'normal', plv: 3, pxp: 0, scouted: true };
+    });
+  }
+  starterRare(seed) {
+    const r = this.seedR((seed || 20260101) + 991);
+    const POS = ['MIL', 'ATT', 'DEF'];
+    const pos = POS[Math.floor(r() * POS.length)];
+    const ovr = 66 + Math.floor(r() * 5);                 // 66 à 70 : utile, pas décisif
+    const p = { id: 90, name: ['N. Oyelaran', 'M. Castellane', 'R. Esperanza', 'S. Haugen', 'K. Rakotoson'][Math.floor(r() * 5)],
+      pos, ovr, pot: Math.min(92, ovr + 14 + Math.floor(r() * 8)), age: 19 + Math.floor(r() * 3),
+      rar: 'rare', plv: 5, pxp: 0, scouted: true, gift: true };
+    // sa compétence spéciale, tirée dans la rareté Rare et compatible avec son poste
+    const D = this.SKILL_DEF(), pool = D.POSOK[pos] || D.POSOK.MIL;
+    let sk = null;
+    for (let i = 0; i < 20 && !sk; i++) {
+      const cand = this.makeSkill(pool[Math.floor(r() * pool.length)], Math.floor(r() * D.C.length), 1, Math.floor(r() * 3));
+      if (this.canEquipRaw(p, cand)) sk = cand;
+    }
+    p.skills = sk ? [sk] : [];
+    return p;
+  }
+  canEquipRaw(p, sk) {
+    const req = sk.req || this.skillReq(sk.eid, sk.rarIdx, sk.lvl - 1);
+    if (req.pos.indexOf(p.pos) < 0) return false;
+    const st = {}; this.genStatsFor(p).forEach((q) => { st[q.l] = q.v; });
+    for (const k in req.stats) if ((st[k] || 0) < req.stats[k]) return false;
+    return (p.plv || 1) >= req.lvl;
+  }
+
+  genStatsFor(p) { return this.cardStats(p); }
+  createClub(opts) {
+    const o = opts || {}, seed = o.seed || Date.now() % 1000000;
+    const country = this.COUNTRIES().find((c) => c.id === o.country) || this.COUNTRIES()[0];
+    const squad = this.starterSquad(seed);
+    const rare = this.starterRare(seed);
+    const patch = {
+      clubName: o.name || 'FC TonPseudo',
+      country: country.id, division: country.div,
+      kit: o.kit || this.state.kit,
+      stade: 0, academy: 0, staff: { adjoint: 0, physique: 0, recruteur: 0, kine: 0 },
+      squad: squad.concat([rare]),
+      nextId: 200, nextSkillUid: 1, skillInv: [], collected: [], seenPlayers: [],
+      balance: 600, shards: 0, xp: 0, level: 1,
+      record: { w: 0, d: 0, l: 0 }, seasonP: 0, winStreak: 0,
+      quests: this.rollQuests(1), caps: { day: this.dayKey() }, ledger: [],
+      freeQueue: ['linkfoot'],                      // un seul pack offert pour démarrer
+      created: true,
+      welcome: { title: 'CLUB CRÉÉ', sub: rare.name + ' (' + rare.pos + ' ' + rare.ovr + ', potentiel ' + rare.pot + ') rejoint le club. Le reste de l’effectif est à construire.' }
+    };
+    this.setState(patch);
+    this.logMoney(600, 'Dotation de départ');
+    return { ok: true, rare, squad };
+  }
+  creationSummary() {
+    const s = this.state, sq = s.squad || [];
+    const rare = sq.find((p) => p.gift);
+    const norm = sq.filter((p) => !p.gift);
+    const avg = norm.length ? Math.round(norm.reduce((a, p) => a + p.ovr, 0) / norm.length) : 0;
+    const pot = norm.length ? Math.round(norm.reduce((a, p) => a + (p.pot || p.ovr), 0) / norm.length) : 0;
+    return {
+      club: s.clubName || 'FC TonPseudo',
+      count: sq.length, avg, pot,
+      rare: rare ? { name: rare.name, pos: rare.pos, ovr: rare.ovr, potential: rare.pot,
+        skill: (rare.skills && rare.skills[0]) ? rare.skills[0].name : null } : null,
+      line: 'Effectif de ' + sq.length + ' joueurs, note moyenne ' + avg + ', potentiel moyen ' + pot + '.'
+    };
+  }
+  valueBreakdown(p) {
+    const skills = this.state && this.state.skillInv ? this.equippedOn(p.id) : [];
+    return {
+      value: this.valueOf(p), lvl: this.playerLevel(p),
+      rar: this.rarityFor(p).label,
+      skills: skills.length,
+      line: 'Niveau ' + this.playerLevel(p) + ' · ' + this.rarityFor(p).label
+        + (skills.length ? ' · ' + skills.length + ' compétence' + (skills.length > 1 ? 's' : '') : '')
+    };
   }
   renderVals() {
     const s = this.state, t = s.tac;
@@ -3764,9 +4403,15 @@ class Component extends DCLogic {
     ].map((o) => Object.assign(o, { styleName: STY[o.style].name, ovr: o.ovr - 5 + (4 - s.division) * 3 }));
     // une seule lecture de la progression par rendu : staff, stade, centre, collection.
     const TR = {}; this.progressBoard().forEach((t) => { TR[t.key] = t; });
+    // §11 et §28 : toutes les probabilités sont affichées, aucune n'est cachée.
     const packDefs = this.PACK_DEFS().map((d) => {
-      const o = this.packOdds(d).filter((x) => x.pct >= 0.05);
-      return Object.assign({}, d, { desc: d.n + ' cartes · ' + o.slice(2).map((x) => x.label + ' ' + x.pct.toFixed(x.pct < 10 ? 1 : 0).replace('.', ',') + ' %').join(' · ') });
+      const o = this.packOdds(d);
+      return Object.assign({}, d, {
+        desc: d.n + ' tirages · ' + d.content,
+        odds: o.map((x) => ({ label: x.label, color: x.color,
+          pct: x.pct >= 10 ? x.pct.toFixed(0) + ' %' : x.pct >= 1 ? x.pct.toFixed(1).replace('.', ',') + ' %' : x.pct.toFixed(1).replace('.', ',') + ' %',
+          w: Math.max(2, Math.round(Math.pow(x.pct, 0.45) * 11)) + '%' }))
+      });
     });
     const best = pk ? pk.got[0] : null;
     const tier = best ? (best.ovr >= 80 ? 'gold' : best.ovr >= 70 ? 'silver' : 'bronze') : 'bronze';
@@ -3774,7 +4419,7 @@ class Component extends DCLogic {
       gold: { glow: 'rgba(255,200,80,0.55)', ray: 'rgba(255,215,120,0.28)', text: '#FFE08A' },
       silver: { glow: 'rgba(190,240,220,0.45)', ray: 'rgba(200,245,225,0.2)', text: '#DFF7EA' },
       bronze: { glow: 'rgba(210,140,80,0.4)', ray: 'rgba(230,160,100,0.16)', text: '#F2C08A' }
-    }[pk && pk.phase === 'charge' ? (pk.def.fx === 'gold' ? 'gold' : pk.def.fx === 'silver' ? 'silver' : 'bronze') : tier];
+    }[pk && pk.phase === 'charge' ? 'gold' : tier];
     const PCOL = tier === 'gold' ? ['#FFE08A', '#FFF6D6', '#E9A93A', '#2ECC71'] : ['#2ECC71', '#43E0C2', '#F2F4F7', '#FFE08A'];
     const particles = Array.from({ length: 26 }, (_, i) => {
       const a = (i / 26) * Math.PI * 2 + (i % 3) * 0.2, d = 150 + (i * 37) % 170;
@@ -3789,11 +4434,11 @@ class Component extends DCLogic {
     const motm = (mtc && mtc.done && mtc.rat) ? (() => { let bi = 0; mtc.rat.H.forEach((v, k2) => { if (v > mtc.rat.H[bi]) bi = k2; }); const p = mtc.xi[bi]; const goals = mtc.events.filter((e) => e.text.indexOf('BUT ! ' + p.name) >= 0).length; return { p, v: mtc.rat.H[bi], goals }; })() : null;
     const SWATCH = ["#2ECC71", "#2ECC71", "#0C1210", "#FFFFFF", "#FF4757", "#1D3F9E", "#55B8E6", "#F2C66B", "#7A1F3D", "#0A8F6B", "#FF8A1F", "#6B2FB3"];
     const kitSmall = this.kitSvg(s.kit, 20);
-    const DAYR = [100, 150, 200, 'Pack Basic', 300, 400, 'Pack Or'];
+    const DAYR = [100, 150, 200, 'LinkFoot Pack', 300, 400, 'LinkFoot Pack'];
     const freeReady = s.now >= s.freePackAt;
     const fmt = (ms) => { const t = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), sec = t % 60; return h ? h + 'h' + String(m).padStart(2, '0') : m + ':' + String(sec).padStart(2, '0'); };
     const md = new Date(s.now); md.setHours(24, 0, 0, 0); const midnight = md.getTime();
-    const claimCount = (s.dayClaimed ? 0 : 1) + (freeReady ? 1 : 0) + s.missions.filter((m) => m.prog >= m.goal && !m.claimed).length + s.freeQueue.length;
+    const claimCount = (s.dayClaimed ? 0 : 1) + (freeReady ? 1 : 0) + s.missions.filter((m) => m.prog >= m.goal && !m.claimed).length + s.freeQueue.length + this.activeQuests().filter((q) => q.prog >= q.goal && !q.claimed).length;
     const meI = league.findIndex((c) => c.me), me = league[meI], ahead = meI > 0 ? league[meI - 1] : null;
     const rivalLine = ahead ? ahead.user + ' (' + ahead.club + ') ' + (ahead.pts === me.pts ? 'est à égalité avec toi mais passe devant' : 'est ' + (ahead.pts - me.pts) + ' pt' + (ahead.pts - me.pts > 1 ? 's' : '') + ' devant toi') + (meI > 1 ? ' : une victoire et tu remontes dans la zone de montée' : ' : bats-le pour prendre la tête') + '.' : 'Tu es en tête ! ' + (league[1] ? league[1].user + ' est à ' + (me.pts - league[1].pts) + ' pt(s), ne lâche rien.' : '');
     const clamp = (v) => Math.max(8, Math.min(100, v)) + '%';
@@ -3816,13 +4461,13 @@ class Component extends DCLogic {
         const isPack = typeof rw === 'string';
         return { n, label: isPack ? rw : '+' + rw, cls: today ? 'lf-glowp' : '', op: done ? 0.45 : 1,
           bg: today ? ORANGE : done ? '#13171C' : '#171B18', fg: today ? ON_ORANGE : '#F2F4F7', border: today ? 'transparent' : 'rgba(255,255,255,0.07)',
-          icon: isPack ? (rw.includes('Or') ? 'linear-gradient(135deg, #FFE59A, #E9A93A)' : 'linear-gradient(135deg, #E8B585, #B7773F)') : 'linear-gradient(135deg, #FFE08A, #E9A93A)', iconR: isPack ? '5px' : '11px',
-          pick: () => { if (!today) return; this.buzz([30, 30, 60]); const q = isPack ? s.freeQueue.concat([rw.indexOf('Or') >= 0 ? 'gold' : 'basic']) : s.freeQueue; this.setState({ dayClaimed: true, dayStreak: s.dayStreak + 1, balance: s.balance + (isPack ? 0 : rw), freeQueue: q }); } };
+          icon: isPack ? 'linear-gradient(135deg, #2ECC71, #1E9E92)' : 'linear-gradient(135deg, #FFE08A, #E9A93A)', iconR: isPack ? '5px' : '11px',
+          pick: () => { if (!today) return; this.buzz([30, 30, 60]); const q = isPack ? s.freeQueue.concat(['linkfoot']) : s.freeQueue; this.setState({ dayClaimed: true, dayStreak: s.dayStreak + 1, balance: s.balance + (isPack ? 0 : rw), freeQueue: q }); } };
       }),
       freeLocked: !freeReady, freeLabel: freeReady ? 'Récupérer' : fmt(s.freePackAt - s.now), freeBg: freeReady ? ORANGE : 'rgba(11,15,12,0.55)', freeFg: freeReady ? ON_ORANGE : '#AEB6C2',
-      claimFree: () => { if (!freeReady) return; this.buzz([30, 30, 60]); this.setState({ freeQueue: s.freeQueue.concat(['premium']), freePackAt: Date.now() + 4 * 3600 * 1000, now: Date.now() }); },
-      hasQueue: s.freeQueue.length > 0, queueLabel: s.freeQueue.length ? 'Ouvrir ' + (s.freeQueue.length > 1 ? 'tes ' + s.freeQueue.length + ' packs offerts' : 'ton ' + this.packName(s.freeQueue[0]) + ' offert') : '',
-      openQueued: () => { const k = s.freeQueue[0]; if (!k) return; const pd = packDefs.find((p) => p.key === k) || packDefs.find((p) => p.key === this.packByKey(k).key); this.setState({ showHub: false, view: 'packs' }); this.startPack(Object.assign({}, pd, { free: true })); },
+      claimFree: () => { if (!freeReady) return; this.buzz([30, 30, 60]); this.setState({ freeQueue: s.freeQueue.concat(['linkfoot']), freePackAt: Date.now() + 4 * 3600 * 1000, now: Date.now() }); },
+      hasQueue: s.freeQueue.length > 0, queueLabel: s.freeQueue.length ? 'Ouvrir ' + (s.freeQueue.length > 1 ? 'tes ' + s.freeQueue.length + ' packs offerts' : 'ton ' + this.THE_PACK().name + ' offert') : '',
+      openQueued: () => { if (!s.freeQueue.length) return; this.setState({ showHub: false, view: 'packs' }); this.startPack({ free: true }); },
       resetIn: fmt(midnight - s.now),
       missionRows: s.missions.map((m) => { const ready = m.prog >= m.goal && !m.claimed; return {
         label: m.label, w: Math.round(m.prog / m.goal * 100) + '%', progLabel: m.prog + '/' + m.goal, rewardLabel: '+' + m.reward + ' jetons · +' + m.xp + ' XP',
@@ -3830,7 +4475,7 @@ class Component extends DCLogic {
         bg: ready ? ORANGE : '#242A33', fg: ready ? ON_ORANGE : '#79828F', border: ready ? 'rgba(46,204,113,0.55)' : 'rgba(255,255,255,0.07)',
         claim: () => { if (!ready) return; this.buzz([30, 30, 60]); const L = this.addXp(s, m.xp); this.setState({ missions: s.missions.map((x) => (x.id === m.id ? Object.assign({}, x, { claimed: true }) : x)), balance: s.balance + m.reward + L.bonusBal, xp: L.xp, level: L.level, freeQueue: L.freeQueue, levelUp: L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : null }); } }; }),
       streakTiers: [[2, 'x1.2'], [3, 'x1.5'], [5, 'x2']].map(([n, mu]) => { const on = s.winStreak >= n; return { mult: mu, need: n + ' victoires', bg: on ? 'linear-gradient(180deg, rgba(46,204,113,0.22) 0%, rgba(46,204,113,0.06) 100%)' : '#1A1F1B', fg: on ? '#2ECC71' : '#F2F4F7', bd: on ? 'rgba(46,204,113,0.45)' : 'rgba(255,255,255,0.06)' }; }),
-      freeName: this.packName('premium'),
+      freeName: this.THE_PACK().name,
       // la même source que les écrans Staff et Packs : progressBoard()
       tracks: this.progressBoard().map((t) => ({
         label: t.label,
@@ -3914,6 +4559,12 @@ class Component extends DCLogic {
       simRes: s.simRes || 'Lance une simulation pour vérifier l’équilibrage.',
       sim50: () => this.simulate(20), sim200: () => this.simulate(100),
       isTrain: s.view === 'train', isMarket: s.view === 'market', goTrain: () => this.setState({ view: 'train' }), goMarket: () => this.setState({ view: 'market' }),
+      goSkills: () => this.setState({ view: 'skills' }),
+      // §1 : le joueur est directeur sportif. Pendant le match il ne touche à rien :
+      // il a composé, préparé, équipé, et il regarde ses décisions prendre vie.
+      roleLine: 'Directeur sportif · ' + (s.clubName || 'FC TonPseudo'),
+      skillHubLine: (() => { const inv = this.skillInventory(), q = this.activeQuests().filter((x) => x.prog >= x.goal && !x.claimed).length;
+        return (inv.length ? inv.filter((k) => k.onName).length + ' équipée(s) · ' + inv.filter((k) => !k.onName).length + ' en réserve' : 'Aucune compétence en réserve') + (q ? ' · ' + q + ' quête(s) à récupérer' : ''); })(),
       trainings: this.TRAININGS().map((t) => ({ label: t.label, desc: t.desc, pick: () => this.train(t.id) })), trainLog: s.trainLog || 'Aucune séance cette semaine.', trainDone: (s.trainDone || 0) + ' séance' + ((s.trainDone || 0) > 1 ? 's' : '') + ' cette saison',
       cohLabel: Math.round(Math.min(1.08, Math.max(0.7, 1 - xi.filter((p) => p.pen).length * 0.06 - (s.preset === 'perso' ? 0.04 : 0) - xi.filter((p) => p.fresh).length * 0.03 + (s.cohBonus || 0))) * 100) + ' %',
       cohHint: (xi.filter((p) => p.pen).length ? xi.filter((p) => p.pen).length + ' hors poste · ' : '') + (s.preset === 'perso' ? 'tactique perso · ' : '') + (xi.filter((p) => p.fresh).length ? xi.filter((p) => p.fresh).length + ' nouveau · ' : '') + 'collectif +' + Math.round((s.cohBonus || 0) * 100) + ' %',
@@ -3927,10 +4578,20 @@ class Component extends DCLogic {
           form: pr.form + ' %', fit: pr.fit + ' %', morale: pr.morale + ' %', fitC: pr.fit >= 70 ? '#2ECC71' : pr.fit >= 45 ? '#FFC24A' : '#FF4757', formC: pr.form >= 70 ? '#2ECC71' : pr.form >= 45 ? '#FFC24A' : '#FF4757',
           inj: pr.inj ? 'Blessé · ' + pr.inj + ' match' + (pr.inj > 1 ? 's' : '') : 'Apte', injC: pr.inj ? '#FF4757' : '#2ECC71', status: tit ? 'Titulaire' : 'Remplaçant', stats: this.cardStats(p), skills: pr.skills.map((k) => ({ name: k.name, cat: k.cat + ' · ' + k.rarLabel + ' · niv. ' + k.lvl, desc: k.desc, color: k.color })),
           ups: this.UPGRADE_CARDS().map(([k, label]) => { const n = (s.inv || {})['up_' + k] || 0; return { label: label + ' +2', n: 'x' + n, use: () => this.useUpgrade(p.id, k), bg: n > 0 ? 'rgba(46,204,113,0.12)' : '#242A33', fg: n > 0 ? '#2ECC71' : '#5E6672', bd: n > 0 ? 'rgba(46,204,113,0.4)' : 'rgba(255,255,255,0.06)' }; }),
-          lvlLabel: (() => { const u = this.upgradeInfo(p); return u.max ? 'Carte niveau 5 · maximum' : 'Carte ' + u.rarLabel + ' niveau ' + u.lvl + ' → ' + (u.lvl + 1) + ' · ' + u.cost + ' fragments' + (u.why ? ' · ' + u.why : ''); })(),
-          lvlBg: this.upgradeInfo(p).can ? '#2ECC71' : '#242A33',
-          lvlFg: this.upgradeInfo(p).can ? '#171B21' : '#5E6672',
-          lvlUp: () => { if (this.upgradeInfo(p).can) this.levelUpPlayer(p.id); },
+          // §6 : un seul niveau par joueur, monté par l'XP. L'entraînement intensif
+          // accélère mais reste plafonné : l'argent n'achète pas une superstar.
+          lvlLabel: (() => { const g = this.playerProgress(p), t = this.shardTrainInfo(p);
+            return 'Niveau ' + g.lvl + ' · ' + g.xp + ' / ' + g.need + ' XP' + (t.why ? ' · ' + t.why : ' · séance ' + t.cost + ' fragments pour +' + t.xp + ' XP'); })(),
+          lvlPct: Math.min(100, this.playerProgress(p).pct) + '%',
+          lvlBg: this.shardTrainInfo(p).can ? '#2ECC71' : '#242A33',
+          lvlFg: this.shardTrainInfo(p).can ? '#171B21' : '#5E6672',
+          lvlCta: this.shardTrainInfo(p).can ? 'Entraîner' : 'Indisponible',
+          lvlUp: () => { if (this.shardTrainInfo(p).can) this.shardTrain(p.id); },
+          // §15 : les compétences portées et les emplacements libres
+          slotLine: this.equippedOn(p.id).length + ' / ' + this.skillSlots(p) + ' emplacements de compétence',
+          hid: (() => { const h = this.hiddenOf(p); const lab = (v) => v >= 80 ? 'excellent' : v >= 62 ? 'bon' : v >= 45 ? 'correct' : 'faible';
+            return [['Régularité', lab(h.regularite)], ['Grands matchs', lab(h.grandsMatchs)], ['Sang-froid', lab(h.pression)], ['Progression', lab(h.progression)], ['Résistance aux blessures', lab(100 - h.blessure)], ['Adaptation tactique', lab(h.adaptation)]]
+              .map(([k, v]) => ({ k, v })); })(),
           canSell, sellLabel: canSell ? 'Vendre · ' + Math.round(pr.value * 0.6).toLocaleString('fr-FR') + ' jetons' : tit ? 'Titulaire : sors-le du XI pour vendre' : 'Effectif minimum atteint', sellBg: canSell ? 'rgba(255,107,92,0.14)' : '#242A33', sellFg: canSell ? '#FF4757' : '#5E6672',
           sell: () => { if (!canSell) return; this.setState({ showPlayer: null }); this.sellPlayer(p.id); } }; })(),
       isHome: s.view === 'home', notHome: s.view !== 'home', goHome: () => this.setState({ view: 'home', sel: null }), nextOpp: opps[0].club, nextOppSub: opps[0].styleName + ' · note ' + opps[0].ovr, kitHero: this.kitSvg(s.kit, 96), squadCountLabel: s.squad.length + ' joueurs',
@@ -4011,27 +4672,76 @@ class Component extends DCLogic {
       collLine: (() => { const c = this.collection(); return c.have + ' / ' + c.total; })(),
       shardLine: (s.shards || 0) + ' fragments · un doublon en rapporte selon sa rareté',
       packs: packDefs.map((pd) => {
-        // un seul juge : packState. Le prix, le verrou et la raison viennent de là.
-        const st2 = this.packState(pd), ok = st2.can, gold = pd.key === 'gold';
-        return { name: pd.name, desc: pd.desc, count: pd.n, color: pd.color,
-          price: st2.locked ? 'Niv. ' + st2.need : pd.cost + ' jetons', locked: !ok,
-          note: st2.why, hasNote: !!st2.why, noteFg: st2.locked ? '#F5C84C' : '#79828F',
-          border: gold ? 'rgba(245,200,76,0.5)' : 'rgba(255,255,255,0.07)', cardBg: gold ? 'linear-gradient(105deg, rgba(245,200,76,0.20) 0%, rgba(245,200,76,0.05) 45%, #1E232B 80%)' : '#1E232B', btnBg: ok ? ORANGE : '#242A33', btnFg: ok ? ON_ORANGE : '#5E6672', btnSh: ok ? '0 6px 18px rgba(46,204,113,0.22), inset 0 1px 0 rgba(255,255,255,0.35)' : 'none', open: () => { if (!ok) return; this.startPack(pd); } };
+        // un seul juge : packState. Le prix et la raison d'un refus viennent de là.
+        const st2 = this.packState(pd), ok = st2.can;
+        return { name: pd.name, desc: pd.desc, count: pd.n, color: pd.color, odds: pd.odds,
+          price: pd.cost + ' jetons', locked: !ok,
+          note: st2.why, hasNote: !!st2.why, noteFg: '#F5C84C',
+          border: 'rgba(46,204,113,0.4)', cardBg: 'linear-gradient(105deg, rgba(46,204,113,0.16) 0%, rgba(46,204,113,0.04) 45%, #1E232B 80%)',
+          btnBg: ok ? ORANGE : '#242A33', btnFg: ok ? ON_ORANGE : '#5E6672', btnSh: ok ? '0 6px 18px rgba(46,204,113,0.22), inset 0 1px 0 rgba(255,255,255,0.35)' : 'none',
+          open: () => { if (!ok) return; this.startPack(pd); } };
       }),
+      // §24 : l'écran Compétences du directeur sportif. Chaque compétence dit
+      // ce qu'elle exige et qui peut la porter (§15).
+      isSkills: s.view === 'skills',
+      skillInv: this.skillInventory().map((k) => ({
+        name: k.name, cat: k.cat, rar: k.rarLabel, color: k.color, power: 'puissance ' + k.power,
+        desc: k.desc, req: k.reqLine,
+        onName: k.onName || null, equipped: !!k.onName,
+        status: k.onName ? 'Portée par ' + k.onName : k.fitCount ? k.fitCount + ' joueur' + (k.fitCount > 1 ? 's' : '') + ' compatible' + (k.fitCount > 1 ? 's' : '') : (k.miss || 'Aucun joueur compatible pour l’instant'),
+        statusFg: k.onName ? '#2ECC71' : k.fitCount ? '#AEB6C2' : '#F5C84C',
+        cta: k.onName ? 'Retirer' : k.fitCount ? 'Équiper sur ' + k.fits[0].name : 'Incompatible',
+        can: !!(k.onName || k.fitCount),
+        btnBg: k.onName ? 'rgba(255,255,255,0.06)' : k.fitCount ? ORANGE : '#242A33',
+        btnFg: k.onName ? '#F2F4F7' : k.fitCount ? ON_ORANGE : '#5E6672',
+        act: () => { if (k.onName) this.unequipSkill(k.uid); else if (k.fitCount) this.equipSkill(k.uid, k.fits[0].id); }
+      })),
+      hasSkills: this.skillInventory().length > 0, noSkills: this.skillInventory().length === 0,
+      skillEmpty: 'Aucune compétence en réserve. Ouvre un ' + this.THE_PACK().name + ' pour en obtenir.',
+      skillTotal: this.skillCount().toLocaleString('fr-FR') + ' combinaisons possibles',
+      skillWorn: this.skillInventory().filter((k) => k.onName).length + ' équipée(s) sur ' + this.skillInventory().length,
+      // §8 : les quêtes, source principale et encadrée de revenus
+      quests: this.activeQuests().map((q) => {
+        const done = q.prog >= q.goal, ready = done && !q.claimed;
+        return { label: q.label, prog: q.prog + ' / ' + q.goal, pct: Math.round(q.prog / q.goal * 100) + '%',
+          reward: '+' + q.reward + ' jetons · +' + q.xp + ' XP', ready, claimed: !!q.claimed,
+          cta: q.claimed ? 'Récupérée' : ready ? 'Récupérer' : 'En cours',
+          btnBg: ready ? ORANGE : '#242A33', btnFg: ready ? ON_ORANGE : '#5E6672',
+          claim: () => { if (ready) this.claimQuest(q.id); } };
+      }),
+      // §7 et §29 : ce que le club a gagné aujourd'hui et d'où ça vient
+      capLine: (() => { const C = this.CAPS(), c2 = s.caps || {};
+        return 'Plafond du jour : ' + (c2.total || 0) + ' / ' + C.total + ' jetons toutes sources confondues'; })(),
+      ledger: (s.ledger || []).slice(0, 10).map((l) => ({
+        label: l.l, amount: (l.a >= 0 ? '+' : '') + l.a, fg: l.a >= 0 ? '#2ECC71' : '#FF8A65' })),
+      hasLedger: (s.ledger || []).length > 0,
       packOpen: !!pk,
       phaseCharge: !!pk && pk.phase === 'charge', phaseWalkout: !!pk && pk.phase === 'walkout', phaseCards: !!pk && pk.phase === 'cards',
       showBurst: !!pk && pk.burst, particles,
       fxGlow: FX.glow, fxRay: FX.ray, fxText: FX.text,
       raysOpacity: pk ? (pk.phase === 'charge' ? 0.35 + pk.taps * 0.2 : 1) : 0,
       fxPack: pk ? pk.def.color : '', packName: pk ? pk.def.name.replace('Pack ', '') : '', packCountLabel: pk ? pk.def.n + ' JOUEURS' : '',
-      packCls: pk ? (pk.taps >= (pk.def && pk.def.fx === 'gold' ? 3 : 2) ? 'lf-shake-hard' : 'lf-shake') : '',
+      packCls: pk ? (pk.taps >= 2 ? 'lf-shake-hard' : 'lf-shake') : '',
       chargeHint: pk ? ['TOUCHE POUR OUVRIR', 'ENCORE !', 'ENCORE UNE FOIS !'][Math.min(2, pk.taps)] : '',
       tapPack: () => this.tapPack(),
       walkBanner: best ? (best.ovr >= 85 ? 'LÉGENDE !' : best.ovr >= 80 ? 'WALKOUT !' : 'GROSSE PIOCHE !') : '',
       bestBg: best ? color(best.ovr) : '', bestPos: best ? best.pos : '', bestOvr: best ? best.ovr : '', bestName: best ? best.name : '',
       walkPos: !!pk && pk.walk >= 1, walkOvr: !!pk && pk.walk >= 2, walkName: !!pk && pk.walk >= 3,
       revealTitle: pk ? pk.def.name + ' ouvert !' : '',
-      reveal: pk ? pk.got.map((p, i) => ({ ovr: p.ovr, pos: p.pos, name: p.name, short: p.name.split(' ').slice(1).join(' '), face: this.faceSvg(p, s.kit), stats: this.cardStats(p), bg: color(p.ovr), glow: glowOf(p.ovr), delay: (0.15 + i * 0.22) + 's' })) : [],
+      // §28 : la révélation. Un lot peut être un joueur, une compétence ou des fragments :
+      // chacun se montre avec ce qui le décrit, pas avec les champs d'un autre.
+      reveal: pk ? pk.got.map((g, i) => {
+        const isSkill = g.kind === 'skill';
+        const face = isSkill ? '' : this.faceSvg({ id: g.id || 1 }, s.kit);
+        return { ovr: g.ovr, pos: isSkill ? g.skill.cat : g.pos, name: g.name,
+          short: isSkill ? g.skill.rarLabel : g.name.split(' ').slice(1).join(' '),
+          face, isSkill, isPlayer: !isSkill,
+          sub: isSkill ? 'puissance ' + g.skill.power + ' · ' + g.skill.rarLabel
+            : g.dup ? 'doublon · +' + g.shards + ' fragments' : g.label + ' · ' + g.pos,
+          stats: isSkill ? [] : this.cardStats({ id: g.id, pos: g.pos, ovr: g.ovr }),
+          bg: isSkill ? g.color : color(g.ovr), glow: glowOf(isSkill ? Math.min(99, 60 + g.skill.power / 3) : g.ovr),
+          delay: (0.15 + i * 0.22) + 's' };
+      }) : [],
       closePack: () => this.closePack(),
       pickingOpp: !mtc, inMatch: !!mtc,
       opps: opps.map((o) => { const d = teamOvr - o.ovr; const adv = s.preset === 'perso' ? 0 : this.matchup(s.preset, o.style); const S2 = STY[o.style];

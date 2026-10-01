@@ -1,11 +1,31 @@
 // LinkFoot : Marché des transferts : valeur, offres, vente (§71).
 // Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
 export const Transfer = {
+  // §25 : la valeur se calcule, elle n'est pas écrite. Niveau, note, âge, potentiel,
+  // forme, rareté et compétences portées entrent tous dedans. Un joueur normal
+  // longuement développé finit donc par valoir cher : c'est une vraie économie.
   valueOf(p) {
     const age = p.age != null ? p.age : this.profile(p).age, pot = p.pot != null ? p.pot : p.ovr;
     const ageK = age <= 21 ? 1.35 : age <= 25 ? 1.2 : age <= 29 ? 1 : age <= 32 ? 0.7 : 0.45;
     const formK = 0.85 + ((p.form != null ? p.form : 70) - 50) / 200;
-    return Math.round(Math.pow(Math.max(40, p.ovr) / 10, 3.2) * ageK * formK * (1 + Math.max(0, pot - p.ovr) / 40) / 3) * 10;
+    const lvlK = 1 + (this.playerLevel(p) - 1) * 0.035;                 // le travail accompli se paie
+    const rarK = 1 + Math.max(0, this.RARITY().findIndex((x) => x.id === this.rarityFor(p).id)) * 0.07;
+    const skills = this.state && this.state.skillInv ? this.equippedOn(p.id) : [];
+    const skK = 1 + skills.reduce((a, k) => a + k.power / 260, 0);      // une compétence rare vaut cher
+    const base = Math.pow(Math.max(40, p.ovr) / 10, 3.2) * ageK * formK * (1 + Math.max(0, pot - p.ovr) / 40) / 3;
+    return Math.round(base * lvlK * rarK * skK) * 10;
+  },
+
+  // Le détail de la valeur, pour que l'écran puisse l'expliquer plutôt que l'afficher sèchement.
+  valueBreakdown(p) {
+    const skills = this.state && this.state.skillInv ? this.equippedOn(p.id) : [];
+    return {
+      value: this.valueOf(p), lvl: this.playerLevel(p),
+      rar: this.rarityFor(p).label,
+      skills: skills.length,
+      line: 'Niveau ' + this.playerLevel(p) + ' · ' + this.rarityFor(p).label
+        + (skills.length ? ' · ' + skills.length + ' compétence' + (skills.length > 1 ? 's' : '') : '')
+    };
   },
 
   marketList() {
@@ -29,8 +49,13 @@ export const Transfer = {
     if (!p) return { ok: false, why: 'Joueur introuvable' };
     const price = Math.round(this.profile(p).value * 0.6);
     this.buzz(25);
-    this.setState({ squad: s.squad.filter((x) => x.id !== id), balance: s.balance + price, sel: null,
+    // les compétences du joueur vendu retournent en réserve : elles t'appartiennent (§19)
+    const inv = (s.skillInv || []).map((k) => (k.on === id ? Object.assign({}, k, { on: null }) : k));
+    this.setState({ squad: s.squad.filter((x) => x.id !== id), sel: null, skillInv: inv,
       trainLog: p.name + ' vendu pour ' + price + ' jetons' });
+    this.earn(price, 'vente', 'Vente de ' + p.name);
+    if (p.base != null && price > p.base) this.bumpQuest('sell', 1);
+    else if (price > this.valueOf(Object.assign({}, p, { plv: 1 }))) this.bumpQuest('sell', 1);
     return { ok: true, price };
   }
 };

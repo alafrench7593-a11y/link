@@ -11,6 +11,9 @@ import { Transfer } from './transfer.js';
 import { Progression } from './progression.js';
 import { Tactics } from './tactics.js';
 import { Tracks } from './tracks.js';
+import { PlayerXP } from './playerxp.js';
+import { Quests } from './quests.js';
+import { Creation } from './creation.js';
 
 export class Club {
   constructor(state) {
@@ -41,8 +44,17 @@ export class Club {
     const f = E.state();
     const hs = f.score.H, as = f.score.A;
     const res = hs > as ? 'w' : hs === as ? 'd' : 'l', reward = res === 'w' ? 120 : res === 'd' ? 50 : 20;
+    const logs = E.log.map((l) => ({ m: l.m, text: l.text, k: l.k, s: l.s }));
+    // §19 : qui a marqué, qui a fait la passe. Les quêtes et l'XP des joueurs en dépendent.
+    const scorers = [], assisters = [];
+    logs.filter((l) => l.k === 'G' && l.s === 'H').forEach((l) => {
+      xi.forEach((p) => {
+        if (l.text.indexOf('BUT ! ' + p.name) >= 0) scorers.push(p.id);
+        else if (l.text.indexOf('servi par ' + p.name) >= 0 || l.text.indexOf('sur un centre de ' + p.name) >= 0) assisters.push(p.id);
+      });
+    });
     const mt = { opp, oxi, bench: this.benchOf(xi), hs, as, st: f.st, rat: f.rat, res, reward, done: true, ended: true,
-      log: E.log.map((l) => ({ m: l.m, text: l.text, k: l.k, s: l.s })),
+      poss: f.poss, scorers, assisters, assists: assisters.length, log: logs,
       xi: f.en ? xi.map((p, i) => Object.assign({}, p, { energy: f.en[i], yc: f.cards[i][0], red: f.cards[i][1] })) : xi };
     const record = Object.assign({}, s.record, { [res]: s.record[res] + 1 });
     const base = Object.assign({}, this.state, { balance: s.balance + reward, record });
@@ -83,4 +95,4 @@ export class Club {
 }
 
 // §80 : chaque domaine vit dans son fichier et vient se mélanger ici.
-Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks);
+Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation);

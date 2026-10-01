@@ -1,6 +1,8 @@
 // LinkFoot : état de départ d'un club. Tout l'état du jeu tient dans cet objet,
 // ce qui le rend sérialisable tel quel (voir save.js).
-const P = (id, name, pos, ovr) => ({ id, name, pos, ovr });
+// Un joueur de l'effectif de démonstration. Son niveau découle de sa note :
+// un joueur à 66 est déjà construit, un joueur à 58 débute (§6).
+const P = (id, name, pos, ovr) => ({ id, name, pos, ovr, plv: Math.max(1, Math.round((ovr - 46) / 3.5)), pxp: 0 });
 
 export function INITIAL_STATE() {
   return {
@@ -13,6 +15,12 @@ export function INITIAL_STATE() {
         P(10, 'K. Rouvière', 'ATT', 69), P(11, 'B. Adebanjo', 'ATT', 64), P(12, 'E. Castellane', 'ATT', 62), P(13, 'R. Moulinet', 'GB', 58), P(14, 'I. Tavares', 'DEF', 59)
       ],
       nextId: 100, pack: null, match: null, record: { w: 1, d: 1, l: 0 },
+      // §12, §19 : l'inventaire de compétences. Une compétence obtenue dans un pack
+      // arrive ici, puis s'équipe sur un joueur compatible, puis agit dans le match.
+      skillInv: [], nextSkillUid: 1, collected: [], seenPlayers: [],
+      // §7, §29 : l'économie encadrée. `caps` compte les gains du jour par source,
+      // `ledger` garde le journal des transactions.
+      shards: 0, caps: {}, ledger: [], quests: null, clubName: 'FC TonPseudo', country: 'fr', created: true,
       kit: { c1: '#2ECC71', c2: '#0C1210', pat: 'uni', collar: 'rond', sponsor: true }, showKit: false, cam: '2d',
       xp: 340, level: 7, dayStreak: 3, dayClaimed: false, winStreak: 0, showHub: false, levelUp: null, now: Date.now(), freePackAt: Date.now() + 90000, freeQueue: [],
       division: 4, seasonP: 2, lastGain: null,
