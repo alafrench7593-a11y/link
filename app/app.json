@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "LinkFoot",
+    "slug": "linkfoot",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0B0F0C",
+    "splash": { "backgroundColor": "#0B0F0C", "resizeMode": "contain" },
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": false },
+    "android": { "adaptiveIcon": { "backgroundColor": "#0B0F0C" } },
+    "web": { "bundler": "metro" }
+  }
+}

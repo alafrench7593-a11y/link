@@ -47,6 +47,7 @@ tools/          synchronisation de l'artboard du canvas depuis src/.
 canvas/         l'écran Mon Club, regénéré depuis src/ par npm run sync.
 types/          déclarations TypeScript.
 dist/linkfoot.js  même chose en un seul fichier, expose window.LinkFoot.
+app/            l'application Expo pour téléphone (voir app/README.md)
 demo/demo.html  page de démonstration : joue des matchs, recharge, le club est toujours là.
 test/sim.js     simulateur d'équilibrage et test d'aller-retour de sauvegarde.
 ```
@@ -137,6 +138,21 @@ const f = E.state();         // score, statistiques, notes, énergie, cartons
 
 Pour le temps réel, utilise `E.step()` image par image et `E.frame()` pour l'état à
 afficher. Le moteur joue le match tout seul : il n'y a pas de contrôle direct.
+
+## Sur téléphone, avec Expo Go
+
+L'application native est dans `app/`. Elle ne contient aucune règle du jeu : elle
+importe le moteur depuis `../src` et se contente de l'afficher.
+
+```bash
+cd app
+npm install
+npx expo start        # puis scanner le QR code avec Expo Go
+```
+
+Six écrans : Club, Effectif, Match, Entraînement, Packs, En ligne. La partie est
+sauvegardée sur le téléphone (AsyncStorage) ; remplacer `PhoneStore` par `HttpStore`
+la fait suivre d'un appareil à l'autre. Détails dans `app/README.md`.
 
 ## Dans une app React ou React Native
 
