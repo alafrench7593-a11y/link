@@ -23,6 +23,8 @@ src/save.js     sérialisation versionnée et stockages (mémoire, navigateur, H
 src/index.js    point d'entrée ES module.
 src/react.js    hooks useClub et useLiveMatch pour React et React Native.
 server/         routes de sauvegarde prêtes à monter dans Express, plus un serveur de démo.
+tools/          synchronisation de l'artboard du canvas depuis src/.
+canvas/         l'écran Mon Club, regénéré depuis src/ par npm run sync.
 types/          déclarations TypeScript.
 dist/linkfoot.js  même chose en un seul fichier, expose window.LinkFoot.
 demo/demo.html  page de démonstration : joue des matchs, recharge, le club est toujours là.
@@ -175,6 +177,21 @@ Pour voir tourner l'ensemble sans rien installer : `npm run demo`, puis
 <http://localhost:8787>. Le serveur de démonstration sert la page et les routes,
 sans aucune dépendance.
 
+## Une seule source de vérité
+
+L'écran Mon Club du canvas (`canvas/Club.dc.html`) contenait sa propre copie du moteur.
+Deux copies, c'est deux équilibrages qui divergent dès la première correction faite d'un
+seul côté. Le moteur et les règles vivent donc dans `src/`, et l'artboard est regénéré :
+
+```bash
+npm run sync      # réinjecte src/engine.js et les méthodes de src/club.js dans l'artboard
+npm run check     # ne réécrit rien : échoue si l'artboard a divergé, puis simule 100 matchs
+```
+
+Après un `npm run sync`, republie `canvas/Club.dc.html` dans le canvas. L'ordre de travail
+est toujours le même : corriger dans `src/`, mesurer avec `npm test`, synchroniser, republier.
+Ne corrige jamais directement dans l'artboard : le prochain `sync` écraserait ta correction.
+
 ## Versions de sauvegarde
 
 `SAVE_VERSION` vaut 2. Une sauvegarde plus ancienne est migrée au chargement par
@@ -197,14 +214,17 @@ des moyennes de championnat réelles :
 | Tirs par match (total) | 24 à 30 | 25 à 28 |
 | Tirs cadrés | 9 à 12 | 10 à 11 |
 | xG par match | 2,4 à 3,0 | 2,4 à 2,9 |
-| Fautes par match | 20 à 24 | 16 à 18 |
-| Cartons jaunes | 3,5 à 4,5 | 3,2 |
-| Cartons rouges | 0,05 à 0,10 | 0,07 |
+| Fautes par match | 20 à 24 | 20 |
+| Cartons jaunes | 3,5 à 4,5 | 3,7 |
+| Cartons rouges | 0,05 à 0,10 | 0,13 |
 | Penalties par match | 0,2 à 0,4 | 0,3 |
 
-Un joueur déjà averti lève le pied : sa probabilité de faute tombe à 22 % et il
-tacle moins. C'est ce qui ramène les expulsions au niveau réel, et au passage ce
-qui a fait disparaître la plupart des scores aberrants.
+Un joueur déjà averti lève le pied : sa probabilité de faute tombe à 14 % et il
+tacle moins, et l'entraîneur adverse le sort en priorité. C'est ce qui a divisé les
+expulsions par deux et fait disparaître la plupart des scores aberrants.
+Il reste environ deux fois trop de rouges par rapport au football réel : la cause
+est le second carton jaune, que seule une substitution automatique côté joueur
+réglerait complètement.
 
 Compte au moins 100 matchs : en dessous, deux matchs à 7 buts suffisent à fausser la moyenne.
 Le test échoue si le total sort de la fourchette, ce qui en fait un garde-fou utile

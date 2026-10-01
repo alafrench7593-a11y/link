@@ -751,7 +751,7 @@ export function makeEngine(cfg) {
         if (hy(bl.x - c.x, bl.y - c.y) < 1.4) {
           c.carry.done = true; const pd = pDrib(c, bl); W.cnt = W.cnt || {}; W.cnt.drib = (W.cnt.drib || 0) + 1;
           if (R() < pd) { W.cnt.dribOk = (W.cnt.dribOk || 0) + 1; bl.beat = 1.1; rt(c, 0.07); rt(bl, -0.03); com(c.short + ' élimine ' + bl.short + ' !'); if (aOf(s, c.y) > 66) key(12, s, 'drib'); c.vx *= 1.1; c.vy *= 1.1; }
-          else { const pf = (inBox(aOf(s, c.y), c.x) ? 0.15 : 1) * 0.14 * [0.65, 1, 1.45][TM[o].tac.tackle] * (TM[o].shout === 'calme' ? 0.75 : 1) * (bl.yc >= 1 ? 0.22 : 1);
+          else { const pf = (inBox(aOf(s, c.y), c.x) ? 0.15 : 1) * 0.17 * [0.65, 1, 1.45][TM[o].tac.tackle] * (TM[o].shout === 'calme' ? 0.75 : 1) * (bl.yc >= 1 ? 0.14 : 1);
             if (R() < pf) { foul(bl, c, 'drib'); return; }
             rt(bl, 0.07); rt(c, -0.04); W.st[o].tk++; com('Tacle de ' + bl.short + ', ballon récupéré');
             if (R() < 0.7) gain(bl, 'tackle'); else { W.owner = null; const b = W.ball; b.vx = (R() - 0.5) * 8; b.vy = (R() - 0.5) * 8; W.last = o; }
@@ -770,11 +770,11 @@ export function makeEngine(cfg) {
         if (d.line === 'GB' || d.beat > 0 || d.fall > 0 || W.t < d.tkT) continue;
         const dist = hy(d.x - c.x, d.y - c.y); if (dist > 1.3) continue;
         const fresh = W.t - c.rcvT < 0.8, ownBox = inBox(aOf(s, c.y), c.x);
-        const pa = (ownBox ? 0.5 : 1) * 0.34 * [0.7, 1, 1.35][TM[o].tac.tackle] * (fresh ? 1.6 : 1) * (d.press ? 1.3 : 1) * (d.stopper ? 1.2 : 1) * (d.yc >= 1 ? 0.55 : 1);
+        const pa = (ownBox ? 0.5 : 1) * 0.34 * [0.7, 1, 1.35][TM[o].tac.tackle] * (fresh ? 1.6 : 1) * (d.press ? 1.3 : 1) * (d.stopper ? 1.2 : 1) * (d.yc >= 1 ? 0.45 : 1);
         d.tkT = W.t + 0.5; if (R() > pa) continue;
         const backToGoal = (c.fy * (s === 'H' ? -1 : 1)) < -0.2;
         const pWin = cl(0.35 + (d.def + TM[o].bonus - Math.max(c.dri, c.phy * 0.92) - TM[s].bonus) / 80 + (backToGoal ? 0.08 : 0) + (fresh ? 0.05 : 0), 0.12, 0.72);
-        const pF = (ownBox ? 0.08 : 1) * 0.11 * [0.6, 1, 1.45][TM[o].tac.tackle] * (TM[o].shout === 'calme' ? 0.75 : 1) * (pWin < 0.3 ? 1.3 : 1) * (d.yc >= 1 ? 0.22 : 1);
+        const pF = (ownBox ? 0.08 : 1) * 0.135 * [0.6, 1, 1.45][TM[o].tac.tackle] * (TM[o].shout === 'calme' ? 0.75 : 1) * (pWin < 0.3 ? 1.3 : 1) * (d.yc >= 1 ? 0.14 : 1);
         const r = R();
         if (r < pWin) { rt(d, 0.07); rt(c, -0.04); W.st[o].tk++; com('Tacle de ' + d.short + ' !'); if (R() < 0.72) gain(d, 'tackle'); else { W.owner = null; const b = W.ball; b.vx = (R() - 0.5) * 9; b.vy = (R() - 0.5) * 9; W.last = o; } return; }
         if (r < pWin + pF) { foul(d, c, 'tackle'); return; }
@@ -1127,7 +1127,9 @@ export function makeEngine(cfg) {
     const oppSubs = () => {
       const T = TM.A; if (!T.bench.length) return;
       const mins = W.clk / 60, due = [62, 71, 80][W.oppSubs]; if (due == null || mins < due || !W.set) return;
-      const cand = LV.A.filter((p) => p.line !== 'GB').sort((a2, b2) => a2.energy - b2.energy)[0]; if (!cand) return;
+      // un entraîneur sort en priorité un joueur averti, puis le plus fatigué
+      const pool = LV.A.filter((p) => p.line !== 'GB');
+      const cand = pool.sort((a2, b2) => (b2.yc - a2.yc) * 60 + (a2.energy - b2.energy))[0]; if (!cand) return;
       const d = T.bench.shift(); W.oppSubs++;
       api.sub('A', cand.i, Object.assign({}, d, { role: cand.role, duty: cand.duty }));
       logE('Changement pour ' + club('A') + ' : ' + d.name + ' remplace ' + cand.name, '#8FB8FF', 'sub', 'A');
