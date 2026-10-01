@@ -153,9 +153,33 @@ export function makeEngine(cfg) {
     const ring = [], log = [], hist = [];
     let ALL = [];
     const all = () => ALL;
-    const refreshLV = () => { LV = { H: TM.H.ps.filter((p) => !p.red), A: TM.A.ps.filter((p) => !p.red) }; ALL = LV.H.concat(LV.A); };
+    // Les listes de joueurs en vie. Elles étaient reconstruites à chaque pas de calcul,
+    // soit trois tableaux neufs 54 000 fois par match pour un contenu qui ne change
+    // qu'à un carton rouge ou à un changement. Le ramasse-miettes en passait sept pour
+    // cent du temps. On ne reconstruit plus que quand la composition bouge vraiment :
+    // le contenu est identique, donc le match l'est aussi, au chiffre près.
+    let lvSale = true;
+    const salirLV = () => { lvSale = true; };
+    const refreshLV = () => {
+      if (!lvSale) return;
+      lvSale = false;
+      LV = { H: TM.H.ps.filter((p) => !p.red), A: TM.A.ps.filter((p) => !p.red) }; ALL = LV.H.concat(LV.A);
+    };
     const club = (s) => TM[s].club;
-    const nearestOf = (s, x, y, excl) => { let b = null, bd = 1e9; for (const q of LV[s]) { if (q === excl) continue; const d = hy(q.x - x, q.y - y); if (d < bd) { bd = d; b = q; } } return { p: b, d: bd }; };
+    // Le plus proche : on compare les distances AU CARRÉ et on ne prend la racine
+    // qu'une fois, à la fin. La racine carrée est croissante, donc le plus proche au
+    // carré est le plus proche tout court, et IEEE 754 l'arrondit exactement : le
+    // nombre renvoyé est le même bit pour bit. Vingt-et-une racines économisées par
+    // appel, et il y en a des millions dans un match.
+    const nearestOf = (s, x, y, excl) => {
+      let b = null, bd = 1e18;
+      for (const q of LV[s]) {
+        if (q === excl) continue;
+        const dx = q.x - x, dy = q.y - y, d2 = dx * dx + dy * dy;
+        if (d2 < bd) { bd = d2; b = q; }
+      }
+      return { p: b, d: b ? Math.sqrt(bd) : 1e9 };
+    };
     const nearestOpp = (p) => nearestOf(OT[p.s], p.x, p.y);
     const rt = (p, d) => { if (p) p.rat = cl(p.rat + d, 3, 10); };
     const clockLabel = (c, h) => { const m = Math.floor(c / 60), hh = h || W.half; if (hh === 1 && m >= 45) return "45+" + (m - 44) + "'"; if (hh === 2 && m >= 90) return "90+" + (m - 89) + "'"; return Math.max(1, m + 1) + "'"; };
@@ -835,7 +859,7 @@ export function makeEngine(cfg) {
       const cardTxt = card === 'Y' ? ' · carton jaune' : card === 'R' ? ' · CARTON ROUGE' : card === 'R2' ? ' · 2e jaune, expulsé !' : '';
       if (pen || card) logE((pen ? 'PENALTY ! Faute de ' : 'Faute de ') + fr.name + ' sur ' + vic.name + cardTxt, '#F2E27C', card === 'Y' ? 'Y' : card ? 'R' : 'P', o);
       else if (aOf(o, vic.y) > 68) logE('Coup franc dangereux pour ' + club(o) + ' · faute de ' + fr.name, '#9AA3B0', 'F', o);
-      if (card === 'R' || card === 'R2') { W.st[o].rc++; rt(fr, -1.2); fr.red = true; fr.x = -9; key(85, s, 'red'); }
+      if (card === 'R' || card === 'R2') { W.st[o].rc++; rt(fr, -1.2); fr.red = true; fr.x = -9; salirLV(); key(85, s, 'red'); }
       else if (card === 'Y') key(28, s, 'card');
       else key(a > 72 ? 20 : 5, s, 'foul');
       setPiece(pen ? 'pen' : 'fk', s, vic.x, vic.y);
@@ -1360,13 +1384,41 @@ export function makeEngine(cfg) {
         return null;
       },
       finish() { W.skip = true; pend = null; let g = 0; while (!W.ended && g++ < 200000) { tick(); keys.length = 0; } snap(); },
+      // Le même match, découpé. Un match complet fait 54 000 pas de calcul, soit deux
+      // secondes sur une machine de bureau et dix à trente sur un téléphone. Tant que
+      // c'est une seule boucle, l'écran est gelé pendant tout ce temps, sans rien
+      // afficher : le joueur croit que l'application a planté.
+      //
+      // runFor rend la main au bout du temps demandé. La SUITE des pas est identique à
+      // celle de finish(), donc le match l'est aussi, au chiffre près : on ne va pas
+      // plus vite, on arrête simplement de bloquer. L'appelant rappelle jusqu'à ce que
+      // done soit vrai, et affiche minute pendant ce temps.
+      runFor(ms) {
+        W.skip = true; pend = null;
+        const fin = Date.now() + (ms > 0 ? ms : 50);
+        let g = 0;
+        while (!W.ended && g < 200000) {
+          // on teste l'horloge tous les 64 pas : la lire à chaque pas coûterait plus
+          // cher que les pas eux-mêmes
+          for (let k = 0; k < 64 && !W.ended && g < 200000; k++) { tick(); keys.length = 0; g++; }
+          if (Date.now() >= fin) break;
+        }
+        if (W.ended) snap();
+        // L'horloge du match n'est pas monotone : les arrêts de jeu poussent clk
+        // au-delà de 2700 en première période, puis la mi-temps la ramène à 2700.
+        // Affiché brut, le compteur reculait de 47' à 45'. On garde donc le plus haut
+        // atteint pour la jauge, et le moteur donne le libellé juste (« 45+2' »).
+        const brut = Math.min(90, Math.floor(W.clk / 60));
+        W.minVue = Math.max(W.minVue || 0, brut);
+        return { done: !!W.ended, minute: W.minVue, clock: clockLabel(W.clk, W.half), pas: g };
+      },
       snapAt(t) { let lo = null; for (let i = hist.length - 1; i >= 0; i--) if (hist[i].t <= t + 1e-6) { lo = hist[i]; break; } return lo || hist[0] || null; },
       state() { snap(); return Object.assign({}, hist[hist.length - 1], { cnt: W.cnt || {} }); },
       sub(side, i, d) {
         const T = TM[side], old = T.ps[i]; if (!old) return;
         const np = mkP(side, i, d, { line: old.line, fx: old.bx / 0.68, fy: 100 - old.ba / 1.05 });
         Object.assign(np, { x: old.x, y: old.y, kind: old.kind, lr: old.lr, wide: old.wide, rat: 6, energy: d.energy != null ? d.energy : 100 });
-        if (np.fbMode == null) np.fbMode = old.fbMode; T.ps[i] = np;
+        if (np.fbMode == null) np.fbMode = old.fbMode; T.ps[i] = np; salirLV();
         if (W.owner === old) W.owner = np; if (W.set && W.set.taker === old) W.set.taker = np;
         if (W.fl) { if (W.fl.to === old) W.fl.to = np; if (W.fl.from === old) W.fl.from = np; }
         TM[OT[side]].ps.forEach((q) => { if (q.markT === old) q.markT = np; });

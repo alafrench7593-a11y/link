@@ -539,7 +539,7 @@ button:disabled{cursor:default}
 </div>
 <span style="flex-grow: 1; font-size: 10px; color: #79828F">{{durLabel}}</span>
 
-<button onClick="{{skip}}" style="height: 36px; padding: 0 12px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.03); color: #F2F4F7; font-family: inherit; font-size: 11px; font-weight: 600; cursor: pointer">Résultat direct</button>
+<button onClick="{{skip}}" disabled="{{isSkipping}}" style="height: 36px; padding: 0 12px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.14); background: {{skipBg}}; color: #F2F4F7; font-family: inherit; font-size: 11px; font-weight: 600; cursor: pointer">{{skipLabel}}</button>
 </div>
 </sc-if>
 
@@ -1138,7 +1138,7 @@ class Component extends DCLogic {
       this.setState({ view: 'match' });
       this.later(() => {
         const o = this.renderVals().opps[0]; if (o && o.play) o.play();
-        if (st !== 'live') this.later(() => { this.skipToEnd(); this.later(() => this.setState({ levelUp: null, showReport: st === 'report' }), 80); }, 80);
+        if (st !== 'live') this.later(() => this.skipToEnd(() => this.later(() => this.setState({ levelUp: null, showReport: st === 'report' }), 80)), 80);
       }, 40);
     }
   }
@@ -2437,10 +2437,26 @@ class Component extends DCLogic {
     this.buzz(res === 'w' ? [60, 40, 60, 40, 160] : 50);
     this.setState(Object.assign({ match: fm, record: rec }, this.afterMatch(fm, Object.assign({}, this.state, { balance: bal, record: rec }))));
   }
-  skipToEnd() {
-    const mt = this.state.match; if (!mt || mt.done || !this.eng) return;
+  // « Résultat direct » : simuler les minutes restantes d'un coup. C'était une seule
+  // boucle de 54 000 pas, soit deux secondes d'écran gelé sur un ordinateur et dix à
+  // trente sur un téléphone, sans rien afficher. Le joueur croyait que ça avait planté.
+  //
+  // Le match reste EXACTEMENT le même : même suite de pas, même score, même xG. On
+  // rend simplement la main à l'interface toutes les 40 millisecondes, ce qui laisse
+  // la minute s'afficher et le bouton rester vivant.
+  skipToEnd(apres) {
+    const mt = this.state.match; if (!mt || mt.done || !this.eng) { if (apres) apres(); return; }
     clearInterval(this.timer); if (this.pb) { this.pb.clip = null; this.pb.queued = null; }
-    this.eng.finish(); this.endMatch();
+    this.setState({ skipping: mt.minute || 0 });
+    const paquet = () => {
+      const m = this.state.match;
+      if (!this.eng || !m || m.done) { this.setState({ skipping: null }); if (apres) apres(); return; }
+      const r = this.eng.runFor(40);
+      if (r.done) { this.setState({ skipping: null }); this.endMatch(); if (apres) apres(); return; }
+      this.setState({ skipping: r.minute, skipClock: r.clock });
+      this.later(paquet, 0);
+    };
+    paquet();
   }
   baseShape(formation, side) {
     const C = this.formCoords(formation), out = [];
@@ -2605,9 +2621,33 @@ class Component extends DCLogic {
     const ring = [], log = [], hist = [];
     let ALL = [];
     const all = () => ALL;
-    const refreshLV = () => { LV = { H: TM.H.ps.filter((p) => !p.red), A: TM.A.ps.filter((p) => !p.red) }; ALL = LV.H.concat(LV.A); };
+    // Les listes de joueurs en vie. Elles étaient reconstruites à chaque pas de calcul,
+    // soit trois tableaux neufs 54 000 fois par match pour un contenu qui ne change
+    // qu'à un carton rouge ou à un changement. Le ramasse-miettes en passait sept pour
+    // cent du temps. On ne reconstruit plus que quand la composition bouge vraiment :
+    // le contenu est identique, donc le match l'est aussi, au chiffre près.
+    let lvSale = true;
+    const salirLV = () => { lvSale = true; };
+    const refreshLV = () => {
+      if (!lvSale) return;
+      lvSale = false;
+      LV = { H: TM.H.ps.filter((p) => !p.red), A: TM.A.ps.filter((p) => !p.red) }; ALL = LV.H.concat(LV.A);
+    };
     const club = (s) => TM[s].club;
-    const nearestOf = (s, x, y, excl) => { let b = null, bd = 1e9; for (const q of LV[s]) { if (q === excl) continue; const d = hy(q.x - x, q.y - y); if (d < bd) { bd = d; b = q; } } return { p: b, d: bd }; };
+    // Le plus proche : on compare les distances AU CARRÉ et on ne prend la racine
+    // qu'une fois, à la fin. La racine carrée est croissante, donc le plus proche au
+    // carré est le plus proche tout court, et IEEE 754 l'arrondit exactement : le
+    // nombre renvoyé est le même bit pour bit. Vingt-et-une racines économisées par
+    // appel, et il y en a des millions dans un match.
+    const nearestOf = (s, x, y, excl) => {
+      let b = null, bd = 1e18;
+      for (const q of LV[s]) {
+        if (q === excl) continue;
+        const dx = q.x - x, dy = q.y - y, d2 = dx * dx + dy * dy;
+        if (d2 < bd) { bd = d2; b = q; }
+      }
+      return { p: b, d: b ? Math.sqrt(bd) : 1e9 };
+    };
     const nearestOpp = (p) => nearestOf(OT[p.s], p.x, p.y);
     const rt = (p, d) => { if (p) p.rat = cl(p.rat + d, 3, 10); };
     const clockLabel = (c, h) => { const m = Math.floor(c / 60), hh = h || W.half; if (hh === 1 && m >= 45) return "45+" + (m - 44) + "'"; if (hh === 2 && m >= 90) return "90+" + (m - 89) + "'"; return Math.max(1, m + 1) + "'"; };
@@ -3287,7 +3327,7 @@ class Component extends DCLogic {
       const cardTxt = card === 'Y' ? ' · carton jaune' : card === 'R' ? ' · CARTON ROUGE' : card === 'R2' ? ' · 2e jaune, expulsé !' : '';
       if (pen || card) logE((pen ? 'PENALTY ! Faute de ' : 'Faute de ') + fr.name + ' sur ' + vic.name + cardTxt, '#F2E27C', card === 'Y' ? 'Y' : card ? 'R' : 'P', o);
       else if (aOf(o, vic.y) > 68) logE('Coup franc dangereux pour ' + club(o) + ' · faute de ' + fr.name, '#9AA3B0', 'F', o);
-      if (card === 'R' || card === 'R2') { W.st[o].rc++; rt(fr, -1.2); fr.red = true; fr.x = -9; key(85, s, 'red'); }
+      if (card === 'R' || card === 'R2') { W.st[o].rc++; rt(fr, -1.2); fr.red = true; fr.x = -9; salirLV(); key(85, s, 'red'); }
       else if (card === 'Y') key(28, s, 'card');
       else key(a > 72 ? 20 : 5, s, 'foul');
       setPiece(pen ? 'pen' : 'fk', s, vic.x, vic.y);
@@ -3812,13 +3852,41 @@ class Component extends DCLogic {
         return null;
       },
       finish() { W.skip = true; pend = null; let g = 0; while (!W.ended && g++ < 200000) { tick(); keys.length = 0; } snap(); },
+      // Le même match, découpé. Un match complet fait 54 000 pas de calcul, soit deux
+      // secondes sur une machine de bureau et dix à trente sur un téléphone. Tant que
+      // c'est une seule boucle, l'écran est gelé pendant tout ce temps, sans rien
+      // afficher : le joueur croit que l'application a planté.
+      //
+      // runFor rend la main au bout du temps demandé. La SUITE des pas est identique à
+      // celle de finish(), donc le match l'est aussi, au chiffre près : on ne va pas
+      // plus vite, on arrête simplement de bloquer. L'appelant rappelle jusqu'à ce que
+      // done soit vrai, et affiche minute pendant ce temps.
+      runFor(ms) {
+        W.skip = true; pend = null;
+        const fin = Date.now() + (ms > 0 ? ms : 50);
+        let g = 0;
+        while (!W.ended && g < 200000) {
+          // on teste l'horloge tous les 64 pas : la lire à chaque pas coûterait plus
+          // cher que les pas eux-mêmes
+          for (let k = 0; k < 64 && !W.ended && g < 200000; k++) { tick(); keys.length = 0; g++; }
+          if (Date.now() >= fin) break;
+        }
+        if (W.ended) snap();
+        // L'horloge du match n'est pas monotone : les arrêts de jeu poussent clk
+        // au-delà de 2700 en première période, puis la mi-temps la ramène à 2700.
+        // Affiché brut, le compteur reculait de 47' à 45'. On garde donc le plus haut
+        // atteint pour la jauge, et le moteur donne le libellé juste (« 45+2' »).
+        const brut = Math.min(90, Math.floor(W.clk / 60));
+        W.minVue = Math.max(W.minVue || 0, brut);
+        return { done: !!W.ended, minute: W.minVue, clock: clockLabel(W.clk, W.half), pas: g };
+      },
       snapAt(t) { let lo = null; for (let i = hist.length - 1; i >= 0; i--) if (hist[i].t <= t + 1e-6) { lo = hist[i]; break; } return lo || hist[0] || null; },
       state() { snap(); return Object.assign({}, hist[hist.length - 1], { cnt: W.cnt || {} }); },
       sub(side, i, d) {
         const T = TM[side], old = T.ps[i]; if (!old) return;
         const np = mkP(side, i, d, { line: old.line, fx: old.bx / 0.68, fy: 100 - old.ba / 1.05 });
         Object.assign(np, { x: old.x, y: old.y, kind: old.kind, lr: old.lr, wide: old.wide, rat: 6, energy: d.energy != null ? d.energy : 100 });
-        if (np.fbMode == null) np.fbMode = old.fbMode; T.ps[i] = np;
+        if (np.fbMode == null) np.fbMode = old.fbMode; T.ps[i] = np; salirLV();
         if (W.owner === old) W.owner = np; if (W.set && W.set.taker === old) W.set.taker = np;
         if (W.fl) { if (W.fl.to === old) W.fl.to = np; if (W.fl.from === old) W.fl.from = np; }
         TM[OT[side]].ps.forEach((q) => { if (q.markT === old) q.markT = np; });
@@ -5976,6 +6044,11 @@ class Component extends DCLogic {
       possDot: mtc && mtc.poss === 'H' ? '#2ECC71' : mtc ? mtc.opp.color : '#fff',
       speeds: [1, 2, 4].map((v) => { const on = (s.speed || 1) === v; return { label: 'x' + v, on, bg: SEG(on).bg, fg: SEG(on).fg, bd: SEG(on).bd, pick: () => { this.setState({ speed: v }); const m = this.state.match; if (m && !m.done) this.startClock(v); } }; }),
       skip: () => this.skipToEnd(),
+      // Pendant la simulation accélérée, le bouton dit la minute atteinte : sans ça,
+      // rien ne distingue « ça calcule » de « c'est bloqué ».
+      isSkipping: s.skipping != null,
+      skipLabel: s.skipping != null ? 'Simulation ' + (s.skipClock || s.skipping + "'") : 'Résultat direct',
+      skipBg: s.skipping != null ? 'rgba(46,204,113,0.16)' : 'rgba(255,255,255,0.03)',
       durLabel: (s.speed || 1) === 1 ? '≈ 5 min' : (s.speed === 2 ? '≈ 2 min 30' : '≈ 1 min 15'),
       league: league.map((c, i) => ({ rank: i + 1, club: c.club, user: c.user, p: c.p, wdl: c.w + '-' + c.d + '-' + c.l, pts: c.pts, bg: c.me ? 'rgba(165,216,96,0.12)' : 'transparent', rankColor: i < 2 ? '#2ECC71' : '#79828F' }))
     };

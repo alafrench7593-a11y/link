@@ -168,6 +168,11 @@ function PlayerScreen({ club, p, act, back }) {
 // ---------- match ----------
 export function MatchScreen({ club, state, act }) {
   const [res, setRes] = useState(null);
+  // Un match fait 54 000 pas de calcul : dix à trente secondes sur un téléphone.
+  // En une seule boucle, l'écran serait mort pendant tout ce temps. playMatchAsync
+  // rend la main entre deux paquets : le match est le même au chiffre près, mais la
+  // minute s'affiche et l'application reste vivante.
+  const [enCours, setEnCours] = useState(null);     // le libellé d'horloge du moteur, ou null
   const opps = [
     { club: 'Auteuil United', ovr: 67, style: 'tiki' },
     { club: 'Kop Bleu FC', ovr: 62, style: 'contre' },
@@ -216,7 +221,11 @@ export function MatchScreen({ club, state, act }) {
               <Text style={st.name}>{o.club}</Text>
               <Text style={st.hint}>{club.styles()[o.style].name} · note {o.ovr}</Text>
             </View>
-            <Btn label="Jouer" small onPress={() => act((c) => { setRes(c.playMatch(o, { seed: Math.floor(Math.random() * 1e6) })); })} />
+            <Btn label={enCours != null ? enCours : 'Jouer'} small
+              why={enCours != null ? 'Match en cours' : ''}
+              onPress={() => { if (enCours != null) return; setRes(null); setEnCours("1'");
+                club.playMatchAsync(o, { seed: Math.floor(Math.random() * 1e6) }, (m, horloge) => setEnCours(horloge))
+                  .then((r) => { setEnCours(null); setRes(r); }); }} />
           </Row>
         </Card>
       ))}

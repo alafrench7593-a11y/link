@@ -38,6 +38,34 @@ export class Club {
 
   // --- un match complet, sans interface : construit le moteur, le déroule, applique les suites
   playMatch(opp, opts) {
+    const ctx = this.ouvrirMatch(opp, opts);
+    ctx.E.finish();
+    return this.cloreMatch(ctx);
+  }
+
+  // La même chose, mais sans geler l'écran. Un match fait 54 000 pas de calcul : deux
+  // secondes sur un ordinateur, dix à trente sur un téléphone. En une seule boucle,
+  // l'interface est morte pendant tout ce temps et le joueur croit à un plantage.
+  //
+  // La suite des pas est identique à celle de playMatch, donc le match l'est aussi,
+  // au chiffre près. On ne va pas plus vite : on rend la main entre deux paquets.
+  // `avance(minute, horloge)` est appelée au fil de l'eau : la minute pour une jauge,
+  // l'horloge pour l'affichage, parce qu'elle sait écrire « 45+2' » et pas 47'.
+  playMatchAsync(opp, opts, avance) {
+    const ctx = this.ouvrirMatch(opp, opts);
+    return new Promise((resolve) => {
+      const paquet = () => {
+        const r = ctx.E.runFor((opts && opts.tranche) || 40);
+        if (r.done) { resolve(this.cloreMatch(ctx)); return; }
+        if (avance) avance(r.minute, r.clock);
+        setTimeout(paquet, 0);
+      };
+      paquet();
+    });
+  }
+
+  // Tout ce qui précède le coup d'envoi.
+  ouvrirMatch(opp, opts) {
     const s = this.state, o = opts || {};
     const xi = this.pickXI(s.formation).map((p) => Object.assign({}, p, { energy: p.fit != null ? p.fit : 100, yc: 0, red: false }));
     const styles = this.styles(), oppForm = (styles[opp.style] || {}).form || '4-4-2';
@@ -46,7 +74,12 @@ export class Club {
     const obench = ['MIL', 'ATT', 'DEF'].map((pos, i) => ({ id: 9500 + i, name: 'B' + i, pos, ovr: Math.round(opp.ovr - 2) }));
     const plan = this.matchPlan();   // figé AVANT le coup d'envoi : le plan tactique se consomme
     const E = makeEngine(Object.assign(this.engineCfg(opp, xi, oxi, obench), { rnd }));
-    E.finish();
+    return { E, xi, oxi, opp, plan };
+  }
+
+  // Tout ce qui suit le coup de sifflet final.
+  cloreMatch(ctx) {
+    const { E, xi, oxi, opp, plan } = ctx, s = this.state;
     const f = E.state();
     const hs = f.score.H, as = f.score.A;
     const res = hs > as ? 'w' : hs === as ? 'd' : 'l', reward = res === 'w' ? 120 : res === 'd' ? 50 : 20;
