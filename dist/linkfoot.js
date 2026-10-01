@@ -1841,6 +1841,30 @@ class Club {
       return q;
     });
   }
+  // §60 à §63 niveaux de carte : les fragments issus des doublons servent à faire monter une carte.
+  UPGRADE_COST() { return [0, 25, 60, 140, 320]; }   // index = niveau visé moins 1
+  cardLevel(p) { return p.lvl || 1; }
+  upgradeInfo(p) {
+    const lvl = this.cardLevel(p), max = lvl >= 5;
+    const cost = max ? 0 : this.UPGRADE_COST()[lvl];
+    return { lvl, max, cost, can: !max && (this.state.shards || 0) >= cost };
+  }
+  levelUpPlayer(id) {
+    const s = this.state, p = s.squad.find((x) => x.id === id);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    const info = this.upgradeInfo(p);
+    if (info.max) return { ok: false, why: 'Niveau maximum' };
+    if (!info.can) return { ok: false, why: 'Il te manque ' + (info.cost - (s.shards || 0)) + ' fragments' };
+    const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; });
+    const w = this.statW(p.pos), keys = Object.keys(w).sort((a, b) => w[b] - w[a]).slice(0, 2);
+    keys.forEach((k) => { if (st[k] != null && st[k] < 99) st[k] += 2; });
+    const ovr = Math.max(p.ovr, this.ovrOf(p.pos, st));
+    this.buzz([30, 30, 60]);
+    this.setState({ shards: (s.shards || 0) - info.cost,
+      squad: s.squad.map((x) => (x.id === id ? Object.assign({}, x, { st, ovr, lvl: info.lvl + 1 }) : x)),
+      trainLog: p.name + ' passe niveau ' + (info.lvl + 1) + ' · ' + keys.map((k) => '+2 ' + k).join(', ') });
+    return { ok: true, lvl: info.lvl + 1 };
+  }
   STAFF_DEFS() {
     return [
       { id: 'adjoint', label: 'Entraîneur adjoint', cost: [400, 900, 1800], wage: [0, 12, 26, 48], eff: ['Aucun', 'Bonus tactique +0,8 en match', 'Bonus tactique +1,6 en match', 'Bonus tactique +2,4 en match'] },

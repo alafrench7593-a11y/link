@@ -63,3 +63,29 @@ export function saveRoutes(opts) {
     } catch (e) { return res.status(500).json({ error: String(e && e.message || e) }); }
   };
 }
+
+// §74 à §76 routes de tournoi. Le stockage est le même contrat que pour les sauvegardes.
+// Aucun paiement n'est déclenché ici : les récompenses en argent restent désactivées.
+export function tournamentRoutes(opts) {
+  const o = opts || {};
+  const storage = o.storage;
+  if (!storage) throw new Error('tournamentRoutes : storage manquant');
+  const auth = o.auth || (() => true);
+  return async function handler(req, res, next) {
+    const m = /^\/([\w.-]+)\/?$/.exec(req.path || req.url);
+    if (!m) return next ? next() : res.status(404).end();
+    const id = 'tournament_' + m[1];
+    if (!(await auth(req, m[1]))) return res.status(403).json({ error: 'interdit' });
+    try {
+      if (req.method === 'GET') { const t = await storage.get(id); return t ? res.json(t) : res.status(404).json({ error: 'tournoi introuvable' }); }
+      if (req.method === 'PUT') {
+        const body = req.body;
+        if (!body || !body.id || !Array.isArray(body.entrants)) return res.status(400).json({ error: 'tournoi invalide' });
+        if (body.payouts && body.payouts.enabled) return res.status(409).json({ error: 'paiements en argent réel désactivés' });
+        await storage.put(id, body); return res.status(204).end();
+      }
+      if (req.method === 'DELETE') { await storage.del(id); return res.status(204).end(); }
+      return res.status(405).end();
+    } catch (e) { return res.status(500).json({ error: String(e && e.message || e) }); }
+  };
+}

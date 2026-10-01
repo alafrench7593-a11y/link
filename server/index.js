@@ -1,1 +1,1 @@
-export { saveRoutes, FileStorage, SqlStorage } from './save-routes.js';
+export { saveRoutes, tournamentRoutes, FileStorage, SqlStorage } from './save-routes.js';

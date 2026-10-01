@@ -760,7 +760,7 @@ button:disabled{cursor:default}
 <span style="font-size: 14px; font-weight: 700">Cartes d’amélioration</span>
 <div style="display: flex; gap: 6px; flex-wrap: wrap"><sc-for list="{{pl.ups}}" as="u" hint-placeholder-count="7"><button sc-camel-on-click="{{u.use}}" style="display: flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid {{u.bd}}; background: {{u.bg}}; color: {{u.fg}}; font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer">{{u.label}} {{u.n}}</button></sc-for></div>
 <div style="display: flex; justify-content: space-between; font-size: 12px; color: #8C9A92"><span>{{pl.contract}}</span><span style="color: #EEF3EF; font-weight: 700">Valeur {{pl.value}}</span></div>
-<button sc-camel-on-click="{{pl.sell}}" style="height: 46px; border-radius: 14px; border: none; background: {{pl.sellBg}}; color: {{pl.sellFg}}; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer">{{pl.sellLabel}}</button>
+<button sc-camel-on-click="{{pl.lvlUp}}" style="width: 100%; min-height: 40px; border-radius: 14px; border: none; background: {{pl.lvlBg}}; color: {{pl.lvlFg}}; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer; margin-bottom: 8px">{{pl.lvlLabel}}</button><button sc-camel-on-click="{{pl.sell}}" style="height: 46px; border-radius: 14px; border: none; background: {{pl.sellBg}}; color: {{pl.sellFg}}; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer">{{pl.sellLabel}}</button>
 </div>
 </div>
 </sc-if>
@@ -3628,6 +3628,29 @@ class Component extends DCLogic {
       return q;
     });
   }
+  UPGRADE_COST() { return [0, 25, 60, 140, 320]; }
+  cardLevel(p) { return p.lvl || 1; }
+  upgradeInfo(p) {
+    const lvl = this.cardLevel(p), max = lvl >= 5;
+    const cost = max ? 0 : this.UPGRADE_COST()[lvl];
+    return { lvl, max, cost, can: !max && (this.state.shards || 0) >= cost };
+  }
+  levelUpPlayer(id) {
+    const s = this.state, p = s.squad.find((x) => x.id === id);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    const info = this.upgradeInfo(p);
+    if (info.max) return { ok: false, why: 'Niveau maximum' };
+    if (!info.can) return { ok: false, why: 'Il te manque ' + (info.cost - (s.shards || 0)) + ' fragments' };
+    const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; });
+    const w = this.statW(p.pos), keys = Object.keys(w).sort((a, b) => w[b] - w[a]).slice(0, 2);
+    keys.forEach((k) => { if (st[k] != null && st[k] < 99) st[k] += 2; });
+    const ovr = Math.max(p.ovr, this.ovrOf(p.pos, st));
+    this.buzz([30, 30, 60]);
+    this.setState({ shards: (s.shards || 0) - info.cost,
+      squad: s.squad.map((x) => (x.id === id ? Object.assign({}, x, { st, ovr, lvl: info.lvl + 1 }) : x)),
+      trainLog: p.name + ' passe niveau ' + (info.lvl + 1) + ' · ' + keys.map((k) => '+2 ' + k).join(', ') });
+    return { ok: true, lvl: info.lvl + 1 };
+  }
   renderVals() {
     const s = this.state, t = s.tac;
     const color = (o) => (o >= 80 ? 'linear-gradient(135deg, #FFE59A, #E9A93A)' : o >= 70 ? 'linear-gradient(135deg, #F2F6F4, #AEB9C2)' : 'linear-gradient(135deg, #E8B585, #B7773F)');
@@ -3824,6 +3847,10 @@ class Component extends DCLogic {
           form: pr.form + ' %', fit: pr.fit + ' %', morale: pr.morale + ' %', fitC: pr.fit >= 70 ? '#A5D860' : pr.fit >= 45 ? '#FFC24A' : '#FF8A7A', formC: pr.form >= 70 ? '#A5D860' : pr.form >= 45 ? '#FFC24A' : '#FF8A7A',
           inj: pr.inj ? 'Blessé · ' + pr.inj + ' match' + (pr.inj > 1 ? 's' : '') : 'Apte', injC: pr.inj ? '#FF8A7A' : '#A5D860', status: tit ? 'Titulaire' : 'Remplaçant', stats: this.cardStats(p), skills: pr.skills.map((k) => ({ name: k.name, cat: k.cat + ' · ' + k.rarLabel + ' · niv. ' + k.lvl, desc: k.desc, color: k.color })),
           ups: this.UPGRADE_CARDS().map(([k, label]) => { const n = (s.inv || {})['up_' + k] || 0; return { label: label + ' +2', n: 'x' + n, use: () => this.useUpgrade(p.id, k), bg: n > 0 ? 'rgba(200,245,107,0.12)' : '#1C211D', fg: n > 0 ? '#C8F56B' : '#5F675F', bd: n > 0 ? 'rgba(200,245,107,0.4)' : 'rgba(255,255,255,0.06)' }; }),
+          lvlLabel: (() => { const u = this.upgradeInfo(p); return u.max ? 'Carte niveau 5 · maximum' : 'Carte niveau ' + u.lvl + ' → ' + (u.lvl + 1) + ' · ' + u.cost + ' fragments'; })(),
+          lvlBg: this.upgradeInfo(p).can ? 'linear-gradient(135deg, #D8F86F 0%, #8BEAA6 60%, #4FDCC4 100%)' : '#1C211D',
+          lvlFg: this.upgradeInfo(p).can ? '#0B1210' : '#5F675F',
+          lvlUp: () => { this.levelUpPlayer(p.id); },
           canSell, sellLabel: canSell ? 'Vendre · ' + Math.round(pr.value * 0.6).toLocaleString('fr-FR') + ' jetons' : tit ? 'Titulaire : sors-le du XI pour vendre' : 'Effectif minimum atteint', sellBg: canSell ? 'rgba(255,107,92,0.14)' : '#1C211D', sellFg: canSell ? '#FF8A7A' : '#5F675F',
           sell: () => { if (!canSell) return; this.setState({ showPlayer: null }); this.sellPlayer(p.id); } }; })(),
       isHome: s.view === 'home', notHome: s.view !== 'home', goHome: () => this.setState({ view: 'home', sel: null }), nextOpp: opps[0].club, nextOppSub: opps[0].styleName + ' · note ' + opps[0].ovr, kitHero: this.kitSvg(s.kit, 96), squadCountLabel: s.squad.length + ' joueurs',

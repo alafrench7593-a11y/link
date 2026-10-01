@@ -20,6 +20,8 @@ src/club.js     classe Club : effectif, compétences, entraînement, forme, bles
                 staff, stade, centre de formation, synergies, finances, saison, divisions.
 src/state.js    état de départ d'un club.
 src/save.js     sérialisation versionnée et stockages (mémoire, navigateur, HTTP).
+src/league.js   classements, calendriers, montées et descentes (§72, §75).
+src/tournament.js tournois 8 à 64, élimination directe ou groupes, récompenses (§73, §74, §76).
 src/index.js    point d'entrée ES module.
 src/react.js    hooks useClub et useLiveMatch pour React et React Native.
 server/         routes de sauvegarde prêtes à monter dans Express, plus un serveur de démo.
@@ -224,6 +226,35 @@ championnat : il ne compte pas au classement, rapporte la moitié, et se termine
 par une séance de tirs au but en cas de nul. La séance suit les règles réelles,
 cinq tireurs puis mort subite, et chaque frappe compare le tir et le sang-froid du
 tireur aux réflexes du gardien, avec la pression qui monte à partir du quatrième.
+
+## Tournois et ligues
+
+```js
+import { createTournament, pendingMatches, reportResult, finalRanking, rewards } from 'linkfoot-engine';
+
+const T = createTournament({ size: 16, entrants, format: 'groups', entry: 100 });
+for (const m of pendingMatches(T)) {
+  const r = jouer(m.home, m.away);               // ton moteur, ou makeEngine
+  reportResult(T, m, r.hs, r.as, r.pso);         // pso obligatoire si match nul en élimination
+}
+finalRanking(T);   // podium
+rewards(T);        // jetons par rang
+```
+
+`node test/tournament.js 16` joue deux tournois complets avec le vrai moteur, puis une
+ligue aller-retour avec classement, montées et descentes.
+
+**Récompenses en argent réel : l'architecture existe, les paiements sont désactivés.**
+`PAYOUTS.enabled` vaut false, `rewards()` ne renvoie jamais de montant, et la route
+serveur refuse par 409 tout tournoi qui tenterait de les activer. Rien ne se débloque
+sans décision explicite côté serveur, une fois le cadre juridique, l'âge, la
+géolocalisation et les règles des plateformes validés.
+
+## Niveaux de carte
+
+Un doublon donne des fragments, les fragments font monter une carte du niveau 1 au
+niveau 5 : 25, 60, 140 puis 320 fragments. Chaque niveau donne +2 sur les deux
+statistiques les plus importantes du poste, donc un gain réel de note.
 
 ## Versions de sauvegarde
 
