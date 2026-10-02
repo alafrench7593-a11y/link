@@ -28,7 +28,7 @@ l'accueil, la section **DIRECTEUR SPORTIF** mène aux neuf écrans du cahier des
 | Écran | Ce qu'on y fait |
 | --- | --- |
 | Accueil | le résumé (note, niveau, séances, solde) et la section DIRECTEUR SPORTIF |
-| Mon effectif | la liste, puis la fiche d'un joueur : niveau, XP, compétences, rapport du recruteur, vente |
+| Mon effectif | le onze poste par poste (un blessé est refusé), la liste, puis la fiche d'un joueur : statistiques, niveau, XP, compétences, rapport du recruteur, vente |
 | Compétences | l'inventaire, et le choix du joueur qui porte chaque compétence |
 | Pack | le pack unique et ses deux tables de probabilités (familles, raretés) |
 | Entraînement | les séances disponibles, les cartes d'amélioration, la réunion d'équipe |
@@ -37,7 +37,8 @@ l'accueil, la section **DIRECTEUR SPORTIF** mène aux neuf écrans du cahier des
 | Finances | le solde, ce qui a été gagné aujourd'hui par source, le journal des transactions |
 | Tactique | formation, mentalité, style de jeu et toutes les consignes lues par le moteur |
 | Club | la progression du club, le staff, le stade, le centre de formation |
-| Match | choisir un adversaire, miser trois pronostics, jouer, lire le rapport |
+| Match | le match du calendrier ou un amical, trois pronostics ; en direct : changements, consignes de la voix, cartes de match, rythme et pause |
+| Division | le classement de la division, les résultats de la dernière journée, où en est le club et le prochain match |
 | En ligne | le journal, le classement, les meilleures équipes, les meilleurs joueurs |
 
 ## La sauvegarde

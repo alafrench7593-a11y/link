@@ -32,13 +32,16 @@ export const Creation = {
     ];
     const F = ['A.', 'B.', 'C.', 'D.', 'E.', 'G.', 'H.', 'I.', 'J.', 'K.', 'L.', 'M.', 'N.', 'O.', 'R.', 'S.', 'T.', 'V.', 'Y.', 'Z.'];
     const L = ['Marvello', 'Ducasson', 'Ebongué', 'Halvorsen', 'Quintero', 'Belkadi-Roy', 'Stranieri', 'Okafor-Lemaire', 'Vasquet', 'Nyamsi', 'Gaudrel', 'Petrakis', 'Lindau', 'Moreau-Diaby', 'Castagne-Nil', 'Rivoire', 'Takamura', 'Ferbault', 'Ansaldi', 'Kowalevski', 'Dembrel', 'Soumahé'];
+    const pris = new Set();
     return plan.map(([pos, ovr], i) => {
       const o = ovr + Math.round((r() - 0.5) * 4);
       const age = 17 + Math.floor(r() * 6);
       // un joueur normal jeune a du potentiel : c'est tout l'intérêt de le développer
       const pot = Math.min(88, o + 10 + Math.floor(r() * 18));
-      return { id: i + 1, name: F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)],
-        pos, ovr: o, pot, age, rar: 'normal', plv: 3, pxp: 0, scouted: true };
+      // le tirage du nom reste à sa place dans la suite aléatoire : seul un doublon change d'initiale
+      const name = this.nomUnique(F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)], pris);
+      pris.add(name);
+      return { id: i + 1, name, pos, ovr: o, pot, age, rar: 'normal', plv: 3, pxp: 0, scouted: true };
     });
   },
 

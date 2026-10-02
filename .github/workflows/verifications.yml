@@ -1,6 +1,6 @@
 # Les vérifications de LinkFoot.
 #
-# À chaque push et chaque pull request : les neuf vérifications rapides, cinq minutes.
+# À chaque push et chaque pull request : les onze vérifications rapides, huit minutes.
 # Elles protègent ce qui casse le plus souvent sans qu'on le voie : le canvas qui
 # diverge du moteur, le serveur qui accepte une triche, un match découpé qui ne donne
 # plus le même score, un pack dont les probabilités affichées ne sont plus celles du
@@ -34,7 +34,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Les neuf vérifications rapides
+      - name: Les onze vérifications rapides
         run: node test/tout.js
 
   longues:
@@ -50,7 +50,8 @@ jobs:
         run: node test/tout.js --long
 
   # L'application, lancée pour de vrai dans un navigateur : premier lancement, les six
-  # onglets, un pack ouvert, second lancement. Compiler ne prouve rien sur ce qu'un
+  # onglets, un pack ouvert, le onze choisi, un match en direct avec un remplacement et
+  # une consigne, la division qui avance, second lancement. Compiler ne prouve rien sur ce qu'un
   # joueur voit ; c'est ce job qui a trouvé que l'app ne se construisait pas et
   # qu'elle ne créait jamais le club.
   application:

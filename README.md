@@ -39,6 +39,8 @@ src/onlineui.js ce que l'écran affiche du multijoueur, y compris quand il n'y a
 src/state.js    état de départ d'un club.
 src/save.js     sérialisation versionnée et stockages (mémoire, navigateur, HTTP).
 src/league.js   classements, calendriers, montées et descentes (§72, §75).
+src/division.js la division du directeur sportif : six clubs, cinq journées, les autres matchs simulés (§22).
+src/direct.js   le match en direct : remplacements, consignes de la voix, cartes de match (§2).
 src/tournament.js tournois 8 à 64, élimination directe ou groupes, récompenses (§73, §74, §76).
 src/index.js    point d'entrée ES module.
 src/react.js    hooks useClub et useLiveMatch pour React et React Native.
@@ -490,7 +492,7 @@ cahier des charges. Chacune mène à un vrai écran, et chaque règle qu'il appl
 
 | Entrée | Ce qu'on y fait | Règles |
 | --- | --- | --- |
-| Mon effectif | composition, fiches, vente | `pickXI`, `sellPlayer` |
+| Mon effectif | le onze poste par poste, fiches, vente | `assignSlot`, `candidatsPoste`, `compositionAuto`, `sellPlayer` |
 | Compétences | équiper sur le joueur choisi | `canEquip`, `equipSkill` |
 | Pack | ouvrir le pack unique | `openPack`, `commitPack` |
 | Entraînement | séances, cartes, réunions | `train`, `useUpgrade`, `holdMeeting` |
@@ -503,6 +505,49 @@ cahier des charges. Chacune mène à un vrai écran, et chaque règle qu'il appl
 ```bash
 node test/directeur.js     # le parcours du §22, de la création du club au match
 ```
+
+### La division (§22)
+
+Six clubs, un calendrier toutes rondes de cinq journées : chaque club rencontre chacun des
+autres une fois. Ton match est joué par le moteur ; les deux autres matchs de la journée
+sont simulés d'après la note et le style des clubs (loi de Poisson, pente de 0,14 but par
+point de note, mesurée sur le moteur), avec une graine, donc reproductibles. Le classement
+se calcule avec les règles de `league.js`, les mêmes que les ligues en ligne. Les deux
+premiers montent (+500 jetons et un LinkFoot Pack), le dernier descend, et la saison
+suivante repart d'un nouveau calendrier.
+
+Seul le match prévu au calendrier compte. Tout autre adversaire est un amical : moitié de
+la prime, rien au classement, et tirs au but en cas de nul (§51), dans l'app comme dans
+l'écran Mon Club. `situationDivision()` dit où en est le club en une phrase qui lit le
+calendrier et les points encore en jeu (« La montée est à 2 pts : Sporting Yoyo (2e). Tu
+l'as déjà joué : il faut qu'il perde des points ailleurs. »).
+
+### Le match en direct (§2)
+
+Le directeur sportif ne touche jamais un joueur : il décide depuis le banc. `matchEnDirect`
+ouvre un match qui avance par tranches ; entre deux tranches, l'écran peut agir.
+
+```js
+const d = club.matchEnDirect(club.prochainMatch().opp);
+d.ecouter((e) => afficher(e));     // à chaque minute, à chaque décision, et à la fin
+d.vitesse(3);                      // minutes de match par seconde ; Infinity : résultat direct
+d.lancer();                        // le match se déroule seul, au rythme choisi
+d.remplacer('ATT0', 14);           // { ok } ou { ok: false, why }
+d.crier('exiger');                 // une consigne de la voix (CRIS)
+d.carte('energie');                // une carte de match de la réserve
+```
+
+Les règles sont les mêmes pour les deux écrans : cinq changements ; un joueur expulsé ne
+se remplace pas (l'équipe repasserait à onze) ; le remplaçant entre avec ses compétences,
+sa forme et son moral (`joueurMoteur`, le même descripteur qu'au coup d'envoi) ; le
+remplacé garde ses minutes, son XP et ses buts. Sans décision, le match en direct est celui
+de `playMatch`, au chiffre près. Un seul match à la fois : un second, ouvert pendant le
+direct, est refusé, pour qu'une journée ne compte jamais deux fois.
+
+Un but porte son buteur et son passeur en champs (`by`, `as`) dans le fil du moteur : les
+lire dans la phrase en manquait un sur quatre (« centre de », « lancé par »…). Et deux
+joueurs d'un même club n'ont jamais le même nom (`nomUnique`) : un club neuf sur cinq en
+avait deux, et l'un volait les buts de l'autre.
 
 ### La création du club
 
@@ -650,8 +695,9 @@ en intégration continue avant de toucher au moteur.
 
 ## Limites connues
 
-- `playMatch` joue un match entier d'un coup. Pour suivre un match en direct, pilote
-  `E.step()` depuis une boucle d'animation, comme le fait l'écran Mon Club.
+- `playMatch` joue un match entier d'un coup. Pour suivre un match et décider pendant,
+  `matchEnDirect` (voir plus haut). Un match en cours n'est pas sauvegardé : si l'app se
+  ferme pendant le direct, le match n'a pas eu lieu et la journée reste à jouer.
 - Les ligues entre amis, les défis, le classement et les tournois entre vraies personnes
   demandent le serveur (`server/online-routes.js`). Sans lui, le jeu reste jouable en solo,
   mais ces écrans n'ont personne en face.

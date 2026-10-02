@@ -90,7 +90,9 @@ function serie(nom, N) {
     const H = r.stats.H, A = r.stats.A;
     t.buts = (t.buts || 0) + r.score[0];
     t.encaisses = (t.encaisses || 0) + r.score[1];
-    t.pts = (t.pts || 0) + (r.res === 'w' ? 3 : r.res === 'd' ? 1 : 0);
+    // le résultat du MATCH, lu au score : un amical nul se termine aux tirs au but (§51),
+    // et r.res dirait alors « victoire » ou « défaite » pour un match nul
+    t.pts = (t.pts || 0) + (r.score[0] > r.score[1] ? 3 : r.score[0] === r.score[1] ? 1 : 0);
     ['sh', 'on', 'xg', 'cor', 'fou', 'yc', 'pa', 'pc', 'off', 'tk'].forEach((k) => { t[k] = (t[k] || 0) + H[k]; });
     ['sh', 'xg', 'pa'].forEach((k) => { t['adv_' + k] = (t['adv_' + k] || 0) + A[k]; });
     Object.keys(r.cnt).forEach((k) => { t[k] = (t[k] || 0) + r.cnt[k]; });

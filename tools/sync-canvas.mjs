@@ -62,10 +62,10 @@ const changed = [];
 // 2. les méthodes du club
 const METHODS = ['rand', 'seedR', 'statW', 'ovrOf', 'genStats', 'cardStats', 'profile', 'valueOf',
   'SKILL_DEF', 'skillCount', 'makeSkill', 'skillsOf', 'styles', 'matchup', 'levelNeed', 'addXp',
-  'table', 'bumpMission', 'afterMatch', 'applyFitness', 'TRAININGS', 'train', 'COACHES',
+  'table', 'ajouterCarriere', 'carriereLigne', 'buteursDuMatch', 'bumpMission', 'afterMatch', 'applyFitness', 'TRAININGS', 'train', 'COACHES',
   'MATCH_CARDS', 'UPGRADE_CARDS', 'useUpgrade', 'STAFF_DEFS', 'staffLv', 'staffWages', 'hireStaff',
   'STADES', 'upgradeStade', 'ACADEMIES', 'upgradeAcademy', 'youthPlayer', 'synergy', 'finances',
-  'marketList', 'MARKET_RULES', 'buyInfo', 'buyPlayer', 'formCoords', 'penalty', 'pickXI', 'benchOf', 'ROLE_OPTS', 'metrics', 'baseShape', 'engineCfg',
+  'marketList', 'MARKET_RULES', 'buyInfo', 'buyPlayer', 'sellInfo', 'formCoords', 'penalty', 'pickXI', 'benchOf', 'ROLE_OPTS', 'metrics', 'baseShape', 'engineCfg',
   'RARITY', 'rarityOf', 'rarityOfPower', 'CARD_POOL', 'drawCard', 'PACK_DEFS', 'THE_PACK', 'packOdds', 'collection', 'sellPlayer', 'ageSquad', 'valueOf', 'valueBreakdown',
   'rarityFor', 'packState', 'packByKey', 'packName', 'PACK_SLOTS', 'drawSlot', 'packFamilies', 'objetCourt', 'drawLot', 'openPack', 'commitPack', 'cardToPlayer',
   'GATES', 'gateOf', 'lockOf', 'progressBoard', 'trackLine', 'unlocksAt',
@@ -78,7 +78,15 @@ const METHODS = ['rand', 'seedR', 'statW', 'ovrOf', 'genStats', 'cardStats', 'pr
   'meetings', 'holdMeeting', 'plansLeft', 'usePlan', 'styleList', 'FORMATIONS', 'TAC_GROUPS', 'setFormation', 'applyStyle', 'setMentality', 'setConsigne',
   'CAPS', 'DAILY_REWARDS', 'claimDaily', 'claimMission', 'logMoney', 'dayKey', 'earn', 'spend', 'PRONO_DEFS', 'MAX_STAKE', 'placeProno', 'settlePronos', 'QUEST_DEFS', 'activeQuests', 'rollQuests', 'bumpQuest', 'claimQuest', 'questsAfterMatch',
   'matchPlan', 'MENTALITES', 'IMPACT_DEFS', 'impactFigures', 'impactReport', 'impactLine',
-  'isOnline', 'onlineSummary', 'onlineActions', 'NEWS_SECTIONS', 'buildNews', 'newsBySection', 'onlineSlides', 'demoFeed', 'CREATION_STEPS', 'COUNTRIES', 'starterSquad', 'starterRare', 'canEquipRaw', 'genStatsFor', 'createClub', 'creationSummary'];
+  'isOnline', 'onlineSummary', 'onlineActions', 'NEWS_SECTIONS', 'buildNews', 'newsBySection', 'onlineSlides', 'demoFeed', 'CREATION_STEPS', 'COUNTRIES', 'starterSquad', 'starterRare', 'canEquipRaw', 'genStatsFor', 'createClub', 'creationSummary',
+  // §22 la division : les règles de classement communes (league.js) et le championnat solo (division.js)
+  'emptyRow', 'applyResult', 'standings', 'schedule', 'movements',
+  'CLUBS_DIVISION', 'DIVISION_RULES', 'clubsDeDivision', 'nouvelleDivision', 'divisionCourante', 'prochainMatch', 'estAuCalendrier',
+  'resultatRapide', 'journeeJouee', 'situationDivision', 'resultatsDeJournee',
+  // §2 composition et décisions pendant le match : les mêmes règles que l'app téléphone (tactics.js, direct.js)
+  'joueurMoteur', 'assignSlot', 'compositionAuto', 'candidatsPoste',
+  'REGLES_DIRECT', 'CRIS', 'entrant', 'remplacementInfo', 'issueDuMatch', 'joueursDuMatch',
+  'nomUnique'];
 // Les méthodes retirées des sources. Le sync ne sait qu'ajouter et remplacer : sans
 // cette liste, une méthode supprimée de src/ resterait dans l'artboard, morte mais
 // toujours appelable par l'écran. Ici, elle est effacée, et --check échoue tant
@@ -87,7 +95,7 @@ const RETIREES = ['PACK_REGISTRY', 'kiosqueSummary',
   'SKILL_PACK', 'skillPackOdds', 'skillPackState', 'openSkillPack', 'commitSkillPack',
   'TRAIN_PACK', 'trainPackOdds', 'drawTrainLot', 'openTrainPack', 'commitTrainPack', 'trainPackState',
   'COACH_PACK', 'coachPackOdds', 'coachPackState', 'openCoachPack', 'commitCoachPack'];
-const SOURCES = ['club.js', 'players.js', 'skills.js', 'cards.js', 'staff.js', 'training.js', 'transfer.js', 'progression.js', 'tactics.js', 'tracks.js', 'playerxp.js', 'quests.js', 'creation.js', 'onlineui.js', 'trainpack.js', 'packs.js', 'news.js', 'impact.js'];
+const SOURCES = ['club.js', 'players.js', 'skills.js', 'cards.js', 'staff.js', 'training.js', 'transfer.js', 'progression.js', 'tactics.js', 'tracks.js', 'playerxp.js', 'quests.js', 'creation.js', 'onlineui.js', 'trainpack.js', 'packs.js', 'news.js', 'impact.js', 'league.js', 'division.js', 'direct.js'];
 const club = SOURCES.map((f) => read('src/' + f)).join('\n');
 // Une méthode du club ne se cherche JAMAIS dans le corps du moteur : le moteur a ses
 // propres fonctions internes (setTac, shoot…), et un nom partagé faisait remplacer
@@ -128,6 +136,63 @@ for (const name of RETIREES) {
   if (artboard[end] === '\n') end++;
   artboard = artboard.slice(0, start) + artboard.slice(end);
   changed.push(name + ' (retirée)');
+}
+
+// 4. le balisage de l'écran. Une balise mal refermée ne fait aucune erreur : le
+// navigateur répare en silence, et tous les écrans qui suivent sortent du cadre du
+// téléphone. C'est arrivé : un reste de l'ancienne liste des packs ciblés refermait le
+// cadre, et la Ligue, le Match ou l'Entraînement s'affichaient sous l'écran, hors champ.
+function balisage(html) {
+  const a = html.indexOf('</helmet>') + '</helmet>'.length, b = html.indexOf('</x-dc>');
+  const zone = html.slice(a, b);
+  const VIDES = new Set(['br', 'img', 'input', 'meta', 'link', 'hr', 'source', 'wbr', 'area', 'col', 'embed', 'param', 'track',
+    'path', 'circle', 'rect', 'line', 'polyline', 'polygon', 'ellipse', 'stop', 'use']);
+  const ligne = (i) => html.slice(0, a + i).split('\n').length;
+  const pile = [], erreurs = [];
+  let i = 0;
+  while ((i = zone.indexOf('<', i)) >= 0) {
+    if (zone.startsWith('<!--', i)) { i = zone.indexOf('-->', i) + 3; continue; }
+    const m = /^<(\/?)([a-zA-Z][\w-]*)/.exec(zone.slice(i, i + 64));
+    if (!m) { i++; continue; }
+    let j = i + m[0].length, q = null;                  // la fin de la balise, guillemets compris
+    for (; j < zone.length; j++) { const c = zone[j]; if (q) { if (c === q) q = null; } else if (c === '"' || c === "'") q = c; else if (c === '>') break; }
+    const nom = m[2].toLowerCase();
+    if (!VIDES.has(nom)) {
+      if (!m[1]) { if (zone[j - 1] !== '/') pile.push({ nom, i }); }
+      else {
+        const k = pile.map((x) => x.nom).lastIndexOf(nom);
+        if (k < 0) erreurs.push('</' + nom + '> ligne ' + ligne(i) + ' : rien à refermer');
+        else {
+          if (k !== pile.length - 1) erreurs.push('</' + nom + '> ligne ' + ligne(i) + ' referme aussi ' + pile.slice(k + 1).map((x) => '<' + x.nom + '> (ligne ' + ligne(x.i) + ')').join(', '));
+          pile.length = k;
+        }
+      }
+    }
+    i = j + 1;
+  }
+  pile.forEach((x) => erreurs.push('<' + x.nom + '> ligne ' + ligne(x.i) + ' : jamais refermée'));
+  return erreurs;
+}
+// 5. les dépendances : une méthode recopiée qui en appelle une autre absente de l'écran
+// planterait à l'exécution, sans que rien ne le dise avant (nomUnique l'a fait).
+// Les actions en ligne viennent de connectOnline (src/online.js), branché seulement
+// avec un serveur : onlineActions ne les appelle que si isOnline() est vrai.
+const EN_LIGNE = ['goOnline', 'playRanked', 'refreshLadder', 'refreshLeagues', 'refreshChallenges', 'refreshFeed', 'refreshMarket', 'sellOnline', 'buyOnline'];
+{
+  const manquent = new Set();
+  for (const name of METHODS) {
+    const hit = horsMoteur(name); if (!hit) continue;
+    for (const m of artboard.slice(hit.start, hit.end).matchAll(/this\.([A-Za-z_]\w*)\(/g)) {
+      if (!horsMoteur(m[1]) && !/^(setState|buzz|later|eng|timer)$/.test(m[1]) && !EN_LIGNE.includes(m[1])) manquent.add(m[1] + ' (appelée par ' + name + ')');
+    }
+  }
+  if (manquent.size) { console.error('méthodes appelées mais absentes de l\'écran Mon Club :\n  ' + [...manquent].join('\n  ')); process.exit(1); }
+}
+
+const casse = balisage(artboard);
+if (casse.length) {
+  console.error('balisage de l\'écran Mon Club cassé :\n  ' + casse.slice(0, 6).join('\n  '));
+  process.exit(1);
 }
 
 if (!changed.length) { console.log('canvas à jour, rien à faire'); process.exit(0); }

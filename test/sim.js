@@ -19,7 +19,9 @@ for (let i = 0; i < N; i++) {
   const opp = Object.assign({}, o, { ovr: o.ovr - 5 + (4 - club.state.division) * 3 });
   const r = club.playMatch(opp, { seed: i * 977 + 13 });
   const [h, a] = r.score;
-  res[r.res === 'w' ? 'w' : r.res === 'd' ? 'd' : 'l']++;
+  // le résultat du MATCH, lu au score : un amical nul se termine aux tirs au but (§51),
+  // et r.res dirait alors « victoire » ou « défaite » pour un match nul
+  res[r.score[0] > r.score[1] ? 'w' : r.score[0] === r.score[1] ? 'd' : 'l']++;
   res.gf += h; res.ga += a; res.dist[h + a] = (res.dist[h + a] || 0) + 1;
   res.sh += r.stats.H.sh + r.stats.A.sh; res.on += r.stats.H.on + r.stats.A.on; res.xg += r.stats.H.xg + r.stats.A.xg;
 }

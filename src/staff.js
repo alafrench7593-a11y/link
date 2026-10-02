@@ -83,7 +83,12 @@ export const Staff = {
     const bonus = st.coach === 'formateur' ? 3 : 0;
     const ovr = A.lo + Math.floor(r() * (A.hi - A.lo + 1)) + bonus;
     const pot = Math.max(ovr + 6, A.potLo + Math.floor(r() * (A.potHi - A.potLo + 1)) + bonus);
-    return { id: 30000 + (st.division * 100) + Math.floor(r() * 900), name: F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)], pos: POS[Math.floor(r() * POS.length)], ovr, pot, age: 16 + Math.floor(r() * 4), youth: true, fresh: true, scouted: true };
+    // un identifiant et un nom libres : deux jeunes au même identifiant partageaient profil et statistiques
+    const ids = new Set((st.squad || []).map((p) => p.id));
+    let id = 30000 + (st.division * 100) + Math.floor(r() * 900);
+    while (ids.has(id)) id++;
+    const name = this.nomUnique(F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)], new Set((st.squad || []).map((p) => p.name)));
+    return { id, name, pos: POS[Math.floor(r() * POS.length)], ovr, pot, age: 16 + Math.floor(r() * 4), youth: true, fresh: true, scouted: true };
   },
 
   synergy(xi) {

@@ -197,7 +197,11 @@ export const Cards = {
     const squad = s.squad.slice(), inv = (s.skillInv || []).slice(), collected = (s.collected || []).slice();
     let uid = s.nextSkillUid || 1;
     res.got.forEach((g) => {
-      if (g.kind === 'player') { squad.push(this.cardToPlayer(g)); collected.push(g.id); }
+      if (g.kind === 'player') {
+        const p = this.cardToPlayer(g);
+        p.name = this.nomUnique(p.name, new Set(squad.map((x) => x.name)));
+        squad.push(p); collected.push(g.id);
+      }
       else if (g.kind === 'skill') { inv.push(Object.assign({}, g.skill, { uid: uid++, on: null })); }
     });
     const objets = res.got.filter((g) => g.kind === 'objet').map((g) => g.objet);

@@ -32,6 +32,42 @@ export const Progression = {
     return out;
   },
 
+  // Les statistiques d'un joueur, match après match : matchs joués, buts, passes
+  // décisives, et la somme des notes (la moyenne se calcule à l'affichage).
+  ajouterCarriere(c, stat) {
+    const x = Object.assign({ m: 0, b: 0, pd: 0, n: 0 }, c || {});
+    return { m: x.m + 1, b: x.b + (stat.goals || 0), pd: x.pd + (stat.assists || 0), n: Math.round((x.n + (stat.rating || 6)) * 10) / 10 };
+  },
+
+  carriereLigne(p) {
+    const c = p.carriere;
+    if (!c || !c.m) return 'Aucun match joué';
+    return c.m + ' match' + (c.m > 1 ? 's' : '') + ' · ' + c.b + ' but' + (c.b > 1 ? 's' : '') + ' · ' + c.pd + ' passe' + (c.pd > 1 ? 's' : '')
+      + ' décisive' + (c.pd > 1 ? 's' : '') + ' · note moyenne ' + (c.n / c.m).toFixed(1).replace('.', ',');
+  },
+
+  // Qui a marqué, qui a fait la passe, lu dans le fil du match. Les quêtes, les
+  // pronostics « X marque » et l'XP des joueurs en dépendent (§19). Une seule lecture
+  // pour l'app et pour l'écran Mon Club, qui ne les relevait pas du tout.
+  buteursDuMatch(log, xi) {
+    const scorers = [], assisters = [], idDe = {};
+    (xi || []).forEach((p) => { idDe[p.name] = p.id; });
+    (log || []).filter((l) => l.k === 'G' && l.s === 'H').forEach((l) => {
+      // le moteur dit qui a marqué et qui a donné la passe (un but contre son camp : personne)
+      if (l.by !== undefined) {
+        if (l.by != null && idDe[l.by] != null) scorers.push(idDe[l.by]);
+        if (l.as != null && idDe[l.as] != null) assisters.push(idDe[l.as]);
+        return;
+      }
+      // un fil plus ancien, sans ces champs : on lit la phrase
+      (xi || []).forEach((p) => {
+        if (l.text.indexOf('BUT ! ' + p.name) >= 0) scorers.push(p.id);
+        else if (l.text.indexOf('servi par ' + p.name) >= 0 || l.text.indexOf('sur un centre de ' + p.name) >= 0) assisters.push(p.id);
+      });
+    });
+    return { scorers, assisters };
+  },
+
   bumpMission(ms, id, n) { return ms.map((m) => (m.id === id && !m.claimed ? Object.assign({}, m, { prog: Math.min(m.goal, m.prog + n) }) : m)); },
 
   afterMatch(mt, st) {
@@ -52,7 +88,8 @@ export const Progression = {
       const i = mt.xi.findIndex((x) => x.id === p.id);
       if (i < 0) return p;
       const stat = {
-        min: 90,
+        // un remplacé ou un entrant n'a pas joué 90 minutes (direct.js, joueursDuMatch)
+        min: mt.xi[i].min != null ? mt.xi[i].min : 90,
         goals: (mt.scorers || []).filter((id) => id === p.id).length,
         assists: (mt.assisters || []).filter((id) => id === p.id).length,
         rating: mt.rat && mt.rat.H ? mt.rat.H[i] : 6
@@ -60,7 +97,9 @@ export const Progression = {
       const gain = this.matchXp(p, stat);
       const up = this.addPlayerXp(p, gain);
       if (up.ups.length) grown.push(p.name + ' niveau ' + up.plv + (up.ups[up.ups.length - 1].capped ? ' (potentiel atteint)' : ''));
-      return Object.assign({}, p, { plv: up.plv, pxp: up.pxp, st: up.st, ovr: up.ovr });
+      // §18 RÉSULTAT DU MATCH → STATISTIQUES DU JOUEUR → XP : les chiffres du match
+      // restent sur le joueur (matchs, buts, passes, notes), et sa fiche les montre
+      return Object.assign({}, p, { plv: up.plv, pxp: up.pxp, st: up.st, ovr: up.ovr, carriere: this.ajouterCarriere(p.carriere, stat) });
     });
     if (grown.length) prog = grown.slice(0, 2).join(' · ');
     squad = this.applyFitness(squad, mt, null);
@@ -77,19 +116,33 @@ export const Progression = {
     const patch = { nextAdv: 0, winStreak, missions, squad, inv, lastFin: 'Recette ' + F.gate + ' · salaires −' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net + ' jetons', coachAdvice: null, xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: st.balance + bonus + L.bonusBal + F.net,
       lastGain: '+' + xpGain + ' XP' + (bonus ? ' · série de ' + winStreak + ' victoires x' + mult + ' (+' + bonus + ' jetons)' : '') + (prog ? ' · ' + prog : '') };
     let over = L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : null;
-    const seasonP = st.seasonP + 1;
-    if (seasonP >= 5) {
-      const tbl = this.table(st.record), rank = tbl.findIndex((c) => c.me) + 1, last = tbl.length;
+    // §22 la division : seul le match prévu au calendrier compte. Un amical ne fait
+    // avancer ni le championnat ni la saison (il la faisait avancer avant, sans compter
+    // dans le classement). La journée jouée, les deux autres matchs le sont aussi.
+    let fin = null;
+    if (!mt.friendly) {
+      const j = this.journeeJouee(this.divisionCourante(), mt.hs, mt.as);
+      this.setState({ league: j.league });
+      patch.seasonP = j.league.day;
+      if (j.over) fin = j.table;
+    } else patch.seasonP = st.seasonP || 0;
+    if (fin) {
+      const R = this.DIVISION_RULES();
+      const tbl = fin, rank = tbl.findIndex((c) => c.me) + 1, last = tbl.length;
       // le centre de formation sort un jeune à chaque fin de saison
       patch.squad = this.ageSquad(patch.squad || st.squad);   // §70 une saison de plus pour tout le monde
       const yg = this.youthPlayer(st);
       let ygTxt = '';
       if (yg) { patch.squad = (patch.squad || st.squad).concat([yg]); patch.youth = (st.youth || []).concat([yg.id]); ygTxt = ' Le centre sort ' + yg.name + ' (' + yg.pos + ' ' + yg.ovr + ', potentiel ' + yg.pot + ').'; }
-      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; this.logMoney(500, 'Promotion en division ' + patch.division); patch.freeQueue = patch.freeQueue.concat(['linkfoot']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un LinkFoot Pack. Les adversaires seront plus forts.' + ygTxt }; }
-      else if (rank === last && st.division < 5) { patch.division = st.division + 1; over = { title: 'RELÉGUÉ EN DIVISION ' + patch.division, sub: 'Fin de saison : ' + rank + 'e sur ' + last + '. Les adversaires seront plus faibles, mais la recette du match baisse.' + ygTxt }; }
-      else over = over || { title: 'FIN DE SAISON', sub: rank + 'e de la division ' + st.division + '. Termine dans les 2 premiers pour monter, évite la dernière place.' + ygTxt };
+      if (rank <= R.up && st.division > R.top) { patch.division = st.division - 1; patch.balance += 500; this.logMoney(500, 'Promotion en division ' + patch.division); patch.freeQueue = patch.freeQueue.concat(['linkfoot']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un LinkFoot Pack. Les adversaires seront plus forts.' + ygTxt }; }
+      else if (rank > last - R.down && st.division < R.bottom) { patch.division = st.division + 1; over = { title: 'RELÉGUÉ EN DIVISION ' + patch.division, sub: 'Fin de saison : ' + rank + 'e sur ' + last + '. Les adversaires seront plus faibles, mais la recette du match baisse.' + ygTxt }; }
+      else over = over || { title: 'FIN DE SAISON', sub: rank + 'e de la division ' + st.division + '. Termine dans les ' + R.up + ' premiers pour monter, évite la dernière place.' + ygTxt };
+      // la saison finie reste lisible ; la suivante repart d'un nouveau calendrier
+      patch.lastSeason = { saison: st.saison || 1, division: st.division, rank, clubs: last,
+        table: tbl.map((c) => ({ club: c.club, me: c.me, pts: c.pts, w: c.w, d: c.d, l: c.l, gd: c.gd })) };
+      patch.saison = (st.saison || 1) + 1; patch.league = null;
       patch.seasonP = 0; patch.record = { w: 0, d: 0, l: 0 };
-    } else patch.seasonP = seasonP;
+    }
     if (over) { patch.levelUp = over; this.buzz([60, 40, 60, 40, 200]); }
     // §8, §19 : le match fait avancer les quêtes. Elles lisent les mêmes chiffres que le rapport.
     this.questsAfterMatch(mt, Object.assign({}, st, { squad: patch.squad || squad, winStreak: st.winStreak }));
@@ -119,14 +172,5 @@ export const Progression = {
       }
       return q;
     });
-  },
-
-  table(rec) {
-    const others = [
-      { user: '@Massilia13', club: 'Olympique Vieux-Port', w: 3, d: 1, l: 0 }, { user: '@Lina_psg', club: 'Auteuil United', w: 2, d: 1, l: 1 },
-      { user: '@Yohan_foot', club: 'Sporting Yoyo', w: 2, d: 0, l: 2 }, { user: '@KopBleu', club: 'Kop Bleu FC', w: 1, d: 1, l: 2 }, { user: '@Nina_foot', club: 'Real Canal FC', w: 0, d: 2, l: 2 }
-    ];
-    return others.concat([{ user: 'Toi', club: 'FC TonPseudo', w: rec.w, d: rec.d, l: rec.l, me: true }])
-      .map((c) => Object.assign({}, c, { pts: c.w * 3 + c.d, p: c.w + c.d + c.l })).sort((a, b) => b.pts - a.pts || b.w - a.w);
   }
 };

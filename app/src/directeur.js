@@ -16,7 +16,6 @@ export function TransfersScreen({ club, state, act }) {
   const market = club.marketList();
   const R = club.MARKET_RULES();
   const squad = state.squad.slice().sort((a, b) => b.ovr - a.ovr);
-  const sellWhy = state.squad.length <= 12 ? 'Il te faut au moins 12 joueurs' : '';
   return (
     <ScrollView contentContainerStyle={st.page}>
       <Title sub={'Le prix dépend de la note, de l’âge, du potentiel et de la forme. Nouvelles offres à chaque journée. Effectif : ' + state.squad.length + ' / ' + R.maxSquad + '.'}>Transferts</Title>
@@ -42,16 +41,16 @@ export function TransfersScreen({ club, state, act }) {
 
       <Text style={st.lbl}>VENDRE · 60 % DE LA VALEUR</Text>
       {squad.map((p) => {
-        const price = Math.round(club.profile(p).value * 0.6);
+        const v = club.sellInfo(p);
         return (
           <Card key={p.id}>
             <Row>
               <Text style={st.ovr}>{p.ovr}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={st.name}>{p.name}</Text>
-                <Text style={st.hint}>{p.pos} · niveau {club.playerLevel(p)}</Text>
+                <Text style={st.hint}>{p.pos} · niveau {club.playerLevel(p)} · {club.carriereLigne(p)}</Text>
               </View>
-              <Btn label={'Vendre · ' + price} small why={sellWhy} onPress={() => act((c) => c.sellPlayer(p.id))} />
+              <Btn label={'Vendre · ' + v.price} small why={v.why} onPress={() => act((c) => c.sellPlayer(p.id))} />
             </Row>
           </Card>
         );
@@ -256,6 +255,71 @@ export function ClubScreen({ club, state, act }) {
         <Btn label={TR.academy.lvl >= TR.academy.max ? 'Niveau max' : 'Améliorer · ' + TR.academy.cost + ' jetons'} why={TR.academy.lvl >= TR.academy.max ? 'Niveau maximum' : TR.academy.why}
           onPress={() => act((c) => c.upgradeAcademy())} />
       </Card>
+    </ScrollView>
+  );
+}
+
+// ---------- Division (§22 « je progresse dans les divisions ») ----------
+export function DivisionScreen({ club, state, go }) {
+  const lg = club.divisionCourante();
+  const tbl = club.table(lg);
+  const pm = club.prochainMatch();
+  const R = club.DIVISION_RULES();
+  const dernier = lg.day ? club.resultatsDeJournee(lg.day, lg) : [];
+  const ls = state.lastSeason;
+  return (
+    <ScrollView contentContainerStyle={st.page}>
+      <Title sub={'Saison ' + lg.saison + ' · journée ' + pm.day + ' sur ' + pm.total + '. Les ' + R.up + ' premiers montent, le dernier descend.'}>{'Division ' + state.division}</Title>
+      <Card style={{ borderColor: 'rgba(46,204,113,0.32)', backgroundColor: 'rgba(46,204,113,0.08)' }}>
+        <Text style={st.body}>{club.situationDivision(lg)}</Text>
+      </Card>
+      <Card>
+        <Row>
+          <Text style={[st.lbl, { width: 22 }]}>#</Text>
+          <Text style={[st.lbl, { flex: 1 }]}>CLUB</Text>
+          <Text style={[st.lbl, { width: 24, textAlign: 'center' }]}>J</Text>
+          <Text style={[st.lbl, { width: 54, textAlign: 'center' }]}>V-N-D</Text>
+          <Text style={[st.lbl, { width: 34, textAlign: 'center' }]}>DIFF</Text>
+          <Text style={[st.lbl, { width: 30, textAlign: 'right' }]}>PTS</Text>
+        </Row>
+        {tbl.map((r) => (
+          <Row key={r.id} style={r.me ? { backgroundColor: 'rgba(46,204,113,0.10)', borderRadius: 8, marginHorizontal: -6, paddingHorizontal: 6 } : null}>
+            <Text style={[st.body, { width: 22, fontWeight: '800', color: r.rank <= R.up ? C.green : r.rank > tbl.length - R.down ? C.amber : C.faint }]}>{r.rank}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[st.body, { fontWeight: r.me ? '800' : '600' }]} numberOfLines={1}>{r.club}</Text>
+              <Text style={st.hint} numberOfLines={1}>{r.user}</Text>
+            </View>
+            <Text style={[st.hint, { width: 24, textAlign: 'center' }]}>{r.p}</Text>
+            <Text style={[st.hint, { width: 54, textAlign: 'center' }]}>{r.w}-{r.d}-{r.l}</Text>
+            <Text style={[st.hint, { width: 34, textAlign: 'center' }]}>{r.gd > 0 ? '+' : ''}{r.gd}</Text>
+            <Text style={[st.body, { width: 30, textAlign: 'right', fontWeight: '800' }]}>{r.pts}</Text>
+          </Row>
+        ))}
+      </Card>
+      {dernier.length ? (
+        <Card>
+          <Text style={st.lbl}>JOURNÉE {lg.day} · RÉSULTATS</Text>
+          {dernier.map((x, i) => (
+            <Row key={i}>
+              <Text style={[st.body, { flex: 1, textAlign: 'right', fontWeight: x.moi ? '800' : '400' }]} numberOfLines={1}>{x.home}</Text>
+              <Text style={[st.body, { width: 48, textAlign: 'center', fontWeight: '800' }]}>{x.hs} - {x.as}</Text>
+              <Text style={[st.body, { flex: 1, fontWeight: x.moi ? '800' : '400' }]} numberOfLines={1}>{x.away}</Text>
+            </Row>
+          ))}
+        </Card>
+      ) : null}
+      <Card>
+        <Text style={st.lbl}>PROCHAIN MATCH</Text>
+        <Text style={st.body}>Journée {pm.day} · {pm.domicile ? 'à domicile' : 'à l’extérieur'} contre {pm.opp.club} ({pm.opp.styleName}, note {pm.opp.ovr})</Text>
+        <Btn label="Préparer et jouer" small onPress={() => go('match')} />
+      </Card>
+      {ls ? (
+        <Card>
+          <Text style={st.lbl}>SAISON {ls.saison} · DIVISION {ls.division}</Text>
+          <Text style={st.body}>Terminée {ls.rank === 1 ? '1er' : ls.rank + 'e'} sur {ls.clubs}.</Text>
+        </Card>
+      ) : null}
+      <Text style={st.hint}>Ton match est joué par le moteur ; les deux autres matchs de la journée sont simulés d’après la note et le style des clubs. Promotion : +500 jetons et un LinkFoot Pack.</Text>
     </ScrollView>
   );
 }

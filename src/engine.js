@@ -189,7 +189,9 @@ export function makeEngine(cfg) {
     const banner = (text, sub, color, dur) => mark({ k: 'banner', text, sub: sub || '', color: color || '#F2F4F7', dur: dur || 1.6 });
     const possPct = () => { const tot = W.pt.H + W.pt.A; return tot ? Math.round(W.pt.H / tot * 100) : 50; };
     const snap = () => hist.push({ t: W.t, m: W.clk, score: { H: W.score.H, A: W.score.A }, st: { H: Object.assign({}, W.st.H), A: Object.assign({}, W.st.A) }, rat: { H: TM.H.ps.map((p) => p.rat), A: TM.A.ps.map((p) => p.rat) }, en: TM.H.ps.map((p) => p.energy), cards: TM.H.ps.map((p) => [p.yc, p.red]), poss: possPct() });
-    const logE = (text, color, k, s) => { log.push({ t: W.t, text: clockLabel(W.clk) + ' ' + text, color, k, s, m: Math.min(90, Math.floor(W.clk / 60)) }); snap(); };
+    // `plus` : ce que le texte dit en toutes lettres, en champs. Un but porte son buteur et
+    // son passeur : les lire dans la phrase en manquait un sur quatre (« centre de », « lancé par »…).
+    const logE = (text, color, k, s, plus) => { log.push(Object.assign({ t: W.t, text: clockLabel(W.clk) + ' ' + text, color, k, s, m: Math.min(90, Math.floor(W.clk / 60)) }, plus || {})); snap(); };
     // ---------- pending highlight / keys ----------
     const keys = [];
     const key = (score, side, kind) => keys.push({ t: W.t, score, side, kind });
@@ -518,7 +520,7 @@ export function makeEngine(cfg) {
       const s = shooter.s, o = bl.s; W.score[s]++; rt(bl, -0.9); const b = W.ball; b.x = 34; b.y = yOf(s, PL + 1.3); b.z = 0.3;
       mark({ k: 'goal', s, c: bl.code, name: bl.short }); banner('CSC !', bl.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#2ECC71' : '#FF4757', 2.8);
       com('Malheureux ' + bl.short + ' : la frappe de ' + shooter.short + ' est déviée dans son propre but !');
-      logE('BUT ! ' + bl.name + ' contre son camp, frappe déviée de ' + shooter.name + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#48E08B' : '#FF4757', 'G', s);
+      logE('BUT ! ' + bl.name + ' contre son camp, frappe déviée de ' + shooter.name + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#48E08B' : '#FF4757', 'G', s, { by: null, as: null, csc: bl.name });
       key(100, s, 'goal'); W.celK = 'calme'; W.cel = W.t + 3.2; W.celS = s; W.scorer = shooter; W.owner = null; W.fl = null;
     };
     const goalScored = (p, f) => {
@@ -558,7 +560,7 @@ export function makeEngine(cfg) {
       const excl = f.xg < 0.1 ? ' Une frappe à ' + Math.round(f.xg * 100) + ' % de chance : du grand art.' : '';
       mark({ k: 'goal', s, c: p.code, name: p.short }); banner(pick(BAN[kind]), p.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#2ECC71' : '#FF4757', 2.8);
       com(pick(COM[kind]).replace('{p}', p.short) + excl);
-      logE('BUT ! ' + p.name + ' ' + how + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#48E08B' : '#FF4757', 'G', s);
+      logE('BUT ! ' + p.name + ' ' + how + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#48E08B' : '#FF4757', 'G', s, { by: p.name, as: as ? as.name : null });
       key(100, s, 'goal');
       W.celK = pickCeleb(p, s); W.cel = W.t + (W.celK === 'ballon' ? 1.9 : W.celK === 'calme' ? 3.2 : 4.4); W.celS = s; W.scorer = p; W.owner = null;
       com(CELEB_TXT[W.celK].replace('{p}', p.short));

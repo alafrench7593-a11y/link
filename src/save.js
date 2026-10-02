@@ -15,7 +15,9 @@ const PERSIST = [
   'caps', 'ledger', 'quests', 'clubName', 'country', 'created', 'pronos', 'sessions', 'coachInv', 'nextAdv',
   // §17 transferts et finances : un joueur acheté ne revient pas sur le marché au
   // rechargement, et l'écran Finances garde le bilan du dernier match
-  'market', 'lastFin'
+  'market', 'lastFin',
+  // §22 la division : calendrier, résultats et classement de la saison, et la saison d'avant
+  'league', 'saison', 'lastSeason'
 ];
 
 export function serialize(club) {

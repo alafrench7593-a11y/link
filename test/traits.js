@@ -41,8 +41,10 @@ function run(skillPicker) {
     Object.keys(r.cnt).forEach((k) => { tot[k] = (tot[k] || 0) + r.cnt[k]; });
     tot.goals = (tot.goals || 0) + r.score[0];
     tot.shots = (tot.shots || 0) + r.stats.H.sh;
-    if (r.res === 'w') tot.wins = (tot.wins || 0) + 1;
-    if (r.res === 'l') tot.losses = (tot.losses || 0) + 1;
+    // le résultat du MATCH, lu au score : un amical nul se termine aux tirs au but (§51),
+    // et r.res dirait alors « victoire » ou « défaite » pour un match nul
+    if (r.score[0] > r.score[1]) tot.wins = (tot.wins || 0) + 1;
+    if (r.score[0] < r.score[1]) tot.losses = (tot.losses || 0) + 1;
   }
   return tot;
 }

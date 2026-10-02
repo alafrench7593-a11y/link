@@ -31,11 +31,12 @@ export const Transfer = {
   marketList() {
     const s = this.state; if (s.market && s.market.week === s.seasonP + s.division * 10) return s.market.list;
     const POS = ['GB', 'DEF', 'DEF', 'MIL', 'MIL', 'ATT'], r = this.seedR(s.division * 977 + s.seasonP * 31 + 5);
-    const list = []; const F = ['A.', 'B.', 'C.', 'D.', 'E.', 'G.', 'H.', 'I.', 'J.', 'K.', 'L.', 'M.', 'N.', 'O.', 'R.', 'S.', 'T.', 'V.', 'Y.', 'Z.'];
+    const list = [], pris = new Set(s.squad.map((p) => p.name)); const F = ['A.', 'B.', 'C.', 'D.', 'E.', 'G.', 'H.', 'I.', 'J.', 'K.', 'L.', 'M.', 'N.', 'O.', 'R.', 'S.', 'T.', 'V.', 'Y.', 'Z.'];
     const L = ['Marvello', 'Ducasson', 'Ebongué', 'Halvorsen', 'Quintero', 'Belkadi-Roy', 'Stranieri', 'Okafor-Lemaire', 'Vasquet', 'Nyamsi', 'Gaudrel', 'Petrakis', 'Lindau', 'Moreau-Diaby', 'Castagne-Nil', 'Rivoire', 'Takamura', 'Ferbault', 'Ansaldi', 'Kowalevski', 'Dembrel', 'Soumahé'];
     for (let i = 0; i < 6; i++) {
       const ovr = 55 + Math.floor(r() * 12) + (5 - s.division) * 3 + this.staffLv('recruteur') * 2, id = 20000 + s.division * 1000 + s.seasonP * 100 + i;
-      const p = { id, name: F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)], pos: POS[Math.floor(r() * POS.length)], ovr };
+      const p = { id, name: this.nomUnique(F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)], pris), pos: POS[Math.floor(r() * POS.length)], ovr };
+      pris.add(p.name);
       list.push(Object.assign(p, { scouted: this.staffLv('recruteur') >= 2, price: this.valueOf(Object.assign({}, p, this.profile(p))) }));
     }
     return list;
@@ -70,13 +71,24 @@ export const Transfer = {
     return { ok: true, price: m.price };
   },
 
+  // Vendre : 60 % de la valeur. Un titulaire ne se vend pas tant qu'il est dans le onze :
+  // la règle vivait seulement dans l'écran Mon Club, l'app téléphone ne la connaissait pas.
+  sellInfo(p) {
+    const s = this.state;
+    if (!p) return { can: false, why: 'Joueur introuvable', price: 0 };
+    const price = Math.round(this.profile(p).value * 0.6);
+    const why = s.match && !s.match.done ? 'Impossible pendant un match'
+      : s.squad.length <= 12 ? 'Effectif minimum atteint (12 joueurs)'
+      : this.pickXI(s.formation).some((x) => x.id === p.id) ? 'Titulaire : sors-le du onze pour le vendre' : '';
+    return { can: !why, why, price };
+  },
+
   sellPlayer(id) {
     const s = this.state;
-    if (s.match && !s.match.done) return { ok: false, why: 'Impossible pendant un match' };
-    if (s.squad.length <= 12) return { ok: false, why: 'Il te faut au moins 12 joueurs' };
     const p = s.squad.find((x) => x.id === id);
-    if (!p) return { ok: false, why: 'Joueur introuvable' };
-    const price = Math.round(this.profile(p).value * 0.6);
+    const info = this.sellInfo(p);
+    if (!info.can) return { ok: false, why: info.why };
+    const price = info.price;
     this.buzz(25);
     // les compétences du joueur vendu retournent en réserve : elles t'appartiennent (§19)
     const inv = (s.skillInv || []).map((k) => (k.on === id ? Object.assign({}, k, { on: null }) : k));

@@ -1,6 +1,23 @@
 // LinkFoot : Fiches joueurs : statistiques, note globale, profil (âge, nationalité, pied, forme).
 // Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
 export const Players = {
+  // Deux joueurs du même nom dans un club : le fil du match ne saurait plus lequel a
+  // marqué, et l'un volait les buts, l'XP et les pronostics « X marque » de l'autre.
+  // Un club neuf sur cinq en avait. Un nom déjà pris change d'initiale (G. → H. → I.),
+  // sans rien toucher d'autre : note, âge et potentiel restent ceux du tirage.
+  nomUnique(name, pris) {
+    if (!pris.has(name)) return name;
+    const m = /^([A-Z])\. (.+)$/.exec(name);
+    if (m) {
+      for (let i = 1; i < 26; i++) {
+        const n = String.fromCharCode(65 + ((m[1].charCodeAt(0) - 65 + i) % 26)) + '. ' + m[2];
+        if (!pris.has(n)) return n;
+      }
+    }
+    let k = 2; while (pris.has(name + ' ' + k)) k++;
+    return name + ' ' + k;
+  },
+
   statW(pos) {
     return { ATT: { ATQ: 0.28, TIR: 0.2, DRI: 0.16, VIT: 0.16, PAS: 0.1, PHY: 0.08, 'DÉF': 0.02 }, MIL: { PAS: 0.26, DRI: 0.17, 'DÉF': 0.14, ATQ: 0.12, PHY: 0.11, TIR: 0.1, VIT: 0.1 }, DEF: { 'DÉF': 0.38, PHY: 0.22, VIT: 0.15, PAS: 0.12, DRI: 0.05, ATQ: 0.04, TIR: 0.04 }, GB: { 'RÉF': 0.3, PLO: 0.25, MAI: 0.2, PLA: 0.15, 'DÉG': 0.05, VIT: 0.05 } }[pos] || this.statW('MIL');
   },

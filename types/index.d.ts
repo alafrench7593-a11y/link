@@ -16,7 +16,20 @@ export interface Player {
   [k: string]: unknown;
 }
 
-export interface Opponent { club: string; ovr: number; style: string; user?: string; color?: string; }
+export interface Opponent { club: string; ovr: number; style: string; user?: string; color?: string; friendly?: boolean; exterieur?: boolean; }
+
+/** §22 Une division solo : ses clubs, son calendrier, ses lignes de classement et ses résultats. */
+export interface DivisionState {
+  saison: number; division: number; day: number;
+  clubs: Array<{ id: string; club: string; color: string; style: string; ovr: number }>;
+  days: Array<Array<{ home: string; away: string }>>;
+  rows: Array<{ id: string; name: string; p: number; w: number; d: number; l: number; gf: number; ga: number; pts: number }>;
+  results: Array<{ day: number; home: string; away: string; hs: number; as: number }>;
+}
+export interface DivisionRow {
+  id: string; me: boolean; club: string; user: string; style: string | null; ovr: number | null;
+  w: number; d: number; l: number; p: number; pts: number; gf: number; ga: number; gd: number; rank: number;
+}
 
 export interface SideStats { sh: number; on: number; xg: number; pa: number; pc: number; tk: number; off: number; cor: number; fou: number; yc: number; rc: number; }
 
@@ -55,6 +68,21 @@ export declare class Club {
   buyInfo(m: (Player & { price: number }) | undefined): { can: boolean; why: string };
   buyPlayer(id: number): { ok: boolean; why?: string; price?: number };
   sellPlayer(id: number): { ok: boolean; why?: string; price?: number };
+  /** Vendre : 60 % de la valeur ; refusé pendant un match, sous 12 joueurs, ou pour un titulaire. */
+  sellInfo(p: Player | undefined): { can: boolean; why: string; price: number };
+  /** §22 La division : six clubs, cinq journées, les deux premiers montent, le dernier descend. */
+  DIVISION_RULES(): { clubs: number; up: number; down: number; top: number; bottom: number };
+  divisionCourante(): DivisionState;
+  prochainMatch(): { day: number; total: number; domicile: boolean; opp: Opponent & { id: string; ligue: true; exterieur: boolean; styleName: string } };
+  /** Seul l'adversaire du calendrier compte pour le championnat ; les autres matchs sont des amicaux. */
+  estAuCalendrier(opp: Opponent | undefined): boolean;
+  table(lg?: DivisionState): DivisionRow[];
+  /** Une phrase vraie sur la situation : qui est devant, si on le joue encore, les points en jeu. */
+  situationDivision(lg?: DivisionState): string;
+  resultatsDeJournee(day: number, lg?: DivisionState): Array<{ home: string; away: string; hs: number; as: number; moi: boolean }>;
+  /** Fonction pure : la journée jouée (ton score + les autres matchs simulés), sans toucher à l'état. */
+  journeeJouee(lg: DivisionState, buts: number, encaisses: number): { league: DivisionState; over: boolean; table: DivisionRow[] };
+  resultatRapide(home: { ovr: number; style: string }, away: { ovr: number; style: string }, graine: number): { hs: number; as: number };
   /** §17 Tactique : formations, consignes et styles, réglés par le module. */
   FORMATIONS(): string[];
   TAC_GROUPS(): Array<{ title: string; color: string; items: Array<[string, string, string[]]> }>;

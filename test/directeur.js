@@ -238,7 +238,11 @@ tete('§17 Transferts : acheter et vendre');
   t('   et la dépense est au journal', c.state.ledger[0].l === 'Achat de ' + m.name && c.state.ledger[0].a === -m.price && ecart(c) === 0);
   const deux = c.buyPlayer(m.id);
   t('le même joueur ne s’achète pas deux fois', !deux.ok, deux.why);
-  const vendu = c.state.squad.find((p) => !p.gift && p.id !== m.id);
+  const titulaire = c.pickXI(c.state.formation)[0];
+  const refusTit = c.sellPlayer(titulaire.id);
+  t('un titulaire ne se vend pas tant qu’il est dans le onze', !refusTit.ok && /Titulaire/.test(refusTit.why), refusTit.why);
+  const xiIds = new Set(c.pickXI(c.state.formation).map((p) => p.id));
+  const vendu = c.state.squad.find((p) => !p.gift && p.id !== m.id && !xiIds.has(p.id));
   const v = c.sellPlayer(vendu.id);
   t('vendre rapporte, par le journal', v.ok && c.state.ledger[0].l === 'Vente de ' + vendu.name && ecart(c) === 0, '+' + v.price);
 }
@@ -258,6 +262,183 @@ tete('§17 Finances : le journal explique le solde, au jeton près');
   t('après un match avec pronostic, le solde est exactement la somme du journal', ecart(c) === 0, 'écart ' + ecart(c));
 }
 
+// ---------------------------------------------------------------- §22 la division
+tete('§22 je progresse dans les divisions : un vrai championnat');
+{
+  const d = new Club(); d.createClub({ name: 'FC Division', seed: 4242 });
+  const lg0 = d.divisionCourante(), R = d.DIVISION_RULES();
+  t('six clubs, cinq journées', lg0.rows.length === R.clubs && lg0.days.length === R.clubs - 1);
+  const paires = new Set();
+  lg0.days.forEach((j) => j.forEach((m) => paires.add([m.home, m.away].sort().join('-'))));
+  t('chaque club rencontre chacun des autres exactement une fois', paires.size === R.clubs * (R.clubs - 1) / 2);
+  t('chaque journée, tout le monde joue', lg0.days.every((j) => j.length === R.clubs / 2));
+  const pm = d.prochainMatch();
+  t('le prochain match est celui du calendrier', !!pm.opp.club && pm.day === 1, pm.opp.club + (pm.domicile ? ', à domicile' : ', à l’extérieur'));
+
+  // un adversaire hors calendrier : c'est un amical, il ne touche ni au bilan ni à la saison
+  const am = d.playMatch({ club: 'Hors calendrier', ovr: 50, style: 'blocmed' }, { seed: 5 });
+  t('un adversaire hors calendrier est un amical', am.amical === true && d.state.seasonP === 0
+    && d.state.record.w + d.state.record.d + d.state.record.l === 0, 'saison ' + d.state.seasonP);
+  t('   moitié de la prime', am.reward === (am.res === 'w' ? 60 : am.res === 'd' ? 25 : 10), '+' + am.reward);
+  t('   et la division n’a pas bougé', d.divisionCourante().day === 0);
+
+  const r1 = d.playMatch(pm.opp, { seed: 6 });
+  const lg1 = d.divisionCourante(), tbl = d.table(lg1), moi = tbl.find((x) => x.me);
+  t('le match du calendrier compte', !r1.amical && lg1.day === 1 && d.state.seasonP === 1);
+  t('   les six clubs ont joué la journée', tbl.every((x) => x.p === 1), tbl.map((x) => x.club + ' ' + x.p).join(', '));
+  t('   ton score est celui du moteur', moi.gf === r1.score[0] && moi.ga === r1.score[1], r1.score.join('-'));
+  t('   les points suivent les résultats, pour tous', tbl.every((x) => x.pts === x.w * 3 + x.d));
+  t('   et le bilan de la saison aussi', d.state.record[r1.res] === 1);
+  t('les trois résultats de la journée sont lisibles', d.resultatsDeJournee(1).length === 3 && d.resultatsDeJournee(1).filter((x) => x.moi).length === 1);
+
+  // les matchs simulés pèsent la note : le plus fort gagne nettement plus souvent
+  let fort = 0, faible = 0;
+  for (let i = 0; i < 400; i++) {
+    const x = d.resultatRapide({ ovr: 60, style: 'blocmed' }, { ovr: 52, style: 'blocmed' }, 1000 + i);
+    if (x.hs > x.as) fort++; else if (x.hs < x.as) faible++;
+  }
+  t('un match simulé favorise la meilleure note, sans être joué d’avance', fort > faible * 3 && faible > 0, fort + ' victoires du plus fort, ' + faible + ' du plus faible');
+
+  // fin de saison : le classement décide, et une nouvelle saison commence
+  const saison0 = d.state.saison || 1, div0 = d.state.division;
+  for (let j = 2; j <= 5; j++) d.playMatch(d.prochainMatch().opp, { seed: 6 + j });
+  const fin = d.state.lastSeason;
+  t('après cinq journées, la saison est close et lisible', !!fin && fin.saison === saison0 && fin.table.length === R.clubs, fin && fin.rank + 'e');
+  const attendu = fin.rank <= R.up && div0 > R.top ? div0 - 1 : fin.rank > R.clubs - R.down && div0 < R.bottom ? div0 + 1 : div0;
+  t('montée, descente ou maintien selon le rang', d.state.division === attendu, 'rang ' + fin.rank + ', division ' + div0 + ' → ' + d.state.division);
+  const lg2 = d.divisionCourante();
+  t('la saison suivante repart d’un nouveau calendrier', d.state.saison === saison0 + 1 && lg2.day === 0 && lg2.rows.every((x) => x.p === 0)
+    && d.state.seasonP === 0 && d.state.record.w + d.state.record.d + d.state.record.l === 0);
+
+  // la phrase de situation lit le calendrier et les points en jeu, au lieu de dire
+  // « bats-le » à un club déjà joué
+  {
+    const s = new Club(); s.createClub({ name: 'FC Situation', seed: 4242 });
+    const base = s.divisionCourante();
+    t('avant la première journée, la phrase présente la saison', /^Saison 1 : 5 journées/.test(s.situationDivision(base)), s.situationDivision(base));
+    // la division arrêtée après trois journées, aux points choisis (aucune égalité)
+    const fige = (pts) => {
+      const lg = JSON.parse(JSON.stringify(base)); lg.day = 3;
+      lg.rows.forEach((r) => {
+        const v = pts[r.id], w = Math.floor(v / 3), dd = v % 3;
+        Object.assign(r, { p: 3, w, d: dd, l: 3 - w - dd, pts: v, gf: v, ga: 3 });
+      });
+      return lg;
+    };
+    const adv = (j) => { const m = base.days[j].find((x) => x.home === 'moi' || x.away === 'moi'); return m.home === 'moi' ? m.away : m.home; };
+    const nom = (id) => base.clubs.find((x) => x.id === id).club;
+    const joue = adv(0), aVenir = adv(3);
+    const [a, b, e] = base.clubs.map((x) => x.id).filter((id) => id !== joue && id !== aVenir);
+    const p1 = s.situationDivision(fige({ [a]: 9, moi: 7, [aVenir]: 6, [joue]: 4, [b]: 3, [e]: 1 }));
+    t('dans la zone de montée : qui suit, à combien, et quand on le joue',
+      /^Tu es 2e, dans la zone de montée/.test(p1) && p1.includes(nom(aVenir) + ' (3e) est à 1 pt derrière') && p1.includes('journée 4'), p1);
+    const p2 = s.situationDivision(fige({ [a]: 9, [joue]: 7, moi: 5, [aVenir]: 4, [b]: 3, [e]: 1 }));
+    t('derrière un club déjà joué : la phrase ne dit plus « bats-le »',
+      p2.includes('La montée est à 2 pts : ' + nom(joue)) && /déjà joué/.test(p2) && !/bats/.test(p2), p2);
+    const p3 = s.situationDivision(fige({ [a]: 9, [aVenir]: 7, moi: 5, [joue]: 4, [b]: 3, [e]: 1 }));
+    t('derrière un club encore à jouer : la journée du duel', p3.includes(nom(aVenir)) && p3.includes('Tu le joues à la journée 4'), p3);
+    const p4 = s.situationDivision(fige({ [a]: 9, [b]: 9, moi: 1, [joue]: 4, [aVenir]: 3, [e]: 0 }));
+    t('quand il manque plus de points qu’il n’en reste, la montée est dite perdue', /n’est plus possible/.test(p4) && /6 points en jeu/.test(p4), p4);
+    const p5 = s.situationDivision(fige({ [a]: 9, [b]: 7, [joue]: 5, [aVenir]: 4, [e]: 3, moi: 1 }));
+    t('dernier : la descente est annoncée', /Tu es dernier, et le dernier descend/.test(p5), p5);
+  }
+
+  // une ancienne sauvegarde (sans calendrier) reprend ses résultats de la saison
+  const old = new Club(); old.setState({ league: undefined, seasonP: 2, record: { w: 1, d: 1, l: 0 } });
+  const lgOld = old.divisionCourante(), me = old.table(lgOld).find((x) => x.me);
+  t('une ancienne partie reprend sa saison au lieu de repartir de zéro', lgOld.day === 2 && me.w === 1 && me.d === 1 && me.p === 2);
+}
+
+// ---------------------------------------------------------------- §2 composition
+tete('§2 je choisis le onze');
+{
+  const k = new Club(); k.createClub({ name: 'FC Onze', seed: 4242 });
+  const xi0 = k.pickXI(k.state.formation), banc = k.benchOf(xi0);
+  const slot = xi0.find((p) => p.line === 'MIL').slot, rempl = banc.find((p) => p.pos === 'MIL') || banc[0];
+  const titulaire = xi0.find((p) => p.slot === slot);
+  const r = k.assignSlot(slot, rempl.id);
+  const xi1 = k.pickXI(k.state.formation);
+  t('un remplaçant mis à un poste joue à ce poste', r.ok && xi1.find((p) => p.slot === slot).id === rempl.id, rempl.name);
+  t('   et le titulaire qu’il remplace passe sur le banc', !xi1.some((p) => p.id === titulaire.id));
+  const att = xi1.find((p) => p.line === 'ATT'), def = xi1.find((p) => p.line === 'DEF');
+  k.assignSlot(att.slot, def.id);
+  const xi2 = k.pickXI(k.state.formation);
+  t('deux titulaires échangent leurs postes, et le hors-poste coûte des points',
+    xi2.find((p) => p.slot === att.slot).id === def.id && xi2.find((p) => p.slot === def.slot).id === att.id && xi2.find((p) => p.slot === att.slot).pen > 0,
+    'pénalité ' + xi2.find((p) => p.slot === att.slot).pen);
+  const bl = banc.find((p) => p.id !== rempl.id);
+  k.setState({ squad: k.state.squad.map((p) => (p.id === bl.id ? Object.assign({}, p, { inj: 2 }) : p)) });
+  const refus = k.assignSlot(slot, bl.id), cand = k.candidatsPoste(slot).find((x) => x.p.id === bl.id);
+  t('un blessé est refusé, et le choix dit pourquoi', !refus.ok && /blessé/.test(refus.why) && cand && !cand.can && /Blessé/.test(cand.why), refus.why);
+  k.setState({ lineup: Object.assign({}, k.state.lineup, { [slot]: bl.id }) });
+  t('un blessé inscrit au onze n’y joue pas', !k.pickXI(k.state.formation).some((p) => p.id === bl.id));
+  k.compositionAuto();
+  t('le onze redevient automatique', !Object.keys(k.state.lineup).length);
+}
+
+// ---------------------------------------------------------------- §2 décisions pendant le match
+tete('§2 pendant le match, je décide depuis le banc');
+{
+  const neuf = () => { const k = new Club(); k.createClub({ name: 'FC Banc', seed: 4242 }); return k; };
+  const jusqua = (d, m) => { let r; do { r = d.avancer(10); } while (!r.done && r.minute < m); return r; };
+  const bloc = neuf().playMatch(ADV, { seed: 501 });
+  const d1 = neuf().matchEnDirect(ADV, { seed: 501 }); jusqua(d1, 99);
+  const r1 = d1.terminer();
+  t('sans décision, le direct est le même match qu’en un bloc', JSON.stringify(bloc.stats) === JSON.stringify(r1.stats) && bloc.log.length === r1.log.length, bloc.score.join('-'));
+
+  const d2 = neuf().matchEnDirect(ADV, { seed: 501 }); jusqua(d2, 20);
+  t('une consigne de la voix est prise', d2.crier('exiger').ok);
+  t('   la même, deux fois de suite, est refusée', !d2.crier('exiger').ok);
+  jusqua(d2, 99);
+  const r2 = d2.terminer();
+  t('la consigne change le match, à graine égale', JSON.stringify(r2.stats) !== JSON.stringify(bloc.stats), bloc.score.join('-') + ' sans, ' + r2.score.join('-') + ' avec');
+
+  const k3 = neuf(), d3 = k3.matchEnDirect(ADV, { seed: 501 }); jusqua(d3, 60);
+  // un joueur de champ encore sur le terrain (un expulsé ne se remplace pas)
+  const e3 = d3.etat(), sort = e3.xi.find((p) => !p.red && p.line !== 'GB'), entre = e3.banc[0];
+  const avant = (id) => { const p = k3.state.squad.find((x) => x.id === id); return p.pxp + p.plv * 1e6; };
+  const xpS = avant(sort.id), xpE = avant(entre.id);
+  t('un remplacement à la 60e', d3.remplacer(sort.slot, entre.id).ok && d3.etat().xi.some((p) => p.id === entre.id) && d3.etat().faits === 1, entre.name + ' pour ' + sort.name);
+  t('   le joueur sorti ne revient pas', !d3.remplacer(d3.etat().xi.find((p) => !p.red && p.id !== entre.id && p.line !== 'GB').slot, sort.id).ok);
+  jusqua(d3, 99);
+  const r3 = d3.terminer();
+  const pS = k3.state.squad.find((p) => p.id === sort.id), pE = k3.state.squad.find((p) => p.id === entre.id);
+  t('le remplacé et l’entrant ont tous deux joué : match compté, XP gagnée', pS.carriere.m === 1 && pE.carriere.m === 1 && avant(sort.id) > xpS && avant(entre.id) > xpE);
+  t('   le remplacé est fatigué comme un joueur qui a joué', pS.fit < 100, pS.fit + ' %');
+  t('   et le résultat garde la trace des décisions', (r3.decisions || []).some((x) => /remplace/.test(x.texte)));
+
+  const k4 = neuf();
+  t('cinq changements, pas un de plus', !k4.remplacementInfo({ xi: [{ slot: 'MIL0', name: 'X' }], banc: [{ id: 1 }], faits: 5 }, 'MIL0', 1).can);
+  const exclu = k4.remplacementInfo({ xi: [{ slot: 'MIL0', name: 'X', red: true }], banc: [{ id: 1 }], faits: 0 }, 'MIL0', 1);
+  t('un joueur expulsé ne se remplace pas : l’équipe reste à dix', !exclu.can, exclu.why);
+  const rare5 = k4.state.squad.find((p) => p.gift);
+  const desc = k4.joueurMoteur(k4.entrant({ line: rare5.pos, slot: rare5.pos + '0' }, rare5));
+  t('le remplaçant entre avec ses compétences, sa forme et son moral', desc.skills.length === k4.skillsOf(rare5).length && desc.skills.length > 0
+    && desc.form != null && desc.morale != null, desc.skills.map((x) => x.name).join(', '));
+
+  const k6 = neuf(); k6.setState({ inv: { energie: 1 } });
+  const d6 = k6.matchEnDirect(ADV, { seed: 502 }); jusqua(d6, 70);
+  const e6a = d6.etat().xi.map((p) => p.energy), c6 = d6.carte('energie'), e6b = d6.etat().xi.map((p) => p.energy);
+  t('une carte de match se joue, et elle se consomme', c6.ok && !(k6.state.inv.energie > 0));
+  t('   Boost énergie : +15 % lus dans le moteur', e6b.every((e, i) => e >= Math.min(100, e6a[i] + 15) - 0.01), Math.round(e6a[0]) + ' → ' + Math.round(e6b[0]));
+  t('   sans carte en réserve, refusée', !d6.carte('energie').ok);
+  let second = '';
+  try { k6.playMatch(ADV, { seed: 1 }); } catch (x) { second = x.message; }
+  t('un second match pendant le direct est refusé : la journée ne compte pas deux fois', /déjà en cours/.test(second), second);
+  jusqua(d6, 99); d6.terminer();
+  t('le match fini, le club est libre', !k6.enDirect);
+
+  const k7 = neuf(), xi7 = k7.pickXI(k7.state.formation), sort7 = xi7[9], ent7 = k7.benchOf(xi7)[0];
+  const J = k7.joueursDuMatch(xi7.map((p, i) => (i === 9 ? k7.entrant(p, ent7) : p)), null, [Object.assign({}, sort7, { min: 55, note: 7.2 })], { [ent7.id]: 55 });
+  t('un but marqué avant de sortir reste au buteur', k7.buteursDuMatch([{ k: 'G', s: 'H', text: "30' BUT ! " + sort7.name + ' du gauche' }], J.xi).scorers.includes(sort7.id));
+  t('   chacun a ses minutes : 55 pour le remplacé, 35 pour l’entrant', J.xi.find((p) => p.id === sort7.id).min === 55 && J.xi.find((p) => p.id === ent7.id).min === 35);
+
+  let nul = null;
+  for (let g = 600; g < 700 && !nul; g++) { const r = neuf().playMatch(ADV, { seed: g, friendly: true }); if (r.score[0] === r.score[1]) nul = r; }
+  t('§51 un amical nul se départage aux tirs au but, dans l’app comme dans l’écran Mon Club',
+    !!nul && !!nul.pso && nul.res !== 'd' && nul.reward === (nul.res === 'w' ? 60 : 10), nul && nul.score.join('-') + ', tirs au but ' + nul.pso.H + '-' + nul.pso.A);
+}
+
 // ---------------------------------------------------------------- sauvegarde
 tete('Sauvegarde : la même partie au rechargement');
 {
@@ -265,8 +446,8 @@ tete('Sauvegarde : la même partie au rechargement');
   const r = new Club(deserialize(data));
   const empreinte = (x) => JSON.stringify({ bal: x.state.balance, sq: x.state.squad.map((p) => [p.id, p.ovr, p.plv, p.pxp]),
     sk: (x.state.skillInv || []).map((s2) => [s2.uid, s2.on]), inv: x.state.inv, co: x.state.coachInv, led: (x.state.ledger || []).length,
-    mk: x.marketList().map((m) => m.id) });
-  t('effectif, compétences équipées, objets, solde, journal et marché identiques', empreinte(r) === empreinte(c));
+    mk: x.marketList().map((m) => m.id), lg: JSON.stringify(x.divisionCourante()) });
+  t('effectif, compétences équipées, objets, solde, journal, marché et division identiques', empreinte(r) === empreinte(c));
 }
 
 // ---------------------------------------------------------------- §17 navigation

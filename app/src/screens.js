@@ -4,10 +4,11 @@
 // méthodes. Un refus vient toujours du moteur, avec sa raison, et l'écran se contente
 // de l'afficher. C'est ce qui garantit que l'app native et l'app web racontent
 // exactement la même chose.
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { C, S } from './theme';
 import { Card, Title, Row, Btn, Bar, Tag, Stat, Empty } from './ui';
+import { Composition, EnDirect } from './direct';
 
 // ---------- accueil ----------
 export function HomeScreen({ club, state, act, go }) {
@@ -54,7 +55,8 @@ export function HomeScreen({ club, state, act, go }) {
       ]} />
       <Text style={st.lbl}>COMPÉTITIONS</Text>
       <NavRow go={go} items={[
-        ['match', 'Jouer un match', 'Le moteur joue, tu as préparé'],
+        ['match', 'Jouer un match', 'Journée ' + club.prochainMatch().day + '/' + club.prochainMatch().total + ' contre ' + club.prochainMatch().opp.club],
+        ['division', 'Division ' + state.division, (() => { const r = club.table().find((x) => x.me); return (r.rank === 1 ? '1er' : r.rank + 'e') + ' sur ' + club.DIVISION_RULES().clubs + ' · ' + r.pts + ' point' + (r.pts > 1 ? 's' : ''); })()],
         ['online', 'En ligne', club.onlineSummary().state]
       ]} />
 
@@ -89,7 +91,8 @@ export function SquadScreen({ club, state, act }) {
   }
   return (
     <ScrollView contentContainerStyle={st.page}>
-      <Title sub="Note, niveau et compétences portées">Effectif</Title>
+      <Title sub="Le onze, puis tout l’effectif : note, niveau et compétences portées">Effectif</Title>
+      <Composition club={club} state={state} act={act} />
       {squad.map((p) => {
         const g = club.playerProgress(p);
         return (
@@ -138,6 +141,11 @@ function PlayerScreen({ club, p, act, back }) {
       </Card>
 
       <Card>
+        <Text style={st.lbl}>STATISTIQUES</Text>
+        <Text style={st.body}>{club.carriereLigne(p)}</Text>
+      </Card>
+
+      <Card>
         <Text style={st.lbl}>NIVEAU</Text>
         <Text style={st.body}>Niveau {g.lvl} · {g.xp} / {g.need} XP</Text>
         <Bar pct={g.pct} />
@@ -174,40 +182,71 @@ function PlayerScreen({ club, p, act, back }) {
         <Text style={st.hint}>Ces qualités ne s’affichent pas comme des statistiques : elles agissent pendant le match.</Text>
       </Card>
 
-      <Btn label={'Vendre · ' + Math.round(pr.value * 0.6) + ' jetons'} tone="ghost"
-        why={club.state.squad.length <= 12 ? 'Il te faut au moins 12 joueurs' : ''}
+      <Btn label={'Vendre · ' + club.sellInfo(p).price + ' jetons'} tone="ghost"
+        why={club.sellInfo(p).why}
         onPress={() => { act((c) => c.sellPlayer(p.id)); back(); }} />
     </ScrollView>
   );
 }
 
 // ---------- match ----------
-export function MatchScreen({ club, state, act }) {
+export function MatchScreen({ club, state, act, go }) {
   const [res, setRes] = useState(null);
-  // Un match fait 54 000 pas de calcul : dix à trente secondes sur un téléphone.
-  // En une seule boucle, l'écran serait mort pendant tout ce temps. playMatchAsync
-  // rend la main entre deux paquets : le match est le même au chiffre près, mais la
-  // minute s'affiche et l'application reste vivante.
-  const [enCours, setEnCours] = useState(null);     // le libellé d'horloge du moteur, ou null
-  const opps = [
-    { club: 'Auteuil United', ovr: 67, style: 'tiki' },
-    { club: 'Kop Bleu FC', ovr: 62, style: 'contre' },
-    { club: 'Olympique Vieux-Port', ovr: 70, style: 'gegen' }
-  ].map((o) => Object.assign({}, o, { ovr: o.ovr - 5 + (4 - state.division) * 3 }));
-  const pronos = club.PRONO_DEFS(opps[0], club.pickXI(state.formation));
+  // §2 le match se suit en direct, et le directeur sportif décide depuis le banc :
+  // remplacements, consigne de la voix, cartes de match (src/direct.js). Le match en
+  // direct appartient au club, pas à l'écran : en revenant sur cet onglet, on le
+  // retrouve là où il en est, au lieu d'en lancer un second.
+  const [vue, setVue] = useState(() => (club.enDirect ? club.enDirect.etat() : null));
+  const ecoute = useRef(null);
+  const suivre = (d) => {
+    if (ecoute.current) ecoute.current();
+    ecoute.current = d.ecouter((e) => { if (e.fini) { setVue(null); setRes(e.resultat); } else setVue(e); });
+  };
+  useEffect(() => {
+    if (club.enDirect) suivre(club.enDirect);
+    return () => { if (ecoute.current) ecoute.current(); };
+  }, []);
+  const direct = club.enDirect;
+  // §22 le match qui compte est celui du calendrier ; les autres clubs de la division
+  // se jouent en amical (moitié de la prime, rien au classement).
+  const pm = club.prochainMatch();
+  const lg = club.divisionCourante();
+  const amicaux = lg.clubs.filter((c) => c.id !== pm.opp.id)
+    .map((c) => Object.assign({}, c, { styleName: (club.styles()[c.style] || {}).name || c.style, friendly: true }));
+  const pronos = club.PRONO_DEFS(pm.opp, club.pickXI(state.formation));
   const taken = state.pronos || [];
+  const lancer = (opp, opts) => {
+    if (club.enDirect) return;
+    setRes(null);
+    const d = club.matchEnDirect(opp, Object.assign({ seed: Math.floor(Math.random() * 1e6) }, opts || {}));
+    suivre(d); setVue(d.etat()); d.lancer();
+  };
+  const occupe = direct ? 'Un match est en cours' : '';
   return (
     <ScrollView contentContainerStyle={st.page}>
-      <Title sub="Les 22 joueurs sont pilotés par l’IA. Tu as préparé, tu regardes.">Match</Title>
+      <Title sub="Les 22 joueurs sont pilotés par l’IA. Tu décides depuis le banc : changements, consignes, cartes.">Match</Title>
+
+      {direct && vue && !vue.fini ? <EnDirect club={club} d={direct} vue={vue} /> : null}
 
       {res ? (
         <Card tint={C.green}>
+          <Text style={st.lbl}>{res.amical ? 'MATCH AMICAL' : 'CHAMPIONNAT'}</Text>
           <Text style={st.score}>{res.score[0]} - {res.score[1]}</Text>
-          <Text style={st.hint}>{res.log.filter((l) => l.k === 'G').length} but(s) · {res.stats.H.sh} tirs · {res.poss} % de possession</Text>
+          {res.pso ? <Text style={[st.body, { textAlign: 'center' }]}>Tirs au but : {res.pso.H} - {res.pso.A}</Text> : null}
+          <Text style={st.hint}>Tirs {res.stats.H.sh} - {res.stats.A.sh} · {res.poss} % de possession · +{res.reward} jetons</Text>
+          {(res.decisions || []).length ? (
+            <View style={{ gap: 2 }}>
+              <Text style={st.lbl}>TES DÉCISIONS</Text>
+              {res.decisions.map((x, i) => <Text key={i} style={[st.hint, { color: C.blue }]}>{x.minute}' {x.texte}</Text>)}
+            </View>
+          ) : null}
           {res.log.slice(-6).reverse().map((l, i) => (
             <Text key={i} style={st.hint}>{l.text}</Text>
           ))}
-          <Btn label="Fermer" tone="ghost" small onPress={() => setRes(null)} />
+          <Row>
+            <Btn label="Fermer" tone="ghost" small onPress={() => setRes(null)} />
+            {!res.amical ? <Btn label="Le classement" small onPress={() => go('division')} /> : null}
+          </Row>
         </Card>
       ) : null}
 
@@ -230,18 +269,28 @@ export function MatchScreen({ club, state, act }) {
         </Card>
       ) : null}
 
-      {opps.map((o) => (
-        <Card key={o.club}>
+      {direct ? null : (<>
+      <Card tint="rgba(46,204,113,0.45)">
+        <Text style={st.lbl}>DIVISION {state.division} · JOURNÉE {pm.day}/{pm.total} · {pm.domicile ? 'À DOMICILE' : 'À L’EXTÉRIEUR'}</Text>
+        <Row>
+          <View style={{ flex: 1 }}>
+            <Text style={st.name}>{pm.opp.club}</Text>
+            <Text style={st.hint}>{pm.opp.styleName} · note {pm.opp.ovr}</Text>
+          </View>
+          <Btn label="Jouer" small why={occupe} onPress={() => lancer(pm.opp)} />
+        </Row>
+        <Text style={st.hint}>Le seul match qui compte au classement. Les deux autres matchs de la journée se jouent en même temps.</Text>
+      </Card>
+
+      <Text style={st.lbl}>AMICAUX · MOITIÉ DE LA PRIME, RIEN AU CLASSEMENT</Text>
+      {amicaux.map((o) => (
+        <Card key={o.id}>
           <Row>
             <View style={{ flex: 1 }}>
               <Text style={st.name}>{o.club}</Text>
-              <Text style={st.hint}>{club.styles()[o.style].name} · note {o.ovr}</Text>
+              <Text style={st.hint}>{o.styleName} · note {o.ovr}</Text>
             </View>
-            <Btn label={enCours != null ? enCours : 'Jouer'} small
-              why={enCours != null ? 'Match en cours' : ''}
-              onPress={() => { if (enCours != null) return; setRes(null); setEnCours("1'");
-                club.playMatchAsync(o, { seed: Math.floor(Math.random() * 1e6) }, (m, horloge) => setEnCours(horloge))
-                  .then((r) => { setEnCours(null); setRes(r); }); }} />
+            <Btn label="Amical" small tone="ghost" why={occupe} onPress={() => lancer(o, { friendly: true })} />
           </Row>
         </Card>
       ))}
@@ -262,6 +311,7 @@ export function MatchScreen({ club, state, act }) {
           );
         })}
       </Card>
+      </>)}
     </ScrollView>
   );
 }

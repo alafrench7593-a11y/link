@@ -20,6 +20,7 @@ const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..');
 // [nom, commande, ce que ça protège]
 const RAPIDES = [
   ['canvas', ['tools/sync-canvas.mjs', '--check'], 'l’écran Mon Club et le moteur disent la même chose'],
+  ['paquet', ['build.mjs', '--check'], 'le fichier unique dist/linkfoot.js se charge, joue, suit src/'],
   ['progression', ['test/progression.js'], 'les systèmes du club sont reliés entre eux'],
   ['impact', ['test/impact.js'], 'le rapport de match ne dit que des choses vraies'],
   ['directeur', ['test/directeur.js'], 'le parcours du directeur sportif, de la création au match'],

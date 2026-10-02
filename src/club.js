@@ -18,6 +18,9 @@ import { OnlineUI } from './onlineui.js';
 import { TrainPack } from './trainpack.js';
 import { Packs } from './packs.js';
 import { Impact } from './impact.js';
+import { LeagueRules } from './league.js';
+import { Division } from './division.js';
+import { Direct } from './direct.js';
 import { News } from './news.js';
 
 export class Club {
@@ -52,12 +55,15 @@ export class Club {
   // `avance(minute, horloge)` est appelée au fil de l'eau : la minute pour une jauge,
   // l'horloge pour l'affichage, parce qu'elle sait écrire « 45+2' » et pas 47'.
   playMatchAsync(opp, opts, avance) {
-    const ctx = this.ouvrirMatch(opp, opts);
+    // `avance` reçoit aussi le match en direct : entre deux paquets, l'écran peut
+    // remplacer, crier une consigne ou jouer une carte (direct.js). Sans décision, le
+    // match est celui de playMatch, au chiffre près.
+    const d = this.matchEnDirect(opp, opts);
     return new Promise((resolve) => {
       const paquet = () => {
-        const r = ctx.E.runFor((opts && opts.tranche) || 40);
-        if (r.done) { resolve(this.cloreMatch(ctx)); return; }
-        if (avance) avance(r.minute, r.clock);
+        const r = d.avancer((opts && opts.tranche) || 40);
+        if (r.done) { resolve(d.terminer()); return; }
+        if (avance) avance(r.minute, r.clock, d);
         setTimeout(paquet, 0);
       };
       paquet();
@@ -66,6 +72,8 @@ export class Club {
 
   // Tout ce qui précède le coup d'envoi.
   ouvrirMatch(opp, opts) {
+    // un seul match à la fois : un second ouvert pendant le direct compterait la journée deux fois
+    if (this.enDirect) throw new Error('Un match est déjà en cours');
     const s = this.state, o = opts || {};
     const xi = this.pickXI(s.formation).map((p) => Object.assign({}, p, { energy: p.fit != null ? p.fit : 100, yc: 0, red: false }));
     const styles = this.styles(), oppForm = (styles[opp.style] || {}).form || '4-4-2';
@@ -73,37 +81,35 @@ export class Club {
     const oxi = shapeA.map((b, i) => ({ id: 9000 + i, name: 'J' + i, pos: b.line, line: b.line, ovr: Math.round(opp.ovr + (rnd() - 0.5) * 8), energy: 100, yc: 0, red: false }));
     const obench = ['MIL', 'ATT', 'DEF'].map((pos, i) => ({ id: 9500 + i, name: 'B' + i, pos, ovr: Math.round(opp.ovr - 2) }));
     const plan = this.matchPlan();   // figé AVANT le coup d'envoi : le plan tactique se consomme
+    // §22 seul le match prévu au calendrier compte pour la division ; tout autre match
+    // est un amical, décidé ici, avant le coup d'envoi, et pas à l'arrivée
+    const amical = !!o.friendly || !this.estAuCalendrier(opp);
     const E = makeEngine(Object.assign(this.engineCfg(opp, xi, oxi, obench), { rnd }));
-    return { E, xi, oxi, opp, plan };
+    return { E, xi, oxi, opp, plan, amical };
   }
 
   // Tout ce qui suit le coup de sifflet final.
   cloreMatch(ctx) {
-    const { E, xi, oxi, opp, plan } = ctx, s = this.state;
-    const f = E.state();
-    const hs = f.score.H, as = f.score.A;
-    const res = hs > as ? 'w' : hs === as ? 'd' : 'l', reward = res === 'w' ? 120 : res === 'd' ? 50 : 20;
-    const logs = E.log.map((l) => ({ m: l.m, text: l.text, k: l.k, s: l.s }));
-    // §19 : qui a marqué, qui a fait la passe. Les quêtes et l'XP des joueurs en dépendent.
-    const scorers = [], assisters = [];
-    logs.filter((l) => l.k === 'G' && l.s === 'H').forEach((l) => {
-      xi.forEach((p) => {
-        if (l.text.indexOf('BUT ! ' + p.name) >= 0) scorers.push(p.id);
-        else if (l.text.indexOf('servi par ' + p.name) >= 0 || l.text.indexOf('sur un centre de ' + p.name) >= 0) assisters.push(p.id);
-      });
-    });
-    const mt = { opp, oxi, bench: this.benchOf(xi), hs, as, st: f.st, rat: f.rat, res, reward, done: true, ended: true, plan,
-      poss: f.poss, scorers, assisters, assists: assisters.length, cnt: f.cnt || {}, log: logs,
-      xi: f.en ? xi.map((p, i) => Object.assign({}, p, { energy: f.en[i], yc: f.cards[i][0], red: f.cards[i][1] })) : xi };
-    const record = Object.assign({}, s.record, { [res]: s.record[res] + 1 });
+    const { E, xi, oxi, opp, plan, amical } = ctx, s = this.state;
+    // l'issue (avec les tirs au but d'un amical nul, §51) et la prime : direct.js, la
+    // même règle que l'écran Mon Club ; un amical rapporte moitié moins (§22)
+    const { f, hs, as, res, reward, pso } = this.issueDuMatch(E, amical);
+    const logs = E.log.map((l) => (l.k === 'G' ? { m: l.m, text: l.text, k: l.k, s: l.s, by: l.by, as: l.as } : { m: l.m, text: l.text, k: l.k, s: l.s }));
+    // qui a joué : le onze final puis les remplacés, avec leurs minutes
+    const J = this.joueursDuMatch(xi, f, ctx.sortis, ctx.entres);
+    // §19 : qui a marqué, qui a fait la passe, remplacés compris. Les quêtes et l'XP en dépendent.
+    const { scorers, assisters } = this.buteursDuMatch(logs, J.xi);
+    const mt = { opp, oxi, bench: this.benchOf(xi), hs, as, st: f.st, rat: J.rat || f.rat, res, reward, pso, done: true, ended: true, plan, friendly: !!amical,
+      poss: f.poss, scorers, assisters, assists: assisters.length, cnt: f.cnt || {}, log: logs, xi: J.xi };
+    const record = amical ? s.record : Object.assign({}, s.record, { [res]: s.record[res] + 1 });
     const base = Object.assign({}, this.state, { balance: s.balance + reward, record });
     const patch = this.afterMatch(mt, base);
     this.setState(Object.assign({ record }, patch));
     // poss : la vraie possession, en temps de ballon, pas en nombre de passes.
     // playVersus la renvoyait déjà ; elle manquait ici, donc rien hors de l'écran ne
     // pouvait vérifier qu'un style de possession garde effectivement le ballon.
-    return { score: [hs, as], res, reward, stats: f.st, poss: f.poss, cnt: f.cnt || {}, log: mt.log, patch,
-      impact: this.impactReport(mt) };
+    return { score: [hs, as], res, reward, pso: pso ? { H: pso.H, A: pso.A } : null, stats: f.st, poss: f.poss, cnt: f.cnt || {}, log: mt.log, patch,
+      amical: !!amical, impact: this.impactReport(mt) };
   }
   rand(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
   seedR(seed) { let x = (seed * 2654435761) % 4294967296; return () => { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; }; }
@@ -138,4 +144,4 @@ export class Club {
 }
 
 // §80 : chaque domaine vit dans son fichier et vient se mélanger ici.
-Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs, News, Impact);
+Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs, News, Impact, LeagueRules, Division, Direct);

@@ -148,7 +148,8 @@ export const Tactics = {
     const byId = {}; s.squad.forEach((p) => { byId[p.id] = p; });
     const pool = s.squad.filter((p) => !p.inj).slice().sort((a, b) => b.ovr - a.ovr);
     const used = new Set(), asg = {};
-    slots.forEach((sl) => { const id = lineup[sl.slot]; if (id != null && byId[id] && !used.has(id)) { asg[sl.slot] = byId[id]; used.add(id); } });
+    // un joueur choisi pour le onze n'y joue pas s'il s'est blessé depuis : le poste repasse en automatique
+    slots.forEach((sl) => { const id = lineup[sl.slot]; if (id != null && byId[id] && !byId[id].inj && !used.has(id)) { asg[sl.slot] = byId[id]; used.add(id); } });
     slots.forEach((sl) => {
       if (asg[sl.slot]) return;
       const p = pool.find((q) => !used.has(q.id) && q.pos === sl.line) || pool.find((q) => !used.has(q.id) && q.pos !== 'GB') || pool.find((q) => !used.has(q.id));
@@ -161,6 +162,42 @@ export const Tactics = {
   },
 
   benchOf(xi) { const ids = new Set(xi.map((p) => p.id)); return this.state.squad.filter((p) => !ids.has(p.id) && !p.inj).sort((a, b) => b.ovr - a.ovr).slice(0, 7); },
+
+  // §2 composition. La règle vivait dans l'écran Mon Club seulement : l'app téléphone
+  // jouait toujours le onze automatique, sans que le directeur sportif puisse choisir.
+  // Mettre un joueur à un poste : s'il était titulaire, les deux échangent leurs places ;
+  // sinon le titulaire retourne sur le banc.
+  assignSlot(slot, pid) {
+    const s = this.state;
+    if (s.match && !s.match.done) return { ok: false, why: 'Pendant le match, on change par les remplacements' };
+    const p = s.squad.find((x) => x.id === pid);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    if (p.inj) return { ok: false, why: p.name + ' est blessé' };
+    const lu = {}; this.pickXI(s.formation).forEach((x) => { lu[x.slot] = x.id; });
+    if (!(slot in lu)) return { ok: false, why: 'Poste inconnu' };
+    const cur = lu[slot], other = Object.keys(lu).find((k) => lu[k] === pid);
+    if (other) lu[other] = cur;
+    lu[slot] = pid;
+    this.buzz(15);
+    this.setState({ lineup: lu, sel: null });
+    return { ok: true };
+  },
+
+  // Le onze redevient automatique : les meilleurs à leur poste.
+  compositionAuto() { this.setState({ lineup: {}, sel: null }); return { ok: true }; },
+
+  // Qui peut jouer à ce poste : tout l'effectif sauf le titulaire, le meilleur d'abord
+  // une fois la pénalité hors poste retirée. Un blessé est listé, mais refusé.
+  candidatsPoste(slot) {
+    const s = this.state, xi = this.pickXI(s.formation), cur = xi.find((p) => p.slot === slot);
+    if (!cur) return [];
+    const inXI = new Set(xi.map((p) => p.id));
+    return s.squad.filter((p) => p.id !== cur.id).map((p) => {
+      const pen = this.penalty(p.pos, cur.line);
+      return { p, pen, eff: Math.max(30, p.ovr - pen), titulaire: inXI.has(p.id), can: !p.inj,
+        why: p.inj ? 'Blessé, ' + p.inj + ' match' + (p.inj > 1 ? 's' : '') : '' };
+    }).sort((a, b) => (b.can - a.can) || (b.eff - a.eff));
+  },
 
   ROLE_OPTS(line, slot, formation) {
     if (line === 'GB') return ['Gardien classique', 'Gardien libéro'];
@@ -220,6 +257,18 @@ export const Tactics = {
     return out;
   },
 
+  // Le joueur tel que le moteur le reçoit : statistiques (moins la pénalité hors poste),
+  // énergie, forme, moral, compétences, pied, rôle et consigne. Le coup d'envoi et les
+  // remplacements passent tous deux par ici. Un remplaçant entrait sans ses compétences,
+  // sa forme, son moral ni son pied : ses cartes ne comptaient plus une fois sur le terrain.
+  joueurMoteur(p) {
+    const s = this.state, st = {};
+    this.cardStats(p).forEach((q) => { st[q.l] = Math.max(25, q.v - Math.round((p.pen || 0) * 0.6)); });
+    return { name: p.name, ovr: p.ovr, st, energy: p.energy, form: p.form != null ? p.form : 70, morale: p.morale != null ? p.morale : 72,
+      skills: this.skillsOf(p), foot: this.profile(p).foot, wf: this.profile(p).wf,
+      role: s.roles[p.slot] || this.ROLE_OPTS(p.line, p.slot, s.formation)[0], duty: s.duties[p.slot] || 'Soutien' };
+  },
+
   engineCfg(opp, xi, oxi, obench) {
     const s = this.state, S = this.styles(), st = S[opp.style] || S.equilibre;
     const coordsFrom = (form) => { const C = this.formCoords(form), out = []; ['GB', 'DEF', 'MIL', 'ATT'].forEach((l) => (C[l] || []).forEach(([fx, fy]) => out.push({ fx, fy, line: l }))); return out; };
@@ -229,8 +278,10 @@ export const Tactics = {
     const adv = (s.preset === 'perso' ? 0 : this.matchup(s.preset, opp.style)) + (s.nextAdv || 0);
     const syn = this.synergy(xi);
     const coh = Math.min(1.2, Math.max(0.7, 1 - xi.filter((p) => p.pen).length * 0.06 - (s.preset === 'perso' ? 0.04 : 0) - xi.filter((p) => p.fresh).length * 0.03 + (s.cohBonus || 0) + syn.score));
-    const H = { club: 'FC TonPseudo', sbonus: this.staffLv('adjoint') * 0.8, coach: this.COACHES().find((c) => c.id === (s.coach || 'tacticien')), coh, tac: s.tac, ment: s.mentality, adv, coords: coordsFrom(s.formation), home: true, players: xi.map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p), energy: p.energy, form: p.form != null ? p.form : 70, morale: p.morale != null ? p.morale : 72, skills: this.skillsOf(p), foot: this.profile(p).foot, wf: this.profile(p).wf, role: s.roles[p.slot] || this.ROLE_OPTS(p.line, p.slot, s.formation)[0], duty: s.duties[p.slot] || 'Soutien' })) };
-    const A = { club: opp.club, tac: st.tac, ment: st.m, adv: -adv, coords: coordsFrom(st.form), players: oxi.map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p), skills: this.skillsOf(p), foot: this.profile(p).foot, wf: this.profile(p).wf })), bench: (obench || []).map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p) })) };
+    // le nom du club est celui du directeur sportif ; l'avantage du terrain va à celui
+    // qui reçoit selon le calendrier (§22). Sans calendrier, le club reçoit, comme avant.
+    const H = { club: s.clubName || 'FC TonPseudo', sbonus: this.staffLv('adjoint') * 0.8, coach: this.COACHES().find((c) => c.id === (s.coach || 'tacticien')), coh, tac: s.tac, ment: s.mentality, adv, coords: coordsFrom(s.formation), home: !opp.exterieur, players: xi.map((p) => this.joueurMoteur(p)) };
+    const A = { club: opp.club, home: !!opp.exterieur, tac: st.tac, ment: st.m, adv: -adv, coords: coordsFrom(st.form), players: oxi.map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p), skills: this.skillsOf(p), foot: this.profile(p).foot, wf: this.profile(p).wf })), bench: (obench || []).map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p) })) };
     return { sides: { H, A } };
   }
 };

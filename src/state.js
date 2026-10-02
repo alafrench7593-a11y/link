@@ -27,7 +27,8 @@ export function INITIAL_STATE() {
       ledger: [{ at: Date.now(), a: 1000, l: 'Dotation de départ' }], clubName: 'FC TonPseudo', country: 'fr', created: true,
       kit: { c1: '#2ECC71', c2: '#0C1210', pat: 'uni', collar: 'rond', sponsor: true }, showKit: false, cam: '2d',
       xp: 340, level: 7, dayStreak: 3, dayClaimed: false, winStreak: 0, showHub: false, levelUp: null, now: Date.now(), freePackAt: Date.now() + 90000, freeQueue: [],
-      division: 4, seasonP: 2, lastGain: null,
+      // le club de démonstration (niveau 7, note 65) joue en division 2, à sa place
+      division: 2, seasonP: 2, lastGain: null,
       staff: { adjoint: 0, physique: 0, recruteur: 0, kine: 0 }, stade: 0, academy: 0, youth: [],
       missions: [
         { id: 'play', label: 'Joue 3 matchs', goal: 3, prog: 0, reward: 100, xp: 30, claimed: false },

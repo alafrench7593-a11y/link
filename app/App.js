@@ -16,7 +16,7 @@ import { createClubHooks } from '../src/react.js';
 import { PhoneStore } from './src/store';
 import { C } from './src/theme';
 import { HomeScreen, SquadScreen, MatchScreen, TrainScreen, PacksScreen, SkillsScreen, OnlineScreen } from './src/screens';
-import { TransfersScreen, QuestsScreen, FinancesScreen, TacticScreen, ClubScreen } from './src/directeur';
+import { TransfersScreen, QuestsScreen, FinancesScreen, TacticScreen, ClubScreen, DivisionScreen } from './src/directeur';
 
 const { useClub } = createClubHooks(React);
 
@@ -61,7 +61,8 @@ export default function App() {
     home: HomeScreen, squad: SquadScreen, match: MatchScreen,
     train: TrainScreen, packs: PacksScreen, skills: SkillsScreen, online: OnlineScreen,
     // §17 les entrées du directeur sportif qui n'avaient pas d'écran ici
-    transfers: TransfersScreen, quests: QuestsScreen, finances: FinancesScreen, tactic: TacticScreen, club: ClubScreen
+    transfers: TransfersScreen, quests: QuestsScreen, finances: FinancesScreen, tactic: TacticScreen, club: ClubScreen,
+    division: DivisionScreen
   }[tab] || HomeScreen;
 
   return (

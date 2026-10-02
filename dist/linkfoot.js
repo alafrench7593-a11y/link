@@ -1,45 +1,6 @@
-/* LinkFoot 2026-10-01 : moteur de match + manager, sans dépendance. */
+/* LinkFoot 2026-10-02 : moteur de match + manager, sans dépendance. */
 (function (root) {
 'use strict';
-// LinkFoot : état de départ d'un club. Tout l'état du jeu tient dans cet objet,
-// ce qui le rend sérialisable tel quel (voir save.js).
-// Un joueur de l'effectif de démonstration. Son niveau découle de sa note :
-// un joueur à 66 est déjà construit, un joueur à 58 débute (§6).
-const P = (id, name, pos, ovr) => ({ id, name, pos, ovr, plv: Math.max(1, Math.round((ovr - 46) / 3.5)), pxp: 0 });
-
-function INITIAL_STATE() {
-  return {
-      speed: 1, view: 'home', formation: '4-3-3', balance: 1000, preset: 'equilibre', mentality: 3,
-      tac: { width: 1, tempo: 1, pass: 1, behind: 0, cross: 1, dribble: 0, longshot: 0, patience: 0, line: 1, engage: 1, press: 1, trap: 0, tackle: 1, lost: 1, won: 1, gk: 0, corners: 0, freekicks: 0, mark: 0, fullbacks: 1, overload: 0, ptrap: 0, timewaste: 0 }, famFilter: null,
-      roles: {}, duties: {}, lineup: {}, sel: null,
-      squad: [
-        P(1, 'T. Varnier', 'GB', 66), P(2, 'L. Okonkwé', 'DEF', 64), P(3, 'M. Delacroix-Sy', 'DEF', 67), P(4, 'J. Ferrandi', 'DEF', 62), P(5, 'A. Braxton', 'DEF', 65),
-        P(6, 'N. Kessler', 'MIL', 68), P(7, 'Y. Mbaloula', 'MIL', 63), P(8, 'D. Arroyo-Faye', 'MIL', 66), P(9, 'S. Lindqvist', 'MIL', 61),
-        P(10, 'K. Rouvière', 'ATT', 69), P(11, 'B. Adebanjo', 'ATT', 64), P(12, 'E. Castellane', 'ATT', 62), P(13, 'R. Moulinet', 'GB', 58), P(14, 'I. Tavares', 'DEF', 59)
-      ],
-      nextId: 100, pack: null, match: null, record: { w: 1, d: 1, l: 0 },
-      // §12, §19 : l'inventaire de compétences. Une compétence obtenue dans un pack
-      // arrive ici, puis s'équipe sur un joueur compatible, puis agit dans le match.
-      skillInv: [], nextSkillUid: 1, collected: [], seenPlayers: [],
-      // §7, §29 : l'économie encadrée. `caps` compte les gains du jour par source,
-      // `ledger` garde le journal des transactions.
-      // §6 : l'entraînement se paie en séances, gagnées dans les Packs Entraînement
-      sessions: 3, coachInv: {}, nextAdv: 0,
-      shards: 0, caps: {}, ledger: [], quests: null, clubName: 'FC TonPseudo', country: 'fr', created: true,
-      kit: { c1: '#2ECC71', c2: '#0C1210', pat: 'uni', collar: 'rond', sponsor: true }, showKit: false, cam: '2d',
-      xp: 340, level: 7, dayStreak: 3, dayClaimed: false, winStreak: 0, showHub: false, levelUp: null, now: Date.now(), freePackAt: Date.now() + 90000, freeQueue: [],
-      division: 4, seasonP: 2, lastGain: null,
-      staff: { adjoint: 0, physique: 0, recruteur: 0, kine: 0 }, stade: 0, academy: 0, youth: [],
-      missions: [
-        { id: 'play', label: 'Joue 3 matchs', goal: 3, prog: 0, reward: 100, xp: 30, claimed: false },
-        { id: 'win', label: 'Gagne 1 match', goal: 1, prog: 0, reward: 150, xp: 50, claimed: false },
-        { id: 'goals', label: 'Marque 3 buts', goal: 3, prog: 0, reward: 100, xp: 40, claimed: false },
-        { id: 'pack', label: 'Ouvre un pack', goal: 1, prog: 0, reward: 80, xp: 20, claimed: false },
-        { id: 'counter', label: 'Joue avec un style qui contre l’adversaire', goal: 1, prog: 0, reward: 120, xp: 60, claimed: false }
-      ]
-    };
-}
-
 // LinkFoot : moteur de match. Aucune dépendance, aucun DOM.
 // Entrée : une configuration { sides: { H, A } } produite par Club.engineCfg().
 // Sortie : une API { next, finish, state, step, frame, sub, card, shout, shootout, ... }.
@@ -77,7 +38,7 @@ function makeEngine(cfg) {
       ['sht', 'pas', 'dri', 'def', 'phy', 'pace', 'dec'].forEach((k) => { p[k] = Math.round(p[k] + fm); });
       p.foot = d.foot || 'Droit'; p.wf = d.wf != null ? d.wf : 3;   // §25 pied fort et pied faible
       p.base = { sht: p.sht, pas: p.pas, dri: p.dri, def: p.def, phy: p.phy, pace: p.pace, dec: p.dec, ref: p.ref, han: p.han }; p.skills = d.skills || []; p.drain = 1; p.momT = -1; p.active = [];
-      p.vmax = 5.5 + (p.pace - 40) * 0.064;
+      p.vmax = 6.10 + (p.pace - 40) * 0.045;
       // accélération, agilité, équilibre : dérivés des stats, distincts de la vitesse de pointe
       p.acc0 = 0.30 + (p.dri * 0.5 + p.pace * 0.5 - 40) * 0.0052;     // démarrage
       p.agi0 = 0.55 + (p.dri - 45) * 0.007 - (p.phy - 65) * 0.0022;   // changement de direction
@@ -160,7 +121,8 @@ function makeEngine(cfg) {
       laser: 'pass', visionnaire: 'pass', chef: 'pass', meneur: 'pass',
       tueur: 'shot', renard: 'shot', clutch: 'shot', acier: 'shot',
       mur: 'tackle', gladiateur: 'tackle', pressing: 'press', grinta: 'press',
-      aerien: 'aerial', gk_reflex: 'gk', gk_mains: 'hands', calme: 'calm', leader: 'lead'
+      aerien: 'aerial', gk_reflex: 'gk', gk_mains: 'hands', calme: 'calm', leader: 'lead',
+      perforateur: 'run', eclair: 'trans'
     };
     // Lecture d'un trait, sûre même avant la première minute.
     const TR = (p, k) => ((p && p.tr && p.tr[k]) || 0);
@@ -184,7 +146,7 @@ function makeEngine(cfg) {
           p.active.forEach((k) => { for (const a in k.eff) { if (a === 'drain') p.drain *= k.eff[a]; else if (a !== 'team') add[a] = (add[a] || 0) + k.eff[a]; } });
           for (const a in p.base) p[a] = Math.round(Math.max(20, Math.min(99, p.base[a] + (add[a] || 0))));
           p.tr = traitsOf(p);                       // §23 recalculé chaque minute, avec les conditions
-          p.vmax = 5.5 + (p.pace - 40) * 0.064;
+          p.vmax = 6.10 + (p.pace - 40) * 0.045;
         });
       });
     };
@@ -195,9 +157,33 @@ function makeEngine(cfg) {
     const ring = [], log = [], hist = [];
     let ALL = [];
     const all = () => ALL;
-    const refreshLV = () => { LV = { H: TM.H.ps.filter((p) => !p.red), A: TM.A.ps.filter((p) => !p.red) }; ALL = LV.H.concat(LV.A); };
+    // Les listes de joueurs en vie. Elles étaient reconstruites à chaque pas de calcul,
+    // soit trois tableaux neufs 54 000 fois par match pour un contenu qui ne change
+    // qu'à un carton rouge ou à un changement. Le ramasse-miettes en passait sept pour
+    // cent du temps. On ne reconstruit plus que quand la composition bouge vraiment :
+    // le contenu est identique, donc le match l'est aussi, au chiffre près.
+    let lvSale = true;
+    const salirLV = () => { lvSale = true; };
+    const refreshLV = () => {
+      if (!lvSale) return;
+      lvSale = false;
+      LV = { H: TM.H.ps.filter((p) => !p.red), A: TM.A.ps.filter((p) => !p.red) }; ALL = LV.H.concat(LV.A);
+    };
     const club = (s) => TM[s].club;
-    const nearestOf = (s, x, y, excl) => { let b = null, bd = 1e9; for (const q of LV[s]) { if (q === excl) continue; const d = hy(q.x - x, q.y - y); if (d < bd) { bd = d; b = q; } } return { p: b, d: bd }; };
+    // Le plus proche : on compare les distances AU CARRÉ et on ne prend la racine
+    // qu'une fois, à la fin. La racine carrée est croissante, donc le plus proche au
+    // carré est le plus proche tout court, et IEEE 754 l'arrondit exactement : le
+    // nombre renvoyé est le même bit pour bit. Vingt-et-une racines économisées par
+    // appel, et il y en a des millions dans un match.
+    const nearestOf = (s, x, y, excl) => {
+      let b = null, bd = 1e18;
+      for (const q of LV[s]) {
+        if (q === excl) continue;
+        const dx = q.x - x, dy = q.y - y, d2 = dx * dx + dy * dy;
+        if (d2 < bd) { bd = d2; b = q; }
+      }
+      return { p: b, d: b ? Math.sqrt(bd) : 1e9 };
+    };
     const nearestOpp = (p) => nearestOf(OT[p.s], p.x, p.y);
     const rt = (p, d) => { if (p) p.rat = cl(p.rat + d, 3, 10); };
     const clockLabel = (c, h) => { const m = Math.floor(c / 60), hh = h || W.half; if (hh === 1 && m >= 45) return "45+" + (m - 44) + "'"; if (hh === 2 && m >= 90) return "90+" + (m - 89) + "'"; return Math.max(1, m + 1) + "'"; };
@@ -206,7 +192,9 @@ function makeEngine(cfg) {
     const banner = (text, sub, color, dur) => mark({ k: 'banner', text, sub: sub || '', color: color || '#F2F4F7', dur: dur || 1.6 });
     const possPct = () => { const tot = W.pt.H + W.pt.A; return tot ? Math.round(W.pt.H / tot * 100) : 50; };
     const snap = () => hist.push({ t: W.t, m: W.clk, score: { H: W.score.H, A: W.score.A }, st: { H: Object.assign({}, W.st.H), A: Object.assign({}, W.st.A) }, rat: { H: TM.H.ps.map((p) => p.rat), A: TM.A.ps.map((p) => p.rat) }, en: TM.H.ps.map((p) => p.energy), cards: TM.H.ps.map((p) => [p.yc, p.red]), poss: possPct() });
-    const logE = (text, color, k, s) => { log.push({ t: W.t, text: clockLabel(W.clk) + ' ' + text, color, k, s, m: Math.min(90, Math.floor(W.clk / 60)) }); snap(); };
+    // `plus` : ce que le texte dit en toutes lettres, en champs. Un but porte son buteur et
+    // son passeur : les lire dans la phrase en manquait un sur quatre (« centre de », « lancé par »…).
+    const logE = (text, color, k, s, plus) => { log.push(Object.assign({ t: W.t, text: clockLabel(W.clk) + ' ' + text, color, k, s, m: Math.min(90, Math.floor(W.clk / 60)) }, plus || {})); snap(); };
     // ---------- pending highlight / keys ----------
     const keys = [];
     const key = (score, side, kind) => keys.push({ t: W.t, score, side, kind });
@@ -234,12 +222,28 @@ function makeEngine(cfg) {
       const prev = W.poss; W.owner = p; W.fl = null; W.dirty = true; const b = W.ball; b.z = 0; b.vx = b.vy = b.vz = 0;
       p.ctrlT = W.t + (how === 'set' ? 0 : ctrlDelay(p)); p.nextDec = p.ctrlT; p.rcvT = W.t; p.carry = null; p.run = null; p.prep = null; p.oneTouch = false; W.last = p.s;
       if (prev !== p.s) {
+        // Compteurs de récupération : comment et où le ballon change de camp. Ils ne
+        // changent rien au match ; ils servent à mesurer ce que le pressing et les
+        // blocs font réellement, que le nombre de tacles ne disait pas.
+        W.cnt = W.cnt || {};
+        W.cnt['rec_' + p.s] = (W.cnt['rec_' + p.s] || 0) + 1;
+        W.cnt['rec_' + p.s + '_' + (how || 'x')] = (W.cnt['rec_' + p.s + '_' + (how || 'x')] || 0) + 1;
+        const zA = aOf(p.s, p.y);
+        if (zA > 52) W.cnt['rec_' + p.s + '_haut'] = (W.cnt['rec_' + p.s + '_haut'] || 0) + 1;
         W.poss = p.s; W.possT = W.t; const T = TM[p.s], O = TM[OT[p.s]];
         const bA = aOf(p.s, p.y), ahead = LV[OT[p.s]].filter((q) => q.line !== 'GB' && aOf(p.s, q.y) > bA).length;
         T.counterUntil = 0; O.counterUntil = 0; T.cpressUntil = 0;
         if (how !== 'set' && how !== 'gk' && T.tac.won === 0 && bA < 70 && ahead <= 6) {
           T.counterUntil = W.t + 7.5;
           if (ahead <= 5 && bA < 62) { com('Contre-attaque ! ' + p.short + ' lance le mouvement'); key(12, p.s, 'counter'); }
+        } else if (how !== 'set' && how !== 'gk' && TR(p, 'trans') && bA < 70 && ahead <= 6) {
+          // §10 le Contre éclair lance la transition LUI-MÊME, même quand la consigne de
+          // l'équipe ne dit pas de contre-attaquer. Sans ça, il voulait jouer vers
+          // l'avant mais ses attaquants ne partaient pas, puisqu'ils ne courent qu'en
+          // phase de contre : il n'avait personne à servir. La fenêtre est plus courte
+          // que celle d'une équipe réglée pour contrer, et grandit avec sa compétence.
+          T.counterUntil = W.t + 3.5 + TR(p, 'trans') * 3;
+          if (ahead <= 5 && bA < 62) { com('Contre éclair de ' + p.short + ' !'); key(12, p.s, 'counter'); }
         }
         O.cpressUntil = O.tac.lost === 0 && how !== 'set' && how !== 'gk' ? W.t + 5 : 0;
         O.regroupUntil = O.tac.lost === 1 ? W.t + 4 : 0;
@@ -318,6 +322,10 @@ function makeEngine(cfg) {
       const s = p.s, o = OT[s], T = TM[s], a = aOf(s, p.y), gk = TM[o].ps[0];
       const est = fk ? { xg: fk.xg, blocker: null, pBlock: 0 } : shotEst(p, head);
       const xg = est.xg; W.st[s].sh++; W.st[s].xg += xg;
+      // Les frappes de TRANSITION : moins de huit secondes après que l'équipe a récupéré
+      // le ballon. C'est le terrain de la compétence Contre éclair ; le total des tirs
+      // la noyait. Simple compteur, sans effet sur le match.
+      if (W.poss === s && W.t - W.possT < 8) { W.cnt = W.cnt || {}; W.cnt['tir_transition_' + s] = (W.cnt['tir_transition_' + s] || 0) + 1; }
       const lp = W.lastPass, rec2 = lp && lp.to === p && W.t - lp.t < 5;
       const orig = head ? 'head' : fk ? 'fk' : a < 84 ? 'long' : rec2 && lp.kind === 'through' ? 'through' : rec2 && lp.kind === 'cross' ? 'cross' : W.t < T.counterUntil ? 'counter' : rec2 ? 'pass' : 'solo';
       if (cfg.shotDbg) cfg.shotDbg(p, { a, x: p.x, xg, orig, nd: nearestOpp(p).d, head, held: W.t - p.rcvT, lp: lp && lp.from ? lp.from.kind + '>' + lp.kind : '-' , defBehind: LV[o].filter((q) => aOf(s, q.y) > a).length });
@@ -515,7 +523,7 @@ function makeEngine(cfg) {
       const s = shooter.s, o = bl.s; W.score[s]++; rt(bl, -0.9); const b = W.ball; b.x = 34; b.y = yOf(s, PL + 1.3); b.z = 0.3;
       mark({ k: 'goal', s, c: bl.code, name: bl.short }); banner('CSC !', bl.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#2ECC71' : '#FF4757', 2.8);
       com('Malheureux ' + bl.short + ' : la frappe de ' + shooter.short + ' est déviée dans son propre but !');
-      logE('BUT ! ' + bl.name + ' contre son camp, frappe déviée de ' + shooter.name + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#48E08B' : '#FF4757', 'G', s);
+      logE('BUT ! ' + bl.name + ' contre son camp, frappe déviée de ' + shooter.name + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#48E08B' : '#FF4757', 'G', s, { by: null, as: null, csc: bl.name });
       key(100, s, 'goal'); W.celK = 'calme'; W.cel = W.t + 3.2; W.celS = s; W.scorer = shooter; W.owner = null; W.fl = null;
     };
     const goalScored = (p, f) => {
@@ -555,7 +563,7 @@ function makeEngine(cfg) {
       const excl = f.xg < 0.1 ? ' Une frappe à ' + Math.round(f.xg * 100) + ' % de chance : du grand art.' : '';
       mark({ k: 'goal', s, c: p.code, name: p.short }); banner(pick(BAN[kind]), p.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#2ECC71' : '#FF4757', 2.8);
       com(pick(COM[kind]).replace('{p}', p.short) + excl);
-      logE('BUT ! ' + p.name + ' ' + how + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#48E08B' : '#FF4757', 'G', s);
+      logE('BUT ! ' + p.name + ' ' + how + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#48E08B' : '#FF4757', 'G', s, { by: p.name, as: as ? as.name : null });
       key(100, s, 'goal');
       W.celK = pickCeleb(p, s); W.cel = W.t + (W.celK === 'ballon' ? 1.9 : W.celK === 'calme' ? 3.2 : 4.4); W.celS = s; W.scorer = p; W.owner = null;
       com(CELEB_TXT[W.celK].replace('{p}', p.short));
@@ -714,14 +722,53 @@ function makeEngine(cfg) {
         const tA = aOf(s, ty); let ev = e.pS * V(s, tx, ty, e.space) - (1 - e.pS) * lossCost(s, tx, ty) * (T.tac.patience ? 1.25 : 1) * (isGK ? 1.5 : 1);
         const prog = tA - a0;
         if (counter) ev *= prog > 5 ? 1.25 : prog < -3 ? 0.55 : 1;
+        // §10 le Contre éclair joue vers l'avant dès la récupération. Au premier jet, son
+        // facteur multipliait l'espérance directement ; une espérance négative devenait
+        // alors PLUS négative, et la compétence faisait jouer moins vers l'avant
+        // (56 passes en profondeur pour mille devenaient 55, et le danger créé
+        // tombait de 13,9 à 9,9). On grandit le gain et on réduit la perte.
+        //
+        // Et la phase de contre de l'équipe ne s'ouvre qu'avec un réglage précis (« après
+        // la récupération : contre-attaquer ») : avec la tactique par défaut, elle ne
+        // s'ouvrait jamais et la compétence ne se déclenchait pas. Le porteur qui l'a
+        // joue donc vers l'avant dans les quatre secondes qui suivent CHAQUE
+        // récupération de son équipe : c'est sa compétence, pas la consigne du coach.
+        const eclair = TR(p, 'trans');
+        if (eclair && (counter || (W.poss === s && W.t - W.possT < 4))) {
+          const kt = prog > 5 ? 1 + eclair * 0.6 : prog < -3 ? 1 / (1 + eclair * 0.6) : 1;
+          ev = ev > 0 ? ev * kt : ev / kt;
+        }
         if (T.tac.pass === 0 && e.d > 26) ev *= 0.85; if (T.tac.pass === 2 && prog > 12) ev *= 1.15;
+        // §42 Jeu court ou jeu long. Les deux lignes au-dessus ne jugeaient que la
+        // distance et la progression, jamais le BALLON joué : une équipe réglée en jeu
+        // direct envoyait exactement autant de ballons aériens qu'une équipe de
+        // possession, donc le curseur ne se voyait pas sur le terrain. Une passe en
+        // l'air est un pari : le jeu court le refuse, le jeu direct le prend.
+        // Attention au signe : une espérance peut être négative (une passe qui coûte
+        // plus qu'elle ne rapporte). La multiplier par 0,7 la rendrait MOINS mauvaise,
+        // donc plus attirante, soit l'inverse de ce qu'on veut. On agit sur l'ampleur
+        // en gardant le sens : favoriser, c'est grandir le gain et réduire la perte.
+        if (aerial) { const k = [0.7, 1, 1.4][T.tac.pass] || 1; ev = ev > 0 ? ev * k : ev / k; }
         // §14 la Passe laser joue entre les lignes : les passes difficiles deviennent
         // une option raisonnable, et le receveur rapide est davantage servi dans la profondeur.
         const tp = TR(p, 'pass');
         if (kind === 'through') ev *= (T.tac.behind ? 1.3 : 1.1) * (1 + tp * 0.45) * (1 + TR(q, 'sprint') * 0.3);
+        // Le passeur sait que le Perforateur fait l'appel : la passe en profondeur vers
+        // lui pèse plus. Sans ce lien, ses courses ne servaient à rien. Même précaution
+        // de signe qu'ailleurs : on grandit le gain, on réduit la perte.
+        if ((kind === 'through' || kind === 'space') && TR(q, 'run')) { const kr = 1 + TR(q, 'run') * 0.5; ev = ev > 0 ? ev * kr : ev / kr; }
         if (kind === 'space') ev *= (1 + tp * 0.3) * (1 + TR(q, 'sprint') * 0.35);
         if (kind === 'long') ev *= 1 + tp * 0.4;
         if (kind === 'switch') ev *= (1.05 + Math.max(0, p.pas - 70) / 260) * (1 + tp * 0.5);
+        // §42 La surcharge n'avait que sa première moitié. Le réglage décalait l'équipe
+        // de sept mètres d'un côté — on attire bien l'adversaire — et rien ne poussait
+        // ensuite à RENVERSER vers l'ailier resté seul de l'autre. Le style promettait
+        // un plan en deux temps et n'en jouait qu'un.
+        if (kind === 'switch' && T.tac.overload) {
+          const lx2 = xl(s, tx);
+          const loin = T.tac.overload === 1 ? lx2 > 40 : lx2 < 28;
+          if (loin) { const kr = 1.45; ev = ev > 0 ? ev * kr : ev / kr; }
+        }
         if (isGK && T.tac.gk === 0 && !aerial) ev *= 1.2; if (isGK && T.tac.gk === 1 && aerial) ev *= 1.25;
         if (e.off) { if (R() < 0.62) return; }
         opts.push({ k: 'pass', q, x: tx, y: ty, kind, aerial: !!aerial, ev, off: e.off });
@@ -785,6 +832,12 @@ function makeEngine(cfg) {
             opts.push({ k: 'cross', x: tx, y: ty, ev, nm });
           }
         }
+        // J'ai essayé de rendre la conservation plus coûteuse chez une équipe patiente,
+        // pour que le Tiki-taka fasse circuler au lieu de garder. Le Tiki-taka a un peu
+        // mieux circulé (de 89 passes de retard à 17) mais un effectif technique a perdu
+        // DOUZE POINTS sur vingt-six matchs : forcé de rejouer vite devant un bloc, il
+        // perd le ballon. L'écart entre deux cartes de même note passait de 18 à 35
+        // points. Annulé : le défaut visé est moins grave que le dégât causé.
         if (pr > 2.2) { const held = W.t - p.rcvT; opts.push({ k: 'hold', ev: Vh - held * (T.tac.patience ? 0.0012 : 0.0028) * (counter ? 3 : 1) * (T.tac.timewaste && W.score[s] > W.score[o] ? 0.3 : 1) - (pr < 4 ? 0.004 : 0.0012) }); }
       }
       if (a0 < 24 && pr < 3.2) opts.push({ k: 'clear', ev: -0.0045 });
@@ -799,7 +852,12 @@ function makeEngine(cfg) {
       // Ils servent au garde-fou test/traits.js, qui vérifie qu'une compétence change
       // le comportement et pas seulement les chiffres affichés.
       W.cnt = W.cnt || {}; W.cnt.dec = (W.cnt.dec || 0) + 1;
-      W.cnt['act_' + ch.k + (ch.k === 'pass' ? '_' + ch.kind : '')] = (W.cnt['act_' + ch.k + (ch.k === 'pass' ? '_' + ch.kind : '')] || 0) + 1;
+      // Une passe aérienne EST un long ballon : deux lignes plus bas, exec l'envoie à
+      // kick() avec le type 'long'. Le compteur disait 'pass', donc une équipe en jeu
+      // direct semblait jouer court. On compte ce que le moteur fait, pas ce que
+      // l'option s'appelait au moment du choix.
+      const sousType = ch.k !== 'pass' ? '' : '_' + (ch.kind === 'pass' && ch.aerial ? 'long' : ch.kind);
+      W.cnt['act_' + ch.k + sousType] = (W.cnt['act_' + ch.k + sousType] || 0) + 1;
       exec(p, ch, counter);
     };
     const exec = (p, ch, counter) => {
@@ -862,7 +920,7 @@ function makeEngine(cfg) {
       const cardTxt = card === 'Y' ? ' · carton jaune' : card === 'R' ? ' · CARTON ROUGE' : card === 'R2' ? ' · 2e jaune, expulsé !' : '';
       if (pen || card) logE((pen ? 'PENALTY ! Faute de ' : 'Faute de ') + fr.name + ' sur ' + vic.name + cardTxt, '#F2E27C', card === 'Y' ? 'Y' : card ? 'R' : 'P', o);
       else if (aOf(o, vic.y) > 68) logE('Coup franc dangereux pour ' + club(o) + ' · faute de ' + fr.name, '#9AA3B0', 'F', o);
-      if (card === 'R' || card === 'R2') { W.st[o].rc++; rt(fr, -1.2); fr.red = true; fr.x = -9; key(85, s, 'red'); }
+      if (card === 'R' || card === 'R2') { W.st[o].rc++; rt(fr, -1.2); fr.red = true; fr.x = -9; salirLV(); key(85, s, 'red'); }
       else if (card === 'Y') key(28, s, 'card');
       else key(a > 72 ? 20 : 5, s, 'foul');
       setPiece(pen ? 'pen' : 'fk', s, vic.x, vic.y);
@@ -984,6 +1042,11 @@ function makeEngine(cfg) {
         const fr = off - 1, span = Math.max(20, fr - ab), f = cl(rel / T.baseLen, 0, 1);
         a = ab + span * Math.pow(f, 0.85);
         if (k === 'CB') { a = Math.min(ab + (p.libero ? -3 : 0), bA - 12); x = 34 + (p.bx - 34) * (buildUp ? 1.6 : 1.1) + (bX - 34) * 0.15; }
+        // J'ai essayé de faire monter les joueurs de couloir plus haut quand la consigne
+        // dit de centrer, pour que le 3-5-2 centre autant qu'il le promet. Résultat
+        // mesuré : il centrait toujours aussi peu (6,9 contre 7,6 pour l'Équilibré) et
+        // il encaissait DEUX FOIS PLUS (17,1 de danger concédé contre 8,3). Deux pistons
+        // haut placés devant trois défenseurs, c'est une défense ouverte. Annulé.
         else if (k === 'FB' || k === 'WB') { const m = k === 'WB' ? 1 : p.fbMode != null ? p.fbMode : T.tac.fullbacks; if (m === 0) { a = ab + 7; x = p.lr < 0 ? 9 : 59; } else if (m === 1) { a = ab + span * (bA > 45 ? 0.58 : 0.35) + (k === 'WB' ? 3 : 0); x = p.lr < 0 ? 4 : 64; } else { a = ab + 10; x = 34 + p.lr * 11; } }
         else if (k === 'DM') { const fbHigh = LV[s].filter((q) => (q.kind === 'FB' || q.kind === 'WB') && aOf(s, q.y) > bA - 8).length >= 2; a = ab + (p.deep && buildUp ? 2 : fbHigh ? 3 : Math.max(8, span * 0.22)); x = 34 + (p.bx - 34) * (fbHigh ? 0.2 : 0.6) + (bX - 34) * 0.2; if (fbHigh) p.intent = 'DROP'; }
         else if (k === 'CM' || k === 'AM') { a = ab + span * (k === 'AM' ? 0.72 : 0.5) + (p.b2b ? 4 : 0); if (bA < 50) a = Math.max(a, bA + (k === 'AM' ? 16 : 8)); x = 34 + (p.bx - 34) * 1.05 * T.width + shiftX + (bX - 34) * 0.15; }
@@ -1013,7 +1076,16 @@ function makeEngine(cfg) {
         }
         // appels : préparation le long de la ligne
         if (carSettled && !p.run && (k === 'ST' || k === 'W' || k === 'AM' || p.duty === 'Attaque' || (T.tac.behind && k === 'CM')) && aOf(s, p.y) > off - 10 && bA > 40 && !boxMode) {
-          if (!p.prep && R() < 0.05 * (1 + T.tac.behind + Math.max(0, T.ment - 3) * 0.3)) p.prep = { until: W.t + 2.2 + R(), dx: (R() < 0.5 ? -1 : 1) * (3 + R() * 4), err: gauss() * 0.9 * (1.3 - p.dec / 100) + 0.3 };
+          // §44 Un bon attaquant part plus souvent, et au bon moment. Le taux était
+          // plat : le meilleur avant-centre du jeu faisait autant d'appels que le pire.
+          // t0 sert au temps de réaction du défenseur, plus bas : c'est le décalage
+          // entre le départ de l'appel et le moment où il est vu.
+          // §10 le Perforateur fait jusqu'à deux fois plus d'appels. Au premier jet c'était
+          // deux fois et demie, et ça le sortait de la surface sans qu'on le serve
+          // davantage : 124 tirs devenaient 106. Ce qui compte, c'est que l'appel soit
+          // VU par le passeur, plus bas, dans addPass.
+          const flair = (0.05 + Math.max(0, p.att + p.dec - 130) * 0.0006) * (1 + TR(p, 'run') * 1.0);
+          if (!p.prep && R() < flair * (1 + T.tac.behind + Math.max(0, T.ment - 3) * 0.3)) p.prep = { t0: W.t, until: W.t + 2.2 + R(), dx: (R() < 0.5 ? -1 : 1) * (3 + R() * 4), err: gauss() * 0.9 * (1.3 - p.dec / 100) + 0.3 };
         }
         if (p.prep) { if (W.t > p.prep.until || !carSettled) p.prep = null; else { a = off - 0.7 + p.prep.err; x += p.prep.dx; urg = 0.95; } }
         if (!p.prep) a = Math.min(a, off - 0.7);
@@ -1047,6 +1119,25 @@ function makeEngine(cfg) {
       const L2 = { DEF: [], MIL: [], ATT: [] };
       for (const p of LV[s]) { if (p.line === 'GB') continue; p.press = false; p.prep = null; p.run = null; p.boxM = false; p.intent = regroup ? 'RECOVER' : 'HOLD'; L2[p.line].push(p); }
       Object.values(L2).forEach((arr) => arr.sort((p1, p2) => p1.bx - p2.bx));
+      // §41 UN 3-5-2 DÉFEND À CINQ, PAS À TROIS. Les pistons sont des milieux de couloir
+      // quand on a le ballon, et des défenseurs dès qu'on le perd : c'est tout l'intérêt
+      // du système, et c'est ce que sa description promet (« largeur et solidité »).
+      //
+      // Le moteur les laissait dans la ligne du milieu même en phase défensive, donc
+      // trois centraux couvraient soixante-huit mètres, avec des intervalles PLUS larges
+      // qu'une défense à quatre : 10,5 mètres contre 9,6. Mesuré, le 3-5-2 encaissait
+      // 20,7 de danger contre 8,3 pour le 4-3-3. Le système le plus solide du football
+      // était le plus perméable du jeu.
+      // Sauf en marquage individuel strict : là, chacun suit son homme au lieu de tenir
+      // une ligne, et placer les pistons dans la défense les tiraille entre les deux.
+      // Mesuré, ça empirait : 21 buts encaissés contre 31.
+      if (L2.DEF.length === 3 && T.tac.mark !== 2) {
+        const pistons = L2.MIL.filter((q) => q.kind === 'WB');
+        if (pistons.length) {
+          L2.DEF = L2.DEF.concat(pistons).sort((p1, p2) => p1.bx - p2.bx);
+          L2.MIL = L2.MIL.filter((q) => q.kind !== 'WB');
+        }
+      }
       const nD = L2.DEF.length, nM = L2.MIL.length;
       const place = (arr, a, gap, lim) => { const n = arr.length; arr.forEach((p, k) => { const x = cl(34 + (k - (n - 1) / 2) * gap + shiftX, lim, 68 - lim); setTL(p, a, x, urg * (0.75 + 0.25 * T.coh)); }); };
       const dGap = (nD >= 5 ? 8.2 : nD === 3 ? 10.5 : 9.6) * (nearBox ? 0.8 : 1);
@@ -1073,7 +1164,21 @@ function makeEngine(cfg) {
         if (!best) continue;
         const ra = aOf(s, best.y);
         let na = p.tl.a, nx = p.tl.x + (xl(s, best.x) - p.tl.x) * (man ? 0.65 : 0.4);
-        if (p.line === 'DEF' && ra < D - 1 && Math.abs(xl(s, best.x) - p.tl.x) < 7) na = Math.max(ra - 1.2, 3);   // suit l'appel dans son dos
+        // LE TEMPS DE RÉACTION. Le défenseur suivait l'appel dans son dos au pas de
+        // calcul près, sans jamais être pris de vitesse par le MOUVEMENT : seule une
+        // vitesse de pointe supérieure pouvait le battre. D'où un jeu où un effectif
+        // athlétique créait trois fois plus de danger qu'un effectif technique de même
+        // note, et où resserrer l'écart de vitesse vidait le match de ses occasions.
+        //
+        // Un appel se gagne d'abord par le départ : l'attaquant part, le défenseur met
+        // un demi-temps à le voir, et ce demi-temps dépend de l'anticipation des deux.
+        // Un attaquant qui sait masquer son appel gagne du terrain sans courir plus
+        // vite ; un défenseur qui lit le jeu ne se laisse pas prendre.
+        const reaction = best.prep
+          ? cl(0.85 + (best.att + best.dec - 130) * 0.0045 - (p.def + p.dec - 130) * 0.0045 + TR(best, 'run') * 0.3, 0.20, 1.6)
+          : 0;
+        const vu = !best.prep || W.t - best.prep.t0 >= reaction;
+        if (vu && p.line === 'DEF' && ra < D - 1 && Math.abs(xl(s, best.x) - p.tl.x) < 7) na = Math.max(ra - 1.2, 3);   // suit l'appel dans son dos
         if (p.line === 'MIL' && ra < midA && ra > D + 2) na = Math.max(ra - 1.5, D + 3);                           // ferme l'intervalle
         if (p.line === 'DEF') { na = cl(na, D - 3.5, D + 1); nx = cl(nx, p.tl.x - dGap * 0.45, p.tl.x + dGap * 0.45); }   // la ligne reste plate et espacée
         p.intent = 'MARK';
@@ -1095,6 +1200,11 @@ function makeEngine(cfg) {
       const tX = xl(s, tgt.x), tA = aOf(s, tgt.y);
       const trapZone = T.tac.ptrap === 1 ? (tX < 16 || tX > 52) : T.tac.ptrap === 2 ? (tX > 20 && tX < 48 && tA > 30 && tA < 75) : false;
       const nearGoal = (tA < 30 && Math.abs(tX - 34) < 26) || tA < 20 || (car && W.t - car.rcvT > 2.5 && tA < 45);
+      // J'ai essayé de faire monter le pressing quand une possession adverse dépasse dix
+      // secondes, pour qu'une équipe en bloc bas ne puisse plus faire tourner derrière
+      // à l'infini. Mesuré : le Bus passait de 59 à 55 % de possession contre le
+      // Tiki-taka, et gagnait toujours 20 points sur 24. Ce n'était pas la cause.
+      // Annulé ; le constat reste dans test/styles.js.
       const engaged = tA < T.engageA || cpress || trig || trapZone || nearGoal;
       const cand = LV[s].filter((p) => p.line !== 'GB' && p.fall <= 0 && p.beat <= 0 && !p.boxM && (p.line !== 'DEF' || tA < 34 || T.tac.mark === 2 || hy(p.x - tgt.x, p.y - tgt.y) < 6)).map((p) => ({ p, t: hy(p.x - tgt.x, p.y - tgt.y) / p.vmax })).sort((a2, b2) => a2.t - b2.t);
       if (!cand.length) return;
@@ -1320,7 +1430,14 @@ function makeEngine(cfg) {
       if (!W.set && W.cel <= 0) ballStep();
       else if (W.cel > 0) { const b = W.ball; b.vx = b.vy = 0; }
       else { const b = W.ball; b.x = W.set.x; b.y = W.set.y; b.z = 0; }
-      if (W.owner || W.fl) { const ps = W.owner ? W.owner.s : W.fl.from ? W.fl.from.s : W.poss; W.pt[ps] += DT; }
+      // La possession se compte en temps de ballon. Le temps de VOL était crédité au
+      // camp du passeur, y compris sur un long dégagement : une équipe qui balançait
+      // devant gagnait de la possession à chaque ballon en l'air. D'où un Bloc bas,
+      // censé laisser le ballon, qui affichait 61 % contre 51 % pour l'Équilibré.
+      // Une passe au sol reste à son camp — elle arrive presque toujours ; un ballon
+      // en l'air n'appartient à personne tant qu'il n'est pas retombé.
+      if (W.owner) W.pt[W.owner.s] += DT;
+      else if (W.fl && W.fl.from && !W.fl.aerial && W.fl.kind !== 'long' && W.fl.kind !== 'cross') W.pt[W.fl.from.s] += DT;
       rec();
       W.t += DT; W.clk += DT;
       if (Math.floor(W.clk / 60) !== lastMin) { lastMin = Math.floor(W.clk / 60); ['H', 'A'].forEach((sd) => { const T = TM[sd]; if (T.boost && W.clk / 60 > T.boost.until) { T.boost = null; setTP(T); } adaptToSituation(T); }); applySkills(); }
@@ -1387,13 +1504,41 @@ function makeEngine(cfg) {
         return null;
       },
       finish() { W.skip = true; pend = null; let g = 0; while (!W.ended && g++ < 200000) { tick(); keys.length = 0; } snap(); },
+      // Le même match, découpé. Un match complet fait 54 000 pas de calcul, soit deux
+      // secondes sur une machine de bureau et dix à trente sur un téléphone. Tant que
+      // c'est une seule boucle, l'écran est gelé pendant tout ce temps, sans rien
+      // afficher : le joueur croit que l'application a planté.
+      //
+      // runFor rend la main au bout du temps demandé. La SUITE des pas est identique à
+      // celle de finish(), donc le match l'est aussi, au chiffre près : on ne va pas
+      // plus vite, on arrête simplement de bloquer. L'appelant rappelle jusqu'à ce que
+      // done soit vrai, et affiche minute pendant ce temps.
+      runFor(ms) {
+        W.skip = true; pend = null;
+        const fin = Date.now() + (ms > 0 ? ms : 50);
+        let g = 0;
+        while (!W.ended && g < 200000) {
+          // on teste l'horloge tous les 64 pas : la lire à chaque pas coûterait plus
+          // cher que les pas eux-mêmes
+          for (let k = 0; k < 64 && !W.ended && g < 200000; k++) { tick(); keys.length = 0; g++; }
+          if (Date.now() >= fin) break;
+        }
+        if (W.ended) snap();
+        // L'horloge du match n'est pas monotone : les arrêts de jeu poussent clk
+        // au-delà de 2700 en première période, puis la mi-temps la ramène à 2700.
+        // Affiché brut, le compteur reculait de 47' à 45'. On garde donc le plus haut
+        // atteint pour la jauge, et le moteur donne le libellé juste (« 45+2' »).
+        const brut = Math.min(90, Math.floor(W.clk / 60));
+        W.minVue = Math.max(W.minVue || 0, brut);
+        return { done: !!W.ended, minute: W.minVue, clock: clockLabel(W.clk, W.half), pas: g };
+      },
       snapAt(t) { let lo = null; for (let i = hist.length - 1; i >= 0; i--) if (hist[i].t <= t + 1e-6) { lo = hist[i]; break; } return lo || hist[0] || null; },
       state() { snap(); return Object.assign({}, hist[hist.length - 1], { cnt: W.cnt || {} }); },
       sub(side, i, d) {
         const T = TM[side], old = T.ps[i]; if (!old) return;
         const np = mkP(side, i, d, { line: old.line, fx: old.bx / 0.68, fy: 100 - old.ba / 1.05 });
         Object.assign(np, { x: old.x, y: old.y, kind: old.kind, lr: old.lr, wide: old.wide, rat: 6, energy: d.energy != null ? d.energy : 100 });
-        if (np.fbMode == null) np.fbMode = old.fbMode; T.ps[i] = np;
+        if (np.fbMode == null) np.fbMode = old.fbMode; T.ps[i] = np; salirLV();
         if (W.owner === old) W.owner = np; if (W.set && W.set.taker === old) W.set.taker = np;
         if (W.fl) { if (W.fl.to === old) W.fl.to = np; if (W.fl.from === old) W.fl.from = np; }
         TM[OT[side]].ps.forEach((q) => { if (q.markT === old) q.markT = np; });
@@ -1455,9 +1600,68 @@ function makeEngine(cfg) {
     return api;
   }
 
+// LinkFoot : état de départ d'un club. Tout l'état du jeu tient dans cet objet,
+// ce qui le rend sérialisable tel quel (voir save.js).
+// Un joueur de l'effectif de démonstration. Son niveau découle de sa note :
+// un joueur à 66 est déjà construit, un joueur à 58 débute (§6).
+const P = (id, name, pos, ovr) => ({ id, name, pos, ovr, plv: Math.max(1, Math.round((ovr - 46) / 3.5)), pxp: 0 });
+
+function INITIAL_STATE() {
+  return {
+      speed: 1, view: 'home', formation: '4-3-3', balance: 1000, preset: 'equilibre', mentality: 3,
+      tac: { width: 1, tempo: 1, pass: 1, behind: 0, cross: 1, dribble: 0, longshot: 0, patience: 0, line: 1, engage: 1, press: 1, trap: 0, tackle: 1, lost: 1, won: 1, gk: 0, corners: 0, freekicks: 0, mark: 0, fullbacks: 1, overload: 0, ptrap: 0, timewaste: 0 }, famFilter: null,
+      roles: {}, duties: {}, lineup: {}, sel: null,
+      squad: [
+        P(1, 'T. Varnier', 'GB', 66), P(2, 'L. Okonkwé', 'DEF', 64), P(3, 'M. Delacroix-Sy', 'DEF', 67), P(4, 'J. Ferrandi', 'DEF', 62), P(5, 'A. Braxton', 'DEF', 65),
+        P(6, 'N. Kessler', 'MIL', 68), P(7, 'Y. Mbaloula', 'MIL', 63), P(8, 'D. Arroyo-Faye', 'MIL', 66), P(9, 'S. Lindqvist', 'MIL', 61),
+        P(10, 'K. Rouvière', 'ATT', 69), P(11, 'B. Adebanjo', 'ATT', 64), P(12, 'E. Castellane', 'ATT', 62), P(13, 'R. Moulinet', 'GB', 58), P(14, 'I. Tavares', 'DEF', 59)
+      ],
+      nextId: 100, pack: null, match: null, record: { w: 1, d: 1, l: 0 },
+      // §12, §19 : l'inventaire de compétences. Une compétence obtenue dans un pack
+      // arrive ici, puis s'équipe sur un joueur compatible, puis agit dans le match.
+      skillInv: [], nextSkillUid: 1, collected: [], seenPlayers: [],
+      // §7, §29 : l'économie encadrée. `caps` compte les gains du jour par source,
+      // `ledger` garde le journal des transactions.
+      // §6 : l'entraînement se paie en séances, gagnées dans les Packs Entraînement
+      sessions: 3, coachInv: {}, nextAdv: 0,
+      shards: 0, caps: {}, quests: null,
+      // le solde de départ a sa ligne : le journal explique le solde dès la première seconde
+      ledger: [{ at: Date.now(), a: 1000, l: 'Dotation de départ' }], clubName: 'FC TonPseudo', country: 'fr', created: true,
+      kit: { c1: '#2ECC71', c2: '#0C1210', pat: 'uni', collar: 'rond', sponsor: true }, showKit: false, cam: '2d',
+      xp: 340, level: 7, dayStreak: 3, dayClaimed: false, winStreak: 0, showHub: false, levelUp: null, now: Date.now(), freePackAt: Date.now() + 90000, freeQueue: [],
+      // le club de démonstration (niveau 7, note 65) joue en division 2, à sa place
+      division: 2, seasonP: 2, lastGain: null,
+      staff: { adjoint: 0, physique: 0, recruteur: 0, kine: 0 }, stade: 0, academy: 0, youth: [],
+      missions: [
+        { id: 'play', label: 'Joue 3 matchs', goal: 3, prog: 0, reward: 100, xp: 30, claimed: false },
+        { id: 'win', label: 'Gagne 1 match', goal: 1, prog: 0, reward: 150, xp: 50, claimed: false },
+        { id: 'goals', label: 'Marque 3 buts', goal: 3, prog: 0, reward: 100, xp: 40, claimed: false },
+        { id: 'pack', label: 'Ouvre un pack', goal: 1, prog: 0, reward: 80, xp: 20, claimed: false },
+        { id: 'counter', label: 'Joue avec un style qui contre l’adversaire', goal: 1, prog: 0, reward: 120, xp: 60, claimed: false }
+      ]
+    };
+}
+
 // LinkFoot : Fiches joueurs : statistiques, note globale, profil (âge, nationalité, pied, forme).
 // Méthodes mélangées dans Club (voir club.js). Pas d'état propre : tout passe par this.state.
 const Players = {
+  // Deux joueurs du même nom dans un club : le fil du match ne saurait plus lequel a
+  // marqué, et l'un volait les buts, l'XP et les pronostics « X marque » de l'autre.
+  // Un club neuf sur cinq en avait. Un nom déjà pris change d'initiale (G. → H. → I.),
+  // sans rien toucher d'autre : note, âge et potentiel restent ceux du tirage.
+  nomUnique(name, pris) {
+    if (!pris.has(name)) return name;
+    const m = /^([A-Z])\. (.+)$/.exec(name);
+    if (m) {
+      for (let i = 1; i < 26; i++) {
+        const n = String.fromCharCode(65 + ((m[1].charCodeAt(0) - 65 + i) % 26)) + '. ' + m[2];
+        if (!pris.has(n)) return n;
+      }
+    }
+    let k = 2; while (pris.has(name + ' ' + k)) k++;
+    return name + ' ' + k;
+  },
+
   statW(pos) {
     return { ATT: { ATQ: 0.28, TIR: 0.2, DRI: 0.16, VIT: 0.16, PAS: 0.1, PHY: 0.08, 'DÉF': 0.02 }, MIL: { PAS: 0.26, DRI: 0.17, 'DÉF': 0.14, ATQ: 0.12, PHY: 0.11, TIR: 0.1, VIT: 0.1 }, DEF: { 'DÉF': 0.38, PHY: 0.22, VIT: 0.15, PAS: 0.12, DRI: 0.05, ATQ: 0.04, TIR: 0.04 }, GB: { 'RÉF': 0.3, PLO: 0.25, MAI: 0.2, PLA: 0.15, 'DÉG': 0.05, VIT: 0.05 } }[pos] || this.statW('MIL');
   },
@@ -1515,13 +1719,13 @@ const Skills = {
     // [id, nom, catégorie, effets, description, prérequis]
     // `req` : statistiques minimum à la rareté Élite, mises à l'échelle selon la rareté.
     const E = [
-      ['tueur', 'Tueur', 'Attaque', { sht: 6 }, 'finition sur les grosses occasions', { TIR: 72, ATQ: 66 }],
+      ['tueur', 'Tueur', 'Tir', { sht: 6 }, 'finition sur les grosses occasions', { TIR: 72, ATQ: 66 }],
       ['visionnaire', 'Visionnaire', 'Passe', { pas: 5, dec: 4 }, 'passes qui créent le danger', { PAS: 72 }],
       ['laser', 'Passe laser', 'Passe', { pas: 7 }, 'précision des passes longues', { PAS: 75 }],
       ['chef', 'Chef d’orchestre', 'Tactique', { dec: 6, pas: 3 }, 'contrôle du rythme', { PAS: 68 }],
-      ['renard', 'Renard des surfaces', 'Attaque', { sht: 4, dec: 4 }, 'déplacements dans la surface', { ATQ: 70 }],
-      ['sprinter', 'Sprinter', 'Physique', { pace: 7 }, 'exploitation des espaces en contre', { VIT: 75 }],
-      ['pressing', 'Pressing fou', 'Défense', { def: 4, pace: 3, drain: 1.25 }, 'pressing plus intense, plus fatigant', { PHY: 68, VIT: 64 }],
+      ['renard', 'Renard des surfaces', 'Finition', { sht: 4, dec: 4 }, 'déplacements dans la surface', { ATQ: 70 }],
+      ['sprinter', 'Sprinter', 'Vitesse', { pace: 7 }, 'exploitation des espaces en contre', { VIT: 75 }],
+      ['pressing', 'Pressing fou', 'Pressing', { def: 4, pace: 3, drain: 1.25 }, 'pressing plus intense, plus fatigant', { PHY: 68, VIT: 64 }],
       ['gladiateur', 'Gladiateur', 'Physique', { phy: 7 }, 'duels physiques', { PHY: 75 }],
       ['calme', 'Calme absolu', 'Mental', { dec: 6, pas: 2 }, 'moins d’erreurs sous pression', {}],
       ['mur', 'Mur', 'Défense', { def: 8 }, 'interventions dans sa surface', { 'DÉF': 75 }],
@@ -1532,9 +1736,14 @@ const Skills = {
       ['leader', 'Leader', 'Leadership', { team: { dec: 2 } }, 'concentration des coéquipiers', {}],
       ['meneur', 'Meneur', 'Collectif', { team: { pas: 2 } }, 'jeu collectif autour de lui', { PAS: 66 }],
       ['grinta', 'Grinta', 'Mental', { phy: 5, def: 3, pace: 3, team: { phy: 1 } }, 'agressivité et pressing quand l’équipe est menée', { PHY: 66 }],
-      ['clutch', 'Clutch', 'Spécial', { sht: 5, dec: 5 }, 'dernières minutes d’un match serré', { TIR: 66 }],
+      ['clutch', 'Clutch', 'Situationnel', { sht: 5, dec: 5 }, 'dernières minutes d’un match serré', { TIR: 66 }],
       ['gk_reflex', 'Réflexes félins', 'Gardien', { ref: 7 }, 'parades réflexes', { 'RÉF': 72 }],
-      ['gk_mains', 'Mains sûres', 'Gardien', { han: 7 }, 'ballons captés, pas de rebond', { MAI: 72 }]
+      ['gk_mains', 'Mains sûres', 'Gardien', { han: 7 }, 'ballons captés, pas de rebond', { MAI: 72 }],
+      // §10 les deux catégories qui manquaient. Elles ont un vrai effet en match
+      // (§13) : le Perforateur multiplie ses appels dans le dos de la défense et les
+      // masque mieux, le Contre éclair joue vers l'avant dès la récupération.
+      ['perforateur', 'Perforateur', 'Attaque', { pace: 3, dec: 3 }, 'appels dans le dos de la défense', { ATQ: 72, VIT: 70 }],
+      ['eclair', 'Contre éclair', 'Transition', { pace: 4, pas: 3 }, 'joue vers l’avant dès la récupération', { VIT: 68, PAS: 66 }]
     ];
     // [id, libellé, multiplicateur, raccourci]
     // Plus la condition est étroite, plus l'effet est fort quand elle se produit.
@@ -1547,10 +1756,17 @@ const Skills = {
     const POSOK = {
       GB: ['gk_reflex', 'gk_mains', 'calme', 'leader', 'acier', 'moteur'],
       DEF: ['mur', 'gladiateur', 'aerien', 'leader', 'calme', 'moteur', 'grinta', 'pressing', 'laser', 'sprinter', 'acier'],
-      MIL: ['visionnaire', 'laser', 'chef', 'meneur', 'moteur', 'pressing', 'dribbleur', 'calme', 'grinta', 'clutch', 'gladiateur', 'sprinter'],
-      ATT: ['tueur', 'renard', 'sprinter', 'dribbleur', 'clutch', 'aerien', 'grinta', 'acier', 'gladiateur', 'visionnaire']
+      MIL: ['visionnaire', 'laser', 'chef', 'meneur', 'moteur', 'pressing', 'dribbleur', 'calme', 'grinta', 'clutch', 'gladiateur', 'sprinter', 'eclair'],
+      ATT: ['tueur', 'renard', 'sprinter', 'dribbleur', 'clutch', 'aerien', 'grinta', 'acier', 'gladiateur', 'visionnaire', 'perforateur', 'eclair']
     };
-    return (this._skill = { E, C, POSOK, LVL: ['I', 'II', 'III', 'IV', 'V'] });
+    // Les compétences avec lesquelles un joueur peut NAÎTRE. Figées sur les vingt
+    // d'origine : une compétence ajoutée au jeu s'obtient (pack, récompense) et
+    // s'équipe, mais ne change pas rétroactivement les joueurs déjà générés. Sans ce
+    // gel, ajouter une compétence redistribuait les compétences innées de tout
+    // l'effectif de départ, et donc changeait tous les matchs déjà joués.
+    const INNEES = new Set(['tueur', 'visionnaire', 'laser', 'chef', 'renard', 'sprinter', 'pressing', 'gladiateur',
+      'calme', 'mur', 'acier', 'dribbleur', 'aerien', 'moteur', 'leader', 'meneur', 'grinta', 'clutch', 'gk_reflex', 'gk_mains']);
+    return (this._skill = { E, C, POSOK, INNEES, LVL: ['I', 'II', 'III', 'IV', 'V'] });
   },
 
   // Le nombre réel de combinaisons : l'objectif du §12 est de dépasser 10 000.
@@ -1699,8 +1915,9 @@ const Skills = {
       for (let k = 0; k < R.length; k++) { q -= R[k].rate; if (q <= 0) { ri = k; break; } }
       ri = Math.min(ri, capIdx);
       // une compétence innée reste compatible avec le poste du joueur
-      const band = (idx[R[ri].id] || []).filter((x) => pool.indexOf(x[0]) >= 0);
-      const list = band.length ? band : (idx[R[0].id] || []).filter((x) => pool.indexOf(x[0]) >= 0);
+      const nee = this.SKILL_DEF().INNEES;
+      const band = (idx[R[ri].id] || []).filter((x) => pool.indexOf(x[0]) >= 0 && nee.has(x[0]));
+      const list = band.length ? band : (idx[R[0].id] || []).filter((x) => pool.indexOf(x[0]) >= 0 && nee.has(x[0]));
       if (!list.length) continue;
       const pick = list[Math.floor(r() * list.length)];
       out.push(this.makeSkill(pick[0], pick[1], pick[2], pick[3]));
@@ -1829,7 +2046,7 @@ const Cards = {
     return [
       { key: 'linkfoot', name: 'LinkFoot Pack', n: 3, cost: 250, req: 0, w: {},
         color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', fx: 'gold',
-        content: 'joueur, compétence ou fragments' }
+        content: 'joueur, compétence, objet ou fragments' }
     ];
   },
 
@@ -1864,7 +2081,18 @@ const Cards = {
   // §10 : le contenu d'un pack. Un tirage = une rareté (taux du §11), puis le lot :
   // un joueur, une compétence de cette rareté, ou des fragments si le lot est un doublon.
   // Tirage côté système, jamais côté affichage (§29).
-  PACK_SLOTS() { return [{ kind: 'player', w: 0.45 }, { kind: 'skill', w: 0.55 }]; },
+  // §8 LE pack principal donne TOUT : joueurs, compétences, objets (séances, cartes
+  // d'amélioration, causeries, plans tactiques) et ressources (fragments, quand un
+  // joueur tiré est déjà au club). Chaque tirage choisit d'abord sa FAMILLE selon ces
+  // parts, puis sa RARETÉ selon RARITY. Les deux sont affichées avant l'ouverture
+  // (§9) : jusqu'ici, la part joueur / compétence n'était écrite nulle part.
+  PACK_SLOTS() {
+    return [
+      { kind: 'player', w: 0.40, label: 'Joueur' },
+      { kind: 'skill', w: 0.45, label: 'Compétence' },
+      { kind: 'objet', w: 0.15, label: 'Objet' }
+    ];
+  },
 
   drawSlot(rnd) {
     const S = this.PACK_SLOTS(), q = (rnd || Math.random)();
@@ -1872,14 +2100,56 @@ const Cards = {
     return S[S.length - 1].kind;
   },
 
-  // Un tirage complet : rareté, puis joueur ou compétence de cette rareté.
+  // §9 : la part de chaque famille, en pourcentage, pour l'affichage avant l'ouverture.
+  // Lue dans PACK_SLOTS, la table même du tirage : changer une part ici change le
+  // tirage ET l'affichage, jamais l'un sans l'autre.
+  packFamilies() {
+    const S = this.PACK_SLOTS(), t = S.reduce((a, x) => a + x.w, 0) || 1;
+    return S.map((x) => ({ kind: x.kind, label: x.label, pct: x.w / t * 100 }));
+  },
+
+  // Ce qu'un objet fait, en quelques mots, lu dans ses propres champs : la carte
+  // révélée ne peut donc pas promettre autre chose que ce que l'objet applique.
+  // Une réunion se range en réserve et agit le jour où on la tient : la carte le dit.
+  objetCourt(o) {
+    if (!o) return '';
+    const p = [];
+    if (o.kind === 'meeting') p.push('à tenir');
+    if (o.sessions) p.push('+' + o.sessions + ' séance' + (o.sessions > 1 ? 's' : ''));
+    const cartes = o.stats || (o.stat ? [o.stat] : []);
+    if (cartes.length) p.push('carte' + (cartes.length > 1 ? 's' : '') + ' +2 ' + cartes.join(', '));
+    if (o.squadXp) p.push('+' + o.squadXp + ' XP à l’effectif');
+    if (o.kind === 'plan') p.push((o.plans || 1) + ' plan' + ((o.plans || 1) > 1 ? 's' : '') + ' tactique' + ((o.plans || 1) > 1 ? 's' : ''));
+    if (o.morale) p.push('moral +' + o.morale);
+    if (o.coh) p.push('cohésion +' + Math.round(o.coh * 100) + ' %');
+    if (o.adv && o.kind !== 'plan') p.push('+' + o.adv + ' d’avantage');
+    return p.join(' · ');
+  },
+
+  // Un tirage complet : rareté, puis famille (joueur, compétence ou objet) de cette rareté.
   drawLot(rnd, owned) {
     const R = this.RARITY(), r = rnd || Math.random;
     let q = r(), pick = R[0];
     for (let i = 0; i < R.length; i++) { q -= R[i].rate; if (q <= 0) { pick = R[i]; break; } }
-    if (this.drawSlot(r) === 'skill') {
+    const slot = this.drawSlot(r);
+    if (slot === 'skill') {
       const sk = this.rollSkill(pick.id, r);
       return { kind: 'skill', rar: pick.id, skill: sk, name: sk.name, ovr: sk.power, label: pick.label, color: pick.color, shards: pick.shards };
+    }
+    if (slot === 'objet') {
+      // Un objet de la rareté tirée, pris dans les deux tables du matériel (entraînement
+      // et entraîneur) : une seule source pour ce qu'un objet fait.
+      const tous = this.TRAIN_LOTS().map((x) => Object.assign({ famille: 'entrainement' }, x))
+        .concat(this.COACH_ITEMS().map((x) => Object.assign({ famille: 'tactique' }, x)));
+      const ici = tous.filter((x) => x.rar === pick.id);
+      const liste = ici.length ? ici : tous.filter((x) => x.rar === 'normal');
+      const obj = liste[Math.floor(r() * liste.length)];
+      const U = this.UPGRADE_CARDS();
+      return { kind: 'objet', rar: pick.id, name: obj.label, label: pick.label, color: pick.color, shards: pick.shards,
+        objet: Object.assign({}, obj, {
+          stat: obj.up ? U[Math.floor(r() * U.length)][0] : null,
+          stats: obj.up > 1 ? Array.from({ length: obj.up }, () => U[Math.floor(r() * U.length)][0]) : null
+        }) };
     }
     const pool = this.CARD_POOL().filter((c) => c.rar === pick.id);
     const c = pool[Math.floor(r() * pool.length)];
@@ -1916,16 +2186,27 @@ const Cards = {
     const squad = s.squad.slice(), inv = (s.skillInv || []).slice(), collected = (s.collected || []).slice();
     let uid = s.nextSkillUid || 1;
     res.got.forEach((g) => {
-      if (g.kind === 'player') { squad.push(this.cardToPlayer(g)); collected.push(g.id); }
+      if (g.kind === 'player') {
+        const p = this.cardToPlayer(g);
+        p.name = this.nomUnique(p.name, new Set(squad.map((x) => x.name)));
+        squad.push(p); collected.push(g.id);
+      }
       else if (g.kind === 'skill') { inv.push(Object.assign({}, g.skill, { uid: uid++, on: null })); }
     });
+    const objets = res.got.filter((g) => g.kind === 'objet').map((g) => g.objet);
     const cost = res.free ? 0 : def.cost;
     this.setState({ squad, skillInv: inv, collected, nextSkillUid: uid,
       shards: (s.shards || 0) + res.shards,
       balance: s.balance - cost,
+      // ce que le kiosque affiche sous la carte du pack : le dernier tirage, en clair
+      lastCardPack: res.got.map((g) => g.name + ' (' + g.label + ')').join(' · '),
       missions: this.bumpMission(s.missions, 'pack', 1),
       freeQueue: res.free ? s.freeQueue.slice(1) : s.freeQueue });
     if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
+    // §3 une seule source de vérité : un objet sorti du pack passe par les fonctions
+    // qui rangent le matériel, les mêmes pour tout ce qui en donne.
+    this.appliquerObjetsEntrainement(objets.filter((o) => o.famille !== 'tactique'));
+    this.rangerObjetsCoach(objets.filter((o) => o.famille === 'tactique'));
     this.bumpQuest('pack', 1);
     return { ok: true };
   },
@@ -1992,7 +2273,8 @@ const Staff = {
     const cost = d.cost[lv];
     if (s.balance < cost) { const why = 'Il te manque ' + (cost - s.balance) + ' jetons'; this.setState({ staffLog: d.label + ' : ' + why }); return { ok: false, why }; }
     this.buzz([25, 25, 50]);
-    this.setState({ balance: s.balance - cost, staff: Object.assign({}, s.staff, { [id]: lv + 1 }), staffLog: d.label + ' niveau ' + (lv + 1) + ' recruté · ' + d.eff[lv + 1] });
+    this.spend(cost, 'Staff : ' + d.label + ' niveau ' + (lv + 1));   // §7 la dépense entre au journal
+    this.setState({ staff: Object.assign({}, s.staff, { [id]: lv + 1 }), staffLog: d.label + ' niveau ' + (lv + 1) + ' recruté · ' + d.eff[lv + 1] });
     return { ok: true, lvl: lv + 1 };
   },
 
@@ -2014,7 +2296,8 @@ const Staff = {
     const cost = L[lv + 1].cost;
     if (s.balance < cost) { const why = 'Il te manque ' + (cost - s.balance) + ' jetons'; this.setState({ staffLog: 'Stade : ' + why }); return { ok: false, why }; }
     this.buzz([25, 25, 60]);
-    this.setState({ balance: s.balance - cost, stade: lv + 1, staffLog: L[lv + 1].name + ' construit · ' + L[lv + 1].cap + ' places' });
+    this.spend(cost, 'Stade : ' + L[lv + 1].name);
+    this.setState({ stade: lv + 1, staffLog: L[lv + 1].name + ' construit · ' + L[lv + 1].cap + ' places' });
     return { ok: true, lvl: lv + 1 };
   },
 
@@ -2035,7 +2318,8 @@ const Staff = {
     const cost = A[lv + 1].cost;
     if (s.balance < cost) { const why = 'Il te manque ' + (cost - s.balance) + ' jetons'; this.setState({ staffLog: 'Centre : ' + why }); return { ok: false, why }; }
     this.buzz([25, 25, 60]);
-    this.setState({ balance: s.balance - cost, academy: lv + 1, staffLog: A[lv + 1].name + ' ouvert' });
+    this.spend(cost, 'Centre de formation : ' + A[lv + 1].name);
+    this.setState({ academy: lv + 1, staffLog: A[lv + 1].name + ' ouvert' });
     return { ok: true, lvl: lv + 1 };
   },
 
@@ -2048,7 +2332,12 @@ const Staff = {
     const bonus = st.coach === 'formateur' ? 3 : 0;
     const ovr = A.lo + Math.floor(r() * (A.hi - A.lo + 1)) + bonus;
     const pot = Math.max(ovr + 6, A.potLo + Math.floor(r() * (A.potHi - A.potLo + 1)) + bonus);
-    return { id: 30000 + (st.division * 100) + Math.floor(r() * 900), name: F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)], pos: POS[Math.floor(r() * POS.length)], ovr, pot, age: 16 + Math.floor(r() * 4), youth: true, fresh: true, scouted: true };
+    // un identifiant et un nom libres : deux jeunes au même identifiant partageaient profil et statistiques
+    const ids = new Set((st.squad || []).map((p) => p.id));
+    let id = 30000 + (st.division * 100) + Math.floor(r() * 900);
+    while (ids.has(id)) id++;
+    const name = this.nomUnique(F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)], new Set((st.squad || []).map((p) => p.name)));
+    return { id, name, pos: POS[Math.floor(r() * POS.length)], ovr, pot, age: 16 + Math.floor(r() * 4), youth: true, fresh: true, scouted: true };
   },
 
   synergy(xi) {
@@ -2160,23 +2449,64 @@ const Transfer = {
   marketList() {
     const s = this.state; if (s.market && s.market.week === s.seasonP + s.division * 10) return s.market.list;
     const POS = ['GB', 'DEF', 'DEF', 'MIL', 'MIL', 'ATT'], r = this.seedR(s.division * 977 + s.seasonP * 31 + 5);
-    const list = []; const F = ['A.', 'B.', 'C.', 'D.', 'E.', 'G.', 'H.', 'I.', 'J.', 'K.', 'L.', 'M.', 'N.', 'O.', 'R.', 'S.', 'T.', 'V.', 'Y.', 'Z.'];
+    const list = [], pris = new Set(s.squad.map((p) => p.name)); const F = ['A.', 'B.', 'C.', 'D.', 'E.', 'G.', 'H.', 'I.', 'J.', 'K.', 'L.', 'M.', 'N.', 'O.', 'R.', 'S.', 'T.', 'V.', 'Y.', 'Z.'];
     const L = ['Marvello', 'Ducasson', 'Ebongué', 'Halvorsen', 'Quintero', 'Belkadi-Roy', 'Stranieri', 'Okafor-Lemaire', 'Vasquet', 'Nyamsi', 'Gaudrel', 'Petrakis', 'Lindau', 'Moreau-Diaby', 'Castagne-Nil', 'Rivoire', 'Takamura', 'Ferbault', 'Ansaldi', 'Kowalevski', 'Dembrel', 'Soumahé'];
     for (let i = 0; i < 6; i++) {
       const ovr = 55 + Math.floor(r() * 12) + (5 - s.division) * 3 + this.staffLv('recruteur') * 2, id = 20000 + s.division * 1000 + s.seasonP * 100 + i;
-      const p = { id, name: F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)], pos: POS[Math.floor(r() * POS.length)], ovr };
+      const p = { id, name: this.nomUnique(F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)], pris), pos: POS[Math.floor(r() * POS.length)], ovr };
+      pris.add(p.name);
       list.push(Object.assign(p, { scouted: this.staffLv('recruteur') >= 2, price: this.valueOf(Object.assign({}, p, this.profile(p))) }));
     }
     return list;
   },
 
+  // §17 Transferts : acheter. La règle vivait dans l'écran Mon Club et nulle part
+  // ailleurs : l'app téléphone ne pouvait pas acheter, et un achat n'apparaissait pas
+  // dans le journal des finances. Elle est ici, une seule fois (§3), et l'argent passe
+  // par spend(), le même chemin que toutes les dépenses du club (§7).
+  MARKET_RULES() { return { maxSquad: 20 }; },
+
+  buyInfo(m) {
+    const s = this.state, R = this.MARKET_RULES();
+    if (!m) return { can: false, why: 'Ce joueur n’est plus sur le marché' };
+    const why = s.match && !s.match.done ? 'Impossible pendant un match'
+      : s.squad.some((p) => p.id === m.id) ? 'Déjà dans ton effectif'
+      : s.squad.length >= R.maxSquad ? 'Effectif complet (' + R.maxSquad + ' joueurs) : vends d’abord'
+      : s.balance < m.price ? 'Il te manque ' + (m.price - s.balance) + ' jetons' : '';
+    return { can: !why, why };
+  },
+
+  buyPlayer(id) {
+    const s = this.state, list = this.marketList(), m = list.find((x) => x.id === id);
+    const info = this.buyInfo(m);
+    if (!info.can) return { ok: false, why: info.why };
+    const pay = this.spend(m.price, 'Achat de ' + m.name);
+    if (!pay.ok) return pay;
+    this.buzz([30, 30, 60]);
+    this.setState({ squad: this.state.squad.concat([Object.assign({}, m, { fresh: true })]),
+      market: { week: s.seasonP + s.division * 10, list: list.filter((x) => x.id !== id) },
+      trainLog: m.name + ' rejoint le club pour ' + m.price + ' jetons' });
+    return { ok: true, price: m.price };
+  },
+
+  // Vendre : 60 % de la valeur. Un titulaire ne se vend pas tant qu'il est dans le onze :
+  // la règle vivait seulement dans l'écran Mon Club, l'app téléphone ne la connaissait pas.
+  sellInfo(p) {
+    const s = this.state;
+    if (!p) return { can: false, why: 'Joueur introuvable', price: 0 };
+    const price = Math.round(this.profile(p).value * 0.6);
+    const why = s.match && !s.match.done ? 'Impossible pendant un match'
+      : s.squad.length <= 12 ? 'Effectif minimum atteint (12 joueurs)'
+      : this.pickXI(s.formation).some((x) => x.id === p.id) ? 'Titulaire : sors-le du onze pour le vendre' : '';
+    return { can: !why, why, price };
+  },
+
   sellPlayer(id) {
     const s = this.state;
-    if (s.match && !s.match.done) return { ok: false, why: 'Impossible pendant un match' };
-    if (s.squad.length <= 12) return { ok: false, why: 'Il te faut au moins 12 joueurs' };
     const p = s.squad.find((x) => x.id === id);
-    if (!p) return { ok: false, why: 'Joueur introuvable' };
-    const price = Math.round(this.profile(p).value * 0.6);
+    const info = this.sellInfo(p);
+    if (!info.can) return { ok: false, why: info.why };
+    const price = info.price;
     this.buzz(25);
     // les compétences du joueur vendu retournent en réserve : elles t'appartiennent (§19)
     const inv = (s.skillInv || []).map((k) => (k.on === id ? Object.assign({}, k, { on: null }) : k));
@@ -2223,6 +2553,42 @@ const Progression = {
     return out;
   },
 
+  // Les statistiques d'un joueur, match après match : matchs joués, buts, passes
+  // décisives, et la somme des notes (la moyenne se calcule à l'affichage).
+  ajouterCarriere(c, stat) {
+    const x = Object.assign({ m: 0, b: 0, pd: 0, n: 0 }, c || {});
+    return { m: x.m + 1, b: x.b + (stat.goals || 0), pd: x.pd + (stat.assists || 0), n: Math.round((x.n + (stat.rating || 6)) * 10) / 10 };
+  },
+
+  carriereLigne(p) {
+    const c = p.carriere;
+    if (!c || !c.m) return 'Aucun match joué';
+    return c.m + ' match' + (c.m > 1 ? 's' : '') + ' · ' + c.b + ' but' + (c.b > 1 ? 's' : '') + ' · ' + c.pd + ' passe' + (c.pd > 1 ? 's' : '')
+      + ' décisive' + (c.pd > 1 ? 's' : '') + ' · note moyenne ' + (c.n / c.m).toFixed(1).replace('.', ',');
+  },
+
+  // Qui a marqué, qui a fait la passe, lu dans le fil du match. Les quêtes, les
+  // pronostics « X marque » et l'XP des joueurs en dépendent (§19). Une seule lecture
+  // pour l'app et pour l'écran Mon Club, qui ne les relevait pas du tout.
+  buteursDuMatch(log, xi) {
+    const scorers = [], assisters = [], idDe = {};
+    (xi || []).forEach((p) => { idDe[p.name] = p.id; });
+    (log || []).filter((l) => l.k === 'G' && l.s === 'H').forEach((l) => {
+      // le moteur dit qui a marqué et qui a donné la passe (un but contre son camp : personne)
+      if (l.by !== undefined) {
+        if (l.by != null && idDe[l.by] != null) scorers.push(idDe[l.by]);
+        if (l.as != null && idDe[l.as] != null) assisters.push(idDe[l.as]);
+        return;
+      }
+      // un fil plus ancien, sans ces champs : on lit la phrase
+      (xi || []).forEach((p) => {
+        if (l.text.indexOf('BUT ! ' + p.name) >= 0) scorers.push(p.id);
+        else if (l.text.indexOf('servi par ' + p.name) >= 0 || l.text.indexOf('sur un centre de ' + p.name) >= 0) assisters.push(p.id);
+      });
+    });
+    return { scorers, assisters };
+  },
+
   bumpMission(ms, id, n) { return ms.map((m) => (m.id === id && !m.claimed ? Object.assign({}, m, { prog: Math.min(m.goal, m.prog + n) }) : m)); },
 
   afterMatch(mt, st) {
@@ -2243,7 +2609,8 @@ const Progression = {
       const i = mt.xi.findIndex((x) => x.id === p.id);
       if (i < 0) return p;
       const stat = {
-        min: 90,
+        // un remplacé ou un entrant n'a pas joué 90 minutes (direct.js, joueursDuMatch)
+        min: mt.xi[i].min != null ? mt.xi[i].min : 90,
         goals: (mt.scorers || []).filter((id) => id === p.id).length,
         assists: (mt.assisters || []).filter((id) => id === p.id).length,
         rating: mt.rat && mt.rat.H ? mt.rat.H[i] : 6
@@ -2251,38 +2618,62 @@ const Progression = {
       const gain = this.matchXp(p, stat);
       const up = this.addPlayerXp(p, gain);
       if (up.ups.length) grown.push(p.name + ' niveau ' + up.plv + (up.ups[up.ups.length - 1].capped ? ' (potentiel atteint)' : ''));
-      return Object.assign({}, p, { plv: up.plv, pxp: up.pxp, st: up.st, ovr: up.ovr });
+      // §18 RÉSULTAT DU MATCH → STATISTIQUES DU JOUEUR → XP : les chiffres du match
+      // restent sur le joueur (matchs, buts, passes, notes), et sa fiche les montre
+      return Object.assign({}, p, { plv: up.plv, pxp: up.pxp, st: up.st, ovr: up.ovr, carriere: this.ajouterCarriere(p.carriere, stat) });
     });
     if (grown.length) prog = grown.slice(0, 2).join(' · ');
     squad = this.applyFitness(squad, mt, null);
     const F = this.finances(st, res); const inv = Object.assign({}, st.inv || {}); if (win) { const drop = ['energie', 'motivation', 'pressing', 'bloc', 'contre', 'finition', 'up_VIT', 'up_TIR', 'up_PAS', 'up_DÉF'][this.rand(0, 9)]; inv[drop] = (inv[drop] || 0) + 1; }
     const L = this.addXp(st, xpGain);
     // §7, §29 : tout ce qui entre passe par le journal. Le match n'est pas plafonné
-    // (il coûte du temps réel), mais il est tracé comme le reste.
+    // (il coûte du temps réel), mais il est tracé comme le reste : la prime du
+    // résultat et le bonus de niveau entraient au solde sans laisser de ligne, si bien
+    // que l'écran Finances ne pouvait pas expliquer le solde.
+    if (mt.reward) this.logMoney(mt.reward, 'Match : prime de ' + (win ? 'victoire' : res === 'd' ? 'nul' : 'défaite'));
     this.logMoney(F.net, 'Match : recette ' + F.gate + ', salaires −' + F.wages);
     if (bonus) this.logMoney(bonus, 'Série de ' + winStreak + ' victoires');
+    if (L.bonusBal) this.logMoney(L.bonusBal, 'Niveau ' + L.level + ' atteint');
     const patch = { nextAdv: 0, winStreak, missions, squad, inv, lastFin: 'Recette ' + F.gate + ' · salaires −' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net + ' jetons', coachAdvice: null, xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: st.balance + bonus + L.bonusBal + F.net,
       lastGain: '+' + xpGain + ' XP' + (bonus ? ' · série de ' + winStreak + ' victoires x' + mult + ' (+' + bonus + ' jetons)' : '') + (prog ? ' · ' + prog : '') };
     let over = L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : null;
-    const seasonP = st.seasonP + 1;
-    if (seasonP >= 5) {
-      const tbl = this.table(st.record), rank = tbl.findIndex((c) => c.me) + 1, last = tbl.length;
+    // §22 la division : seul le match prévu au calendrier compte. Un amical ne fait
+    // avancer ni le championnat ni la saison (il la faisait avancer avant, sans compter
+    // dans le classement). La journée jouée, les deux autres matchs le sont aussi.
+    let fin = null;
+    if (!mt.friendly) {
+      const j = this.journeeJouee(this.divisionCourante(), mt.hs, mt.as);
+      this.setState({ league: j.league });
+      patch.seasonP = j.league.day;
+      if (j.over) fin = j.table;
+    } else patch.seasonP = st.seasonP || 0;
+    if (fin) {
+      const R = this.DIVISION_RULES();
+      const tbl = fin, rank = tbl.findIndex((c) => c.me) + 1, last = tbl.length;
       // le centre de formation sort un jeune à chaque fin de saison
       patch.squad = this.ageSquad(patch.squad || st.squad);   // §70 une saison de plus pour tout le monde
       const yg = this.youthPlayer(st);
       let ygTxt = '';
       if (yg) { patch.squad = (patch.squad || st.squad).concat([yg]); patch.youth = (st.youth || []).concat([yg.id]); ygTxt = ' Le centre sort ' + yg.name + ' (' + yg.pos + ' ' + yg.ovr + ', potentiel ' + yg.pot + ').'; }
-      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; patch.freeQueue = patch.freeQueue.concat(['linkfoot']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un LinkFoot Pack. Les adversaires seront plus forts.' + ygTxt }; }
-      else if (rank === last && st.division < 5) { patch.division = st.division + 1; over = { title: 'RELÉGUÉ EN DIVISION ' + patch.division, sub: 'Fin de saison : ' + rank + 'e sur ' + last + '. Les adversaires seront plus faibles, mais la recette du match baisse.' + ygTxt }; }
-      else over = over || { title: 'FIN DE SAISON', sub: rank + 'e de la division ' + st.division + '. Termine dans les 2 premiers pour monter, évite la dernière place.' + ygTxt };
+      if (rank <= R.up && st.division > R.top) { patch.division = st.division - 1; patch.balance += 500; this.logMoney(500, 'Promotion en division ' + patch.division); patch.freeQueue = patch.freeQueue.concat(['linkfoot']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un LinkFoot Pack. Les adversaires seront plus forts.' + ygTxt }; }
+      else if (rank > last - R.down && st.division < R.bottom) { patch.division = st.division + 1; over = { title: 'RELÉGUÉ EN DIVISION ' + patch.division, sub: 'Fin de saison : ' + rank + 'e sur ' + last + '. Les adversaires seront plus faibles, mais la recette du match baisse.' + ygTxt }; }
+      else over = over || { title: 'FIN DE SAISON', sub: rank + 'e de la division ' + st.division + '. Termine dans les ' + R.up + ' premiers pour monter, évite la dernière place.' + ygTxt };
+      // la saison finie reste lisible ; la suivante repart d'un nouveau calendrier
+      patch.lastSeason = { saison: st.saison || 1, division: st.division, rank, clubs: last,
+        table: tbl.map((c) => ({ club: c.club, me: c.me, pts: c.pts, w: c.w, d: c.d, l: c.l, gd: c.gd })) };
+      patch.saison = (st.saison || 1) + 1; patch.league = null;
       patch.seasonP = 0; patch.record = { w: 0, d: 0, l: 0 };
-    } else patch.seasonP = seasonP;
+    }
     if (over) { patch.levelUp = over; this.buzz([60, 40, 60, 40, 200]); }
     // §8, §19 : le match fait avancer les quêtes. Elles lisent les mêmes chiffres que le rapport.
     this.questsAfterMatch(mt, Object.assign({}, st, { squad: patch.squad || squad, winStreak: st.winStreak }));
     // §9 : les pronostics se règlent sur le match qui vient d'être joué, jamais sur un match réel.
     const pr = this.settlePronos(mt);
     if (pr.lines.length) patch.lastProno = pr.lines;
+    // earn() vient de verser les gains au solde, mais `patch.balance` a été calculé
+    // avant : sans cette ligne, l'appelant écrasait le solde et les pronostics gagnés
+    // n'étaient jamais payés, alors que le journal les affichait.
+    if (pr.won) patch.balance += pr.won;
     if (patch.division && patch.division < st.division) this.bumpQuest('division', 1);
     return patch;
   },
@@ -2302,15 +2693,6 @@ const Progression = {
       }
       return q;
     });
-  },
-
-  table(rec) {
-    const others = [
-      { user: '@Massilia13', club: 'Olympique Vieux-Port', w: 3, d: 1, l: 0 }, { user: '@Lina_psg', club: 'Auteuil United', w: 2, d: 1, l: 1 },
-      { user: '@Yohan_foot', club: 'Sporting Yoyo', w: 2, d: 0, l: 2 }, { user: '@KopBleu', club: 'Kop Bleu FC', w: 1, d: 1, l: 2 }, { user: '@Nina_foot', club: 'Real Canal FC', w: 0, d: 2, l: 2 }
-    ];
-    return others.concat([{ user: 'Toi', club: 'FC TonPseudo', w: rec.w, d: rec.d, l: rec.l, me: true }])
-      .map((c) => Object.assign({}, c, { pts: c.w * 3 + c.d, p: c.w + c.d + c.l })).sort((a, b) => b.pts - a.pts || b.w - a.w);
   }
 };
 
@@ -2338,9 +2720,9 @@ const Tactics = {
       S('vertical', 'Transition', 'Transitions verticales', '4-2-3-1', 3, { tempo: 2, pass: 2, behind: 1, line: 1, engage: 1, press: 1, won: 0 }, 'Dès la récupération, le ballon va vers l’avant : peu de passes, beaucoup de vitesse.', 'Leicester champion en 2016', ['blochaut', 'homme', 'gegen'], ['blocbas', 'blocmed', 'catenaccio'], 'space'),
       S('direct', 'Direct', 'Jeu direct', '4-4-2', 4, { width: 2, tempo: 2, pass: 2, behind: 1, cross: 2, longshot: 1, tackle: 2, gk: 1 }, 'Longs ballons vers un grand attaquant, on gagne les deuxièmes ballons.', 'Le foot anglais traditionnel', ['gegen', 'blochaut', 'total'], ['blocmed', 'tiki', 'posit'], 'space'),
       S('kick', 'Direct', 'Kick and rush', '4-4-2', 5, { width: 2, tempo: 2, pass: 2, behind: 1, cross: 2, longshot: 1, engage: 2, press: 2, tackle: 2, gk: 1 }, 'On balance devant et on court : intensité maximale, peu de construction.', 'Le football d’avant, 100 % engagement', ['gegen', 'homme'], ['blocbas', 'blocmed', 'tiki'], 'space'),
-      S('ailes', 'Couloirs', 'Jeu sur les ailes', '4-4-2', 4, { width: 2, cross: 2, dribble: 1, fullbacks: 1 }, 'Débordements et centres : on étire le bloc adverse sur toute la largeur.', 'Idéal avec des ailiers rapides', ['blocbas', 'bus', 'catenaccio'], ['contre', 'blocmed'], 'wide'),
+      S('ailes', 'Couloirs', 'Jeu sur les ailes', '4-3-3', 4, { width: 2, cross: 2, dribble: 1, fullbacks: 1 }, 'Débordements et centres : on étire le bloc adverse sur toute la largeur.', 'Idéal avec des ailiers rapides', ['blocbas', 'bus', 'catenaccio'], ['contre', 'blocmed'], 'wide'),
       S('surcharge', 'Couloirs', 'Surcharge et renversement', '4-3-3', 4, { width: 2, pass: 1, patience: 1, overload: 1, fullbacks: 2 }, 'On attire l’adversaire d’un côté à 5 contre 3, puis on renverse vers un ailier seul de l’autre côté.', 'Très utilisé dans le foot moderne', ['homme', 'blocmed', 'catenaccio'], ['gegen', 'contre'], 'wide'),
-      S('pistons', 'Couloirs', 'Pistons en 3-5-2', '3-5-2', 4, { width: 2, cross: 1, behind: 1, fullbacks: 1, line: 1 }, 'Trois défenseurs centraux et deux pistons qui font tout le couloir : largeur et solidité.', 'Système favori de nombreux entraîneurs italiens', ['blocbas', 'bus', 'kick'], ['contre', 'homme'], 'wide')
+      S('pistons', 'Couloirs', 'Pistons en 3-5-2', '3-5-2', 4, { width: 2, cross: 2, behind: 1, fullbacks: 2, line: 1 }, 'Trois défenseurs centraux et deux pistons qui font tout le couloir : largeur et solidité.', 'Système favori de nombreux entraîneurs italiens', ['blocbas', 'bus', 'kick'], ['contre', 'homme'], 'wide')
     ];
     this._styles = {};
     list.forEach((x) => { this._styles[x.k] = x; });
@@ -2350,6 +2732,87 @@ const Tactics = {
 
   // La liste des styles, dans l'ordre d'affichage.
   styleList() { this.styles(); return this._styleList; },
+
+  // ---------- §17 TACTIQUE : les réglages, une seule fois pour tous les écrans ----------
+  // L'écran Mon Club les écrivait en ligne, avec ses propres libellés : l'app téléphone
+  // n'avait donc aucun écran Tactique, et rien n'empêchait deux écrans de régler la même
+  // chose différemment. Les règles et les libellés sont ici (§3). Chaque réglage listé
+  // est lu par le moteur ; test/leviers.js vérifie qu'il change vraiment le match.
+  FORMATIONS() { return ['4-3-3', '4-4-2', '4-2-3-1', '3-5-2', '5-3-2']; },
+
+  // [clé lue par le moteur, libellé, options dans l'ordre des valeurs 0, 1, 2…]
+  TAC_GROUPS() {
+    return [
+      { title: 'Avec le ballon', color: '#2ECC71', items: [
+        ['width', 'Largeur', ['Étroite', 'Normale', 'Large']],
+        ['tempo', 'Tempo', ['Lent', 'Normal', 'Rapide']],
+        ['pass', 'Style de passes', ['Courtes', 'Mixtes', 'Directes']],
+        ['cross', 'Centres', ['Rasants', 'Mixtes', 'Aériens']],
+        ['behind', 'Jeu dans le dos de la défense', ['Non', 'Oui']],
+        ['dribble', 'Dribbles', ['Normal', 'Plus de dribbles']],
+        ['longshot', 'Frappes de loin', ['Rarement', 'Souvent']],
+        ['patience', 'Patience dans la construction', ['Normale', 'Travailler le ballon']]
+      ] },
+      { title: 'Sans le ballon', color: '#5ED6C0', items: [
+        ['line', 'Ligne défensive', ['Basse', 'Normale', 'Haute']],
+        ['engage', 'Ligne d’engagement', ['Basse', 'Moyenne', 'Haute']],
+        ['press', 'Intensité du pressing', ['Faible', 'Normale', 'Intense']],
+        ['trap', 'Piège du hors-jeu', ['Non', 'Oui']],
+        ['tackle', 'Tacles', ['Prudents', 'Normaux', 'Rugueux']]
+      ] },
+      { title: 'Organisation', color: '#C39BFF', items: [
+        ['mark', 'Marquage', ['En zone', 'Mixte', 'Individuel']],
+        ['fullbacks', 'Latéraux', ['Restent', 'Montent', 'Inversés']],
+        ['overload', 'Surcharger un côté', ['Non', 'Gauche', 'Axe', 'Droite']],
+        ['ptrap', 'Pièges de pressing', ['Aucun', 'Sur les côtés', 'Dans l’axe']],
+        ['timewaste', 'Gagner du temps quand on mène', ['Non', 'Oui']]
+      ] },
+      { title: 'Transitions', color: '#4FA8E8', items: [
+        ['lost', 'À la perte du ballon', ['Contre-pressing', 'Se replacer']],
+        ['won', 'À la récupération', ['Contre-attaque', 'Construire']],
+        ['gk', 'Relance du gardien', ['Courte', 'Longue']]
+      ] },
+      { title: 'Coups de pied arrêtés', color: '#F5C84C', items: [
+        ['corners', 'Corners', ['1er poteau', '2e poteau', 'Point de penalty', 'À la remise']],
+        ['freekicks', 'Coups francs', ['Frappe directe', 'Centre', 'Combinaison']]
+      ] }
+    ];
+  },
+
+  setFormation(f) {
+    if (this.FORMATIONS().indexOf(f) < 0) return { ok: false, why: 'Formation inconnue' };
+    this.setState({ formation: f, roles: {}, duties: {}, sel: null });
+    return { ok: true };
+  },
+
+  // Appliquer un style : ses consignes et sa mentalité, et sa formation sauf si on
+  // demande de garder la sienne (les raccourcis de l'écran Tactique la gardent).
+  applyStyle(k, opts) {
+    const x = this.styles()[k];
+    if (!x) return { ok: false, why: 'Style inconnu' };
+    const patch = { preset: k, mentality: x.m, tac: Object.assign({}, this.state.tac, x.tac) };
+    if (!opts || opts.formation !== false) Object.assign(patch, { formation: x.form, roles: {}, duties: {}, sel: null });
+    this.setState(patch);
+    return { ok: true };
+  },
+
+  // Toucher à une consigne ou à la mentalité, c'est quitter le style : plus de bonus
+  // ni de malus de confrontation (matchup), et l'écran le dit.
+  setMentality(i) {
+    const m = Math.round(i);
+    if (!(m >= 0 && m <= 6)) return { ok: false, why: 'Mentalité hors limites' };
+    this.setState({ mentality: m, preset: 'perso' });
+    return { ok: true };
+  },
+
+  setConsigne(k, v) {
+    let it = null;
+    this.TAC_GROUPS().forEach((g) => g.items.forEach((x) => { if (x[0] === k) it = x; }));
+    if (!it) return { ok: false, why: 'Réglage inconnu' };
+    if (!(v >= 0 && v < it[2].length && v === Math.round(v))) return { ok: false, why: 'Valeur hors limites' };
+    this.setState({ tac: Object.assign({}, this.state.tac, { [k]: v }), preset: 'perso' });
+    return { ok: true };
+  },
 
   matchup(a, b) {
     const S = this.styles(), A = S[a], B = S[b];
@@ -2383,7 +2846,8 @@ const Tactics = {
     const byId = {}; s.squad.forEach((p) => { byId[p.id] = p; });
     const pool = s.squad.filter((p) => !p.inj).slice().sort((a, b) => b.ovr - a.ovr);
     const used = new Set(), asg = {};
-    slots.forEach((sl) => { const id = lineup[sl.slot]; if (id != null && byId[id] && !used.has(id)) { asg[sl.slot] = byId[id]; used.add(id); } });
+    // un joueur choisi pour le onze n'y joue pas s'il s'est blessé depuis : le poste repasse en automatique
+    slots.forEach((sl) => { const id = lineup[sl.slot]; if (id != null && byId[id] && !byId[id].inj && !used.has(id)) { asg[sl.slot] = byId[id]; used.add(id); } });
     slots.forEach((sl) => {
       if (asg[sl.slot]) return;
       const p = pool.find((q) => !used.has(q.id) && q.pos === sl.line) || pool.find((q) => !used.has(q.id) && q.pos !== 'GB') || pool.find((q) => !used.has(q.id));
@@ -2396,6 +2860,42 @@ const Tactics = {
   },
 
   benchOf(xi) { const ids = new Set(xi.map((p) => p.id)); return this.state.squad.filter((p) => !ids.has(p.id) && !p.inj).sort((a, b) => b.ovr - a.ovr).slice(0, 7); },
+
+  // §2 composition. La règle vivait dans l'écran Mon Club seulement : l'app téléphone
+  // jouait toujours le onze automatique, sans que le directeur sportif puisse choisir.
+  // Mettre un joueur à un poste : s'il était titulaire, les deux échangent leurs places ;
+  // sinon le titulaire retourne sur le banc.
+  assignSlot(slot, pid) {
+    const s = this.state;
+    if (s.match && !s.match.done) return { ok: false, why: 'Pendant le match, on change par les remplacements' };
+    const p = s.squad.find((x) => x.id === pid);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    if (p.inj) return { ok: false, why: p.name + ' est blessé' };
+    const lu = {}; this.pickXI(s.formation).forEach((x) => { lu[x.slot] = x.id; });
+    if (!(slot in lu)) return { ok: false, why: 'Poste inconnu' };
+    const cur = lu[slot], other = Object.keys(lu).find((k) => lu[k] === pid);
+    if (other) lu[other] = cur;
+    lu[slot] = pid;
+    this.buzz(15);
+    this.setState({ lineup: lu, sel: null });
+    return { ok: true };
+  },
+
+  // Le onze redevient automatique : les meilleurs à leur poste.
+  compositionAuto() { this.setState({ lineup: {}, sel: null }); return { ok: true }; },
+
+  // Qui peut jouer à ce poste : tout l'effectif sauf le titulaire, le meilleur d'abord
+  // une fois la pénalité hors poste retirée. Un blessé est listé, mais refusé.
+  candidatsPoste(slot) {
+    const s = this.state, xi = this.pickXI(s.formation), cur = xi.find((p) => p.slot === slot);
+    if (!cur) return [];
+    const inXI = new Set(xi.map((p) => p.id));
+    return s.squad.filter((p) => p.id !== cur.id).map((p) => {
+      const pen = this.penalty(p.pos, cur.line);
+      return { p, pen, eff: Math.max(30, p.ovr - pen), titulaire: inXI.has(p.id), can: !p.inj,
+        why: p.inj ? 'Blessé, ' + p.inj + ' match' + (p.inj > 1 ? 's' : '') : '' };
+    }).sort((a, b) => (b.can - a.can) || (b.eff - a.eff));
+  },
 
   ROLE_OPTS(line, slot, formation) {
     if (line === 'GB') return ['Gardien classique', 'Gardien libéro'];
@@ -2455,6 +2955,18 @@ const Tactics = {
     return out;
   },
 
+  // Le joueur tel que le moteur le reçoit : statistiques (moins la pénalité hors poste),
+  // énergie, forme, moral, compétences, pied, rôle et consigne. Le coup d'envoi et les
+  // remplacements passent tous deux par ici. Un remplaçant entrait sans ses compétences,
+  // sa forme, son moral ni son pied : ses cartes ne comptaient plus une fois sur le terrain.
+  joueurMoteur(p) {
+    const s = this.state, st = {};
+    this.cardStats(p).forEach((q) => { st[q.l] = Math.max(25, q.v - Math.round((p.pen || 0) * 0.6)); });
+    return { name: p.name, ovr: p.ovr, st, energy: p.energy, form: p.form != null ? p.form : 70, morale: p.morale != null ? p.morale : 72,
+      skills: this.skillsOf(p), foot: this.profile(p).foot, wf: this.profile(p).wf,
+      role: s.roles[p.slot] || this.ROLE_OPTS(p.line, p.slot, s.formation)[0], duty: s.duties[p.slot] || 'Soutien' };
+  },
+
   engineCfg(opp, xi, oxi, obench) {
     const s = this.state, S = this.styles(), st = S[opp.style] || S.equilibre;
     const coordsFrom = (form) => { const C = this.formCoords(form), out = []; ['GB', 'DEF', 'MIL', 'ATT'].forEach((l) => (C[l] || []).forEach(([fx, fy]) => out.push({ fx, fy, line: l }))); return out; };
@@ -2464,14 +2976,1740 @@ const Tactics = {
     const adv = (s.preset === 'perso' ? 0 : this.matchup(s.preset, opp.style)) + (s.nextAdv || 0);
     const syn = this.synergy(xi);
     const coh = Math.min(1.2, Math.max(0.7, 1 - xi.filter((p) => p.pen).length * 0.06 - (s.preset === 'perso' ? 0.04 : 0) - xi.filter((p) => p.fresh).length * 0.03 + (s.cohBonus || 0) + syn.score));
-    const H = { club: 'FC TonPseudo', sbonus: this.staffLv('adjoint') * 0.8, coach: this.COACHES().find((c) => c.id === (s.coach || 'tacticien')), coh, tac: s.tac, ment: s.mentality, adv, coords: coordsFrom(s.formation), home: true, players: xi.map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p), energy: p.energy, form: p.form != null ? p.form : 70, morale: p.morale != null ? p.morale : 72, skills: this.skillsOf(p), foot: this.profile(p).foot, wf: this.profile(p).wf, role: s.roles[p.slot] || this.ROLE_OPTS(p.line, p.slot, s.formation)[0], duty: s.duties[p.slot] || 'Soutien' })) };
-    const A = { club: opp.club, tac: st.tac, ment: st.m, adv: -adv, coords: coordsFrom(st.form), players: oxi.map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p), skills: this.skillsOf(p), foot: this.profile(p).foot, wf: this.profile(p).wf })), bench: (obench || []).map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p) })) };
+    // le nom du club est celui du directeur sportif ; l'avantage du terrain va à celui
+    // qui reçoit selon le calendrier (§22). Sans calendrier, le club reçoit, comme avant.
+    const H = { club: s.clubName || 'FC TonPseudo', sbonus: this.staffLv('adjoint') * 0.8, coach: this.COACHES().find((c) => c.id === (s.coach || 'tacticien')), coh, tac: s.tac, ment: s.mentality, adv, coords: coordsFrom(s.formation), home: !opp.exterieur, players: xi.map((p) => this.joueurMoteur(p)) };
+    const A = { club: opp.club, home: !!opp.exterieur, tac: st.tac, ment: st.m, adv: -adv, coords: coordsFrom(st.form), players: oxi.map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p), skills: this.skillsOf(p), foot: this.profile(p).foot, wf: this.profile(p).wf })), bench: (obench || []).map((p) => ({ name: p.name, ovr: p.ovr, st: statsOf(p) })) };
     return { sides: { H, A } };
+  }
+};
+
+// LinkFoot : la colonne vertébrale de la progression (§70, §72, §81).
+// Un seul axe commande tout : le niveau de club. Les cartes, le staff, le stade,
+// le centre de formation et les packs lisent leurs paliers ici, et nulle part ailleurs.
+// Un bouton qui refuse dit toujours pourquoi : plus aucune action morte dans l'interface.
+
+const Tracks = {
+  // Paliers de niveau de club exigés par chaque palier de chaque piste.
+  // Index = le niveau que l'on veut atteindre. 0 = disponible dès le départ.
+  GATES() {
+    return {
+      staff: [0, 2, 6, 11],                            // niveaux de staff 0 à 3
+      stade: [0, 3, 7, 12, 18],                        // niveaux de stade 0 à 4
+      academy: [0, 4, 9, 15],                          // niveaux de centre 0 à 3
+      pack: { linkfoot: 0 }                            // §10 : un seul pack, ouvert dès le départ
+    };
+  },
+
+  // Le niveau de club exigé pour atteindre `lvl` sur la piste `kind`.
+  gateOf(kind, lvl) {
+    const G = this.GATES()[kind];
+    if (!G) return 0;
+    return G[Math.max(0, Math.min(G.length - 1, lvl))] || 0;
+  },
+
+  // Verrou unique, utilisé par toutes les pistes et par les packs.
+  lockOf(need) {
+    const lvl = this.state.level || 1;
+    return need > lvl ? { locked: true, need, why: 'Niveau de club ' + need + ' requis (tu es niveau ' + lvl + ')' } : { locked: false, need, why: '' };
+  },
+
+  // Le tableau de bord de la progression : la même forme pour toutes les pistes,
+  // pour que l'interface les affiche de la même façon et dise la même chose.
+  // { key, label, lvl, max, pct, nextLabel, cost, currency, lock, can, why }
+  progressBoard() {
+    const s = this.state, out = [];
+    const row = (key, label, lvl, max, nextLabel, cost, currency, need, extra) => {
+      const lock = this.lockOf(need), have = currency === 'shards' ? (s.shards || 0) : s.balance;
+      const max_ = lvl >= max;
+      out.push(Object.assign({
+        key, label, lvl, max, pct: Math.round(lvl / max * 100), nextLabel: max_ ? null : nextLabel,
+        cost: max_ ? 0 : cost, currency, locked: lock.locked && !max_,
+        can: !max_ && !lock.locked && have >= cost,
+        why: max_ ? 'Niveau maximum' : lock.locked ? lock.why : have < cost ? 'Il te manque ' + (cost - have) + (currency === 'shards' ? ' fragments' : ' jetons') : ''
+      }, extra || {}));
+    };
+
+    const need = this.levelNeed(s.level);
+    out.push({ key: 'club', label: 'Niveau de club', lvl: s.level, max: s.level + 1, pct: Math.round((s.xp / need) * 100),
+      nextLabel: 'Niveau ' + (s.level + 1), cost: 0, currency: 'xp', locked: false, can: false,
+      why: (need - s.xp) + ' XP avant le niveau ' + (s.level + 1), xp: s.xp, xpNeed: need });
+    out.push({ key: 'division', label: 'Division', lvl: 6 - s.division, max: 5, pct: Math.round((6 - s.division) / 5 * 100),
+      nextLabel: s.division > 1 ? 'Division ' + (s.division - 1) : null, cost: 0, currency: 'rang', locked: false, can: false,
+      why: s.division > 1 ? 'Termine dans les 2 premiers de la division ' + s.division : 'Division maximale', division: s.division });
+
+    this.STAFF_DEFS().forEach((d) => {
+      const lv = this.staffLv(d.id);
+      row('staff:' + d.id, d.label, lv, 3, d.eff[Math.min(3, lv + 1)], lv < 3 ? d.cost[lv] : 0, 'tokens', this.gateOf('staff', lv + 1), { eff: d.eff[lv], wage: d.wage[lv] });
+    });
+    const L = this.STADES(), sl = s.stade || 0;
+    row('stade', 'Stade', sl, L.length - 1, sl < L.length - 1 ? L[sl + 1].name + ' · ' + L[sl + 1].cap + ' places' : null, sl < L.length - 1 ? L[sl + 1].cost : 0, 'tokens', this.gateOf('stade', sl + 1), { name: L[sl].name, cap: L[sl].cap });
+    const A = this.ACADEMIES(), al = s.academy || 0;
+    row('academy', 'Centre de formation', al, A.length - 1, al < A.length - 1 ? A[al + 1].name : null, al < A.length - 1 ? A[al + 1].cost : 0, 'tokens', this.gateOf('academy', al + 1), { name: A[al].name, note: A[al].note });
+
+    // §12, §19 : la collection de compétences est une piste de progression comme les autres
+    const inv = this.state.skillInv || [];
+    out.push({ key: 'skills', label: 'Compétences', lvl: inv.length, max: Math.max(12, inv.length),
+      pct: Math.min(100, Math.round(inv.length / 12 * 100)),
+      nextLabel: inv.filter((k) => !k.on).length + ' en réserve', cost: 0, currency: 'cartes', locked: false, can: false,
+      why: inv.length ? inv.filter((k) => k.on).length + ' équipées, ' + inv.filter((k) => !k.on).length + ' en réserve' : 'Ouvre un LinkFoot Pack pour en obtenir' });
+
+    const col = this.collection();
+    out.push({ key: 'collection', label: 'Collection', lvl: col.have, max: col.total, pct: Math.round(col.have / col.total * 100),
+      nextLabel: col.have < col.total ? (col.total - col.have) + ' cartes manquantes' : null, cost: 0, currency: 'cartes', locked: false, can: false,
+      why: col.have >= col.total ? 'Collection complète' : 'Ouvre des packs pour compléter' });
+    return out;
+  },
+
+  // Résumé d'une ligne : la même phrase partout dans l'interface.
+  trackLine(t) {
+    if (t.currency === 'xp') return t.why;
+    if (t.currency === 'rang') return t.why;
+    if (t.currency === 'cartes') return t.lvl + ' / ' + t.max + ' · ' + t.why;
+    return 'Niveau ' + t.lvl + ' / ' + t.max + (t.nextLabel ? ' · suivant : ' + t.nextLabel : '') + (t.why ? ' · ' + t.why : '');
+  }
+};
+
+// LinkFoot : PlayerProgression (§5, §6, §20).
+// Un joueur a UN niveau, monté par l'XP. Pas de second barème.
+//
+// §6 : monter un joueur doit être difficile et le devenir de plus en plus.
+// L'argent aide (entraînement, fragments) mais ne remplace jamais le temps de jeu :
+// l'XP d'entraînement est plafonnée par jour, celle des matchs ne l'est pas.
+const PlayerXP = {
+  // §6 : courbe exponentielle contrôlée, calée sur l'échelle demandée.
+  // Un match rapporte 35 à 70 XP selon la performance.
+  //   1→2 : 60 XP (~1 match, facile)        5→6 : 112 XP (~2 matchs, facile)
+  //   10→11 : 246 XP (~5 matchs, difficile) 20→21 : 1 196 XP (~24 matchs, très difficile)
+  //   30→31 : 5 760 XP (~115 matchs, extrêmement difficile)
+  // Atteindre le niveau 20 demande environ 6 700 XP cumulés, soit ~135 matchs joués.
+  playerXpNeed(l) { return Math.round(60 * Math.pow(1.17, Math.max(1, l) - 1)); },
+
+  playerLevel(p) { return p && p.plv ? p.plv : 1; },
+  playerXp(p) { return p && p.pxp ? p.pxp : 0; },
+
+  playerProgress(p) {
+    const lvl = this.playerLevel(p), xp = this.playerXp(p), need = this.playerXpNeed(lvl);
+    return { lvl, xp, need, pct: Math.round(xp / need * 100), slots: this.skillSlots(p), worn: this.equippedOn(p.id).length };
+  },
+
+  // §5 : les caractéristiques cachées. Elles ne s'affichent pas telles quelles,
+  // mais chacune a un effet réel, listé en commentaire à côté.
+  hiddenOf(p) {
+    if (p._hid) return p._hid;
+    const r = this.seedR((p.id || 1) * 15485863 + 29);
+    const pr = { pot: p.pot != null ? p.pot : 0 };
+    const h = {
+      potReel: Math.max(p.ovr, Math.min(99, (pr.pot || p.ovr + 8) + Math.round((r() - 0.5) * 8))),  // plafond réel de progression
+      regularite: Math.round(35 + r() * 60),        // variance de la note de match
+      grandsMatchs: Math.round(30 + r() * 65),      // bonus face à un adversaire mieux classé
+      pression: Math.round(30 + r() * 65),          // bonus dans les 15 dernières minutes serrées
+      progression: Math.round(55 + r() * 70),       // multiplicateur d'XP, 100 = normal
+      blessure: Math.round(20 + r() * 70),          // risque de blessure
+      adaptation: Math.round(35 + r() * 60)         // perte quand il joue hors de son poste
+    };
+    return h;
+  },
+
+  // La traduction des attributs cachés en effets réels sur le onze (§19, §22).
+  // Appliquée dans engineCfg : rien ici n'est décoratif.
+  hiddenMods(p, ctx) {
+    const h = this.hiddenOf(p), c = ctx || {};
+    const n = (v) => (v - 65) / 100;                 // 65 = la moyenne, donc effet nul
+    const m = { dec: 0, sht: 0, pas: 0, phy: 0, def: 0, pace: 0, drain: 1, varia: 1 };
+    m.varia = 1.35 - h.regularite / 150;             // régulier = moins de hauts et de bas
+    if (c.strongerOpp) { m.dec += n(h.grandsMatchs) * 4; m.sht += n(h.grandsMatchs) * 3; }
+    if (c.closeLate) { m.dec += n(h.pression) * 4; m.sht += n(h.pression) * 3; }
+    if (c.outOfPos) { const pen = (1 - h.adaptation / 100) * 5; m.dec -= pen; m.pas -= pen; m.def -= pen; }
+    m.drain = 0.86 + (100 - h.blessure) / 100 * 0.1;
+    return m;
+  },
+
+  injuryRisk(p) { return 0.6 + this.hiddenOf(p).blessure / 100 * 0.9; },
+  xpRate(p) { return this.hiddenOf(p).progression / 100; },
+
+  // §6 : l'XP gagnée par un joueur sur un match. Jouer rapporte ; bien jouer rapporte plus.
+  matchXp(p, stat) {
+    const s = stat || {};
+    const base = 14 + (s.min || 90) / 90 * 10;
+    const perf = (s.goals || 0) * 9 + (s.assists || 0) * 6 + Math.max(0, ((s.rating || 6) - 6) * 7);
+    return Math.max(1, Math.round((base + perf) * this.xpRate(p)));
+  },
+
+  // Donner de l'XP à un joueur. Le gain s'arrête net au potentiel réel (§5, §6).
+  addPlayerXp(p, gain) {
+    const h = this.hiddenOf(p);
+    let lvl = this.playerLevel(p), xp = this.playerXp(p) + Math.max(0, Math.round(gain));
+    const ups = [];
+    const stats = {}; this.cardStats(p).forEach((q) => { stats[q.l] = q.v; });
+    let ovr = p.ovr;
+    let guard = 0;
+    while (xp >= this.playerXpNeed(lvl) && guard++ < 60) {
+      xp -= this.playerXpNeed(lvl); lvl++;
+      if (ovr >= h.potReel) { ups.push({ lvl, gain: null, capped: true }); continue; }
+      // la montée fait progresser les statistiques qui comptent pour son poste
+      const w = this.statW(p.pos), keys = Object.keys(w).sort((a, b) => w[b] - w[a]);
+      const k = keys[lvl % 3];
+      if (stats[k] != null && stats[k] < 99) stats[k] += 1;
+      const second = keys[(lvl + 1) % keys.length];
+      if (lvl % 2 === 0 && stats[second] != null && stats[second] < 99) stats[second] += 1;
+      ovr = Math.min(h.potReel, Math.max(ovr, this.ovrOf(p.pos, stats)));
+      ups.push({ lvl, gain: k, capped: false });
+    }
+    return { plv: lvl, pxp: xp, st: stats, ovr, ups };
+  },
+
+  // §19 : appliquer la montée à l'effectif, et le dire.
+  grantPlayerXp(id, gain, why) {
+    const s = this.state, p = s.squad.find((x) => x.id === id);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    const res = this.addPlayerXp(p, gain);
+    const squad = s.squad.map((x) => (x.id === id ? Object.assign({}, x, { plv: res.plv, pxp: res.pxp, st: res.st, ovr: res.ovr }) : x));
+    const up = res.ups.length;
+    this.setState({ squad, trainLog: p.name + ' +' + Math.round(gain) + ' XP' + (why ? ' (' + why + ')' : '')
+      + (up ? ' · niveau ' + res.plv + (res.ups[up - 1].capped ? ' · potentiel atteint' : '') : '') });
+    if (up) { this.buzz([30, 30, 60]); this.bumpQuest('levelup', up); }
+    return { ok: true, lvl: res.plv, ups: res.ups };
+  },
+
+  // L'entraînement payé en fragments : il accélère, il ne remplace pas (§6).
+  // Plafonné par jour pour que l'argent ne devienne jamais un raccourci (§29).
+  SHARD_XP() { return { cost: 20, xp: 35, perDay: 6 }; },
+
+  shardTrainInfo(p) {
+    const s = this.state, D = this.SHARD_XP();
+    const used = (s.caps && s.caps.shardTrain) || 0;
+    const poor = (s.shards || 0) < D.cost;
+    const capped = used >= D.perDay;
+    const none = this.sessions() <= 0;
+    return { cost: D.cost, xp: Math.round(D.xp * this.xpRate(p)), used, perDay: D.perDay, sessions: this.sessions(),
+      can: !poor && !capped && !none,
+      why: capped ? 'Limite du jour atteinte (' + D.perDay + ' séances intensives)'
+        : none ? this.trainInfo().why
+        : poor ? 'Il te manque ' + (D.cost - (s.shards || 0)) + ' fragments' : '' };
+  },
+
+  shardTrain(id) {
+    const s = this.state, p = s.squad.find((x) => x.id === id);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    const info = this.shardTrainInfo(p);
+    if (!info.can) return { ok: false, why: info.why };
+    // une séance intensive consomme aussi une séance : c'est la même ressource partout
+    if (!this.takeSession()) return { ok: false, why: this.trainInfo().why };
+    this.setState({ shards: (s.shards || 0) - info.cost, caps: Object.assign({}, this.state.caps, { shardTrain: info.used + 1 }) });
+    return this.grantPlayerXp(id, info.xp, 'séance intensive');
+  }
+};
+
+// LinkFoot : QuestEngine et EconomyEngine (§7, §8, §29).
+//
+// §7 : l'argent doit être difficile à obtenir et chaque dépense doit compter.
+// §29 : aucune source ne doit pouvoir produire une quantité infinie d'argent,
+// donc chaque gain passe par `earn`, qui applique un plafond quotidien et
+// écrit une ligne dans le journal. Rien n'arrive au solde par un autre chemin.
+const Quests = {
+  // Plafonds quotidiens, par source. `null` = pas de plafond (le match en est un :
+  // il coûte du temps réel, donc il s'auto-limite).
+  CAPS() {
+    return { quest: 900, pack: null, match: null, prono: 400, mission: 600, vente: null, connexion: null, total: 2600 };
+  },
+
+  // Les récompenses de connexion : sept jours, dont deux packs. Elles passaient par
+  // l'écran, sans plafond ni journal ; elles passent par earn() comme tout le reste (§7).
+  DAILY_REWARDS() { return [100, 150, 200, 'linkfoot', 300, 400, 'linkfoot']; },
+
+  claimDaily() {
+    const s = this.state, D = this.DAILY_REWARDS(), i = s.dayStreak || 0;
+    if (s.dayClaimed) return { ok: false, why: 'Déjà récupérée aujourd’hui' };
+    if (i >= D.length) return { ok: false, why: 'Série de connexion complète' };
+    const rw = D[i];
+    this.setState({ dayClaimed: true, dayStreak: i + 1,
+      freeQueue: typeof rw === 'string' ? (s.freeQueue || []).concat([rw]) : s.freeQueue });
+    const got = typeof rw === 'number' ? this.earn(rw, 'connexion', 'Connexion, jour ' + (i + 1)) : null;
+    this.buzz([30, 30, 60]);
+    return { ok: true, reward: rw, got: got ? got.given : 0 };
+  },
+
+  // Les missions du jour. Même règle : la récompense passe par earn(), donc par le
+  // plafond « mission » qui existait déjà mais que l'écran contournait.
+  claimMission(id) {
+    const s = this.state, m = (s.missions || []).find((x) => x.id === id);
+    if (!m) return { ok: false, why: 'Mission inconnue' };
+    if (m.claimed) return { ok: false, why: 'Déjà récupérée' };
+    if (m.prog < m.goal) return { ok: false, why: 'Objectif non atteint (' + m.prog + ' sur ' + m.goal + ')' };
+    const L = this.addXp(s, m.xp);
+    this.setState({ missions: s.missions.map((x) => (x.id === id ? Object.assign({}, x, { claimed: true }) : x)),
+      xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: s.balance + L.bonusBal,
+      levelUp: L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : s.levelUp });
+    if (L.bonusBal) this.logMoney(L.bonusBal, 'Niveau ' + L.level + ' atteint');
+    const got = this.earn(m.reward, 'mission', 'Mission : ' + m.label);
+    this.buzz([30, 30, 60]);
+    return { ok: true, got: got.given, capped: got.capped };
+  },
+
+  // §29 : le journal des transactions. 60 lignes gardées, assez pour une vérification
+  // sans gonfler la sauvegarde.
+  logMoney(amount, label) {
+    const s = this.state, led = (s.ledger || []).slice(0, 59);
+    led.unshift({ at: Date.now(), a: Math.round(amount), l: label });
+    this.setState({ ledger: led });
+    return led;
+  },
+
+  dayKey() { const d = new Date(); return d.getUTCFullYear() + '-' + (d.getUTCMonth() + 1) + '-' + d.getUTCDate(); },
+
+  // Le seul chemin par lequel de l'argent entre dans le club.
+  earn(amount, source, label) {
+    const s = this.state, C = this.CAPS();
+    const caps = Object.assign({}, s.caps);
+    if (caps.day !== this.dayKey()) { Object.keys(caps).forEach((k) => { if (k !== 'day') caps[k] = 0; }); caps.day = this.dayKey(); }
+    let give = Math.max(0, Math.round(amount));
+    const capped = [];
+    const lim = C[source];
+    if (lim != null) {
+      const used = caps[source] || 0;
+      if (used + give > lim) { give = Math.max(0, lim - used); capped.push(source); }
+      caps[source] = (caps[source] || 0) + give;
+    }
+    if (C.total != null) {
+      const usedT = caps.total || 0;
+      if (usedT + give > C.total) { give = Math.max(0, C.total - usedT); capped.push('total'); }
+      caps.total = usedT + give;
+    }
+    this.setState({ balance: s.balance + give, caps });
+    if (give) this.logMoney(give, label || source);
+    return { given: give, asked: Math.round(amount), capped: capped.length ? capped : null };
+  },
+
+  // Dépenser. Refuse clairement plutôt que de ne rien faire.
+  spend(amount, label) {
+    const s = this.state, cost = Math.round(amount);
+    if (s.balance < cost) return { ok: false, why: 'Il te manque ' + (cost - s.balance) + ' jetons' };
+    this.setState({ balance: s.balance - cost });
+    this.logMoney(-cost, label || 'dépense');
+    return { ok: true };
+  },
+
+  // §8 : le catalogue de quêtes. `kind` est la clé bumpée par le jeu,
+  // `goal` l'objectif, `reward` l'argent et `xp` l'XP de club.
+  QUEST_DEFS() {
+    return [
+      { id: 'q_win3', kind: 'win', goal: 3, label: 'Gagner 3 matchs', reward: 220, xp: 80, tier: 1 },
+      { id: 'q_assist5', kind: 'assist', goal: 5, label: 'Délivrer 5 passes décisives', reward: 260, xp: 90, tier: 2 },
+      { id: 'q_lowscorer', kind: 'lowGoal', goal: 1, label: 'Marquer avec un joueur de niveau inférieur à 10', reward: 300, xp: 110, tier: 2 },
+      { id: 'q_levelup', kind: 'levelup', goal: 3, label: 'Faire progresser un joueur de 3 niveaux', reward: 280, xp: 100, tier: 2 },
+      { id: 'q_poss60', kind: 'poss60', goal: 1, label: 'Gagner un match avec 60 % de possession', reward: 320, xp: 120, tier: 3 },
+      { id: 'q_streak3', kind: 'streak3', goal: 1, label: 'Remporter 3 matchs consécutifs', reward: 400, xp: 150, tier: 3 },
+      { id: 'q_rotate5', kind: 'rotate', goal: 5, label: 'Faire jouer 5 joueurs différents', reward: 180, xp: 70, tier: 1 },
+      { id: 'q_div', kind: 'division', goal: 1, label: 'Monter d’une division', reward: 700, xp: 300, tier: 4 },
+      { id: 'q_grow20', kind: 'reach20', goal: 1, label: 'Amener un joueur normal au niveau 20', reward: 900, xp: 400, tier: 5 },
+      { id: 'q_pack', kind: 'pack', goal: 3, label: 'Ouvrir 3 LinkFoot Packs', reward: 150, xp: 60, tier: 1 },
+      { id: 'q_equip', kind: 'equip', goal: 2, label: 'Équiper 2 compétences', reward: 200, xp: 80, tier: 1 },
+      { id: 'q_clean', kind: 'clean', goal: 2, label: 'Garder 2 fois sa cage inviolée', reward: 260, xp: 90, tier: 2 },
+      { id: 'q_sell', kind: 'sell', goal: 1, label: 'Vendre un joueur plus cher que sa valeur de départ', reward: 240, xp: 80, tier: 3 },
+      { id: 'q_youth', kind: 'youth', goal: 1, label: 'Faire jouer un joueur du centre de formation', reward: 300, xp: 110, tier: 3 }
+    ];
+  },
+
+  // Les quêtes actives : quatre à la fois, choisies selon le niveau du club,
+  // pour que les objectifs restent atteignables sans devenir une rente (§7).
+  activeQuests() {
+    const s = this.state;
+    if (s.quests && s.quests.length) return s.quests;
+    return this.rollQuests(s.level || 1);
+  },
+
+  rollQuests(level) {
+    const D = this.QUEST_DEFS(), maxTier = level >= 15 ? 5 : level >= 10 ? 4 : level >= 5 ? 3 : 2;
+    const pool = D.filter((q) => q.tier <= maxTier);
+    const r = this.seedR((level || 1) * 7717 + 3), out = [], taken = {};
+    while (out.length < 4 && out.length < pool.length) {
+      const q = pool[Math.floor(r() * pool.length)];
+      if (taken[q.id]) continue;
+      taken[q.id] = 1;
+      out.push(Object.assign({}, q, { prog: 0, claimed: false }));
+    }
+    return out;
+  },
+
+  bumpQuest(kind, n) {
+    const s = this.state, qs = this.activeQuests();
+    let touched = false;
+    const next = qs.map((q) => {
+      if (q.kind !== kind || q.claimed || q.prog >= q.goal) return q;
+      touched = true;
+      return Object.assign({}, q, { prog: Math.min(q.goal, q.prog + (n || 1)) });
+    });
+    if (touched) this.setState({ quests: next });
+    return next;
+  },
+
+  claimQuest(id) {
+    const s = this.state, qs = this.activeQuests();
+    const q = qs.find((x) => x.id === id);
+    if (!q) return { ok: false, why: 'Quête introuvable' };
+    if (q.claimed) return { ok: false, why: 'Déjà récupérée' };
+    if (q.prog < q.goal) return { ok: false, why: 'Objectif non atteint (' + q.prog + ' sur ' + q.goal + ')' };
+    const got = this.earn(q.reward, 'quest', 'Quête : ' + q.label);
+    const L = this.addXp(this.state, q.xp);
+    // une quête terminée est remplacée : la liste reste à quatre, les gains restent plafonnés
+    const fresh = this.QUEST_DEFS().filter((d) => !qs.some((x) => x.id === d.id) && d.tier <= (this.state.level >= 10 ? 5 : 3));
+    const repl = fresh.length ? Object.assign({}, fresh[Math.floor(Math.random() * fresh.length)], { prog: 0, claimed: false }) : null;
+    const next = qs.map((x) => (x.id === id ? (repl || Object.assign({}, x, { claimed: true })) : x));
+    this.setState({ quests: next, xp: L.xp, level: L.level, freeQueue: L.freeQueue,
+      balance: this.state.balance + L.bonusBal,
+      levelUp: L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : this.state.levelUp });
+    if (L.bonusBal) this.logMoney(L.bonusBal, 'Niveau ' + L.level + ' atteint');   // §7 tout ce qui entre est tracé
+    this.buzz([30, 30, 60]);
+    return { ok: true, got: got.given, capped: got.capped, xp: q.xp };
+  },
+
+  // §9 : les pronostics. Ils portent sur le match que tu t'apprêtes à jouer, dans le jeu,
+  // jamais sur un match réel. La mise est en jetons, le gain passe par `earn` et son
+  // plafond : un pronostic ne peut pas devenir une source infinie d'argent (§29).
+  PRONO_DEFS(opp, xi) {
+    const me = this.metrics(xi || this.pickXI(this.state.formation)).ovr;
+    const gap = me - (opp ? opp.ovr : me);
+    // la cote suit l'écart de niveau : parier sur soi quand on est favori rapporte peu
+    const pWin = Math.max(0.12, Math.min(0.84, 0.5 + gap * 0.028));
+    const odd = (p) => Math.round((1 / Math.max(0.1, p)) * 10) / 10;
+    const scorers = (xi || this.pickXI(this.state.formation)).filter((p) => p.line !== 'GB')
+      .sort((a, b) => b.ovr - a.ovr).slice(0, 3);
+    return [
+      { id: 'win', label: 'Je gagne ce match', odd: odd(pWin) },
+      { id: 'draw', label: 'Match nul', odd: odd(0.24) },
+      { id: 'over', label: 'Plus de 2,5 buts au total', odd: odd(0.47) },
+      { id: 'clean', label: 'Je ne prends aucun but', odd: odd(0.3) },
+      { id: 'poss', label: 'J’ai plus de 55 % de possession', odd: odd(0.42) }
+    ].concat(scorers.map((p) => ({ id: 'sc_' + p.id, label: p.name + ' marque', odd: odd(0.26), who: p.id })));
+  },
+
+  MAX_STAKE() { return 120; },
+
+  placeProno(id, stake) {
+    const s = this.state, bet = Math.max(10, Math.min(this.MAX_STAKE(), Math.round(stake || 40)));
+    if ((s.pronos || []).some((p) => p.id === id)) return { ok: false, why: 'Pronostic déjà pris' };
+    if ((s.pronos || []).length >= 3) return { ok: false, why: 'Trois pronostics par match au maximum' };
+    const sp = this.spend(bet, 'Pronostic : ' + id);
+    if (!sp.ok) return sp;
+    const def = this.PRONO_DEFS(s.nextOpp).find((d) => d.id === id) || { odd: 2, label: id };
+    this.setState({ pronos: (s.pronos || []).concat([{ id, stake: bet, odd: def.odd, label: def.label, who: def.who || null }]) });
+    return { ok: true, stake: bet, odd: def.odd };
+  },
+
+  // Règlement après le coup de sifflet final. Rien n'est versé hors de `earn`.
+  settlePronos(mt) {
+    const s = this.state, bets = s.pronos || [];
+    if (!bets.length) return { won: 0, lost: 0, lines: [] };
+    const hit = (b) => {
+      if (b.id === 'win') return mt.res === 'w';
+      if (b.id === 'draw') return mt.res === 'd';
+      if (b.id === 'over') return mt.hs + mt.as > 2;
+      if (b.id === 'clean') return mt.as === 0;
+      if (b.id === 'poss') return (mt.poss || 50) > 55;
+      if (b.who) return (mt.scorers || []).indexOf(b.who) >= 0;
+      return false;
+    };
+    const lines = [];
+    let won = 0;
+    bets.forEach((b) => {
+      const okb = hit(b);
+      if (okb) { const gain = Math.round(b.stake * b.odd); const g = this.earn(gain, 'prono', 'Pronostic gagné : ' + b.label); won += g.given; lines.push({ label: b.label, ok: true, gain: g.given, capped: !!g.capped }); }
+      else lines.push({ label: b.label, ok: false, gain: -b.stake });
+    });
+    this.setState({ pronos: [], lastProno: lines });
+    return { won, lost: bets.filter((b) => !hit(b)).length, lines };
+  },
+
+  // Ce que le match vient de produire comme avancement de quêtes (§19).
+  questsAfterMatch(mt, st) {
+    const res = mt.res;
+    if (res === 'w') this.bumpQuest('win', 1);
+    if (mt.as === 0) this.bumpQuest('clean', 1);
+    if (mt.assists) this.bumpQuest('assist', mt.assists);
+    if (mt.poss != null && mt.poss >= 60 && res === 'w') this.bumpQuest('poss60', 1);
+    if (res === 'w' && (st.winStreak || 0) + 1 >= 3) this.bumpQuest('streak3', 1);
+    if (mt.xi) {
+      const seen = new Set((st.seenPlayers || []).concat(mt.xi.map((p) => p.id)));
+      this.setState({ seenPlayers: Array.from(seen).slice(-40) });
+      this.bumpQuest('rotate', 0);
+      const qs = this.activeQuests().map((q) => (q.kind === 'rotate' && !q.claimed ? Object.assign({}, q, { prog: Math.min(q.goal, seen.size) }) : q));
+      this.setState({ quests: qs });
+      if (mt.xi.some((p) => p.youth)) this.bumpQuest('youth', 1);
+      if (mt.scorers) mt.scorers.forEach((id) => {
+        const p = st.squad.find((x) => x.id === id);
+        if (p && this.playerLevel(p) < 10) this.bumpQuest('lowGoal', 1);
+      });
+    }
+    if (st.squad.some((p) => this.playerLevel(p) >= 20 && (p.rar || 'normal') === 'normal')) this.bumpQuest('reach20', 1);
+  }
+};
+
+// LinkFoot : création du club (§2, §3, §4, §27).
+//
+// Le principe : on commence avec peu. L'effectif de départ est fait de joueurs
+// NORMAUX, faibles mais avec du potentiel, plus UN joueur rare offert qui aide
+// sans décider des matchs à lui seul.
+const Creation = {
+  // §2 : ce que le directeur sportif choisit avant de recevoir son effectif.
+  CREATION_STEPS() {
+    return [
+      { id: 'name', label: 'Nom du club', hint: 'Le nom qui s’affichera partout' },
+      { id: 'kit', label: 'Couleurs et maillot', hint: 'Deux couleurs, un motif, un col' },
+      { id: 'logo', label: 'Logo', hint: 'Forme et initiales' },
+      { id: 'stade', label: 'Stade', hint: 'Terrain municipal au départ, agrandissable' },
+      { id: 'pays', label: 'Pays et championnat', hint: 'Détermine la division de départ' }
+    ];
+  },
+
+  COUNTRIES() {
+    return [
+      { id: 'fr', label: 'France', div: 4 }, { id: 'es', label: 'Espagne', div: 4 },
+      { id: 'it', label: 'Italie', div: 4 }, { id: 'en', label: 'Angleterre', div: 4 },
+      { id: 'de', label: 'Allemagne', div: 4 }, { id: 'pt', label: 'Portugal', div: 5 }
+    ];
+  },
+
+  // §4 : la base du jeu. Note 46 à 58, jeunes, avec un vrai potentiel à développer.
+  starterSquad(seed) {
+    const r = this.seedR(seed || 20260101);
+    const plan = [
+      ['GB', 54], ['GB', 48], ['DEF', 55], ['DEF', 53], ['DEF', 51], ['DEF', 49], ['DEF', 47],
+      ['MIL', 56], ['MIL', 54], ['MIL', 51], ['MIL', 48], ['ATT', 55], ['ATT', 52], ['ATT', 49]
+    ];
+    const F = ['A.', 'B.', 'C.', 'D.', 'E.', 'G.', 'H.', 'I.', 'J.', 'K.', 'L.', 'M.', 'N.', 'O.', 'R.', 'S.', 'T.', 'V.', 'Y.', 'Z.'];
+    const L = ['Marvello', 'Ducasson', 'Ebongué', 'Halvorsen', 'Quintero', 'Belkadi-Roy', 'Stranieri', 'Okafor-Lemaire', 'Vasquet', 'Nyamsi', 'Gaudrel', 'Petrakis', 'Lindau', 'Moreau-Diaby', 'Castagne-Nil', 'Rivoire', 'Takamura', 'Ferbault', 'Ansaldi', 'Kowalevski', 'Dembrel', 'Soumahé'];
+    const pris = new Set();
+    return plan.map(([pos, ovr], i) => {
+      const o = ovr + Math.round((r() - 0.5) * 4);
+      const age = 17 + Math.floor(r() * 6);
+      // un joueur normal jeune a du potentiel : c'est tout l'intérêt de le développer
+      const pot = Math.min(88, o + 10 + Math.floor(r() * 18));
+      // le tirage du nom reste à sa place dans la suite aléatoire : seul un doublon change d'initiale
+      const name = this.nomUnique(F[Math.floor(r() * F.length)] + ' ' + L[Math.floor(r() * L.length)], pris);
+      pris.add(name);
+      return { id: i + 1, name, pos, ovr: o, pot, age, rar: 'normal', plv: 3, pxp: 0, scouted: true };
+    });
+  },
+
+  // §3 : le joueur rare offert. Meilleure base, meilleur potentiel, une compétence
+  // spéciale, mais une note qui reste loin de ce qui gagne un match tout seul.
+  starterRare(seed) {
+    const r = this.seedR((seed || 20260101) + 991);
+    const POS = ['MIL', 'ATT', 'DEF'];
+    const pos = POS[Math.floor(r() * POS.length)];
+    const ovr = 66 + Math.floor(r() * 5);                 // 66 à 70 : utile, pas décisif
+    const p = { id: 90, name: ['N. Oyelaran', 'M. Castellane', 'R. Esperanza', 'S. Haugen', 'K. Rakotoson'][Math.floor(r() * 5)],
+      pos, ovr, pot: Math.min(92, ovr + 14 + Math.floor(r() * 8)), age: 19 + Math.floor(r() * 3),
+      rar: 'rare', plv: 5, pxp: 0, scouted: true, gift: true };
+    // sa compétence spéciale, tirée dans la rareté Rare et compatible avec son poste
+    const D = this.SKILL_DEF(), pool = D.POSOK[pos] || D.POSOK.MIL;
+    let sk = null;
+    for (let i = 0; i < 20 && !sk; i++) {
+      const cand = this.makeSkill(pool[Math.floor(r() * pool.length)], Math.floor(r() * D.C.length), 1, Math.floor(r() * 3));
+      if (this.canEquipRaw(p, cand)) sk = cand;
+    }
+    p.skills = sk ? [sk] : [];
+    return p;
+  },
+
+  // La vérification de compatibilité sans passer par l'inventaire (le joueur n'existe pas encore).
+  canEquipRaw(p, sk) {
+    const req = sk.req || this.skillReq(sk.eid, sk.rarIdx, sk.lvl - 1);
+    if (req.pos.indexOf(p.pos) < 0) return false;
+    const st = {}; this.genStatsFor(p).forEach((q) => { st[q.l] = q.v; });
+    for (const k in req.stats) if ((st[k] || 0) < req.stats[k]) return false;
+    return (p.plv || 1) >= req.lvl;
+  },
+
+  genStatsFor(p) { return this.cardStats(p); },
+
+  // §2 : créer le club. Rien d'autre n'est donné : ni jetons en masse, ni pack gratuit
+  // en série. Le premier LinkFoot Pack se mérite (§27).
+  createClub(opts) {
+    const o = opts || {}, seed = o.seed || Date.now() % 1000000;
+    const country = this.COUNTRIES().find((c) => c.id === o.country) || this.COUNTRIES()[0];
+    const squad = this.starterSquad(seed);
+    const rare = this.starterRare(seed);
+    const patch = {
+      clubName: o.name || 'FC TonPseudo',
+      country: country.id, division: country.div,
+      kit: o.kit || this.state.kit,
+      stade: 0, academy: 0, staff: { adjoint: 0, physique: 0, recruteur: 0, kine: 0 },
+      squad: squad.concat([rare]),
+      nextId: 200, nextSkillUid: 1, skillInv: [], collected: [], seenPlayers: [],
+      balance: 600, shards: 0, xp: 0, level: 1,
+      record: { w: 0, d: 0, l: 0 }, seasonP: 0, winStreak: 0,
+      // la série de connexion repart de zéro : l'état de démonstration en était au jour 4
+      dayStreak: 0, dayClaimed: false, market: null,
+      quests: this.rollQuests(1), caps: { day: this.dayKey() }, ledger: [],
+      freeQueue: ['linkfoot'],                      // un seul pack offert pour démarrer
+      created: true,
+      welcome: { title: 'CLUB CRÉÉ', sub: rare.name + ' (' + rare.pos + ' ' + rare.ovr + ', potentiel ' + rare.pot + ') rejoint le club. Le reste de l’effectif est à construire.' }
+    };
+    this.setState(patch);
+    this.logMoney(600, 'Dotation de départ');
+    return { ok: true, rare, squad };
+  },
+
+  // Le résumé affiché après la création : ce que le directeur sportif a en main.
+  creationSummary() {
+    const s = this.state, sq = s.squad || [];
+    const rare = sq.find((p) => p.gift);
+    const norm = sq.filter((p) => !p.gift);
+    const avg = norm.length ? Math.round(norm.reduce((a, p) => a + p.ovr, 0) / norm.length) : 0;
+    const pot = norm.length ? Math.round(norm.reduce((a, p) => a + (p.pot || p.ovr), 0) / norm.length) : 0;
+    return {
+      club: s.clubName || 'FC TonPseudo',
+      count: sq.length, avg, pot,
+      rare: rare ? { name: rare.name, pos: rare.pos, ovr: rare.ovr, potential: rare.pot,
+        skill: (rare.skills && rare.skills[0]) ? rare.skills[0].name : null } : null,
+      line: 'Effectif de ' + sq.length + ' joueurs, note moyenne ' + avg + ', potentiel moyen ' + pot + '.'
+    };
+  }
+};
+
+// LinkFoot : ce que l'écran affiche du multijoueur (§26).
+//
+// Ce module ne parle à personne. Il met en forme l'état en ligne pour l'interface,
+// et surtout il répond proprement quand aucun serveur n'est branché : l'écran dit
+// alors ce qu'il faut faire pour y remédier, au lieu d'afficher des boutons morts (§81).
+const OnlineUI = {
+  isOnline() { return !!(this.online && this.onlineState && !this.onlineState.offline); },
+
+  onlineSummary() {
+    const s = this.state, st = this.onlineState || {};
+    const on = this.isOnline();
+    return {
+      connected: on,
+      state: on ? 'En ligne' : this.online ? 'Serveur injoignable' : 'Hors ligne',
+      // Le message s'adresse au joueur, pas au développeur : il dit ce qui se passe
+      // et ce qu'il peut faire, pas comment le code est branché.
+      why: on ? 'Ton équipe est publiée : les autres clubs peuvent te défier.' : this.online
+        ? 'Le serveur ne répond pas. Tout le reste du jeu continue de fonctionner.'
+        : 'Les matchs classés, les ligues entre amis et le classement arrivent bientôt. Le reste du jeu fonctionne sans eux.',
+      error: s.onlineError || null,
+      elo: s.elo || null,
+      ladder: (st.ladder || []).slice(0, 20),
+      leagues: st.leagues || [],
+      challenges: st.challenges || [],
+      feed: st.feed || null,
+      market: st.market || null,
+      last: s.lastVersus || null,
+      lastLine: s.lastVersus
+        ? 'Dernier match classé : ' + s.lastVersus.score.join(' - ') + ' contre ' + s.lastVersus.opponent
+          + ' · Elo ' + (s.lastVersus.delta >= 0 ? '+' : '') + s.lastVersus.delta
+        : 'Aucun match classé joué.'
+    };
+  },
+
+  // Les actions proposées par l'écran. Chacune refuse avec sa raison si le serveur
+  // n'est pas là : aucune ne fait semblant de marcher.
+  onlineActions() {
+    const can = this.isOnline();
+    const refuse = () => Promise.resolve({ ok: false, why: this.onlineSummary().why });
+    return {
+      can,
+      publish: () => (can ? this.goOnline() : refuse()),
+      // §81 : si l'action n'est pas disponible, le bouton le dit au lieu de ne rien faire.
+      ranked: (id) => (can ? this.playRanked(id) : refuse()),
+      createLeague: (name) => (can ? this.online.createLeague(name, 2) : refuse()),
+      joinLeague: (code) => (can ? this.online.joinLeague(code) : refuse()),
+      refresh: () => (can ? Promise.all([this.refreshLadder(), this.refreshLeagues(), this.refreshChallenges(), this.refreshFeed(), this.refreshMarket()]) : refuse()),
+      sell: (id, price) => (can ? this.sellOnline(id, price) : refuse()),
+      buy: (listingId) => (can ? this.buyOnline(listingId) : refuse())
+    };
+  }
+};
+
+// LinkFoot : les séances et le matériel d'entraînement (§5, §6, §29).
+//
+// L'entraînement n'est pas illimité. Chaque séance consomme UNE séance en stock.
+// On en reçoit deux par jour gratuitement, et le pack unique en donne à sa part
+// « Objet ». C'est ce qui fait de l'entraînement une décision : avec trois séances en
+// poche, on choisit qui on fait progresser, on ne lance pas tout.
+const TrainPack = {
+  // Deux séances offertes par jour, vingt en réserve au maximum : impossible
+  // d'empiler trois mois d'entraînement pour tout lancer d'un coup (§29).
+  SESSION_RULES() { return { freePerDay: 2, max: 20 }; },
+
+  // Les séances disponibles, en remettant les gratuites du jour si on ne les a pas prises.
+  sessions() {
+    const s = this.state, R = this.SESSION_RULES();
+    const caps = s.caps || {};
+    if (caps.day !== this.dayKey()) return Math.min(R.max, (s.sessions || 0) + R.freePerDay);
+    return s.sessions || 0;
+  },
+
+  // Appelé avant toute séance : remet les gratuites du jour si besoin, puis en retire une.
+  takeSession() {
+    const s = this.state, R = this.SESSION_RULES(), caps = Object.assign({}, s.caps || {});
+    let have = s.sessions || 0;
+    if (caps.day !== this.dayKey()) { have = Math.min(R.max, have + R.freePerDay); caps.day = this.dayKey(); }
+    if (have <= 0) return false;
+    this.setState({ sessions: have - 1, caps });
+    return true;
+  },
+
+  addSessions(n) {
+    const R = this.SESSION_RULES();
+    this.setState({ sessions: Math.min(R.max, (this.state.sessions || 0) + Math.max(0, Math.round(n))) });
+    return this.state.sessions;
+  },
+
+  // L'état de l'entraînement, pour que l'écran dise toujours pourquoi il refuse (§81).
+  trainInfo() {
+    const n = this.sessions(), R = this.SESSION_RULES();
+    const busy = !!(this.state.match && !this.state.match.done);
+    return {
+      sessions: n, max: R.max, freePerDay: R.freePerDay,
+      can: n > 0 && !busy,
+      why: busy ? 'Impossible pendant un match'
+        : n > 0 ? '' : 'Plus de séance. Tu en reçois ' + R.freePerDay + ' par jour, et le ' + this.THE_PACK().name + ' en donne parfois.',
+      line: n + ' séance' + (n > 1 ? 's' : '') + ' en stock · ' + R.freePerDay + ' offertes par jour'
+    };
+  },
+
+  // Le matériel d'entraînement : un objet par rareté. Il sort du pack unique, à la part
+  // « Objet » et à la rareté tirée, donc un Stage Gold est aussi rare qu'un joueur Gold.
+  TRAIN_LOTS() {
+    return [
+      { id: 'seance', rar: 'normal', label: 'Séance d’entraînement', desc: '+1 séance', sessions: 1 },
+      { id: 'carte', rar: 'rare', label: 'Carte d’amélioration', desc: '+2 sur une statistique, au joueur de ton choix', up: 1 },
+      { id: 'duo', rar: 'epic', label: 'Double séance', desc: '+2 séances', sessions: 2 },
+      { id: 'specialise', rar: 'elite', label: 'Séance spécialisée', desc: '+3 séances et une carte d’amélioration', sessions: 3, up: 1 },
+      { id: 'stage', rar: 'gold', label: 'Stage de pré-saison', desc: '+60 XP à tout l’effectif', squadXp: 60 },
+      { id: 'masterclass', rar: 'legendary', label: 'Masterclass', desc: '+150 XP à tout l’effectif et trois cartes d’amélioration', squadXp: 150, up: 3 }
+    ];
+  },
+
+  // Les cartes d'amélioration que le pack peut donner : les mêmes que celles déjà
+  // utilisables sur la fiche d'un joueur. Rien de nouveau à comprendre.
+  UPGRADE_CARDS() {
+    return [['VIT', 'Vitesse'], ['ATQ', 'Attaque'], ['TIR', 'Tir'], ['PAS', 'Passe'], ['DRI', 'Dribble'], ['DÉF', 'Défense'], ['PHY', 'Physique']];
+  },
+
+  useUpgrade(pid, stat) {
+    const s = this.state, key = 'up_' + stat, inv = Object.assign({}, s.inv || {});
+    if (!(inv[key] > 0)) return { ok: false, why: 'Aucune carte ' + stat + ' en réserve' };
+    const p = s.squad.find((x) => x.id === pid);
+    if (!p) return { ok: false, why: 'Joueur introuvable' };
+    const st = {}; this.cardStats(p).forEach((q) => { st[q.l] = q.v; });
+    if (st[stat] == null) return { ok: false, why: 'Un gardien ne travaille pas cette statistique' };
+    if (st[stat] >= 99) return { ok: false, why: stat + ' est déjà au maximum' };
+    const h = this.hiddenOf(p);
+    if (p.ovr >= h.potReel) return { ok: false, why: p.name + ' a atteint son potentiel' };
+    st[stat] = Math.min(99, st[stat] + 2);
+    inv[key]--;
+    const ovr = Math.min(h.potReel, Math.max(p.ovr, this.ovrOf(p.pos, st)));
+    this.buzz([25, 25, 50]);
+    this.setState({ inv, squad: s.squad.map((x) => (x.id === pid ? Object.assign({}, x, { st, ovr }) : x)),
+      trainLog: p.name + ' +2 ' + stat + (ovr > p.ovr ? ' · note ' + p.ovr + ' → ' + ovr : '') });
+    return { ok: true, ovr };
+  },
+
+  // §19 : tout ce que le pack donne arrive immédiatement là où ça sert.
+  // Ce que des objets d'entraînement donnent au club : séances, cartes d'amélioration,
+  // XP de stage. Une seule fonction pour tout ce qui en donne (§3).
+  appliquerObjetsEntrainement(lots) {
+    if (!lots || !lots.length) return { sessions: 0, xp: 0, cards: [] };
+    const s = this.state, R = this.SESSION_RULES(), inv = Object.assign({}, s.inv || {});
+    let add = 0, xp = 0;
+    const cards = [];
+    lots.forEach((g) => {
+      add += g.sessions || 0;
+      xp += g.squadXp || 0;
+      (g.stats || (g.stat ? [g.stat] : [])).forEach((k) => { inv['up_' + k] = (inv['up_' + k] || 0) + 1; cards.push(k); });
+    });
+    this.setState({ inv, sessions: Math.min(R.max, (s.sessions || 0) + add) });
+    // un stage profite à tout l'effectif : c'est ce qui rend les lots rares désirables
+    if (xp) this.state.squad.forEach((p) => this.grantPlayerXp(p.id, xp, 'stage'));
+    return { sessions: add, xp, cards };
+  },
+
+  // §19 : l'écran d'entraînement ne propose que ce que le directeur sportif peut
+  // réellement faire AUJOURD'HUI, avec ce qu'il a en réserve. Chaque ligne dit ce
+  // qu'elle consomme et, si elle refuse, ce qui manque (§81).
+  trainingOptions() {
+    const ti = this.trainInfo(), inv = this.state.inv || {};
+    const base = this.TRAININGS().map((t) => ({
+      id: t.id, label: t.label, desc: t.desc, cost: '1 séance', kind: 'squad',
+      can: ti.can, why: ti.can ? '' : ti.why
+    }));
+    // les cartes d'amélioration ouvrent des séances ciblées : on ne les propose
+    // que si on en possède, et on dit sur quelle statistique elles portent
+    const cards = this.UPGRADE_CARDS()
+      .map(([k, label]) => ({ k, label, n: inv['up_' + k] || 0 }))
+      .filter((x) => x.n > 0)
+      .map((x) => ({
+        id: 'up_' + x.k, label: 'Séance ciblée ' + x.label.toLowerCase(), kind: 'card', stat: x.k, n: x.n,
+        desc: '+2 ' + x.k + ' sur le joueur de ton choix, sans consommer de séance',
+        cost: x.n + ' carte' + (x.n > 1 ? 's' : ''), can: true, why: ''
+      }));
+    return base.concat(cards);
+  }
+};
+
+// LinkFoot : le pack unique et le matériel de l'entraîneur (§8, §9, §24).
+//
+// §8 UN SEUL PACK. Le LinkFoot Pack est le seul pack du jeu : un seul bouton,
+// « OUVRIR LE PACK », et chaque tirage peut donner un joueur, une compétence, un objet
+// (séance, carte d'amélioration, causerie, plan tactique) ou des fragments quand le
+// joueur tiré est déjà au club. Avant l'ouverture, il affiche les deux tables qui
+// décident du tirage : la part de chaque famille et le taux de chaque rareté (§9).
+//
+// Il y a eu jusqu'à quatre packs (plus un Pack Compétence, un Pack Entraînement et un
+// Pack Entraîneur). Ils ont été retirés : le §8 n'en veut qu'un, et deux d'entre eux
+// vendaient des objets Gold à 1,8 % et 2,6 % par lot, au-dessus du « 1 % ou moins »
+// du §12. Tout ce qu'ils donnaient sort du pack unique, à la rareté commune.
+const Packs = {
+  // L'écran Packs, dans le canvas comme dans l'app, lit cette forme : le pack, son
+  // prix, ses deux tables de probabilités et ce qu'il a donné la dernière fois. Les
+  // probabilités sont demandées à leurs propres fonctions, jamais recopiées (§29).
+  KIOSQUE() {
+    return [
+      { key: 'linkfoot', def: this.THE_PACK(), family: 'Pack unique', principal: true,
+        question: 'Joueur, compétence ou objet : un seul pack pour tout',
+        odds: () => this.packOdds(this.THE_PACK()), kind: 'rarete',
+        familles: () => this.packFamilies(),
+        state: () => this.packState(this.THE_PACK()),
+        useView: 'squad', useLabel: 'Joueurs dans l’effectif, compétences en réserve, objets à l’entraînement',
+        last: 'lastCardPack' }
+    ];
+  },
+
+  // La liste prête à afficher. Aucune fonction d'interface là-dedans : l'écran y branche
+  // son bouton lui-même, parce que l'ouverture du pack a son animation.
+  kiosque() {
+    const s = this.state;
+    return this.KIOSQUE().map((e) => {
+      const st = e.state(), d = e.def;
+      return {
+        key: e.key, name: d.name, family: e.family, question: e.question,
+        principal: !!e.principal,
+        n: d.n, cost: d.cost, color: d.color, content: d.content,
+        desc: d.n + ' tirages · ' + d.content,
+        can: !!st.can, why: st.why || '', locked: !st.can,
+        useView: e.useView, useLabel: e.useLabel,
+        got: s[e.last] || '',
+        kind: e.kind, odds: e.odds(),
+        familles: e.familles ? e.familles() : null
+      };
+    });
+  },
+
+  // Le pack unique, tel que les écrans l'affichent.
+  packPrincipal() { return this.kiosque()[0]; },
+
+  // ---------- le matériel de l'entraîneur (§24) ----------
+  // Il sort du pack unique, à la part « Objet » et à la rareté tirée. Chaque objet a
+  // un effet réel, lu au moment où on s'en sert (§13).
+  // Le matériel tactique. Chaque objet a un effet réel, lu au moment du match (§14, §81).
+  COACH_ITEMS() {
+    return [
+      { id: 'causerie', rar: 'normal', label: 'Causerie d’avant-match', kind: 'meeting',
+        desc: 'Moral +8 pour tout l’effectif, une fois', morale: 8 },
+      { id: 'video', rar: 'rare', label: 'Séance vidéo', kind: 'meeting',
+        desc: 'Révèle le style de l’adversaire et donne +1 d’avantage tactique au prochain match', adv: 1 },
+      { id: 'atelier', rar: 'epic', label: 'Atelier tactique', kind: 'meeting',
+        desc: 'Cohésion +4 %, durable', coh: 0.04 },
+      { id: 'plan', rar: 'elite', label: 'Plan tactique', kind: 'plan',
+        desc: 'Un style de jeu préparé : +2 d’avantage tactique quand tu l’utilises contre le bon adversaire', adv: 2 },
+      { id: 'reunion', rar: 'gold', label: 'Réunion de groupe', kind: 'meeting',
+        desc: 'Moral +15, cohésion +6 % et +40 XP à tout l’effectif', morale: 15, coh: 0.06, squadXp: 40 },
+      { id: 'masterplan', rar: 'legendary', label: 'Plan de campagne', kind: 'plan',
+        desc: 'Trois plans tactiques, moral +20 et cohésion +8 %', plans: 3, morale: 20, coh: 0.08 }
+    ];
+  },
+
+  // Ranger le matériel de l'entraîneur sorti du pack. Une seule fonction pour tout
+  // ce qui en donne (§3) : un objet fait la même chose d'où qu'il vienne.
+  //
+  // Un plan (simple ou de campagne) va dans la réserve de plans, la seule que lit
+  // usePlan. Le plan de campagne promettait « trois plans tactiques, moral +20 et
+  // cohésion +8 % » : il en donnait deux, rangés sous une clé que rien ne lisait, et
+  // ni moral ni cohésion. Ce n'est pas une réunion qu'on tient plus tard : son moral
+  // et sa cohésion s'appliquent à réception, ses trois plans vont en réserve.
+  rangerObjetsCoach(lots) {
+    if (!lots || !lots.length) return { plans: 0, morale: 0, coh: 0 };
+    const s = this.state, coach = Object.assign({}, s.coachInv || {});
+    let plans = 0, morale = 0, coh = 0;
+    lots.forEach((g) => {
+      if (g.kind === 'plan') {
+        plans += g.plans || 1;
+        morale += g.morale || 0;
+        coh += g.coh || 0;
+      } else coach[g.id] = (coach[g.id] || 0) + 1;
+    });
+    if (plans) coach.plan = (coach.plan || 0) + plans;
+    const patch = { coachInv: coach };
+    if (morale) patch.squad = s.squad.map((p) => Object.assign({}, p, { morale: Math.min(99, this.profile(p).morale + morale) }));
+    if (coh) patch.cohBonus = Math.min(0.16, (s.cohBonus || 0) + coh);
+    this.setState(patch);
+    return { plans, morale, coh };
+  },
+
+  // ---------- la réunion d'équipe (§24) ----------
+  // Ce que le directeur sportif peut faire avec son matériel, et ce qu'il lui manque.
+  meetings() {
+    const s = this.state, inv = s.coachInv || {};
+    return this.COACH_ITEMS().filter((x) => x.kind === 'meeting').map((x) => {
+      const n = inv[x.id] || 0;
+      return Object.assign({}, x, {
+        n, can: n > 0,
+        why: n > 0 ? '' : 'Aucun(e) ' + x.label.toLowerCase() + ' en réserve : ça sort du ' + this.THE_PACK().name + ', à la part Objet.'
+      });
+    });
+  },
+
+  // Tenir une réunion : l'effet est immédiat et visible dans l'effectif (§19).
+  holdMeeting(id) {
+    const s = this.state, item = this.COACH_ITEMS().find((x) => x.id === id);
+    if (!item || item.kind !== 'meeting') return { ok: false, why: 'Réunion inconnue' };
+    const inv = Object.assign({}, s.coachInv || {});
+    if (!(inv[id] > 0)) return { ok: false, why: 'Aucun(e) ' + item.label.toLowerCase() + ' en réserve' };
+    inv[id]--;
+    const patch = { coachInv: inv };
+    let txt = item.label;
+    if (item.morale) {
+      patch.squad = s.squad.map((p) => {
+        const pr = this.profile(p);
+        return Object.assign({}, p, { morale: Math.min(99, pr.morale + item.morale) });
+      });
+      txt += ' · moral +' + item.morale;
+    }
+    if (item.coh) { patch.cohBonus = Math.min(0.16, (s.cohBonus || 0) + item.coh); txt += ' · cohésion +' + Math.round(item.coh * 100) + ' %'; }
+    if (item.adv) { patch.nextAdv = (s.nextAdv || 0) + item.adv; txt += ' · +' + item.adv + ' d’avantage au prochain match'; }
+    patch.trainLog = txt;
+    this.buzz([25, 25, 50]);
+    this.setState(patch);
+    if (item.squadXp) this.state.squad.forEach((p) => this.grantPlayerXp(p.id, item.squadXp, item.label));
+    return { ok: true, text: txt };
+  },
+
+  // Les plans tactiques préparés : un plan consommé donne un vrai avantage dans le match
+  // qui suit, et seulement celui-là.
+  plansLeft() { return (this.state.coachInv || {}).plan || 0; },
+
+  usePlan(styleKey) {
+    const s = this.state, inv = Object.assign({}, s.coachInv || {});
+    if (!(inv.plan > 0)) return { ok: false, why: 'Aucun plan tactique en réserve : ça sort du ' + this.THE_PACK().name + ', à la part Objet.' };
+    const S = this.styles();
+    if (!S[styleKey]) return { ok: false, why: 'Style inconnu' };
+    inv.plan--;
+    this.setState({ coachInv: inv, preset: styleKey, tac: Object.assign({}, S[styleKey].tac), mentality: S[styleKey].m,
+      nextAdv: (s.nextAdv || 0) + 2,
+      trainLog: 'Plan tactique préparé : ' + S[styleKey].name + ' · +2 d’avantage au prochain match' });
+    this.buzz([25, 25, 60]);
+    return { ok: true, style: S[styleKey].name };
+  }
+};
+
+// LinkFoot : ce que tes décisions ont fait, en chiffres du match (§1, §22, §47).
+//
+// Le directeur sportif ne touche jamais au ballon. Il compose, place, règle, prépare,
+// équipe, entraîne, et le match se joue tout seul. Le problème, c'est qu'il n'a alors
+// aucun moyen de savoir si ses réglages ont servi à quelque chose : il voit un score,
+// pas une conséquence.
+//
+// Ce fichier répond à une seule question, après le coup de sifflet : qu'est-ce que
+// chacune de tes décisions a produit sur le terrain ?
+//
+// DEUX RÈGLES, pour que ça reste honnête :
+//
+//   1. Une ligne n'apparaît que si tu as VRAIMENT bougé ce réglage. Rien ne s'affiche
+//      pour un curseur laissé au milieu : ce serait du décor (§47).
+//   2. Le chiffre vient du match qui vient d'être joué, jamais d'une estimation et
+//      jamais d'un « sans ça, tu aurais fait X ». On ne rejoue pas la rencontre pour
+//      inventer un contrefactuel : on dit ce qui s'est passé.
+//
+// Les réglages sont figés au coup d'envoi par matchPlan(), parce que certains se
+// consomment pendant la rencontre : un plan tactique préparé ne vaut qu'un match, et
+// l'état d'après ne saurait plus dire qu'il avait été préparé.
+const Impact = {
+  // Les décisions, photographiées avant le coup d'envoi.
+  matchPlan() {
+    const s = this.state, xi = this.pickXI(s.formation);
+    const duty = {};
+    xi.forEach((p) => { const d = s.duties[p.slot] || 'Soutien'; duty[d] = (duty[d] || 0) + 1; });
+    const portees = xi.reduce((a, p) => a + (this.equippedOn ? this.equippedOn(p.id).length : 0), 0);
+    return {
+      formation: s.formation, mentality: s.mentality, preset: s.preset,
+      tac: Object.assign({}, s.tac),
+      adv: s.nextAdv || 0, coh: s.cohBonus || 0,
+      adjoint: this.staffLv('adjoint'), duty, portees,
+      moral: Math.round(xi.reduce((a, p) => a + this.profile(p).morale, 0) / (xi.length || 1)),
+      fraicheur: Math.round(xi.reduce((a, p) => a + (p.fit != null ? p.fit : 100), 0) / (xi.length || 1))
+    };
+  },
+
+  MENTALITES() { return ['Très défensive', 'Défensive', 'Prudente', 'Équilibrée', 'Positive', 'Offensive', 'Très offensive']; },
+
+  // Chaque ligne : quand elle s'affiche, ce qu'elle a décidé, ce que ça a donné.
+  // `m` rassemble les chiffres du match ; `pm` les ramène pour mille ballons joués,
+  // sans quoi deux matchs de volumes différents ne se comparent pas.
+  IMPACT_DEFS() {
+    const n1 = (v) => (Math.round(v * 10) / 10).toString().replace('.', ',');
+    return [
+      { id: 'mentalite',
+        quand: (p) => p.mentality !== 3,
+        titre: (p) => 'Mentalité ' + (this.MENTALITES()[p.mentality] || '').toLowerCase(),
+        mesure: (m) => m.sh + ' frappes tentées, ' + m.advSh + ' concédées' },
+
+      { id: 'formation',
+        quand: (p) => p.formation !== '4-3-3',
+        titre: (p) => 'Formation en ' + p.formation,
+        mesure: (m) => m.advSh + ' tirs concédés, ' + m.tk + ' ballons récupérés' },
+
+      { id: 'style',
+        quand: (p) => p.preset && p.preset !== 'perso' && p.preset !== 'equilibre',
+        titre: (p) => { const st = this.styles()[p.preset]; return 'Style ' + (st ? st.name : p.preset); },
+        mesure: (m) => m.poss + ' % de possession' },
+
+      { id: 'passe',
+        quand: (p) => p.tac.pass !== 1,
+        titre: (p) => (p.tac.pass === 0 ? 'Jeu court imposé' : 'Jeu direct imposé'),
+        mesure: (m) => n1(m.pm('act_pass_long')) + ' longs ballons pour mille, contre '
+          + n1(m.pm('act_pass_pass')) + ' passes au sol' },
+
+      // Pas le nombre de tacles : une équipe qui presse a plus le ballon, donc elle tacle
+      // MOINS, et le rapport aurait dit l'inverse de ce qui s'est passé. Ce qui montre
+      // qu'un pressing a marché, c'est OÙ le ballon a été récupéré.
+      { id: 'pressing',
+        quand: (p) => p.tac.press !== 1 || p.tac.engage !== 1,
+        titre: (p) => (p.tac.press >= 2 ? 'Pressing haut' : p.tac.press === 0 ? 'Bloc en retrait' : 'Pressing réglé'),
+        mesure: (m) => m.recHaut + ' ballons récupérés dans la moitié adverse sur ' + m.rec
+          + ', ' + m.fou + ' fautes' },
+
+      { id: 'ligne',
+        quand: (p) => p.tac.line !== 1,
+        titre: (p) => (p.tac.line === 2 ? 'Ligne défensive haute' : 'Ligne défensive basse'),
+        mesure: (m) => m.advOff + ' hors-jeu provoqués, ' + m.advSh + ' tirs concédés' },
+
+      { id: 'couloirs',
+        quand: (p) => p.tac.cross !== 1 || p.tac.width !== 1,
+        titre: (p) => (p.tac.cross >= 2 ? 'Attaque par les couloirs' : 'Jeu resserré dans l’axe'),
+        mesure: (m) => m.cross + ' centres, ' + m.cor + ' corners' },
+
+      { id: 'consignes',
+        quand: (p) => (p.duty.Attaque || 0) + (p.duty['Défense'] || 0) > 0,
+        titre: (p) => (p.duty.Attaque || 0) + ' en consigne Attaque, ' + (p.duty['Défense'] || 0) + ' en Défense',
+        mesure: (m) => n1(m.pm('boxRcv')) + ' ballons reçus dans la surface pour mille' },
+
+      { id: 'plan',
+        quand: (p) => p.adv > 0,
+        titre: (p) => 'Plan tactique préparé, +' + p.adv + ' d’avantage',
+        mesure: (m) => n1(m.xg) + ' de danger créé (xG), ' + m.on + ' frappes cadrées' },
+
+      { id: 'reunion',
+        quand: (p) => p.coh > 0,
+        titre: (p) => 'Réunion tenue, cohésion +' + Math.round(p.coh * 100) + ' %',
+        mesure: (m) => m.precision + ' % de passes réussies, sur ' + m.pa + ' tentées' },
+
+      { id: 'competences',
+        quand: (p) => p.portees > 0,
+        titre: (p) => p.portees + ' compétence(s) équipée(s) sur le onze',
+        mesure: (m) => m.drib + ' dribbles tentés, ' + m.dribOk + ' réussis, '
+          + m.gestes + ' gestes de haut niveau' },
+
+      { id: 'adjoint',
+        quand: (p) => p.adjoint > 0,
+        titre: (p) => 'Adjoint niveau ' + p.adjoint,
+        mesure: (m) => m.precision + ' % de passes réussies' },
+
+      { id: 'fraicheur',
+        quand: (p) => p.fraicheur < 85,
+        titre: (p) => 'Onze à ' + p.fraicheur + ' % de fraîcheur',
+        mesure: (m) => m.tk + ' ballons récupérés, ' + n1(m.pm('act_shot')) + ' frappes pour mille' },
+
+      { id: 'moral',
+        quand: (p) => p.moral >= 80 || p.moral <= 55,
+        titre: (p) => 'Effectif au moral ' + (p.moral >= 80 ? 'haut' : 'bas') + ' (' + p.moral + ')',
+        mesure: (m) => n1(m.xg) + ' de danger créé (xG)' }
+    ];
+  },
+
+  // Les chiffres du match, rassemblés une fois pour toutes les lignes.
+  impactFigures(mt) {
+    const H = (mt.st && mt.st.H) || {}, A = (mt.st && mt.st.A) || {}, cnt = mt.cnt || {};
+    const dec = cnt.dec || 0;
+    const gestes = [3, 4, 5].reduce((a, t) => a + (cnt['g' + t] || 0), 0);
+    return {
+      sh: H.sh || 0, on: H.on || 0, xg: H.xg || 0, cor: H.cor || 0, fou: H.fou || 0,
+      yc: H.yc || 0, pa: H.pa || 0, pc: H.pc || 0, tk: H.tk || 0,
+      advSh: A.sh || 0, advOff: A.off || 0,
+      poss: mt.poss != null ? mt.poss : (mt.possNow != null ? mt.possNow : 50),
+      cross: cnt.cross || 0, drib: cnt.drib || 0, dribOk: cnt.dribOk || 0, gestes,
+      rec: cnt.rec_H || 0, recHaut: cnt.rec_H_haut || 0,
+      precision: H.pa ? Math.round(H.pc / H.pa * 100) : 0,
+      dec, pm: (k) => (dec ? (cnt[k] || 0) / dec * 1000 : 0)
+    };
+  },
+
+  // Le rapport : une ligne par décision réellement prise, avec ce qu'elle a donné.
+  // Vide si le directeur sportif n'a rien changé : c'est une réponse, pas un remplissage.
+  impactReport(mt) {
+    if (!mt) return [];
+    const plan = mt.plan || this.matchPlan();
+    const m = this.impactFigures(mt);
+    if (!m.dec && !m.sh && !m.pa) return [];        // match pas encore joué : rien à dire
+    return this.IMPACT_DEFS()
+      .filter((d) => { try { return d.quand(plan); } catch (e) { return false; } })
+      .map((d) => ({ id: d.id, titre: d.titre(plan), valeur: d.mesure(m) }));
+  },
+
+  // Une phrase pour l'accueil et le rapport : combien de décisions ont pesé.
+  impactLine(mt) {
+    const n = this.impactReport(mt).length;
+    return n ? n + ' de tes décisions ont pesé sur ce match' : 'Aucun réglage changé : l’équipe a joué par défaut';
+  }
+};
+
+// LinkFoot : classements et calendriers (§72, §75).
+// Le même code sert pour la division solo du directeur sportif, une ligue entre amis,
+// un tournoi ou un classement national : il n'existe qu'un seul système de classement
+// dans tout le jeu (§3).
+//
+// Les règles sont écrites comme des MÉTHODES d'un objet, LeagueRules, pour deux raisons :
+//   - Club les reçoit (Object.assign), et la division solo s'en sert par this.standings ;
+//   - tools/sync-canvas.mjs les recopie dans l'écran Mon Club, qui ne peut rien importer.
+// Aucune n'utilise `this`, et aucune n'appelle une autre : les exports nommés plus bas
+// restent donc de simples fonctions, pour le serveur et les tournois.
+
+const POINTS = { win: 3, draw: 1, loss: 0 };
+
+const LeagueRules = {
+  // Une ligne de classement vierge.
+  emptyRow(id, name) {
+    return { id, name, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 };
+  },
+
+  // Applique un résultat aux deux lignes concernées. Les lignes sont créées si besoin.
+  // Victoire 3 points, nul 1, défaite 0 : les mêmes valeurs que POINTS.
+  applyResult(rows, homeId, awayId, hs, as) {
+    const get = (id) => {
+      let r = rows.find((x) => x.id === id);
+      if (!r) { r = { id, name: String(id), p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }; rows.push(r); }
+      return r;
+    };
+    const H = get(homeId), A = get(awayId);
+    H.p++; A.p++; H.gf += hs; H.ga += as; A.gf += as; A.ga += hs;
+    if (hs > as) { H.w++; A.l++; H.pts += 3; }
+    else if (hs < as) { A.w++; H.l++; A.pts += 3; }
+    else { H.d++; A.d++; H.pts += 1; A.pts += 1; }
+    return rows;
+  },
+
+  // Tri officiel : points, puis différence de buts, puis buts marqués, puis victoires, puis nom.
+  standings(rows) {
+    return rows.slice()
+      .map((r) => Object.assign({}, r, { gd: r.gf - r.ga }))
+      .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || b.w - a.w || String(a.name).localeCompare(String(b.name)))
+      .map((r, i) => Object.assign(r, { rank: i + 1 }));
+  },
+
+  // Calendrier toutes rondes (méthode du cercle). `rounds` = 1 pour aller simple, 2 pour aller-retour.
+  schedule(teamIds, rounds) {
+    const t = teamIds.slice();
+    if (t.length % 2) t.push(null);                 // exempt
+    const n = t.length, half = n / 2, out = [];
+    let arr = t.slice();
+    for (let r = 0; r < (n - 1) * (rounds || 1); r++) {
+      const day = [];
+      for (let i = 0; i < half; i++) {
+        const a = arr[i], b = arr[n - 1 - i];
+        if (a == null || b == null) continue;
+        day.push(r % 2 === 0 ? { home: a, away: b } : { home: b, away: a });
+      }
+      out.push(day);
+      arr = [arr[0]].concat([arr[n - 1]], arr.slice(1, n - 1));   // rotation
+    }
+    return out;
+  },
+
+  // Promotion et relégation d'une division (§72).
+  movements(table, opts) {
+    const o = opts || {};
+    const up = o.up != null ? o.up : 2, down = o.down != null ? o.down : 1;
+    return {
+      promoted: table.slice(0, up).map((r) => r.id),
+      relegated: down ? table.slice(table.length - down).map((r) => r.id) : []
+    };
+  }
+};
+
+const emptyRow = LeagueRules.emptyRow;
+const applyResult = LeagueRules.applyResult;
+const standings = LeagueRules.standings;
+const schedule = LeagueRules.schedule;
+const movements = LeagueRules.movements;
+
+// LinkFoot : la division du directeur sportif (§2 « compétitions », §22 « je progresse
+// dans les divisions »).
+//
+// Avant, le classement de division était un décor : cinq clubs aux bilans figés
+// (3-1-0, 2-1-1…), qui ne jouaient jamais et ne repartaient même pas de zéro à la saison
+// suivante. N'importe quel adversaire comptait pour le championnat, et un match amical
+// faisait avancer la saison.
+//
+// La division est maintenant un vrai championnat de six clubs, tenu avec les règles de
+// classement communes à tout le jeu (league.js, §3) :
+//   - un calendrier toutes rondes de cinq journées : chaque club rencontre chacun des
+//     autres une fois, à domicile ou à l'extérieur ;
+//   - ton match est joué par le moteur ; les deux autres matchs de la journée sont
+//     simulés d'après la note et le style des clubs, avec une graine, donc reproductibles ;
+//   - le classement est calculé, jamais écrit ; les deux premiers montent, le dernier
+//     descend, et la saison suivante repart d'un nouveau calendrier.
+// Seul le match prévu au calendrier compte. Les autres rencontres sont des amicaux.
+const Division = {
+  // Les clubs que l'on peut croiser en division. Tous fictifs. `base` est leur note en
+  // division 4, celle où démarre un club créé en France : autour de la note d'un effectif
+  // de départ (55), pour qu'un nouveau club joue sa division au lieu de la subir.
+  // Chaque division plus haute ajoute 4 points, chaque division plus basse en retire 4.
+  // L'ancienne échelle (62 à 72 en division 4) avait été réglée sur le club de
+  // démonstration : un club neuf perdait tout, 0-5 et 0-8, et restait dernier.
+  CLUBS_DIVISION() {
+    return [
+      { id: 'auteuil', club: 'Auteuil United', base: 57, color: '#2F8FE0', style: 'tiki' },
+      { id: 'kop', club: 'Kop Bleu FC', base: 53, color: '#5CC8FF', style: 'contre' },
+      { id: 'vieuxport', club: 'Olympique Vieux-Port', base: 58, color: '#6FD0F7', style: 'gegen' },
+      { id: 'yoyo', club: 'Sporting Yoyo', base: 54, color: '#F2C66B', style: 'blocbas' },
+      { id: 'canal', club: 'Real Canal FC', base: 50, color: '#FF8A65', style: 'direct' },
+      { id: 'brindille', club: 'Calcio Brindille', base: 55, color: '#1B3FA0', style: 'catenaccio' },
+      { id: 'dynamo', club: 'Dynamo Positif', base: 56, color: '#B98CFF', style: 'posit' },
+      { id: 'fleches', club: 'Flèches du Nord', base: 52, color: '#FF4757', style: 'ailes' },
+      { id: 'duel', club: 'Duel FC', base: 54, color: '#24B463', style: 'homme' },
+      { id: 'phare', club: 'Racing du Phare', base: 51, color: '#E9A93A', style: 'vertical' },
+      { id: 'tilleuls', club: 'AS Tilleuls', base: 52, color: '#43E0C2', style: 'blocmed' },
+      { id: 'meridien', club: 'Méridien SC', base: 55, color: '#C39BFF', style: 'surcharge' }
+    ];
+  },
+
+  DIVISION_RULES() { return { clubs: 6, up: 2, down: 1, top: 1, bottom: 5 }; },
+
+  // Les cinq adversaires d'une division et d'une saison : tirés avec une graine, pour
+  // que la même saison donne toujours la même division.
+  clubsDeDivision(division, saison) {
+    const r = this.seedR(division * 1009 + saison * 131 + 7);
+    const pool = this.CLUBS_DIVISION().slice();
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); const t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+    return pool.slice(0, this.DIVISION_RULES().clubs - 1).map((c) => ({
+      id: c.id, club: c.club, color: c.color, style: c.style,
+      ovr: c.base + (4 - division) * 4 + Math.round((r() - 0.5) * 4)
+    }));
+  },
+
+  // Une division neuve. `deja` : les résultats déjà joués cette saison par le club, quand
+  // une ancienne sauvegarde n'avait pas encore de calendrier (on les rejoue dans l'ordre).
+  nouvelleDivision(division, saison, deja) {
+    const clubs = this.clubsDeDivision(division, saison);
+    const ids = ['moi'].concat(clubs.map((c) => c.id));
+    let lg = { saison, division, clubs, days: this.schedule(ids, 1), day: 0,
+      rows: ids.map((id) => this.emptyRow(id, id === 'moi' ? 'moi' : clubs.find((c) => c.id === id).club)), results: [] };
+    (deja || []).forEach((m) => { lg = this.journeeJouee(lg, m.hs, m.as).league; });
+    return lg;
+  },
+
+  // La division en cours, telle qu'elle est ou telle qu'elle commence. Ne modifie rien :
+  // un écran peut l'appeler à chaque rendu. Une ancienne partie (sans calendrier) reprend
+  // ses résultats de la saison, pour que le classement ne reparte pas de zéro en cours de route.
+  divisionCourante() {
+    const s = this.state, lg = s.league;
+    if (lg && lg.division === s.division && lg.day < lg.days.length) return lg;
+    const rec = s.record || { w: 0, d: 0, l: 0 }, deja = [];
+    if (!lg && (s.seasonP || 0) > 0) {
+      for (let i = 0; i < rec.w; i++) deja.push({ hs: 1, as: 0 });
+      for (let i = 0; i < rec.d; i++) deja.push({ hs: 1, as: 1 });
+      for (let i = 0; i < rec.l; i++) deja.push({ hs: 0, as: 1 });
+    }
+    return this.nouvelleDivision(s.division, s.saison || 1, deja.slice(0, Math.min(deja.length, s.seasonP || 0, 4)));
+  },
+
+  // Le prochain match du club : l'adversaire, la journée, et où il se joue.
+  prochainMatch() {
+    const lg = this.divisionCourante();
+    const m = lg.days[lg.day].find((x) => x.home === 'moi' || x.away === 'moi');
+    const c = lg.clubs.find((x) => x.id === (m.home === 'moi' ? m.away : m.home));
+    const S = this.styles()[c.style] || {};
+    return { day: lg.day + 1, total: lg.days.length, domicile: m.home === 'moi',
+      opp: { id: c.id, club: c.club, ovr: c.ovr, style: c.style, color: c.color, styleName: S.name || c.style,
+        ligue: true, exterieur: m.home !== 'moi' } };
+  },
+
+  // Un adversaire compte pour le championnat seulement s'il est celui du calendrier.
+  estAuCalendrier(opp) {
+    if (!opp || opp.friendly) return false;
+    return this.prochainMatch().opp.club === opp.club;
+  },
+
+  // Les autres matchs de la journée. Le moteur joue le tien ; ceux-là sont simulés d'après
+  // la note et le style : un match complet du moteur prend dix à trente secondes sur un
+  // téléphone, et en jouer deux de plus à chaque journée gèlerait l'application.
+  // Buts selon une loi de Poisson ; l'écart de note et le duel de styles déplacent la
+  // moyenne, le club qui reçoit a un léger avantage. La pente (0,14 but par point de note)
+  // est mesurée sur le moteur : un effectif de départ y marque 3 buts et en encaisse 0,2
+  // contre une équipe de 7 points plus faible, 1,7 contre 1 avec 3 points d'écart. Les
+  // matchs simulés pèsent donc la note autant que les matchs joués.
+  resultatRapide(home, away, graine) {
+    const r = this.seedR(graine);
+    const m = this.matchup(home.style, away.style);
+    const lh = Math.max(0.15, Math.min(4.5, 1.4 + (home.ovr - away.ovr) * 0.14 + m * 0.15 + 0.15));
+    const la = Math.max(0.15, Math.min(4.5, 1.2 + (away.ovr - home.ovr) * 0.14 - m * 0.15));
+    const poisson = (l) => { const L = Math.exp(-l); let k = 0, p = 1; do { k++; p *= r(); } while (p > L && k < 12); return k - 1; };
+    return { hs: poisson(lh), as: poisson(la) };
+  },
+
+  // Une journée jouée : ton résultat (buts du club, buts de l'adversaire), puis les autres
+  // matchs simulés. Fonction pure : elle rend la division suivante sans toucher à l'état.
+  journeeJouee(lg0, buts, encaisses) {
+    const lg = JSON.parse(JSON.stringify(lg0));
+    const day = lg.days[lg.day], clubOf = (id) => lg.clubs.find((c) => c.id === id);
+    day.forEach((m, i) => {
+      let hs, as;
+      if (m.home === 'moi') { hs = buts; as = encaisses; }
+      else if (m.away === 'moi') { hs = encaisses; as = buts; }
+      else ({ hs, as } = this.resultatRapide(clubOf(m.home), clubOf(m.away), lg.saison * 7919 + lg.division * 613 + lg.day * 97 + i * 13 + 1));
+      this.applyResult(lg.rows, m.home, m.away, hs, as);
+      lg.results.push({ day: lg.day + 1, home: m.home, away: m.away, hs, as });
+    });
+    lg.day++;
+    return { league: lg, over: lg.day >= lg.days.length, table: this.table(lg) };
+  },
+
+  // Le classement, dans la forme que les écrans lisaient déjà : un club par ligne, `me`
+  // pour le tien. Calculé avec standings(), la même règle que les ligues en ligne.
+  table(lg0) {
+    const s = this.state, lg = lg0 && lg0.rows ? lg0 : this.divisionCourante();
+    const S = this.styles();
+    return this.standings(lg.rows).map((r) => {
+      const me = r.id === 'moi', c = me ? null : lg.clubs.find((x) => x.id === r.id);
+      return { id: r.id, me, club: me ? (s.clubName || 'FC TonPseudo') : c.club,
+        user: me ? 'Ton club' : ((S[c.style] || {}).name || c.style) + ' · note ' + c.ovr,
+        style: me ? null : c.style, ovr: me ? null : c.ovr,
+        w: r.w, d: r.d, l: r.l, p: r.p, pts: r.pts, gf: r.gf, ga: r.ga, gd: r.gd, rank: r.rank };
+    });
+  },
+
+  // Où en est le club, en une phrase vraie. L'ancienne phrase de l'écran disait « bats-le
+  // pour prendre la tête » même quand le club de devant avait déjà été joué, et « une
+  // victoire et tu remontes » quand il manquait six points. Celle-ci lit le calendrier
+  // et les points qui restent en jeu.
+  situationDivision(lg0) {
+    const lg = lg0 && lg0.rows ? lg0 : this.divisionCourante(), R = this.DIVISION_RULES();
+    const t = this.table(lg), i = t.findIndex((r) => r.me), me = t[i];
+    const reste = lg.days.length - lg.day, enJeu = reste * 3;
+    const pts = (n) => n + ' pt' + (n > 1 ? 's' : '');
+    const rang = (r) => (r.rank === 1 ? '1er' : r.rank + 'e');
+    const ecart = (n) => (n ? 'à ' + pts(n) : 'à égalité de points');
+    const journee = (id) => {
+      for (let d = lg.day; d < lg.days.length; d++) {
+        if (lg.days[d].some((m) => (m.home === 'moi' && m.away === id) || (m.away === 'moi' && m.home === id))) return d + 1;
+      }
+      return 0;
+    };
+    const fin = ' Il reste ' + reste + ' journée' + (reste > 1 ? 's' : '') + ', ' + enJeu + ' points en jeu.';
+    if (!lg.day) return 'Saison ' + lg.saison + ' : ' + lg.days.length + ' journées, chaque club rencontre chacun des autres une fois. Les ' + R.up + ' premiers montent, le dernier descend.';
+    if (!reste) return 'Saison terminée : ' + rang(me) + ' sur ' + t.length + '.';
+    if (i < R.up) {
+      const s = t[R.up];                                    // le premier club hors de la zone de montée
+      return 'Tu es ' + rang(me) + ', dans la zone de montée. ' + s.club + ' (' + rang(s) + ') est ' + ecart(me.pts - s.pts) + ' derrière.'
+        + (journee(s.id) ? ' Tu le joues à la journée ' + journee(s.id) + '.' : '') + fin;
+    }
+    const c = t[R.up - 1], manque = c.pts - me.pts;         // le dernier club de la zone de montée
+    const dernier = R.down && i >= t.length - R.down;
+    if (manque > enJeu) {
+      if (dernier) {
+        const s = t[t.length - R.down - 1];
+        return 'La montée n’est plus possible cette saison. Tu es dernier, et le dernier descend : ' + s.club + ' (' + rang(s) + ') est ' + ecart(s.pts - me.pts) + '.' + fin;
+      }
+      const d = t[t.length - 1];
+      return 'La montée n’est plus possible cette saison (' + pts(manque) + ' à reprendre). Le maintien : ' + d.club + ', dernier, est ' + ecart(me.pts - d.pts) + ' derrière toi.' + fin;
+    }
+    const duel = journee(c.id) ? ' Tu le joues à la journée ' + journee(c.id) + '.' : ' Tu l’as déjà joué : il faut qu’il perde des points ailleurs.';
+    if (dernier) {
+      const s = t[t.length - R.down - 1];
+      return 'Tu es dernier, et le dernier descend : ' + s.club + ' (' + rang(s) + ') est ' + ecart(s.pts - me.pts) + '. La montée est ' + ecart(manque) + ', ' + c.club + ' (' + rang(c) + ').' + fin;
+    }
+    return 'La montée est ' + ecart(manque) + ' : ' + c.club + ' (' + rang(c) + ').' + duel + fin;
+  },
+
+  // Les résultats d'une journée, avec les noms : pour l'écran et pour le journal.
+  resultatsDeJournee(day, lg0) {
+    const s = this.state, lg = lg0 || this.divisionCourante();
+    const nom = (id) => (id === 'moi' ? (s.clubName || 'FC TonPseudo') : lg.clubs.find((c) => c.id === id).club);
+    return lg.results.filter((x) => x.day === day).map((x) => ({ home: nom(x.home), away: nom(x.away), hs: x.hs, as: x.as,
+      moi: x.home === 'moi' || x.away === 'moi' }));
+  }
+};
+
+// LinkFoot : les décisions pendant le match (§2 « remplacements, décisions pendant le
+// match »), écrites une seule fois pour tous les écrans.
+//
+// Le match reste 100 % automatique (§14) : le directeur sportif ne touche jamais un
+// joueur. Il décide depuis le banc, comme un entraîneur : il remplace, il donne une
+// consigne de la voix, il joue une carte de match. L'écran Mon Club le faisait déjà,
+// avec des règles écrites dans l'écran ; l'app téléphone, elle, ne pouvait que regarder
+// la minute défiler. Les règles sont ici, et les deux écrans les appliquent.
+//
+// Trois défauts de l'écran Mon Club ont disparu au passage :
+//   - un remplaçant entrait sans ses compétences, sa forme ni son moral (joueurMoteur) ;
+//   - on pouvait remplacer un joueur expulsé, et l'équipe repassait à onze ;
+//   - un joueur remplacé ne gagnait ni XP ni fatigue, et son but, s'il avait marqué
+//     avant de sortir, n'était crédité à personne.
+const Direct = {
+  REGLES_DIRECT() { return { remplacements: 5 }; },
+
+  // Les consignes de la voix, et ce qu'elles changent vraiment dans le moteur (setTP,
+  // décisions, fautes). L'effet affiché est celui du code, pas une promesse.
+  CRIS() {
+    return [
+      { id: 'encourager', label: 'Encourager', effet: 'Bonus collectif +1,5 : de meilleures décisions partout sur le terrain' },
+      { id: 'exiger', label: 'Exiger plus', effet: 'Pressing plus large, engagement plus haut, jeu plus rapide, tirs plus tentés ; fatigue +8 %' },
+      { id: 'resserrer', label: 'Resserrer le bloc', effet: 'Ligne plus basse, bloc plus court, engagement en retrait' },
+      { id: 'calme', label: 'Garder la tête froide', effet: 'Moins de fautes et de cartons, passes plus sûres sous la pression' }
+    ];
+  },
+
+  // Le joueur qui entre, au poste de celui qui sort. Hors de son poste, il perd des
+  // points, comme au coup d'envoi. Il entre avec l'énergie qu'il a (sa forme physique),
+  // pas avec 100 % d'office : un remplaçant fatigué reste fatigué.
+  entrant(sortant, p) {
+    const pen = this.penalty(p.pos, sortant.line);
+    return Object.assign({}, p, { line: sortant.line, slot: sortant.slot, base: p.ovr, pen, ovr: Math.max(30, p.ovr - pen),
+      energy: p.fit != null ? p.fit : 100, yc: 0, red: false });
+  },
+
+  // Un remplacement est-il possible ? `m` : { xi, banc, faits, done }, le onze tel qu'il
+  // est sur le terrain (énergie, cartons, expulsions lus dans le moteur).
+  remplacementInfo(m, slot, id) {
+    const R = this.REGLES_DIRECT();
+    if (!m || m.done) return { can: false, why: 'Aucun match en cours' };
+    if ((m.faits || 0) >= R.remplacements) return { can: false, why: 'Les ' + R.remplacements + ' changements sont faits' };
+    const out = (m.xi || []).find((p) => p.slot === slot);
+    if (!out) return { can: false, why: 'Poste introuvable' };
+    if (out.red) return { can: false, why: out.name + ' est expulsé : un joueur exclu ne se remplace pas' };
+    if (!(m.banc || []).some((p) => p.id === id)) return { can: false, why: 'Ce joueur n’est pas sur le banc' };
+    return { can: true, why: '' };
+  },
+
+  // Comment un match se termine, pour tous les écrans. Un amical nul se départage aux
+  // tirs au but (§51) : l'écran Mon Club le faisait, l'app téléphone non, et le même
+  // nul rapportait 25 jetons d'un côté, 60 ou 10 de l'autre.
+  issueDuMatch(E, amical) {
+    const f = E.state(), hs = f.score.H, as = f.score.A;
+    let res = hs > as ? 'w' : hs === as ? 'd' : 'l', pso = null;
+    if (amical && res === 'd') { pso = E.shootout(); res = pso.win === 'H' ? 'w' : 'l'; }
+    const reward = (res === 'w' ? 120 : res === 'd' ? 50 : 20) * (amical ? 0.5 : 1);
+    return { f: pso ? E.state() : f, hs, as, res, pso, reward };
+  },
+
+  // Qui a joué, et combien de temps : le onze final (énergie et cartons lus dans le
+  // moteur, minutes pour ceux qui sont entrés), puis les remplacés, avec leur minute de
+  // sortie et leur note à ce moment-là. Les notes suivent le même ordre que les joueurs.
+  joueursDuMatch(xi, f, sortis, entres) {
+    const fin = xi.map((p, i) => Object.assign({}, p,
+      f && f.en ? { energy: f.en[i], yc: f.cards[i][0], red: f.cards[i][1] } : {},
+      entres && entres[p.id] != null ? { min: Math.max(1, 90 - entres[p.id]) } : {}));
+    const out = (sortis || []).map((p) => Object.assign({}, p, { sorti: true }));
+    return { xi: fin.concat(out),
+      rat: f && f.rat ? { H: f.rat.H.concat(out.map((p) => (p.note != null ? p.note : 6))), A: f.rat.A } : null };
+  },
+
+  // Un match qu'on suit et sur lequel on décide. Le moteur avance par tranches ; entre
+  // deux tranches, l'écran peut remplacer, crier une consigne ou jouer une carte.
+  //   avancer(ms)        une tranche de calcul (le match est le même qu'en un bloc
+  //                      tant qu'aucune décision n'est prise)
+  //   lancer()           le match se déroule seul, au rythme choisi, jusqu'au bout
+  //   vitesse(v)         minutes de match par seconde ; Infinity pour le résultat direct
+  //   pause(oui)         le temps s'arrête, les décisions restent possibles
+  //   ecouter(fn)        fn(état) à chaque minute, à chaque décision, et à la fin
+  //   terminer()         joue ce qui reste d'un coup et clôt le match
+  // Il n'y a qu'un match en direct à la fois : il est rangé dans this.enDirect, pour
+  // qu'un écran qui revient le retrouve au lieu d'en lancer un second.
+  matchEnDirect(opp, opts) {
+    const self = this, R = this.REGLES_DIRECT(), ctx = this.ouvrirMatch(opp, opts);   // ouvrirMatch refuse un second match
+    ctx.banc = this.benchOf(ctx.xi).map((p) => Object.assign({}, p, { energy: p.fit != null ? p.fit : 100, yc: 0, red: false }));
+    Object.assign(ctx, { faits: 0, cri: null, decisions: [], sortis: [], entres: {} });
+    let dernier = { done: false, minute: 0, clock: "1'" }, rythme = 3, enPause = false, resultat = null, promesse = null;
+    const ecouteurs = [];
+    const vivant = (f) => ctx.xi.map((p, i) => Object.assign({}, p, f.en ? { energy: f.en[i], yc: f.cards[i][0], red: f.cards[i][1], note: f.rat.H[i] } : {}));
+    const noter = (texte) => { ctx.decisions.push({ minute: dernier.minute, texte }); diffuser(); };
+    const diffuser = () => { const e = api.etat(); ecouteurs.slice().forEach((fn) => fn(e)); };
+    const api = {
+      opp: ctx.opp, amical: ctx.amical,
+      etat() {
+        if (resultat) return { done: true, fini: true, resultat, decisions: ctx.decisions.slice(), opp: ctx.opp, amical: ctx.amical };
+        const f = ctx.E.state();
+        return { done: false, fini: false, opp: ctx.opp, amical: ctx.amical, minute: dernier.minute, clock: dernier.clock,
+          score: [f.score.H, f.score.A], poss: f.poss, tirs: [f.st.H.sh, f.st.A.sh],
+          xi: vivant(f), banc: ctx.banc.slice(), faits: ctx.faits, max: R.remplacements, cri: ctx.cri,
+          cartes: self.MATCH_CARDS().map((c) => Object.assign({}, c, { n: (self.state.inv || {})[c.id] || 0 })),
+          decisions: ctx.decisions.slice(), fil: ctx.E.log.slice(-6).map((l) => ({ text: l.text, k: l.k, s: l.s })),
+          vitesse: rythme, pause: enPause };
+      },
+      avancer(ms) { if (!dernier.done) dernier = ctx.E.runFor(ms || 40); return dernier; },
+      remplacer(slot, id) {
+        const f = ctx.E.state(), xi = vivant(f);
+        const info = self.remplacementInfo({ xi, banc: ctx.banc, faits: ctx.faits, done: dernier.done || !!resultat }, slot, id);
+        if (!info.can) return { ok: false, why: info.why };
+        const i = xi.findIndex((p) => p.slot === slot), sortant = xi[i];
+        const entrant = self.entrant(sortant, ctx.banc.find((p) => p.id === id));
+        ctx.sortis.push(Object.assign({}, sortant, { min: Math.max(1, dernier.minute) }));
+        ctx.E.sub('H', i, self.joueurMoteur(entrant));
+        ctx.xi[i] = entrant; ctx.entres[entrant.id] = dernier.minute;
+        ctx.banc = ctx.banc.filter((p) => p.id !== id); ctx.faits++;
+        self.buzz(25);
+        noter(entrant.name + ' remplace ' + sortant.name + (entrant.pen ? ' (hors poste, −' + entrant.pen + ')' : ''));
+        return { ok: true };
+      },
+      crier(id) {
+        const c = self.CRIS().find((x) => x.id === id);
+        if (!c) return { ok: false, why: 'Consigne inconnue' };
+        if (dernier.done || resultat) return { ok: false, why: 'Le match est fini' };
+        if (ctx.cri === id) return { ok: false, why: 'C’est déjà la consigne en cours' };
+        ctx.E.shout(id); ctx.cri = id;
+        noter('Consigne : ' + c.label);
+        return { ok: true };
+      },
+      carte(id) {
+        const c = self.MATCH_CARDS().find((x) => x.id === id), inv = Object.assign({}, self.state.inv || {});
+        if (!c) return { ok: false, why: 'Carte inconnue' };
+        if (dernier.done || resultat) return { ok: false, why: 'Le match est fini' };
+        if (!(inv[id] > 0)) return { ok: false, why: 'Aucune carte ' + c.label + ' en réserve' };
+        if (!ctx.E.card(id)) return { ok: false, why: 'Le moteur a refusé la carte' };
+        inv[id]--; self.setState({ inv });
+        self.buzz([30, 30, 60]);
+        noter('Carte jouée : ' + c.label);
+        return { ok: true };
+      },
+      vitesse(v) { rythme = v > 0 ? v : 3; diffuser(); },
+      pause(oui) { enPause = !!oui; diffuser(); },
+      ecouter(fn) { ecouteurs.push(fn); return () => { const k = ecouteurs.indexOf(fn); if (k >= 0) ecouteurs.splice(k, 1); }; },
+      terminer() {
+        if (resultat) return resultat;
+        if (!dernier.done) { ctx.E.finish(); dernier = { done: true, minute: 90, clock: 'FIN' }; }
+        self.enDirect = null;
+        resultat = self.cloreMatch(ctx);
+        resultat.decisions = ctx.decisions.slice();
+        diffuser();
+        return resultat;
+      },
+      // Le match se déroule seul. Le rythme se compte en minutes de match par seconde
+      // réelle : à 3, un match dure trente secondes, le temps de voir venir et de décider.
+      lancer() {
+        if (promesse) return promesse;
+        promesse = new Promise((resolve) => {
+          let t = Date.now(), cible = dernier.minute;
+          const tour = () => {
+            if (resultat) { resolve(resultat); return; }
+            const now = Date.now(), dt = Math.min(1, (now - t) / 1000); t = now;
+            if (!enPause) cible = rythme === Infinity ? 999 : cible + dt * rythme;
+            const avant = dernier.minute, limite = Date.now() + 30;
+            while (!dernier.done && dernier.minute < cible && Date.now() < limite) api.avancer(rythme === Infinity ? 30 : 8);
+            if (dernier.done) { resolve(api.terminer()); return; }
+            if (dernier.minute !== avant) diffuser();
+            setTimeout(tour, rythme === Infinity ? 0 : 40);
+          };
+          tour();
+        });
+        return promesse;
+      }
+    };
+    this.enDirect = api;
+    return api;
+  }
+};
+
+// LinkFoot : le journal (§26).
+//
+// Un classement est une liste de nombres. Un journal raconte ce que ces nombres
+// veulent dire : qui monte, qui s'effondre, qui a planté un triplé samedi. Tout ce
+// fichier ne fait que ça : transformer de VRAIS résultats en articles.
+//
+// Rien n'est inventé. Chaque article cite un match, un classement ou un transfert
+// qui a réellement eu lieu. S'il n'y a pas de résultat, il n'y a pas d'article.
+const News = {
+  // Les rubriques, dans l'ordre où le journal les présente.
+  NEWS_SECTIONS() {
+    return [
+      { id: 'une', label: 'À la une' },
+      { id: 'resultats', label: 'Résultats' },
+      { id: 'joueurs', label: 'Joueurs' },
+      { id: 'marche', label: 'Mercato' },
+      { id: 'classement', label: 'Classement' }
+    ];
+  },
+
+  // Construit le journal à partir de ce que le serveur a renvoyé.
+  // `feed` : { matches, ladder, movers, transfers, players }
+  buildNews(feed) {
+    const f = feed || {}, out = [];
+    const when = (t) => {
+      const d = Math.max(0, Date.now() - (t || Date.now()));
+      const h = Math.floor(d / 3600000), m = Math.floor(d / 60000);
+      return h >= 24 ? Math.floor(h / 24) + ' j' : h >= 1 ? h + ' h' : m >= 1 ? m + ' min' : 'à l’instant';
+    };
+
+    // À la une : le match le plus marquant, celui qui a le plus gros écart ou le plus de buts
+    const ms = (f.matches || []).slice();
+    if (ms.length) {
+      const best = ms.slice().sort((a, b) => {
+        const sa = Math.abs(a.score[0] - a.score[1]) * 2 + a.score[0] + a.score[1];
+        const sb = Math.abs(b.score[0] - b.score[1]) * 2 + b.score[0] + b.score[1];
+        return sb - sa;
+      })[0];
+      const gap = Math.abs(best.score[0] - best.score[1]);
+      const win = best.score[0] > best.score[1] ? best.home : best.score[1] > best.score[0] ? best.away : null;
+      out.push({
+        section: 'une', kind: 'match', at: best.at,
+        title: win
+          ? (gap >= 4 ? win + ' passe le rouleau compresseur' : gap >= 2 ? win + ' s’impose nettement' : win + ' arrache la victoire')
+          : 'Rien n’a pu les départager',
+        sub: best.home + ' ' + best.score[0] + ' - ' + best.score[1] + ' ' + best.away,
+        body: win
+          ? (gap >= 4
+            ? win + ' n’a laissé aucune chance à son adversaire et signe la performance de la journée.'
+            : gap >= 2
+              ? win + ' a contrôlé la rencontre de bout en bout.'
+              : 'Un but d’écart, et une fin de match irrespirable.')
+          : 'Les deux clubs se quittent dos à dos, sans trouver la faille.',
+        ago: when(best.at)
+      });
+    }
+
+    // Résultats : tous les matchs, du plus récent au plus ancien
+    ms.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 12).forEach((m) => {
+      out.push({
+        section: 'resultats', kind: 'score', at: m.at,
+        title: m.home + ' ' + m.score[0] + ' - ' + m.score[1] + ' ' + m.away,
+        sub: m.comp || 'Match classé',
+        body: '', ago: when(m.at)
+      });
+    });
+
+    // Joueurs : les hommes du match, et le joueur de la semaine
+    const ps = (f.players || []).slice().sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    if (ps.length) {
+      const star = ps[0];
+      out.push({
+        section: 'joueurs', kind: 'star', at: star.at,
+        title: star.name + ', l’homme de la semaine',
+        sub: star.club + ' · note ' + (star.rating || 0).toFixed(1) + (star.goals ? ' · ' + star.goals + ' but' + (star.goals > 1 ? 's' : '') : ''),
+        body: star.goals >= 3 ? 'Un triplé qui restera.' : star.goals === 2 ? 'Un doublé décisif.' : star.goals === 1 ? 'Un but, et une prestation complète.' : 'Une démonstration sans marquer.',
+        ago: when(star.at)
+      });
+      ps.slice(1, 6).forEach((p) => out.push({
+        section: 'joueurs', kind: 'player', at: p.at,
+        title: p.name, sub: p.club + ' · note ' + (p.rating || 0).toFixed(1) + (p.goals ? ' · ' + p.goals + ' but' + (p.goals > 1 ? 's' : '') : ''),
+        body: '', ago: when(p.at)
+      }));
+    }
+
+    // Mercato : les transferts réels
+    (f.transfers || []).slice(0, 8).forEach((t) => out.push({
+      section: 'marche', kind: 'transfer', at: t.at,
+      title: t.player + ' quitte ' + t.from,
+      sub: t.to + ' · ' + (t.price || 0).toLocaleString('fr-FR') + ' jetons',
+      body: t.price >= 3000 ? 'Un transfert qui fera date.' : '',
+      ago: when(t.at)
+    }));
+
+    // Classement : qui monte, qui descend
+    (f.movers || []).slice(0, 6).forEach((m) => out.push({
+      section: 'classement', kind: 'mover', at: m.at,
+      title: m.club + (m.delta > 0 ? ' grimpe de ' + m.delta + ' place' + (m.delta > 1 ? 's' : '') : ' perd ' + (-m.delta) + ' place' + (m.delta < -1 ? 's' : '')),
+      sub: (m.rank ? m.rank + 'e au classement' : '') + (m.elo ? ' · ' + m.elo + ' points' : ''),
+      body: '', ago: when(m.at)
+    }));
+    const lad = (f.ladder || []).slice(0, 3);
+    if (lad.length) out.push({
+      section: 'classement', kind: 'top', at: Date.now(),
+      title: lad[0].name + ' en tête',
+      sub: lad.map((r, i) => (i + 1) + '. ' + r.name + ' ' + r.elo).join(' · '),
+      body: '', ago: 'maintenant'
+    });
+
+    return out;
+  },
+
+  // Le journal tel que l'écran l'affiche, rubrique par rubrique.
+  newsBySection(feed) {
+    const all = this.buildNews(feed);
+    return this.NEWS_SECTIONS().map((sec) => ({
+      id: sec.id, label: sec.label,
+      items: all.filter((x) => x.section === sec.id),
+      empty: !all.some((x) => x.section === sec.id)
+    }));
+  },
+
+  // Hors ligne, l'écran n'a rien à montrer. Plutôt qu'une page vide, il montre un
+  // EXEMPLE construit depuis les données du club solo, clairement étiqueté comme tel.
+  // Rien n'est inventé : ce sont les vrais résultats et le vrai classement de la
+  // division (§22), et le vrai effectif.
+  demoFeed() {
+    const s = this.state, lg = this.divisionCourante(), tbl = this.table(lg);
+    const now = Date.now();
+    const joues = [];
+    for (let d = lg.day; d >= 1 && joues.length < 6; d--) this.resultatsDeJournee(d, lg).forEach((x) => joues.push(Object.assign({ day: d }, x)));
+    return {
+      demo: true,
+      matches: joues.slice(0, 6).map((x, i) => ({
+        at: now - (i + 1) * 5400000,
+        home: x.home, away: x.away,
+        score: [x.hs, x.as], comp: 'Division ' + s.division + ' · journée ' + x.day
+      })),
+      // les joueurs qui ont joué, avec leur vraie note moyenne et leurs vrais buts (§18)
+      players: s.squad.filter((p) => p.carriere && p.carriere.m).map((p, i) => ({
+        at: now - i * 3600000, name: p.name, club: s.clubName || 'FC TonPseudo',
+        rating: Math.round(p.carriere.n / p.carriere.m * 10) / 10, goals: p.carriere.b
+      })),
+      transfers: [],
+      // le rang avant et après la dernière journée, recalculé depuis les résultats
+      movers: (() => {
+        if (!lg.day) return [];
+        const avant = lg.rows.map((r) => this.emptyRow(r.id, r.name));
+        lg.results.filter((x) => x.day < lg.day).forEach((x) => this.applyResult(avant, x.home, x.away, x.hs, x.as));
+        const r0 = this.standings(avant).find((r) => r.id === 'moi').rank, r1 = tbl.find((c) => c.me).rank;
+        return [{ at: now, club: s.clubName || 'FC TonPseudo', delta: r0 - r1, rank: r1, elo: null }];
+      })(),
+      // pas d'Elo hors ligne : le classement de la division, en points
+      ladder: tbl.map((c, i) => ({ rank: i + 1, id: c.id, name: c.club, elo: c.pts + ' pt' + (c.pts > 1 ? 's' : ''),
+        p: c.p, w: c.w, d: c.d, l: c.l, gf: c.gf, ga: c.ga })),
+      leagues: [], tournaments: []
+    };
+  },
+
+  // Les diapositives de l'écran En ligne : chacune répond à une question du §26.
+  // Hors ligne, elles disent ce qui manque plutôt que de rester vides (§81).
+  onlineSlides(feed) {
+    const f = feed || {}, on = this.isOnline();
+    const none = (what) => on ? 'Rien pour l’instant : ' + what : 'Disponible une fois le mode en ligne branché.';
+    const lad = f.ladder || [];
+    const best = lad.slice(0, 10);
+    const players = (f.players || []).slice().sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 10);
+    return [
+      { id: 'journal', label: 'Le journal', sub: 'Ce qui s’est passé cette semaine',
+        empty: !(f.matches || []).length, emptyWhy: none('aucun match n’a encore été joué en ligne.') },
+      { id: 'ligue', label: 'Ligue en ligne', sub: 'Tes ligues entre amis',
+        empty: !(f.leagues || []).length, emptyWhy: none('crée une ligue et partage son code.') },
+      { id: 'tournoi', label: 'Tournoi', sub: 'Les coupes en cours',
+        empty: !(f.tournaments || []).length, emptyWhy: none('aucun tournoi en cours.') },
+      { id: 'classement', label: 'Classement', sub: 'Le général, tous clubs confondus',
+        empty: !lad.length, emptyWhy: none('le classement se remplit au premier match classé.') },
+      { id: 'equipes', label: 'Meilleures équipes', sub: 'Les dix premiers clubs',
+        empty: !best.length, emptyWhy: none('aucun club classé.') },
+      { id: 'joueurs', label: 'Meilleurs joueurs', sub: 'Les dix meilleures notes de la semaine',
+        empty: !players.length, emptyWhy: none('aucune note enregistrée.') }
+    ];
   }
 };
 
 // LinkFoot : état du club et règles du manager. Aucune dépendance au DOM ni à React.
 // Le même code que l'interface utilise, sorti de la page pour tourner dans une app ou sur un serveur.
+
+
+
+
 
 
 
@@ -2508,34 +4746,75 @@ class Club {
 
   // --- un match complet, sans interface : construit le moteur, le déroule, applique les suites
   playMatch(opp, opts) {
+    const ctx = this.ouvrirMatch(opp, opts);
+    ctx.E.finish();
+    return this.cloreMatch(ctx);
+  }
+
+  // La même chose, mais sans geler l'écran. Un match fait 54 000 pas de calcul : deux
+  // secondes sur un ordinateur, dix à trente sur un téléphone. En une seule boucle,
+  // l'interface est morte pendant tout ce temps et le joueur croit à un plantage.
+  //
+  // La suite des pas est identique à celle de playMatch, donc le match l'est aussi,
+  // au chiffre près. On ne va pas plus vite : on rend la main entre deux paquets.
+  // `avance(minute, horloge)` est appelée au fil de l'eau : la minute pour une jauge,
+  // l'horloge pour l'affichage, parce qu'elle sait écrire « 45+2' » et pas 47'.
+  playMatchAsync(opp, opts, avance) {
+    // `avance` reçoit aussi le match en direct : entre deux paquets, l'écran peut
+    // remplacer, crier une consigne ou jouer une carte (direct.js). Sans décision, le
+    // match est celui de playMatch, au chiffre près.
+    const d = this.matchEnDirect(opp, opts);
+    return new Promise((resolve) => {
+      const paquet = () => {
+        const r = d.avancer((opts && opts.tranche) || 40);
+        if (r.done) { resolve(d.terminer()); return; }
+        if (avance) avance(r.minute, r.clock, d);
+        setTimeout(paquet, 0);
+      };
+      paquet();
+    });
+  }
+
+  // Tout ce qui précède le coup d'envoi.
+  ouvrirMatch(opp, opts) {
+    // un seul match à la fois : un second ouvert pendant le direct compterait la journée deux fois
+    if (this.enDirect) throw new Error('Un match est déjà en cours');
     const s = this.state, o = opts || {};
     const xi = this.pickXI(s.formation).map((p) => Object.assign({}, p, { energy: p.fit != null ? p.fit : 100, yc: 0, red: false }));
     const styles = this.styles(), oppForm = (styles[opp.style] || {}).form || '4-4-2';
     const shapeA = this.baseShape(oppForm, 'A'), rnd = this.seedR(o.seed != null ? o.seed : Date.now() % 100000);
     const oxi = shapeA.map((b, i) => ({ id: 9000 + i, name: 'J' + i, pos: b.line, line: b.line, ovr: Math.round(opp.ovr + (rnd() - 0.5) * 8), energy: 100, yc: 0, red: false }));
     const obench = ['MIL', 'ATT', 'DEF'].map((pos, i) => ({ id: 9500 + i, name: 'B' + i, pos, ovr: Math.round(opp.ovr - 2) }));
+    const plan = this.matchPlan();   // figé AVANT le coup d'envoi : le plan tactique se consomme
+    // §22 seul le match prévu au calendrier compte pour la division ; tout autre match
+    // est un amical, décidé ici, avant le coup d'envoi, et pas à l'arrivée
+    const amical = !!o.friendly || !this.estAuCalendrier(opp);
     const E = makeEngine(Object.assign(this.engineCfg(opp, xi, oxi, obench), { rnd }));
-    E.finish();
-    const f = E.state();
-    const hs = f.score.H, as = f.score.A;
-    const res = hs > as ? 'w' : hs === as ? 'd' : 'l', reward = res === 'w' ? 120 : res === 'd' ? 50 : 20;
-    const logs = E.log.map((l) => ({ m: l.m, text: l.text, k: l.k, s: l.s }));
-    // §19 : qui a marqué, qui a fait la passe. Les quêtes et l'XP des joueurs en dépendent.
-    const scorers = [], assisters = [];
-    logs.filter((l) => l.k === 'G' && l.s === 'H').forEach((l) => {
-      xi.forEach((p) => {
-        if (l.text.indexOf('BUT ! ' + p.name) >= 0) scorers.push(p.id);
-        else if (l.text.indexOf('servi par ' + p.name) >= 0 || l.text.indexOf('sur un centre de ' + p.name) >= 0) assisters.push(p.id);
-      });
-    });
-    const mt = { opp, oxi, bench: this.benchOf(xi), hs, as, st: f.st, rat: f.rat, res, reward, done: true, ended: true,
-      poss: f.poss, scorers, assisters, assists: assisters.length, cnt: f.cnt || {}, log: logs,
-      xi: f.en ? xi.map((p, i) => Object.assign({}, p, { energy: f.en[i], yc: f.cards[i][0], red: f.cards[i][1] })) : xi };
-    const record = Object.assign({}, s.record, { [res]: s.record[res] + 1 });
+    return { E, xi, oxi, opp, plan, amical };
+  }
+
+  // Tout ce qui suit le coup de sifflet final.
+  cloreMatch(ctx) {
+    const { E, xi, oxi, opp, plan, amical } = ctx, s = this.state;
+    // l'issue (avec les tirs au but d'un amical nul, §51) et la prime : direct.js, la
+    // même règle que l'écran Mon Club ; un amical rapporte moitié moins (§22)
+    const { f, hs, as, res, reward, pso } = this.issueDuMatch(E, amical);
+    const logs = E.log.map((l) => (l.k === 'G' ? { m: l.m, text: l.text, k: l.k, s: l.s, by: l.by, as: l.as } : { m: l.m, text: l.text, k: l.k, s: l.s }));
+    // qui a joué : le onze final puis les remplacés, avec leurs minutes
+    const J = this.joueursDuMatch(xi, f, ctx.sortis, ctx.entres);
+    // §19 : qui a marqué, qui a fait la passe, remplacés compris. Les quêtes et l'XP en dépendent.
+    const { scorers, assisters } = this.buteursDuMatch(logs, J.xi);
+    const mt = { opp, oxi, bench: this.benchOf(xi), hs, as, st: f.st, rat: J.rat || f.rat, res, reward, pso, done: true, ended: true, plan, friendly: !!amical,
+      poss: f.poss, scorers, assisters, assists: assisters.length, cnt: f.cnt || {}, log: logs, xi: J.xi };
+    const record = amical ? s.record : Object.assign({}, s.record, { [res]: s.record[res] + 1 });
     const base = Object.assign({}, this.state, { balance: s.balance + reward, record });
     const patch = this.afterMatch(mt, base);
     this.setState(Object.assign({ record }, patch));
-    return { score: [hs, as], res, reward, stats: f.st, cnt: f.cnt || {}, log: mt.log, patch };
+    // poss : la vraie possession, en temps de ballon, pas en nombre de passes.
+    // playVersus la renvoyait déjà ; elle manquait ici, donc rien hors de l'écran ne
+    // pouvait vérifier qu'un style de possession garde effectivement le ballon.
+    return { score: [hs, as], res, reward, pso: pso ? { H: pso.H, A: pso.A } : null, stats: f.st, poss: f.poss, cnt: f.cnt || {}, log: mt.log, patch,
+      amical: !!amical, impact: this.impactReport(mt) };
   }
   rand(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
   seedR(seed) { let x = (seed * 2654435761) % 4294967296; return () => { x = (x * 1664525 + 1013904223) % 4294967296; return x / 4294967296; }; }
@@ -2570,7 +4849,7 @@ class Club {
 }
 
 // §80 : chaque domaine vit dans son fichier et vient se mélanger ici.
-Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs, News);
+Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs, News, Impact, LeagueRules, Division, Direct);
 
 // LinkFoot : sauvegarde. Sérialise l'état du club, le relit, et le range
 // où tu veux : mémoire, navigateur, ou ton serveur.
@@ -2586,7 +4865,12 @@ const PERSIST = [
   'staff', 'stade', 'academy', 'youth', 'inv', 'coach', 'coachMode', 'cohBonus', 'trainDone',
   // directeur sportif : inventaire de compétences, économie encadrée, quêtes, identité du club
   'skillInv', 'nextSkillUid', 'collected', 'seenPlayers', 'shards',
-  'caps', 'ledger', 'quests', 'clubName', 'country', 'created', 'pronos', 'sessions', 'coachInv', 'nextAdv'
+  'caps', 'ledger', 'quests', 'clubName', 'country', 'created', 'pronos', 'sessions', 'coachInv', 'nextAdv',
+  // §17 transferts et finances : un joueur acheté ne revient pas sur le marché au
+  // rechargement, et l'écran Finances garde le bilan du dernier match
+  'market', 'lastFin',
+  // §22 la division : calendrier, résultats et classement de la saison, et la saison d'avant
+  'league', 'saison', 'lastSeason'
 ];
 
 function serialize(club) {
@@ -2714,69 +4998,6 @@ class SaveManager {
     return this;
   }
   stop() { clearTimeout(this._t); if (this._off) { this._off(); this._off = null; } return this; }
-}
-
-// LinkFoot : classements et calendriers (§72, §75).
-// Pure logique, aucune dépendance : le même code sert pour une division solo,
-// une ligue entre amis ou un classement national.
-
-const POINTS = { win: 3, draw: 1, loss: 0 };
-
-// Une ligne de classement vierge.
-function emptyRow(id, name) {
-  return { id, name, p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 };
-}
-
-// Applique un résultat aux deux lignes concernées. Les lignes sont créées si besoin.
-function applyResult(rows, homeId, awayId, hs, as) {
-  const get = (id) => {
-    let r = rows.find((x) => x.id === id);
-    if (!r) { r = emptyRow(id, String(id)); rows.push(r); }
-    return r;
-  };
-  const H = get(homeId), A = get(awayId);
-  H.p++; A.p++; H.gf += hs; H.ga += as; A.gf += as; A.ga += hs;
-  if (hs > as) { H.w++; A.l++; H.pts += POINTS.win; A.pts += POINTS.loss; }
-  else if (hs < as) { A.w++; H.l++; A.pts += POINTS.win; H.pts += POINTS.loss; }
-  else { H.d++; A.d++; H.pts += POINTS.draw; A.pts += POINTS.draw; }
-  return rows;
-}
-
-// Tri officiel : points, puis différence de buts, puis buts marqués, puis victoires, puis nom.
-function standings(rows) {
-  return rows.slice()
-    .map((r) => Object.assign({}, r, { gd: r.gf - r.ga }))
-    .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || b.w - a.w || String(a.name).localeCompare(String(b.name)))
-    .map((r, i) => Object.assign(r, { rank: i + 1 }));
-}
-
-// Calendrier toutes rondes (méthode du cercle). `rounds` = 1 pour aller simple, 2 pour aller-retour.
-function schedule(teamIds, rounds) {
-  const t = teamIds.slice();
-  if (t.length % 2) t.push(null);                 // exempt
-  const n = t.length, half = n / 2, out = [];
-  let arr = t.slice();
-  for (let r = 0; r < (n - 1) * (rounds || 1); r++) {
-    const day = [];
-    for (let i = 0; i < half; i++) {
-      const a = arr[i], b = arr[n - 1 - i];
-      if (a == null || b == null) continue;
-      day.push(r % 2 === 0 ? { home: a, away: b } : { home: b, away: a });
-    }
-    out.push(day);
-    arr = [arr[0]].concat([arr[n - 1]], arr.slice(1, n - 1));   // rotation
-  }
-  return out;
-}
-
-// Promotion et relégation d'une division (§72).
-function movements(table, opts) {
-  const o = opts || {};
-  const up = o.up != null ? o.up : 2, down = o.down != null ? o.down : 1;
-  return {
-    promoted: table.slice(0, up).map((r) => r.id),
-    relegated: down ? table.slice(table.length - down).map((r) => r.id) : []
-  };
 }
 
 // LinkFoot : tournois (§73, §74, §76).
@@ -2917,6 +5138,162 @@ function rewards(T) {
   return { tokens: out, cash: PAYOUTS.enabled ? null : { paid: false, reason: PAYOUTS.reason } };
 }
 
+// LinkFoot : match entre deux vrais clubs (§26, §73, §74).
+//
+// Le moteur est déterministe : à graine égale, le match est identique partout.
+// Le serveur n'a donc pas besoin de stocker un film de match, seulement
+// (club A, club B, graine). Les deux joueurs rejouent la même rencontre chez eux,
+// avec les mêmes buts à la même minute, et personne ne peut la truquer de son côté
+// puisque le score fait foi côté serveur (§29).
+
+
+// L'état minimal d'un club à envoyer au serveur pour qu'il puisse jouer le match.
+// On n'envoie ni le solde, ni l'inventaire, ni le journal : seulement l'équipe.
+function teamSnapshot(club) {
+  const s = club.state;
+  const xi = club.pickXI(s.formation);
+  return {
+    club: s.clubName || 'FC TonPseudo',
+    division: s.division,
+    level: s.level,
+    ovr: Math.round(club.metrics(xi).ovr),
+    formation: s.formation,
+    preset: s.preset,
+    tac: s.tac,
+    mentality: s.mentality,
+    coach: s.coach || null,
+    staffAdjoint: club.staffLv('adjoint'),
+    cohBonus: s.cohBonus || 0,
+    roles: s.roles, duties: s.duties,
+    xi: xi.map((p) => ({
+      id: p.id, name: p.name, pos: p.pos, line: p.line, slot: p.slot, ovr: p.ovr,
+      st: (() => { const o = {}; club.cardStats(p).forEach((q) => { o[q.l] = q.v; }); return o; })(),
+      energy: p.fit != null ? p.fit : 100, form: p.form != null ? p.form : 70, morale: p.morale != null ? p.morale : 72,
+      pen: p.pen || 0, skills: club.skillsOf(p),
+      foot: club.profile(p).foot, wf: club.profile(p).wf
+    })),
+    bench: club.benchOf(xi).slice(0, 5).map((p) => ({
+      id: p.id, name: p.name, pos: p.pos, ovr: p.ovr,
+      st: (() => { const o = {}; club.cardStats(p).forEach((q) => { o[q.l] = q.v; }); return o; })()
+    }))
+  };
+}
+
+// Construit la configuration du moteur depuis deux instantanés d'équipe.
+// Aucune des deux équipes n'est « l'IA » : les deux sont de vrais effectifs.
+// Les réglages par défaut d'une équipe. Une équipe publiée par un client peut arriver
+// incomplète : ancienne version, client bricolé, champ oublié. Sans ces valeurs, le
+// moteur calculait sur `undefined`, les positions devenaient NaN et le serveur
+// répondait 500 — autrement dit, n'importe qui pouvait le faire tomber en publiant une
+// équipe sans tactique (§29). On complète ici, une fois, pour les deux camps.
+function completer(t) {
+  const ref = new Club();
+  const form = t && t.formation && ref.formCoords(t.formation) ? t.formation : '4-3-3';
+  const preset = (t && t.preset) || (t && t.style) || 'equilibre';
+  const style = ref.styles()[preset] || ref.styles().equilibre;
+  const tac = {};
+  Object.keys(style.tac).forEach((k) => {
+    const v = t && t.tac ? t.tac[k] : undefined;
+    tac[k] = Number.isFinite(v) ? v : style.tac[k];
+  });
+  const ment = Number.isFinite(t && t.mentality) ? t.mentality : style.m;
+  return Object.assign({}, t, { formation: form, preset, tac, mentality: ment,
+    roles: (t && t.roles) || {}, duties: (t && t.duties) || {},
+    xi: ((t && t.xi) || []).map((p) => Object.assign({}, p, {
+      ovr: Number.isFinite(p.ovr) ? p.ovr : 60,
+      energy: Number.isFinite(p.energy) ? p.energy : 100,
+      form: Number.isFinite(p.form) ? p.form : 70,
+      morale: Number.isFinite(p.morale) ? p.morale : 72,
+      wf: Number.isFinite(p.wf) ? p.wf : 3
+    })) });
+}
+
+// Ce qu'une équipe publiée doit contenir pour être jouable. Le serveur s'en sert pour
+// refuser à la porte, avec une raison lisible, plutôt que de planter en plein match :
+// un 500 ne dit rien au joueur et laisse le serveur à la merci du premier client
+// bricolé (§29).
+function verifierEquipe(t) {
+  if (!t || typeof t !== 'object') return 'équipe absente';
+  if (!Array.isArray(t.xi) || t.xi.length !== 11) return 'il faut exactement onze joueurs';
+  const LIGNES = ['GB', 'DEF', 'MIL', 'ATT'];
+  for (let i = 0; i < t.xi.length; i++) {
+    const p = t.xi[i];
+    if (!p || typeof p !== 'object') return 'joueur ' + (i + 1) + ' absent';
+    if (!p.name || typeof p.name !== 'string') return 'joueur ' + (i + 1) + ' sans nom';
+    if (LIGNES.indexOf(p.line) < 0) return 'joueur ' + (i + 1) + ' : ligne inconnue';
+    if (!Number.isFinite(p.ovr) || p.ovr < 1 || p.ovr > 99) return 'joueur ' + (i + 1) + ' : note hors limites';
+  }
+  if (t.xi.filter((p) => p.line === 'GB').length !== 1) return 'il faut exactement un gardien';
+  const ref = new Club();
+  if (t.formation && !ref.formCoords(t.formation)) return 'formation inconnue : ' + t.formation;
+  return null;
+}
+
+function versusCfg(home0, away0, seed) {
+  const home = completer(home0), away = completer(away0);
+  const ref = new Club();
+  const coordsFrom = (form) => {
+    const C = ref.formCoords(form), out = [];
+    ['GB', 'DEF', 'MIL', 'ATT'].forEach((l) => (C[l] || []).forEach(([fx, fy]) => out.push({ fx, fy, line: l })));
+    return out;
+  };
+  const adv = ref.matchup(home.preset, away.preset) || 0;
+  const side = (t, isHome, advantage) => ({
+    club: t.club,
+    sbonus: (t.staffAdjoint || 0) * 0.8,
+    coach: ref.COACHES().find((c) => c.id === (t.coach || 'tacticien')),
+    coh: Math.min(1.2, Math.max(0.7, 1 - t.xi.filter((p) => p.pen).length * 0.06 + (t.cohBonus || 0))),
+    tac: t.tac, ment: t.mentality, adv: advantage, home: isHome,
+    coords: coordsFrom(t.formation),
+    players: t.xi.map((p) => ({
+      name: p.name, ovr: p.ovr, st: p.st, energy: p.energy, form: p.form, morale: p.morale,
+      skills: p.skills || [], foot: p.foot, wf: p.wf,
+      role: (t.roles || {})[p.slot] || ref.ROLE_OPTS(p.line, p.slot, t.formation)[0],
+      duty: (t.duties || {})[p.slot] || 'Soutien'
+    })),
+    bench: (t.bench || []).map((p) => ({ name: p.name, ovr: p.ovr, st: p.st }))
+  });
+  return { sides: { H: side(home, true, adv), A: side(away, false, -adv) }, rnd: ref.seedR(seed) };
+}
+
+// Joue la rencontre. Le même appel, avec la même graine, rend exactement le même
+// résultat sur le serveur et chez les deux joueurs.
+function playVersus(home, away, seed, opts) {
+  // Une équipe injouable doit se voir ici, avec son nom et sa raison, pas trois cents
+  // lignes plus bas sous la forme d'un NaN.
+  const eh = verifierEquipe(home), ea = verifierEquipe(away);
+  if (eh) throw new Error('équipe à domicile invalide : ' + eh);
+  if (ea) throw new Error('équipe à l’extérieur invalide : ' + ea);
+  const E = makeEngine(versusCfg(home, away, seed));
+  E.finish();
+  const f = E.state();
+  const hs = f.score.H, as = f.score.A;
+  // §51 : en coupe, une égalité se départage aux tirs au but. La séance est jouée
+  // par le même moteur et la même graine, donc elle se rejoue à l'identique partout.
+  let pso = null;
+  if (opts && opts.shootout && hs === as) {
+    const so = E.shootout();
+    pso = { H: so.H, A: so.A, kicks: so.kicks };
+  }
+  return {
+    seed,
+    home: home.club, away: away.club,
+    score: [hs, as], pso,
+    res: hs > as ? 'h' : hs < as ? 'a' : pso ? (pso.H > pso.A ? 'h' : 'a') : 'd',
+    st: f.st, rat: f.rat, poss: f.poss,
+    log: E.log.map((l) => ({ m: l.m, text: l.text, k: l.k, s: l.s }))
+  };
+}
+
+// Vérifie qu'un résultat annoncé par un client correspond bien au match joué (§29).
+// C'est ce qui empêche quelqu'un d'envoyer « j'ai gagné 9-0 » depuis sa console.
+function verifyResult(home, away, seed, claimed) {
+  const real = playVersus(home, away, seed);
+  const ok = !!claimed && real.score[0] === claimed[0] && real.score[1] === claimed[1];
+  return { ok, real: real.score, claimed: claimed || null };
+}
+
 root.LinkFoot = { makeEngine, Club, INITIAL_STATE, serialize, deserialize, SAVE_VERSION, MemoryStore, LocalStore, HttpStore, SaveManager,
-  standings, schedule, applyResult, emptyRow, movements, createTournament, pendingMatches, reportResult, finalRanking, rewards, PAYOUTS };
+  standings, schedule, applyResult, emptyRow, movements, createTournament, pendingMatches, reportResult, finalRanking, rewards, PAYOUTS,
+  teamSnapshot, versusCfg, playVersus, verifyResult };
 })(typeof window !== 'undefined' ? window : globalThis);

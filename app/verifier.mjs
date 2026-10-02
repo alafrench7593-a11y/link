@@ -127,6 +127,69 @@ t('et le club n’est pas recréé : le même effectif qu’avant de fermer', !!
   effectif + ' joueurs avant, ' + ((c.match(/(\d+) joueurs/) || [])[1]) + ' après');
 t('aucune erreur dans la console sur tout le parcours', !erreurs.length, erreurs[0] || '');
 
+// §2 « composition » : le onze se choisit poste par poste, dans l'effectif.
+console.log('\n§2 La composition se choisit');
+// cliquer sur le premier texte qui CONTIENT `v` (une ligne de liste, dont le Pressable reçoit le clic)
+const toucheContient = (pg, v) => pg.evaluate((x) => {
+  const e = [...document.querySelectorAll('*')].find((y) => !y.children.length && y.textContent.includes(x));
+  if (!e) return false; e.click(); return true;
+}, v);
+erreurs.length = 0;
+await touche(p2, 'Effectif');
+await p2.waitForTimeout(700);
+t('l’effectif montre le onze, automatique au départ', /LE ONZE · 4-3-3 · AUTOMATIQUE/.test(await lit(p2)));
+await touche(p2, 'GB');
+await p2.waitForTimeout(500);
+t('toucher un poste ouvre le choix du joueur', /QUI JOUE À LA PLACE DE/.test(await lit(p2)));
+await toucheContient(p2, '· remplaçant');
+await p2.waitForTimeout(600);
+t('le joueur choisi entre dans le onze, et l’écran le dit', /CHOISI PAR TOI/.test(await lit(p2)), erreurs[0] || '');
+
+// §2 « remplacements, décisions pendant le match » : le match du calendrier, en direct.
+console.log('\n§2 Pendant le match, le directeur sportif décide');
+await touche(p2, 'Match');
+await p2.waitForTimeout(600);
+await touche(p2, 'Jouer');
+await p2.waitForTimeout(1200);
+let vu = await lit(p2);
+t('le match se joue en direct', /CHAMPIONNAT · EN DIRECT/.test(vu), (vu.match(/EN DIRECT · ([^ ]+)/) || [])[1]);
+await touche(p2, 'Pause');
+await p2.waitForTimeout(400);
+const m1 = ((await lit(p2)).match(/EN DIRECT · (\d+)/) || [])[1];
+await p2.waitForTimeout(1200);
+const m2 = ((await lit(p2)).match(/EN DIRECT · (\d+)/) || [])[1];
+t('la pause arrête le temps', !!m1 && m1 === m2, m1 + "' puis " + m2 + "'");
+await touche(p2, 'Exiger plus');
+await p2.waitForTimeout(400);
+t('une consigne de la voix s’applique, et son effet est écrit', /Exiger plus : Pressing plus large/.test(await lit(p2)));
+await touche(p2, 'ATT');
+await p2.waitForTimeout(400);
+const ok1 = await p2.evaluate(() => {
+  const e = [...document.querySelectorAll('*')].find((y) => !y.children.length && /^Qui remplace /.test(y.textContent));
+  const ligne = e && e.parentElement && e.parentElement.children[1];
+  if (!ligne) return false; ligne.click(); return true;
+});
+await p2.waitForTimeout(500);
+vu = await lit(p2);
+t('un remplacement se fait depuis le banc', ok1 && /CHANGEMENTS · 1 \/ 5/.test(vu) && /Toi : .+ remplace /.test(vu), (vu.match(/Toi : [^']+/) || [])[0]);
+await touche(p2, 'Reprendre');
+await touche(p2, 'Résultat direct');
+for (let i = 0; i < 40 && !/TES DÉCISIONS/.test(await lit(p2)); i++) await p2.waitForTimeout(500);
+vu = await lit(p2);
+t('le match va au bout, et le résultat rappelle tes décisions', /CHAMPIONNAT/.test(vu) && /TES DÉCISIONS/.test(vu) && /remplace/.test(vu) && /Consigne : Exiger plus/.test(vu));
+await touche(p2, 'Le classement');
+await p2.waitForTimeout(800);
+vu = await lit(p2);
+t('§22 la journée est jouée pour toute la division', /JOURNÉE 1 · RÉSULTATS/.test(vu) && /Journée 2 sur 5|journée 2 sur 5/.test(vu), (vu.match(/[Jj]ournée \d sur 5/) || [])[0]);
+t('aucune erreur dans la console pendant le match', !erreurs.length, erreurs[0] || '');
+await p2.close();
+
+const p3 = await ouvre();
+await touche(p3, 'Accueil');
+await p3.waitForTimeout(500);
+t('au lancement suivant, la division a avancé : le prochain match est la journée 2', /Journée 2\/5 contre/.test(await lit(p3)));
+await p3.close();
+
 await b.close();
 srv.close();
 console.log('\n' + (ko ? 'ÉCHECS : ' + ko + ' sur ' + (ok + ko) : 'OK : ' + ok + ' vérifications, l’app tourne comme un joueur la verrait'));

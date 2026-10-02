@@ -122,26 +122,37 @@ export const News = {
 
   // Hors ligne, l'écran n'a rien à montrer. Plutôt qu'une page vide, il montre un
   // EXEMPLE construit depuis les données du club solo, clairement étiqueté comme tel.
-  // Rien n'est inventé : c'est le vrai classement de division et le vrai effectif.
+  // Rien n'est inventé : ce sont les vrais résultats et le vrai classement de la
+  // division (§22), et le vrai effectif.
   demoFeed() {
-    const s = this.state, tbl = this.table(s.record);
-    const xi = this.pickXI(s.formation);
+    const s = this.state, lg = this.divisionCourante(), tbl = this.table(lg);
     const now = Date.now();
+    const joues = [];
+    for (let d = lg.day; d >= 1 && joues.length < 6; d--) this.resultatsDeJournee(d, lg).forEach((x) => joues.push(Object.assign({ day: d }, x)));
     return {
       demo: true,
-      matches: tbl.slice(0, 4).map((c, i) => ({
+      matches: joues.slice(0, 6).map((x, i) => ({
         at: now - (i + 1) * 5400000,
-        home: c.club, away: tbl[(i + 1) % tbl.length].club,
-        score: [c.w % 4, c.l % 3], comp: 'Division ' + s.division
+        home: x.home, away: x.away,
+        score: [x.hs, x.as], comp: 'Division ' + s.division + ' · journée ' + x.day
       })),
-      players: xi.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 8).map((p, i) => ({
+      // les joueurs qui ont joué, avec leur vraie note moyenne et leurs vrais buts (§18)
+      players: s.squad.filter((p) => p.carriere && p.carriere.m).map((p, i) => ({
         at: now - i * 3600000, name: p.name, club: s.clubName || 'FC TonPseudo',
-        rating: Math.min(9.4, 6.2 + (p.ovr - 55) / 12), goals: i === 0 ? 2 : i < 3 ? 1 : 0
+        rating: Math.round(p.carriere.n / p.carriere.m * 10) / 10, goals: p.carriere.b
       })),
       transfers: [],
-      movers: [{ at: now, club: s.clubName || 'FC TonPseudo', delta: 2, rank: 3, elo: 1000 + s.level * 6 }],
-      ladder: tbl.map((c, i) => ({ rank: i + 1, id: c.user, name: c.club, elo: 1100 - i * 27,
-        p: c.w + c.d + c.l, w: c.w, d: c.d, l: c.l, gf: c.w * 2 + c.d, ga: c.l * 2 + c.d })),
+      // le rang avant et après la dernière journée, recalculé depuis les résultats
+      movers: (() => {
+        if (!lg.day) return [];
+        const avant = lg.rows.map((r) => this.emptyRow(r.id, r.name));
+        lg.results.filter((x) => x.day < lg.day).forEach((x) => this.applyResult(avant, x.home, x.away, x.hs, x.as));
+        const r0 = this.standings(avant).find((r) => r.id === 'moi').rank, r1 = tbl.find((c) => c.me).rank;
+        return [{ at: now, club: s.clubName || 'FC TonPseudo', delta: r0 - r1, rank: r1, elo: null }];
+      })(),
+      // pas d'Elo hors ligne : le classement de la division, en points
+      ladder: tbl.map((c, i) => ({ rank: i + 1, id: c.id, name: c.club, elo: c.pts + ' pt' + (c.pts > 1 ? 's' : ''),
+        p: c.p, w: c.w, d: c.d, l: c.l, gf: c.gf, ga: c.ga })),
       leagues: [], tournaments: []
     };
   },
