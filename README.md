@@ -746,11 +746,11 @@ en intégration continue avant de toucher au moteur.
 - Un match prend environ 1,5 seconde en simulation complète sur un poste de bureau.
   Pour simuler une saison entière côté serveur, mets les matchs en file plutôt que
   de bloquer une requête.
-- À note égale, un effectif athlétique crée environ deux fois le danger d'un effectif
-  technique (`test/coherence.js` le mesure). Resserrer la vitesse de pointe a été essayé
-  à trois réglages (pente 0,024, 0,030 et 0,032 par point au lieu de 0,045) : l'écart
-  tombe entre 1 et 1,8 selon le réglage, mais chacun casse quatre ou cinq leviers de
-  `test/leviers.js`, toujours les mêmes (la fraîcheur physique et la compétence de
-  finisseur ne font plus frapper davantage). La vitesse est donc restée telle quelle. La
-  correction est à chercher du côté de la note des cartes, qui sous-pèse la vitesse, et
-  à mesurer sur des séries plus longues que douze matchs.
+- À note égale, un effectif athlétique crée 1,7 fois le danger d'un effectif technique,
+  pour un écart de points faible (29 contre 27 sur 36 ; `test/coherence.js`). Resserrer la
+  vitesse de pointe a été essayé à trois réglages (pente 0,024, 0,030 et 0,032 par point
+  au lieu de 0,045) : aux deux plus serrés, le rapport tombe vers 1 à 1,3, mais chacun des
+  trois casse quatre ou cinq leviers de `test/leviers.js`, dont toujours ces deux-là : une
+  équipe fraîche ne garde plus mieux le ballon, et la compétence de finisseur ne fait plus
+  frapper davantage. La vitesse est donc restée telle quelle. La correction est à chercher du côté de la note des cartes, qui
+  sous-pèse la vitesse, et à mesurer sur des séries plus longues que douze matchs.
