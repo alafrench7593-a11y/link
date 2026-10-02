@@ -1,5 +1,6 @@
 #include "LFCore/LFDocument.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace lf
@@ -59,6 +60,16 @@ namespace lf
 		std::string texteDe(const json::Valeur& objet, std::string_view cle)
 		{
 			return objet.texteOu(cle, "");
+		}
+
+		OptionDecision lireOptionDecision(const json::Valeur& o)
+		{
+			OptionDecision r;
+			r.k = texteDe(o, "k");
+			r.genre = texteDe(o, "genre");
+			r.vers = entierOu(o, "vers", -1);
+			r.ev = o.nombreOu("ev", 0.0);
+			return r;
 		}
 
 		// Les champs plats d'un objet, rangés par genre : c'est ainsi que se lisent les
@@ -396,6 +407,68 @@ namespace lf
 		return f && f->aMoteur && f->moteur.vitesseMax > 0.0 ? f->moteur.vitesseMax : 9.0;
 	}
 
+	const Decision* DocumentMatch::derniereDecision(int code, double t, double fenetreS) const
+	{
+		// la première décision après t, puis on remonte jusqu'à une décision de ce joueur
+		auto it = std::upper_bound(decisions.begin(), decisions.end(), t + 1e-9, [](double v, const Decision& d) { return v < d.t; });
+		while (it != decisions.begin())
+		{
+			--it;
+			if (t - it->t > fenetreS + 1e-9)
+			{
+				return nullptr;
+			}
+			if (it->code == code)
+			{
+				return &*it;
+			}
+		}
+		return nullptr;
+	}
+
+	std::string texteOption(const OptionDecision& o)
+	{
+		struct Mot
+		{
+			std::string_view cle, texte;
+		};
+		static constexpr Mot kGenres[] = {
+			{ "pass:pass", "passe" }, { "pass:through", "passe en profondeur" }, { "pass:space", "passe dans l'espace" },
+			{ "pass:long", "passe longue" }, { "pass:switch", "renversement" },
+			{ "carry:goal", "conduite vers le but" }, { "carry:fwd", "conduite vers l'avant" }, { "carry:in", "conduite vers l'axe" },
+			{ "carry:line", "conduite le long de la ligne" }, { "carry:side", "conduite de côté" },
+			{ "cross:near", "centre au premier poteau" }, { "cross:far", "centre au second poteau" },
+			{ "cross:spot", "centre au point de penalty" }, { "cross:six", "centre dans les six mètres" } };
+		static constexpr Mot kGestes[] = {
+			{ "pass", "passe" }, { "shot", "frappe" }, { "carry", "conduite" }, { "cross", "centre" }, { "hold", "garder le ballon" }, { "clear", "dégagement" } };
+		std::string texte = o.k;
+		const std::string cle = o.k + ":" + o.genre;
+		bool trouve = false;
+		for (const Mot& m : kGenres)
+		{
+			if (m.cle == cle)
+			{
+				texte = std::string(m.texte);
+				trouve = true;
+			}
+		}
+		if (!trouve)
+		{
+			for (const Mot& m : kGestes)
+			{
+				if (m.cle == o.k)
+				{
+					texte = std::string(m.texte);
+				}
+			}
+		}
+		if (o.k == "pass" && o.vers >= 0)
+		{
+			texte += " vers #" + std::to_string(o.vers);
+		}
+		return texte;
+	}
+
 	EmpreinteImages::EmpreinteImages(std::uint32_t nombreDeLignes)
 		: h1_(0xdeadbeefu ^ nombreDeLignes)
 		, h2_(0x41c6ce57u ^ nombreDeLignes)
@@ -685,6 +758,45 @@ namespace lf
 				e.genre = texteDe(o, "k");
 				e.texte = texteDe(o, "text");
 				doc.evenements.push_back(std::move(e));
+			}
+		}
+		if (const json::Valeur* ds = racine.champ("decisions"); ds && ds->genre == json::Genre::Tableau)
+		{
+			doc.decisions.reserve(ds->elements.size());
+			for (const json::Valeur& o : ds->elements)
+			{
+				if (!o.estObjet())
+				{
+					continue;
+				}
+				Decision d;
+				d.t = o.nombreOu("t", 0.0);
+				d.code = static_cast<int>(o.nombreOu("c", -1.0));
+				d.rang = static_cast<int>(o.nombreOu("rang", 0.0));
+				d.bascule = o.booleenOu("bascule", false);
+				if (const json::Valeur* ch = o.champ("choix"); ch && ch->estObjet())
+				{
+					d.choix = lireOptionDecision(*ch);
+				}
+				if (const json::Valeur* as2 = o.champ("autres"); as2 && as2->genre == json::Genre::Tableau)
+				{
+					for (const json::Valeur& a : as2->elements)
+					{
+						if (a.estObjet())
+						{
+							d.autres.push_back(lireOptionDecision(a));
+						}
+					}
+				}
+				if (d.code < 0 || d.code >= kJoueurs)
+				{
+					return erreurDocument("une décision désigne le code " + std::to_string(d.code));
+				}
+				if (!doc.decisions.empty() && d.t < doc.decisions.back().t - 1e-9)
+				{
+					return erreurDocument("des décisions hors de l'ordre du temps");
+				}
+				doc.decisions.push_back(std::move(d));
 			}
 		}
 		if (const json::Valeur* res = racine.champ("resultat"); res && res->estObjet())

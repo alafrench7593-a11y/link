@@ -148,9 +148,21 @@ joueurs [ ... ]                     la feuille de match (3.5)
 images { champs, donnees }          dix images par seconde (3.6)
 actions [ ... ]                     ce que chaque joueur fait (3.7)
 evenements [ ... ]                  buts, cartons, clameur, gestes, commentaire (3.8)
+decisions [ ... ]                   mode débogage seulement : les délibérations du moteur (ci-dessous)
 resultat { score, tirs_au_but, possession, stats, notes, journal }
 empreinte                           l'empreinte des images et des actions
 ```
+
+En mode débogage (`{ debug: true }`), `decisions` donne, à chaque décision d'un porteur, ce
+qu'il a choisi et ce qu'il a écarté (§71 du cahier) : `{ t, c, choix, rang, autres, bascule }`.
+`choix` et chacune des trois meilleures `autres` sont `{ k, genre, vers, ev }` : le geste (`pass`,
+`shot`, `carry`, `cross`, `hold`, `clear`), son genre (passe en profondeur, conduite vers le but,
+centre au premier poteau...), le receveur d'une passe, et l'espérance que le moteur lui donnait,
+sans unité, comparable seulement à la même décision. `rang` : 0 si le joueur a pris l'option qu'il
+jugeait la meilleure (il se trompe parfois, selon sa lecture du jeu). `bascule` : sans sa
+compétence, il aurait préféré autre chose. Un observateur, sans effet sur le match ; un match
+entier en compte environ 3 500 (770 Ko). Chaque passe, frappe, centre ou dégagement choisi
+correspond à l'action du même joueur au même instant (`test/passerelle.js`, et le cœur C++).
 
 Ordre de grandeur, un match entier : 36 000 à 42 000 images, environ 2 400 actions, 22 Mo de
 JSON, 7 Mo compressé, 4 à 5 secondes de calcul. Un format binaire viendra si la taille gêne ;
@@ -269,7 +281,7 @@ et ce qui existe :
 | `ULFActionComponent` : le geste, Motion Warping vers le point de contact | le contact dans `ULFAnimInstanceFootballeur` (`LFContact` : instant, genre, surface, pied, point) ; IK du pied vers le point plutôt que Motion Warping, qui modifie le root motion qu'un personnage consomme pour se déplacer et ne déplacerait donc pas un acteur posé par le moteur (déduit de la documentation, à vérifier) | C++ écrit ; gestes : captures de football |
 | `ALFBall` | `ALFBallon` | écrit |
 | `ULFGoalkeeperComponent`, `ALFCameraDirector`, `ALFCrowd`, `ULFAudio` | | phases 3 et 4 |
-| `ULFDebugOverlay` (§54) | `ALFHUDDebug` | écrit ; les délibérations du moteur ne sont pas exportées (audit, section 3) |
+| `ULFDebugOverlay` (§54) | `ALFHUDDebug` | écrit, délibérations du moteur comprises (mode débogage, 3.4) |
 | `ULFSyncChecker` (§55 côté rendu) | `ULFComposantControle` et `LFDetecteurs` : écart au moteur, pieds, mouvements impossibles, famille d'animation, contact pied-ballon | écrit ; collisions de capsules : à écrire |
 
 Ce que chaque donnée pilote :
@@ -397,5 +409,5 @@ Mesuré, à reprendre dans le moteur (`docs/ue5/audit.md`, section 3) : à 60 im
 20 346 à-coups au-dessus de 14 m/s² sur 1 463 minutes-joueur (3 886 après le lissage du rendu) ;
 un ballon qui suit son porteur sans touches ; un contrôle raté repris au pas suivant 350 fois sur
 390 ; 44 % des frappes du pied faible, le côté du terrain décidant du pied ; des vols aériens
-jusqu'à 9,4 g ; des frappes en une touche jusqu'à 1,7 m du corps ; les délibérations du moteur
-absentes du document.
+jusqu'à 9,4 g ; des frappes en une touche jusqu'à 1,7 m du corps. Les délibérations du moteur
+manquaient au document : elles y sont en mode débogage (3.4).

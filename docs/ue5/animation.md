@@ -148,7 +148,7 @@ Un pied qui va au point du moteur touche donc le ballon qu'on voit.
 
 Hors d'Unreal, à chaque modification (et en intégration continue) :
 
-- `unreal/tests-coeur` : 88 vérifications du cœur sur trois vrais matchs et les seize scènes ;
+- `unreal/tests-coeur` : 96 vérifications du cœur sur trois vrais matchs (le premier aussi en mode débogage) et les seize scènes ;
 - `python3 unreal/verif-syntaxe/verifier.py` : la couche Unreal contre les déclarations relevées
   dans la référence 5.8 (syntaxe seulement).
 

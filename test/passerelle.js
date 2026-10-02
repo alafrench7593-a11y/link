@@ -96,6 +96,31 @@ tete('Le format décrit dans docs/passerelle-ue5.md');
   t('une frappe dit tout ce que le rendu doit jouer : départ, arrivée, durée, variante, issue', tir && ['x0', 'y0', 'x1', 'y1', 'dur', 'apex', 'variante', 'issue'].every((k) => k in tir), JSON.stringify(tir).slice(0, 140));
 }
 
+tete('§71 en mode débogage, les délibérations du moteur');
+{
+  const dec = D1.decisions || [];
+  t('chaque décision d’un porteur est dans le document, avec ce qu’il a écarté', dec.length > 1000 && dec.every((x) => x.choix && typeof x.choix.ev === 'number' && Array.isArray(x.autres) && x.rang >= 0),
+    dec.length + ' décisions, ' + dec.filter((x) => x.rang === 0).length + ' au premier rang de ses options');
+  let trie = true; for (let i = 1; i < dec.length; i++) if (dec[i].t < dec[i - 1].t) trie = false;
+  t('   dans l’ordre du temps', trie);
+  // une passe, une frappe, un centre, un dégagement choisis se jouent au même instant
+  const actionsA = new Map();
+  D1.actions.forEach((a) => { const k = a.c + ':' + Math.round(a.t * 10); if (!actionsA.has(k)) actionsA.set(k, []); actionsA.get(k).push(a.a); });
+  const attendu = { pass: 'passe', cross: 'passe', shot: 'tir', clear: 'degagement' };
+  const jouees = dec.filter((x) => attendu[x.choix.k]);
+  const justes = jouees.filter((x) => (actionsA.get(x.c + ':' + Math.round(x.t * 10)) || []).some((a) => a === attendu[x.choix.k] || (x.choix.k === 'clear' && a === 'passe')));
+  t('   chaque passe, frappe, centre ou dégagement choisi est joué au même instant', jouees.length > 500 && justes.length === jouees.length, justes.length + ' sur ' + jouees.length);
+  // et réciproquement : une passe ou une frappe en jeu (hors coup de pied arrêté, hors frappe
+  // de la phase du ballon, qui porte t0) vient d'une décision
+  const decA = new Set(dec.map((x) => x.c + ':' + Math.round(x.t * 10)));
+  const enJeu = D1.actions.filter((a) => (a.a === 'passe' || a.a === 'tir') && !a.cpa && a.t0 == null);
+  t('   et chaque passe ou frappe en jeu vient d’une décision', enJeu.length > 500 && enJeu.every((a) => decA.has(a.c + ':' + Math.round(a.t * 10))),
+    enJeu.filter((a) => decA.has(a.c + ':' + Math.round(a.t * 10))).length + ' sur ' + enJeu.length);
+  const sans = club().matchPont(ADV, { seed: 77 });
+  t('sans le mode débogage, le document n’en porte pas ; avec, le match est le même', sans.document.decisions === undefined
+    && JSON.stringify([sans.resultat.score, sans.resultat.stats, sans.resultat.poss, sans.resultat.log]) === JSON.stringify([R1.score, R1.stats, R1.poss, R1.log]));
+}
+
 tete('§36 une carte, un joueur, un personnage');
 {
   const c = club(), H = D1.joueurs.filter((j) => j.camp === 'H');

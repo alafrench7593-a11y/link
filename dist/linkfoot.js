@@ -5962,16 +5962,48 @@ const Passerelle = {
     return doc;
   },
 
+  // §71 Une délibération du moteur : ce que le porteur a choisi, à quel rang de ses options
+  // (0 : la meilleure à ses yeux ; il se trompe parfois, selon sa lecture du jeu), et les
+  // trois meilleures qu'il a écartées. bascule : sans sa compétence, il aurait préféré autre
+  // chose (le même calcul que le compteur bascule_ du moteur). Les espérances sont celles du
+  // moteur, sans unité : elles se comparent entre elles, à la même décision.
+  decisionPont(W, p, ch, opts) {
+    const r5 = (v) => Math.round(v * 1e5) / 1e5;
+    const option = (x) => {
+      const o = { k: x.k, ev: r5(x.ev) };
+      const genre = x.k === 'pass' ? (x.kind === 'pass' && x.aerial ? 'long' : x.kind) : x.k === 'carry' ? x.label : x.k === 'cross' ? x.nm : null;
+      if (genre) o.genre = genre;
+      if (x.k === 'pass' && x.q) o.vers = x.q.code;
+      return o;
+    };
+    const d = { t: Math.round(W.t * 10) / 10, c: p.code, choix: option(ch), rang: opts.indexOf(ch), autres: opts.filter((x) => x !== ch).slice(0, 3).map(option) };
+    if (opts.some((x) => x.sans !== undefined)) {
+      let sansB = null, sansEv = -Infinity;
+      for (const x of opts) { const v = x.sans === null ? -Infinity : x.sans !== undefined ? x.sans : x.ev; if (v > sansEv) { sansEv = v; sansB = x; } }
+      if (sansB !== opts[0]) d.bascule = true;
+    }
+    return d;
+  },
+
   // Jouer un match en gardant tout ce que la passerelle transmet. C'est le vrai match :
   // résultat, XP, finances et division s'appliquent comme avec playMatch, au chiffre près.
+  // En mode débogage (debug), le document porte en plus les cibles de l'IA à chaque image
+  // et les délibérations du moteur à chaque décision (§71) : un observateur, sans effet
+  // sur le match.
   matchPont(opp, opts) {
     const o = Object.assign({}, opts, { pont: true });
+    const decisions = o.debug ? [] : null;
+    if (decisions) {
+      const autre = typeof o.dbg === 'function' ? o.dbg : null;
+      o.dbg = (W, p, ch, opts2) => { decisions.push(this.decisionPont(W, p, ch, opts2)); if (autre) autre(W, p, ch, opts2); };
+    }
     const ctx = this.ouvrirMatch(opp, o);
     // la feuille de match se lit au coup d'envoi : c'est là que chaque code porte son titulaire
     ctx.feuille = this.feuillePont(ctx);
     ctx.E.capture(1e9);
     ctx.E.finish();
     const doc = this.documentPont(ctx, o);
+    if (decisions) doc.decisions = decisions;
     const resultat = this.cloreMatch(ctx);
     const st = ctx.E.state();
     doc.resultat = { score: resultat.score, tirs_au_but: resultat.pso, possession: resultat.poss, stats: resultat.stats,

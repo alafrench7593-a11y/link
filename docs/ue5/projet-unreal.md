@@ -65,7 +65,7 @@ du débogage, sauf le module de jeu qui assemble tout.
 | Fichier | Contenu |
 | --- | --- |
 | `LFJson` | un lecteur JSON strict (sans dépendance) |
-| `LFDocument` | le document `linkfoot-match` v1 : feuille de match, images, actions, événements, résultat, scène ; refuse un document qui ment (version, ordre du temps, empreinte) |
+| `LFDocument` | le document `linkfoot-match` v1 : feuille de match, images, actions, événements, résultat, scène, délibérations du moteur (mode débogage) ; refuse un document qui ment (version, ordre du temps, empreinte) |
 | `LFRepere` | le repère du moteur vers celui d'Unreal, au bit près de `src/passerelle.js` ; le rayon du ballon |
 | `LFCinematique` | la position, la vitesse, l'accélération et l'orientation de chaque joueur à n'importe quel instant (courbe qui passe par chaque image du moteur, lissage borné à 25 cm) ; le ballon, par la formule même de chaque vol |
 | `LFTrajectoire` | la trajectoire de Motion Matching : le vrai passé, le vrai futur |
@@ -89,7 +89,7 @@ du débogage, sauf le module de jeu qui assemble tout.
 | `ULFAnimInstanceFootballeur` | Player | la classe parente des Animation Blueprint (docs/ue5/animation.md) |
 | `ULFDefinitionsPersonnages` | Player | un Data Asset : un maillage par morphotype, la classe d'animation |
 | `ULFComposantControle` | Debug | les détecteurs, sur les os de chaque image |
-| `ALFHUDDebug` | Debug | étiquettes au-dessus des joueurs et panneau du §71 |
+| `ALFHUDDebug` | Debug | étiquettes au-dessus des joueurs et panneau du §71, dernière décision comprise |
 | `ALFModeDeJeu` | LinkFoot | pion spectateur, HUD de débogage |
 | `ALFDirecteurMatch` | LinkFoot | posé dans un niveau : charge, fait entrer les joueurs (le seul joueur mis en avant au palier 1), avance l'horloge, ralenti, boucle |
 | tests `LinkFoot.*` | LinkFoot | scènes, repère, trajectoire, état du match |

@@ -54,8 +54,8 @@ unreal/LinkFoot   LinkFootCore (C++20 sans Unreal) → LinkFootMatch → LinkFoo
 | Club et manager | `src/club.js` et 25 modules | cartes, raretés, packs, compétences, entraînement, transferts, divisions, quêtes | en service |
 | Rendus | `src/stade3d.js`, `app/src/terrain.js`, canvas | 2D, 3D three.js (téléphone et web), direct | en service ; ils ne décident rien |
 | Serveur | `server/`, `api/` | rejoue chaque match en ligne par sa graine, fait autorité | en service |
-| Passerelle | `src/passerelle.js` | le document du match : feuille, 10 images par seconde, actions datées, événements, résultat, empreintes | 47 vérifications (`test/passerelle.js`) |
-| Cœur C++ | `unreal/LinkFoot/Source/LinkFootCore` | lecture, repère, cinématique, trajectoire de Motion Matching, regard, contacts, état du match, statistiques, morphotypes, détecteurs, scènes | compilé ici (g++ et clang, avertissements en erreurs) ; 82 vérifications |
+| Passerelle | `src/passerelle.js` | le document du match : feuille, 10 images par seconde, actions datées, événements, résultat, empreintes, délibérations en mode débogage | 52 vérifications (`test/passerelle.js`) |
+| Cœur C++ | `unreal/LinkFoot/Source/LinkFootCore` | lecture, repère, cinématique, trajectoire de Motion Matching, regard, contacts, état du match, statistiques, morphotypes, détecteurs, délibérations, scènes | compilé ici (g++ et clang, avertissements en erreurs) ; 96 vérifications |
 | Couche Unreal | `unreal/LinkFoot/Source/LinkFoot*` | sous-système du match, ballon, footballeur, instance d'animation, contrôle, HUD de débogage, directeur, tests d'automatisation | écrite ; **pas compilée par Unreal** (section 8) |
 | Scènes de test | `unreal/LinkFoot/Content/LinkFoot/Scenes` | les 16 scènes du §76, tirées de vrais matchs | extraites par `tools/scenes-ue5.mjs`, vérifiées par le cœur |
 
@@ -91,10 +91,12 @@ le moteur, puisque c'est lui qui fait autorité.
 | 5 | Un vol aérien n'obéit pas à la pesanteur | 78 vols sur 168 au-delà de 1,5 g, jusqu'à 9,4 g (déviations de la tête) | ballon qui monte et retombe trop vite | `kick()` (sommet et durée indépendants) |
 | 6 | Une passe en une touche part jusqu'à 1,7 m du joueur | 6 frappes au sol sur 2 961 au-delà de 1,2 m | le pied n'atteint pas le ballon | `arrive()` accepte la réception à 1,7 m |
 | 7 | Le placement du gardien ignore son attribut PLA | hors de l'angle 13 à 22 % du temps (passerelle, §9) | §28 un mauvais gardien doit être mal placé | `gkTarget()` |
-| 8 | Le moteur ne transmet pas ses délibérations | panneau « décision » du §71 vide | on ne peut pas montrer pourquoi il a passé | `decide()` |
-| 9 | Pas de blessure pendant le match ; la taille ne pèse pas dans les duels aériens | | §64, §44 | moteur, phase 6 |
-| 10 | Le pressing change le comportement, presque pas le résultat | 0,58 joueur au pressing (bas) contre 2,67 (très intense), 0,10 contre 0,74 dans la moitié adverse ; ballons récupérés dans la moitié adverse : 279 contre 297 sur 24 matchs | un réglage que le manager ne voit pas payer | le pressing de `targets()`, les duels |
-| 11 | Le Tueur en permanence agit à peine | 4 ou 5 décisions basculées vers la frappe en 12 matchs. Renforcé seul (poids × 1,33), il en fait basculer 32 à 44 mais l'xG de l'équipe a baissé sur 36 matchs (36,6 → 32,3) : il faut aussi qu'il finisse mieux | une carte presque cosmétique (§13) | `decide()`, la frappe |
+| 8 | Pas de blessure pendant le match ; la taille ne pèse pas dans les duels aériens | | §64, §44 | moteur, phase 6 |
+| 9 | Le pressing change le comportement, presque pas le résultat | 0,58 joueur au pressing (bas) contre 2,67 (très intense), 0,10 contre 0,74 dans la moitié adverse ; ballons récupérés dans la moitié adverse : 279 contre 297 sur 24 matchs | un réglage que le manager ne voit pas payer | le pressing de `targets()`, les duels |
+| 10 | Le Tueur en permanence agit à peine | 4 ou 5 décisions basculées vers la frappe en 12 matchs. Renforcé seul (poids × 1,33), il en fait basculer 32 à 44 mais l'xG de l'équipe a baissé sur 36 matchs (36,6 → 32,3) : il faut aussi qu'il finisse mieux | une carte presque cosmétique (§13) | `decide()`, la frappe |
+
+Ajouté, sans effet sur le match : les délibérations du moteur (mode débogage), pour le panneau
+« décision » du §71 : l'option choisie, son rang, les options écartées et leur espérance.
 
 Corrigé pendant ce travail, et protégé par un test : le coup d'envoi à vingt-deux dans le rond, les
 tireurs téléportés ou qui bondissent au ballon, la touche jouée balle au pied, la tête qui repartait
@@ -102,7 +104,7 @@ du sol, l'instant des réceptions (daté un pas trop tôt : le ballon était enc
 d'un titulaire remplacé (elle portait les attributs de son remplaçant), la hauteur du point de
 frappe dans le lecteur C++.
 
-Les corrections qui changent le jeu (points 1 à 7, 10, 11) doivent passer par les tests
+Les corrections qui changent le jeu (points 1 à 7, 9, 10) doivent passer par les tests
 d'équilibre. Ceux qui jugeaient sur des résultats trop bruités pour six ou douze matchs (le
 pressing, le Tueur, le Perforateur) vérifient maintenant ce que font les joueurs : combien
 pressent et où, et les décisions qu'une compétence a fait basculer (le moteur compare, au même

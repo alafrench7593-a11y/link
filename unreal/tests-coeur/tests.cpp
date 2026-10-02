@@ -1279,6 +1279,99 @@ namespace
 			"corrélation " + nombre(correlation(accelerations, explosivites), 3));
 	}
 
+	// ------------------------------------------------------------------ §71 les délibérations
+	void testsDecisions(const lf::DocumentMatch& debug, const lf::DocumentMatch& normal, const std::string& texteDebug)
+	{
+		titre("§71 Les délibérations du moteur (mode débogage) : ce que le porteur a choisi, et ce qu'il a écarté");
+		const std::vector<lf::Decision>& D = debug.decisions;
+		bool ordre = true, codes = true;
+		int rang0 = 0, bascules = 0;
+		for (std::size_t i = 0; i < D.size(); ++i)
+		{
+			ordre = ordre && (i == 0 || D[i].t >= D[i - 1].t);
+			codes = codes && D[i].code >= 0 && D[i].code < lf::kJoueurs && !D[i].choix.k.empty();
+			rang0 += D[i].rang == 0 ? 1 : 0;
+			bascules += D[i].bascule ? 1 : 0;
+		}
+		verifier("chaque décision se lit, dans l'ordre du temps, avec son choix et ses options écartées", D.size() > 1000 && ordre && codes,
+			std::to_string(D.size()) + " décisions, " + std::to_string(rang0) + " au premier rang des options du joueur");
+		verifier("sans le mode débogage, aucune", normal.decisions.empty());
+		// le choix se joue au même instant : une passe, une frappe, un centre, un dégagement
+		std::map<std::pair<int, long>, std::vector<lf::TypeAction>> actions;
+		for (const lf::Action& a : debug.actions)
+		{
+			actions[{ a.code, std::lround(a.t * 10.0) }].push_back(a.type);
+		}
+		int jouees = 0, justes = 0;
+		for (const lf::Decision& d : D)
+		{
+			lf::TypeAction attendue = lf::TypeAction::Inconnue;
+			if (d.choix.k == "pass" || d.choix.k == "cross")
+			{
+				attendue = lf::TypeAction::Passe;
+			}
+			else if (d.choix.k == "shot")
+			{
+				attendue = lf::TypeAction::Tir;
+			}
+			else if (d.choix.k == "clear")
+			{
+				attendue = lf::TypeAction::Degagement;
+			}
+			if (attendue == lf::TypeAction::Inconnue)
+			{
+				continue;
+			}
+			++jouees;
+			const auto it = actions.find({ d.code, std::lround(d.t * 10.0) });
+			bool trouve = false;
+			if (it != actions.end())
+			{
+				for (lf::TypeAction t : it->second)
+				{
+					trouve = trouve || t == attendue || (attendue == lf::TypeAction::Degagement && t == lf::TypeAction::Passe);
+				}
+			}
+			justes += trouve ? 1 : 0;
+		}
+		verifier("chaque passe, frappe, centre ou dégagement choisi est joué au même instant", jouees > 500 && justes == jouees,
+			std::to_string(justes) + " sur " + std::to_string(jouees));
+		// le panneau du §71 retrouve la décision qui a lancé chaque passe ou frappe en jeu
+		int enJeu = 0, retrouvees = 0;
+		for (const lf::Action& a : debug.actions)
+		{
+			if ((a.type != lf::TypeAction::Passe && a.type != lf::TypeAction::Tir) || a.texte("cpa") || a.aNombre("t0"))
+			{
+				continue;
+			}
+			++enJeu;
+			const lf::Decision* d = debug.derniereDecision(a.code, a.t);
+			retrouvees += d && std::fabs(d->t - a.t) < 1e-6 ? 1 : 0;
+		}
+		verifier("derniereDecision retrouve, à l'instant de chaque passe ou frappe en jeu, la décision qui l'a lancée", enJeu > 500 && retrouvees == enJeu,
+			std::to_string(retrouvees) + " sur " + std::to_string(enJeu));
+		verifier("hors de la fenêtre (3 s), pas de décision", !debug.derniereDecision(D.front().code, D.front().t - 0.05) && !debug.derniereDecision(D.back().code, D.back().t + 3.5));
+		lf::OptionDecision o;
+		o.k = "pass";
+		o.genre = "through";
+		o.vers = 9;
+		lf::OptionDecision f;
+		f.k = "shot";
+		verifier("l'option en mots pour le panneau", lf::texteOption(o) == "passe en profondeur vers #9" && lf::texteOption(f) == "frappe", lf::texteOption(o));
+		constat("décisions que la compétence d'un joueur a fait basculer, dans ce match", std::to_string(bascules));
+		// un document dont les décisions remontent le temps ment : il est refusé
+		std::string faux = texteDebug;
+		const std::size_t p = faux.find("\"decisions\":[{\"t\":");
+		bool refuse = false;
+		if (p != std::string::npos)
+		{
+			faux.insert(p + std::string("\"decisions\":[").size(), "{\"t\":99999,\"c\":0,\"choix\":{\"k\":\"hold\",\"ev\":0},\"rang\":0,\"autres\":[]},");
+			lf::DocumentMatch d2;
+			refuse = !lf::chargerDocument(faux, d2).ok;
+		}
+		verifier("des décisions hors de l'ordre du temps : document refusé", refuse);
+	}
+
 	// ------------------------------------------------------------------ §76 les scènes
 	void testsScenes(const std::filesystem::path& dossier)
 	{
@@ -1297,7 +1390,7 @@ namespace
 			}
 		}
 		std::sort(fichiers.begin(), fichiers.end());
-		int lues = 0, avecCibles = 0;
+		int lues = 0, avecCibles = 0, avecDecisions = 0;
 		for (const auto& p : fichiers)
 		{
 			auto ch = charger(p);
@@ -1308,12 +1401,14 @@ namespace
 			}
 			++lues;
 			avecCibles += ch->doc.cibles.size() == ch->doc.images.size() * static_cast<std::size_t>(lf::kChampsCibles) ? 1 : 0;
+			avecDecisions += ch->doc.decisions.empty() ? 0 : 1;
 			const lf::Cinematique c(ch->doc);
 			const lf::VerdictScene v = lf::verifierScene(ch->doc, c);
 			verifier(std::to_string(ch->doc.scene.numero) + ". " + ch->doc.scene.titre, v.ok, v.detail);
 		}
 		verifier("les seize scènes sont là", lues == 16, std::to_string(lues) + " scènes");
 		verifier("§71 chaque scène porte la cible que l'IA du moteur donne à chaque joueur, image par image", avecCibles == lues);
+		verifier("§71 et les délibérations du moteur dans sa fenêtre", avecDecisions == lues, std::to_string(avecDecisions) + " scènes sur " + std::to_string(lues));
 	}
 }
 
@@ -1375,6 +1470,17 @@ int main(int argc, char** argv)
 		testsContact(trois);
 		testsDetecteurContact(trois);
 		testsCorps(trois);
+	}
+	const std::string texteDebug = lireFichier(fixtures / "match-77-debug.json");
+	lf::DocumentMatch debug;
+	const lf::ResultatChargement rd = lf::chargerDocument(texteDebug, debug);
+	if (!rd.ok)
+	{
+		verifier("le match en mode débogage se lit", false, rd.erreur);
+	}
+	else
+	{
+		testsDecisions(debug, match->doc, texteDebug);
 	}
 	if (argc >= 3)
 	{

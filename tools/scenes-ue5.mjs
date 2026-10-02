@@ -48,7 +48,8 @@ const REGLAGES = {
 const matchs = new Map();
 function match(reglage, graine) {
   const cle = reglage + ':' + graine;
-  // debug : les scènes portent aussi la cible que l'IA du moteur donne à chaque joueur (§71, TargetPosition)
+  // debug : les scènes portent aussi la cible que l'IA du moteur donne à chaque joueur (§71, TargetPosition),
+  // et ses délibérations à chaque décision du porteur
   if (!matchs.has(cle)) matchs.set(cle, { reglage, graine, doc: nouveauClub(REGLAGES[reglage]).matchPont(ADV, { seed: graine, debug: true }).document });
   return matchs.get(cle);
 }
@@ -113,10 +114,12 @@ function decouper(m, def) {
   // les remplacements d'avant la fenêtre restent : ils disent qui porte quel code
   const actions = doc.actions.filter((a) => (a.t >= t0 - 1e-9 && a.t <= t1 + 1e-9) || (a.a === 'remplacement' && a.t < t0));
   const evenements = doc.evenements.filter((e) => e.t >= t0 - 1e-9 && e.t <= t1 + 1e-9);
+  // §71 les délibérations du moteur dans la fenêtre (le match est joué en mode débogage)
+  const decisions = (doc.decisions || []).filter((d) => d.t >= t0 - 1e-9 && d.t <= t1 + 1e-9);
   const c = new Club();
   const scene = Object.assign({}, doc, {
     match: Object.assign({}, doc.match, { debut: donnees[0][0] / 10, fin: donnees[donnees.length - 1][0] / 10 }),
-    images: { champs: doc.images.champs, donnees }, actions, evenements, resultat: undefined
+    images: { champs: doc.images.champs, donnees }, actions, evenements, decisions, resultat: undefined
   });
   delete scene.resultat;
   scene.empreinte = String(c.empreintePont(JSON.stringify([donnees, actions])));

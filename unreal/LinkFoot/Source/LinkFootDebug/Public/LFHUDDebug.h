@@ -4,10 +4,10 @@
 // footballeur : son numéro, ce que le moteur lui fait faire, l'animation que l'écran montre, et
 // les alertes en rouge. Pour le joueur suivi, le panneau du §71 : identifiants (code, carte,
 // personnage), position, vitesse, accélération, orientation, cible donnée par l'IA du moteur,
-// action attendue, animation jouée, compétences, rôle, fatigue, forme, moral, prochain contact.
-//
-// Le panneau « décision » du §71 (option choisie, raison, probabilité) n'y est pas : le moteur
-// ne transmet pas encore ses délibérations (docs/ue5/audit.md, systèmes manquants).
+// action attendue, animation jouée, compétences, rôle, fatigue, forme, moral, prochain contact,
+// et sa dernière décision : l'option choisie, son rang, les options écartées avec l'espérance
+// que le moteur leur donnait, et si sa compétence a fait basculer le choix. Ces délibérations
+// ne sont dans le document qu'en mode débogage (les scènes de test les portent).
 #pragma once
 
 #include "CoreMinimal.h"

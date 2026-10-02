@@ -257,6 +257,31 @@ namespace lf
 		int buts = 0;
 	};
 
+	// §71 Une option pesée par le moteur à une décision du porteur (mode débogage).
+	struct OptionDecision
+	{
+		std::string k;			// pass, shot, carry, cross, hold, clear
+		std::string genre;		// passe : pass, through, space, long, switch ; conduite : goal, fwd, in, line, side ; centre : near, far, spot, six
+		int vers = -1;			// passe : le code du receveur
+		double ev = 0.0;		// l'espérance du moteur, sans unité : elle se compare à la même décision
+	};
+
+	// §71 Une délibération : ce que le porteur a choisi, son rang parmi ses options (0 : la
+	// meilleure à ses yeux ; il se trompe parfois, selon sa lecture du jeu), les meilleures
+	// qu'il a écartées, et si sa compétence a fait basculer le choix.
+	struct Decision
+	{
+		double t = 0.0;
+		int code = -1;
+		OptionDecision choix;
+		int rang = 0;
+		bool bascule = false;
+		std::vector<OptionDecision> autres;
+	};
+
+	// L'option en mots, pour le panneau du §71 (UTF-8) : « passe en profondeur vers #9 ».
+	LFCORE_API std::string texteOption(const OptionDecision& o);
+
 	// Un remplacement : à partir de t, le code est porté par une autre fiche (un remplaçant).
 	struct Remplacement
 	{
@@ -281,6 +306,7 @@ namespace lf
 		std::vector<float> cibles;			// kChampsCibles par image en mode débogage, vide sinon
 		std::vector<Action> actions;		// dans l'ordre du moteur (temps croissant)
 		std::vector<Evenement> evenements;
+		std::vector<Decision> decisions;	// mode débogage : les délibérations du moteur, dans l'ordre du temps
 		std::vector<Remplacement> remplacements;
 		std::string empreinte;				// cyrb53 du texte (calculée par le moteur)
 		std::string empreinteImages;		// cyrb53 des entiers des images (vérifiée à la lecture)
@@ -302,6 +328,9 @@ namespace lf
 		// La dernière image dont le temps est ≤ t (-1 avant la première).
 		int indexImageA(double t) const;
 		double vitesseMax(int code, double t) const;	// celle du moteur, 9 m/s sans attributs
+		// La dernière décision de ce joueur à l'instant t ou avant, si elle date de moins de
+		// fenetreS secondes ; nullptr sinon (ou sans mode débogage).
+		const Decision* derniereDecision(int code, double t, double fenetreS = 3.0) const;
 	};
 
 	struct ResultatChargement

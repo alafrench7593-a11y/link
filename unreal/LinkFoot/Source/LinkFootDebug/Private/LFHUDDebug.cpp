@@ -139,6 +139,30 @@ void ALFHUDDebug::Panneau(const ALFFootballeur& J, float X, float Y)
 		}
 	}
 
+	// §71 sa dernière décision (mode débogage) : ce qu'il a choisi, et ce qu'il a écarté
+	if (const lf::Decision* Delib = Doc.derniereDecision(J.Code, J.TempsMoteur(), 3.0))
+	{
+		FString Choix = ULFMatchSubsystem::Texte(lf::texteOption(Delib->choix)) + FString::Printf(TEXT(" %.3f"), Delib->choix.ev);
+		if (Delib->rang > 0)
+		{
+			Choix += FString::Printf(TEXT(" (%de option)"), Delib->rang + 1);
+		}
+		if (Delib->bascule)
+		{
+			Choix += TexteHUD(" : sa compétence a fait basculer le choix");
+		}
+		Ligne(FString::Printf(TEXT("%s, il y a %.1f s : %s"), *TexteHUD("décision"), J.TempsMoteur() - Delib->t, *Choix), X, Y, kBlanc);
+		FString Ecartees;
+		for (const lf::OptionDecision& O : Delib->autres)
+		{
+			Ecartees += (Ecartees.IsEmpty() ? TEXT("") : TEXT(" ; ")) + ULFMatchSubsystem::Texte(lf::texteOption(O)) + FString::Printf(TEXT(" %.3f"), O.ev);
+		}
+		if (!Ecartees.IsEmpty())
+		{
+			Ligne(TexteHUD("écartées : ") + Ecartees, X, Y, kGris);
+		}
+	}
+
 	// §71 l'action, l'animation, la compétence, la tactique
 	if (const ULFAnimInstanceFootballeur* Anim = Cast<ULFAnimInstanceFootballeur>(J.GetMesh()->GetAnimInstance()))
 	{

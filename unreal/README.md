@@ -8,7 +8,7 @@ tout ; Unreal le montre (pourquoi : `docs/ue5/audit.md`). Le projet et ses modul
 
 | Partie | État |
 | --- | --- |
-| Cœur C++ (`LinkFootCore`) | écrit, **compilé et testé ici** : 88 vérifications sur trois vrais matchs et les seize scènes (`tests-coeur`) |
+| Cœur C++ (`LinkFootCore`) | écrit, **compilé et testé ici** : 96 vérifications sur trois vrais matchs (le premier aussi en mode débogage) et les seize scènes (`tests-coeur`) |
 | Couche Unreal (4 modules, 15 fichiers .cpp) | écrite, **jamais compilée par Unreal** : ce dépôt n'a pas d'Unreal. Vérifiée en syntaxe contre les déclarations relevées dans la référence 5.8 (`verif-syntaxe`), y compris la compilation « unity » |
 | Scènes de test (§76) | 16 scènes tirées de vrais matchs, dans `LinkFoot/Content/LinkFoot/Scenes` |
 | Assets (Animation Blueprint, bases Pose Search, IK Rig, Blueprints, niveau) | **aucun** : ils se créent dans l'éditeur (ci-dessous) |

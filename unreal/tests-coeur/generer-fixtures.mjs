@@ -13,6 +13,7 @@
 //   press-haut.json       le même match, pressing à fond (press 2)
 //   match-78.json, match-79.json  deux autres matchs (autres adversaires) : les statistiques
 //                         recalculées par le cœur doivent être celles du moteur sur chacun
+//   match-77-debug.json   le match 77 en mode débogage : cibles de l'IA et délibérations (§71)
 import { Club } from '../../src/club.js';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -73,5 +74,6 @@ writeFileSync(join(dossier, 'press-haut.json'), JSON.stringify(club(tac({ press:
 
 writeFileSync(join(dossier, 'match-78.json'), JSON.stringify(club().matchPont({ club: 'Rival', ovr: 70, style: 'pressing' }, { seed: 78 }).document));
 writeFileSync(join(dossier, 'match-79.json'), JSON.stringify(club().matchPont({ club: 'Costauds', ovr: 75, style: 'direct' }, { seed: 79 }).document));
+writeFileSync(join(dossier, 'match-77-debug.json'), JSON.stringify(club().matchPont(ADV, { seed: 77, debug: true }).document));
 
 console.log('fixtures écrites dans ' + dossier + ' en ' + ((Date.now() - t0) / 1000).toFixed(1) + ' s');
