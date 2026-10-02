@@ -8,7 +8,10 @@
 #include "LFFootballeur.h"
 #include "LFMatchSubsystem.h"
 
+#include "LFCore/LFDetecteurs.h"
 #include "LFCore/LFDocument.h"
+
+#include <string>
 
 ALFDirecteurMatch::ALFDirecteurMatch()
 {
@@ -125,6 +128,7 @@ void ALFDirecteurMatch::Tick(float DeltaSeconds)
 	M->Avancer(DeltaSeconds);
 	if (M->Temps() >= M->Fin() - 1e-6)
 	{
+		JugerQualite();
 		if (bBoucler)
 		{
 			Recommencer();
@@ -134,6 +138,50 @@ void ALFDirecteurMatch::Tick(float DeltaSeconds)
 			bEnLecture = false;
 		}
 	}
+}
+
+ELFVerdictQualite ALFDirecteurMatch::JugerQualite()
+{
+	lf::BilanQualite Total;
+	int32 Controles = 0;
+	for (ALFFootballeur* J : Footballeurs)
+	{
+		if (ULFComposantControle* Controle = J ? J->FindComponentByClass<ULFComposantControle>() : nullptr)
+		{
+			Total += Controle->Bilan();
+			Controle->DebuterBilan();
+			++Controles;
+		}
+	}
+	if (Controles == 0)
+	{
+		bQualiteJugee = false;
+		RaisonsQualite = ULFMatchSubsystem::Texte("aucun contrôle posé (bControles) : la qualité ne peut pas être jugée");
+		UE_LOG(LogTemp, Warning, TEXT("LinkFoot : %s"), *RaisonsQualite);
+		return VerdictQualite;
+	}
+	const lf::ResultatQualite R = lf::porteQualite(Total);
+	bQualiteJugee = true;
+	++BouclesJugees;
+	VerdictQualite = static_cast<ELFVerdictQualite>(static_cast<uint8>(R.verdict));
+	RaisonsQualite = ULFMatchSubsystem::Texte(R.raisons);
+	const std::string Detail = std::string("porte de qualité : ") + lf::nomVerdictQualite(R.verdict) + " (boucle " + std::to_string(BouclesJugees) + ", "
+		+ std::to_string(Controles) + " contrôle(s), " + std::to_string(Total.contactsJuges) + " contact(s) jugé(s))"
+		+ (R.raisons.empty() ? std::string() : " : " + R.raisons);
+	const FString Message = ULFMatchSubsystem::Texte(Detail);
+	switch (R.verdict)
+	{
+	case lf::VerdictQualite::Valide:
+		UE_LOG(LogTemp, Log, TEXT("LinkFoot : %s"), *Message);
+		break;
+	case lf::VerdictQualite::AReprendre:
+		UE_LOG(LogTemp, Warning, TEXT("LinkFoot : %s"), *Message);
+		break;
+	case lf::VerdictQualite::NePasLivrer:
+		UE_LOG(LogTemp, Error, TEXT("LinkFoot : %s"), *Message);
+		break;
+	}
+	return VerdictQualite;
 }
 
 void ALFDirecteurMatch::Recommencer()

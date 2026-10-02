@@ -22,6 +22,7 @@
 
 #include "LFFootballeur.generated.h"
 
+class ULFComposantPeau;
 class ULFDefinitionsPersonnages;
 class ULFMatchSubsystem;
 
@@ -47,6 +48,10 @@ public:
 	// Mettre le personnage à la taille de la fiche (échelle du squelette).
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LinkFoot|Footballeur")
 	bool bAppliquerTaille = true;
+
+	// La sueur, la pluie et le souffle envoyés aux matériaux (cahier « qualité visuelle » §3, §24).
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "LinkFoot|Footballeur")
+	TObjectPtr<ULFComposantPeau> Peau;
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "LinkFoot|Footballeur")
 	int32 Code = -1;
@@ -84,6 +89,10 @@ public:
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "LinkFoot|Corps")
 	float Carrure = 0.5f;
+
+	// du sol à la hanche (cm), pour la foulée (cahier « qualité visuelle » §21)
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "LinkFoot|Corps")
+	float LongueurJambeCm = 87.f;
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "LinkFoot|Footballeur")
 	bool bSurLeTerrain = false;

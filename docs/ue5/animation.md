@@ -50,6 +50,19 @@ ne joue aucune animation : elle traduit ce que le moteur a joué en entrées des
 | `TypeCorps`, `Explosivite`, `Agilite`, `Equilibre`, `Foulee` | | la carte du joueur (`LFCorps`) | le choix des bases, le maillage |
 | `FamilleAttendue` | énumération | ce que le moteur fait faire au joueur (29 familles) | le contrôle (section 6) |
 
+Pour le cahier « qualité visuelle » (`docs/ue5/personnages.md`, section 5 pour le branchement) :
+
+| Propriété | Unité | D'où | Nœud qui la lit |
+| --- | --- | --- | --- |
+| `TypeCourse` | énumération (15) | immobile, marche, trot, course, sprint, départ, accélération, décélération, arrêt, courbe, diagonale, latéral, recul, repli, pressing (`LFLocomotion`) | le choix des bases (un Chooser) |
+| `LongueurPas`, `Cadence`, `InclinaisonBuste` | cm, pas/s, degrés (+ en avant) | la foulée de ce corps à cette vitesse et cette accélération (`LFCorps`) | Stride Warping ; une rotation du buste |
+| `LacetTete`, `TangageTete`, `LacetYeux`, `TangageYeux`, `bCibleHorsDeVue` | degrés (+ à droite, + vers le haut) | la tête par rapport au corps, les yeux par rapport à la tête (`orienterRegard`) | une rotation du cou et de la tête ; le regard du visage |
+| `PoidsConcentration` ... `PoidsFatigueVisage`, `ExpressionDominante` | 0 à 1 | 8 expressions (`LFVisage`) | les poses d'expression du visage |
+| `Geste`, `PoidsGeste`, `TempsGeste` | énumération, 0 à 1, s | appel, protestation, mains sur la tête, applaudir, célébration, consigne, poing serré | un montage du haut du corps |
+| `Essoufflement`, `FrequenceRespiration`, `AmplitudeRespiration`, `PostureFatigue` | 0 à 1, cycles/min | le souffle et la posture (`LFPhysiologie`) | une couche additive de respiration ; une posture fatiguée |
+| `Transpiration`, `Humidite` | 0 à 1 | la sueur accumulée, la pluie | les matériaux, par `ULFComposantPeau` |
+| `Agressivite`, `Calme`, `Expressivite`, `EnergieCaractere`, `Confiance` | 0,1 à 0,9 | le caractère de la fiche | l'amplitude des gestes et des expressions |
+
 ## 4. Le graphe de l'Animation Blueprint
 
 ```

@@ -16,6 +16,8 @@
 #include "LFCore/LFCinematique.h"
 #include "LFCore/LFDocument.h"
 #include "LFCore/LFEtatMatch.h"
+#include "LFCore/LFPhysiologie.h"
+#include "LFCore/LFVisage.h"
 
 #include "LFMatchSubsystem.generated.h"
 
@@ -91,6 +93,9 @@ public:
 	const lf::DocumentMatch* Document() const { return Doc.Get(); }
 	const lf::Cinematique* Cinematique() const { return Cine.Get(); }
 	const lf::ChroniqueMatch* Chronique() const { return Chron.Get(); }
+	// Ce que montrent les visages et les corps (cahier « qualité visuelle » §3, §24 à §27).
+	const lf::ChroniqueVisages* Visages() const { return ChronVisages.Get(); }
+	const lf::ChroniquePhysiologie* Physiologie() const { return ChronPhysio.Get(); }
 
 	// Le repère : un point du moteur (mètres) en centimètres d'Unreal, un vecteur, une orientation.
 	// Le terrain du moteur est centré sur l'origine d'Unreal.
@@ -120,6 +125,8 @@ private:
 	TUniquePtr<lf::DocumentMatch> Doc;
 	TUniquePtr<lf::Cinematique> Cine;
 	TUniquePtr<lf::ChroniqueMatch> Chron;
+	TUniquePtr<lf::ChroniqueVisages> ChronVisages;
+	TUniquePtr<lf::ChroniquePhysiologie> ChronPhysio;
 	double TempsCourant = 0.0;
 	uint32 GenerationCourante = 0;
 	uint32 SautsCourants = 0;

@@ -1,0 +1,61 @@
+{
+  "_lisez_moi": [
+    "Les correspondances entre les fiches de LinkFoot et MetaHuman Creator (Unreal 5.8), lues par metahumans_linkfoot.py.",
+    "Une entrée vide (null, liste vide) n'est pas appliquée : le rapport la signale. Rien n'est deviné.",
+    "modeles_visage : des MetaHuman Character faits à la main dans MetaHuman Creator (mélanges de presets, aucun visage réel), sans coiffure ni barbe ni tenue. teints : les teints LinkFoot (0 très clair à 9 très foncé) avec lesquels le visage va ; absent : tous.",
+    "corps : pour chaque mesure de la fiche, les mots cherchés dans les noms des contraintes du corps (mh.lister montre les vrais noms ; « contrainte » fixe le nom exact). mode absolu : une mesure (cm, kg), essayée aux échelles permises (0.01 : des cm vers des m) ; sinon une valeur de 0 à 1 placée dans la plage de la contrainte, resserrée par amplitude.",
+    "teints_uv : pour chaque teint LinkFoot 0 à 9, le point [U, V] du sélecteur de teint de MetaHuman, relevé à l'oeil dans l'éditeur (la documentation ne dit pas quel axe fonce la peau).",
+    "textures_peau : le nombre de textures de peau proposées (pores, imperfections) ; chaque joueur en reçoit une, toujours la même.",
+    "yeux : pour chaque couleur LinkFoot (0 marron foncé, 1 marron, 2 noisette, 3 vert, 4 bleu, 5 gris), les propriétés de eyes_settings à poser (chemins pointés, relevés dans les exemples Python livrés avec MetaHuman).",
+    "emplacements : les noms des emplacements de la garde-robe. La documentation cite « Hair » et « Outfits » ; celui de la barbe et de la moustache est à relever dans le panneau de la garde-robe.",
+    "coiffures, barbes, tenues : des Wardrobe Items autonomes (chemins /Game/...), faits ou choisis par l'artiste. tenues : par camp (H domicile, A extérieur), des maillots LinkFoot originaux.",
+    "melange_visages : expérimental, désactivé ; à juger à l'oeil avant de l'activer."
+  ],
+  "dossier_sortie": "/Game/LinkFoot/MetaHumans/Joueurs",
+  "prefixe": "MHC_",
+  "modeles_visage": [
+    { "chemin": null, "teints": [0, 1, 2, 3, 4] },
+    { "chemin": null, "teints": [3, 4, 5, 6] },
+    { "chemin": null, "teints": [5, 6, 7, 8, 9] }
+  ],
+  "amplitude": 0.6,
+  "corps": {
+    "taille_cm": { "motifs": ["height", "stature"], "mode": "absolu", "echelles": [1, 0.01] },
+    "poids_kg": { "motifs": ["weight", "bodymass"], "mode": "absolu" },
+    "envergure_cm": { "motifs": ["armspan", "wingspan"], "mode": "absolu", "echelles": [1, 0.01] },
+    "epaules": { "motifs": ["shoulder"] },
+    "poitrine": { "motifs": ["chest", "bust"] },
+    "ventre": { "motifs": ["waist"] },
+    "bassin": { "motifs": ["hip"] },
+    "bras": { "motifs": ["armlength", "upperarm", "arm"] },
+    "mains": { "motifs": ["hand"] },
+    "jambes": { "motifs": ["inseam", "leglength", "leg"] },
+    "cuisses": { "motifs": ["thigh"] },
+    "mollets": { "motifs": ["calf", "calves"] },
+    "cou": { "motifs": ["neck"] },
+    "tete": { "motifs": ["head"] },
+    "pieds": { "motifs": ["foot", "feet"] },
+    "muscles": { "motifs": ["muscul", "muscle"] },
+    "masse_grasse": { "motifs": ["bodyfat", "fat"] }
+  },
+  "teints_uv": [null, null, null, null, null, null, null, null, null, null],
+  "textures_peau": null,
+  "yeux": {},
+  "emplacements": { "cheveux": "Hair", "barbe": null, "moustache": null, "tenue": "Outfits" },
+  "coiffures": {
+    "ras": null, "court": null, "degrade": null, "boucles": null, "frises": null,
+    "afro": null, "dreadlocks": null, "tresses": null, "long": null, "attache": null
+  },
+  "barbes": {
+    "aucune": null,
+    "tres_courte": { "emplacement": "barbe", "item": null },
+    "courte": { "emplacement": "barbe", "item": null },
+    "moyenne": { "emplacement": "barbe", "item": null },
+    "longue": { "emplacement": "barbe", "item": null },
+    "moustache": { "emplacement": "moustache", "item": null },
+    "bouc": { "emplacement": "barbe", "item": null }
+  },
+  "tenues": { "H": null, "A": null },
+  "melange_visages": { "actif": false, "poids_max": 0.35 },
+  "assemblage": { "type": "OPTIMIZED", "qualite": "MEDIUM", "rig": "JOINTS_AND_BLENDSHAPES" }
+}

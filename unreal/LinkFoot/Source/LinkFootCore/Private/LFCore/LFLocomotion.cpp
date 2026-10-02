@@ -2,6 +2,7 @@
 
 #include "LFCore/LFRepere.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace lf
@@ -130,7 +131,97 @@ namespace lf
 			const EtatCinematique apres = c.etat(code, t + 0.5);
 			d.phase = memeSegment(apres) && apres.vitesse < p.seuilArret ? PhaseVitesse::Arret : PhaseVitesse::Freinage;
 		}
+
+		// §17 du cahier « qualité visuelle » : le type de course, par ordre de priorité
+		const double ecartCorps = std::fabs(d.angleLocomotionDeg);
+		// son propre but : y = 105 pour le domicile (qui attaque vers y = 0), y = 0 pour l'extérieur
+		const double versSonBut = (code < 11 ? e.vy : -e.vy) / std::max(e.vitesse, 1e-6);
+		if (d.phase == PhaseVitesse::Demarrage)
+		{
+			d.type = TypeCourse::Depart;
+		}
+		else if (d.phase == PhaseVitesse::Arret)
+		{
+			d.type = TypeCourse::Arret;
+		}
+		else if (e.vitesse < p.seuilArret)
+		{
+			d.type = TypeCourse::Immobile;
+		}
+		else if ((e.etats & etat::Presse) != 0 && e.vitesse > 2.0)
+		{
+			d.type = TypeCourse::Pressing;
+		}
+		else if (e.intention == static_cast<std::uint8_t>(Intention::Recover) && e.vitesse > 3.0 && versSonBut > 0.5)
+		{
+			d.type = TypeCourse::Repli;
+		}
+		else if (d.allure == Allure::Recul)
+		{
+			d.type = TypeCourse::Recul;
+		}
+		else if (d.allure == Allure::Lateral)
+		{
+			d.type = TypeCourse::Laterale;
+		}
+		else if (d.phase == PhaseVitesse::Acceleration && e.vitesse > 2.0)
+		{
+			d.type = TypeCourse::Acceleration;
+		}
+		else if (d.phase == PhaseVitesse::Freinage)
+		{
+			d.type = TypeCourse::Deceleration;
+		}
+		else if (std::fabs(d.virageDeg) >= 25.0 && e.vitesse >= 3.0)
+		{
+			d.type = TypeCourse::Courbe;
+		}
+		else if (ecartCorps >= 20.0 && e.vitesse >= 2.0)
+		{
+			d.type = TypeCourse::Diagonale;
+		}
+		else
+		{
+			switch (d.bande)
+			{
+			case BandeVitesse::Arret: d.type = TypeCourse::Immobile; break;
+			case BandeVitesse::Marche: d.type = TypeCourse::Marche; break;
+			case BandeVitesse::Trot: d.type = TypeCourse::Trot; break;
+			case BandeVitesse::Course:
+			case BandeVitesse::Rapide: d.type = TypeCourse::Course; break;
+			case BandeVitesse::Sprint: d.type = TypeCourse::Sprint; break;
+			}
+			// un sprint, c'est aussi un joueur lancé à plus de 6 m/s que le moteur fait sprinter,
+			// ou qui court à plus de 85 % de SA pointe (le moteur dépasse rarement 8 m/s)
+			if (d.type == TypeCourse::Course && e.vitesse >= 6.0 && (d.sprintVoulu || d.effort >= 0.85))
+			{
+				d.type = TypeCourse::Sprint;
+			}
+		}
 		return d;
+	}
+
+	const char* nomTypeCourse(TypeCourse t)
+	{
+		switch (t)
+		{
+		case TypeCourse::Immobile: return "immobile";
+		case TypeCourse::Marche: return "marche";
+		case TypeCourse::Trot: return "trot";
+		case TypeCourse::Course: return "course";
+		case TypeCourse::Sprint: return "sprint";
+		case TypeCourse::Depart: return "depart";
+		case TypeCourse::Acceleration: return "acceleration";
+		case TypeCourse::Deceleration: return "deceleration";
+		case TypeCourse::Arret: return "arret";
+		case TypeCourse::Courbe: return "courbe";
+		case TypeCourse::Diagonale: return "diagonale";
+		case TypeCourse::Laterale: return "laterale";
+		case TypeCourse::Recul: return "recul";
+		case TypeCourse::Repli: return "repli";
+		case TypeCourse::Pressing: return "pressing";
+		}
+		return "?";
 	}
 
 	const char* nomBande(BandeVitesse b)

@@ -150,6 +150,77 @@ tete('§4 et §8 le corps raconte la carte');
   t('le gardien a ses attributs de gardien, et lui seul', !!(g.moteur && g.moteur.gardien) && D1.joueurs.filter((j) => j.moteur && j.moteur.gardien).every((j) => j.code === 0 || j.code === 11));
 }
 
+tete('Cahier « qualité visuelle » §5 à §10 et §27 : le corps, le visage, le caractère');
+{
+  const c = club();
+  const MESURES = ['epaules', 'poitrine', 'ventre', 'bassin', 'bras', 'mains', 'jambes', 'cuisses', 'mollets', 'cou', 'tete', 'pieds', 'muscles', 'masse_grasse'];
+  const tous = D1.joueurs;
+  const complet = tous.every((j) => { const m = j.morphologie; return m && m.taille_cm >= 160 && m.taille_cm <= 210 && m.poids_kg > 50 && MESURES.every((k) => m[k] >= 0 && m[k] <= 1)
+    && m.masse_grasse_pct >= 6 && m.masse_grasse_pct <= 15 && m.pointure >= 38 && m.pointure <= 50 && Math.abs(m.envergure_cm / m.taille_cm - 1) < 0.08; });
+  t('§7 chaque joueur a les seize mesures de son corps, en proportions et en unités humaines', complet,
+    tous.length + ' joueurs ; ' + JSON.stringify(tous[0].morphologie).slice(0, 110) + '…');
+  // §8 deux joueurs du même poste : jamais la même silhouette
+  let paires = 0, proches = 0, plusProche = 9;
+  for (let i = 0; i < tous.length; i++) for (let k = i + 1; k < tous.length; k++) {
+    if (tous[i].poste !== tous[k].poste) continue;
+    const d = Math.hypot(...MESURES.map((m) => tous[i].morphologie[m] - tous[k].morphologie[m]));
+    paires++; if (d < 0.1) proches++; plusProche = Math.min(plusProche, d);
+  }
+  t('§8 deux joueurs du même poste n’ont pas la même silhouette', paires > 50 && proches === 0, paires + ' paires, écart le plus faible ' + plusProche.toFixed(2));
+  // §9 §10 la carte se lit dans le corps
+  const p = c.state.squad.find((q) => q.pos === 'MIL');
+  const rapide = c.morphologie(p, { VIT: 95, PHY: 60 }, 'LF-t'), lent = c.morphologie(p, { VIT: 45, PHY: 60 }, 'LF-t');
+  t('§10 un joueur rapide : cuisses et mollets plus forts, moins de masse grasse', rapide.cuisses > lent.cuisses && rapide.mollets > lent.mollets && rapide.masse_grasse < lent.masse_grasse,
+    'cuisses ' + lent.cuisses + ' → ' + rapide.cuisses + ', masse grasse ' + lent.masse_grasse_pct + ' → ' + rapide.masse_grasse_pct + ' %');
+  const fort = c.morphologie(p, { VIT: 60, PHY: 92 }, 'LF-t'), frele = c.morphologie(p, { VIT: 60, PHY: 48 }, 'LF-t');
+  t('   un physique fort : torse, cou et épaules', fort.poitrine > frele.poitrine && fort.cou > frele.cou && fort.epaules > frele.epaules);
+  const moyenne = (pos, k, rap) => { let s = 0; for (let i = 0; i < 300; i++) { const m = c.morphologie({ id: 50000 + i, pos, ovr: 70 }, { VIT: 65, PHY: 70, PLO: 70, MAI: 70 }, 'LF-m' + i); s += rap ? m[k] / m.taille_cm : m[k]; } return s / 300; };
+  t('   à statistiques égales, un défenseur a les épaules et le torse plus larges qu’un milieu', moyenne('DEF', 'epaules') > moyenne('MIL', 'epaules') + 0.05 && moyenne('DEF', 'poitrine') > moyenne('MIL', 'poitrine'));
+  t('   un gardien a l’envergure, les bras et les mains', moyenne('GB', 'envergure_cm', true) > moyenne('MIL', 'envergure_cm', true) + 0.02 && moyenne('GB', 'mains') > moyenne('MIL', 'mains') + 0.1,
+    'envergure ' + (100 * moyenne('GB', 'envergure_cm', true)).toFixed(1) + ' % de la taille, contre ' + (100 * moyenne('MIL', 'envergure_cm', true)).toFixed(1));
+  // §5 §6 les coiffures et les barbes du cahier, sur 3 000 personnages
+  const coiffures = new Set(), barbes = new Set(), teints = new Set(), parTeint = { clair: {}, fonce: {} };
+  for (let i = 0; i < 3000; i++) {
+    const a = c.apparencePont('LF-v' + i); coiffures.add(a.coiffure); barbes.add(a.barbe); teints.add(a.teint);
+    const g = a.teint <= 2 ? 'clair' : a.teint >= 7 ? 'fonce' : null;
+    if (g) parTeint[g][a.texture_cheveux] = (parTeint[g][a.texture_cheveux] || 0) + 1;
+  }
+  t('§5 toutes les coiffures : rasés, courts, dégradés, afro, boucles, frisés, dreadlocks, longs, attachés',
+    ['ras', 'court', 'degrade', 'afro', 'boucles', 'frises', 'dreadlocks', 'long', 'attache'].every((x) => coiffures.has(x)), [...coiffures].join(', '));
+  t('§6 toute la pilosité faciale : rasé, très courte, courte, moyenne, longue, moustache, bouc',
+    ['aucune', 'tres_courte', 'courte', 'moyenne', 'longue', 'moustache', 'bouc'].every((x) => barbes.has(x)), [...barbes].join(', '));
+  const part = (g, x) => (parTeint[g][x] || 0) / Object.values(parTeint[g]).reduce((s, v) => s + v, 0);
+  t('les dix teints existent, et la texture des cheveux en tient compte sans rien exclure', teints.size === 10
+    && ['raides', 'ondules', 'boucles', 'crepus'].every((x) => parTeint.clair[x] > 0 && parTeint.fonce[x] > 0) && part('fonce', 'crepus') > part('clair', 'crepus'),
+    'cheveux crépus : ' + Math.round(100 * part('clair', 'crepus')) + ' % des teints clairs, ' + Math.round(100 * part('fonce', 'crepus')) + ' % des teints foncés');
+  const ailleurs = club().matchPont(ADV, { seed: 78 }).document.joueurs, parPerso = new Map(ailleurs.map((j) => [j.personnage, j]));
+  t('un personnage garde son corps, son visage et son caractère d’un match à l’autre', tous.every((j) => !parPerso.has(j.personnage)
+    || JSON.stringify([j.morphologie, j.apparence, j.personnalite]) === JSON.stringify([parPerso.get(j.personnage).morphologie, parPerso.get(j.personnage).apparence, parPerso.get(j.personnage).personnalite])));
+  // le tirage de l'apparence est figé : le changer change le visage de tous les joueurs, et
+  // ceux des MetaHumans déjà fabriqués (Content/Python/metahumans_linkfoot.py) ; il faut que ce
+  // soit voulu, et ces trois empreintes mises à jour en connaissance de cause
+  const FIGEES = {
+    'LF-00001': '{"graine":1671150789,"visage":[0.63,0.714,0.035,0.112,0.072,0.987,0.064,0.134],"teint":5,"texture_cheveux":"boucles","coiffure":"boucles","cheveux":"noir","barbe":"bouc","sourcils":5,"yeux":0}',
+    'LF-00127': '{"graine":118399892,"visage":[0.754,0.351,0.13,0.482,0.02,0.596,0.25,0.576],"teint":1,"texture_cheveux":"ondules","coiffure":"degrade","cheveux":"chatain","barbe":"aucune","sourcils":1,"yeux":0}',
+    'ADV-20815-09': '{"graine":1692492191,"visage":[0.034,0.61,0.516,0.132,0.464,0.09,0.073,0.455],"teint":4,"texture_cheveux":"raides","coiffure":"attache","cheveux":"brun_fonce","barbe":"courte","sourcils":4,"yeux":4}',
+  };
+  const changes = Object.keys(FIGEES).filter((k) => JSON.stringify(c.apparencePont(k)) !== FIGEES[k]);
+  t('le visage d’un personnage est figé d’une version à l’autre (trois empreintes)', changes.length === 0, changes.length ? 'changé : ' + changes.join(', ') : 'LF-00001, LF-00127, ADV-20815-09');
+  // §27 six tempéraments, subtils, qui prolongent la fiche
+  const types = {}, parFiche = {};
+  for (let i = 0; i < 3000; i++) {
+    const q = { id: 60000 + i, pos: 'MIL', ovr: 70 }, k = c.personnalitePont(q, { VIT: 60, PHY: 60, 'DÉF': 55 }, 'LF-c' + i, []);
+    types[k.type] = (types[k.type] || 0) + 1;
+    const f = c.profile(q).perso; (parFiche[f] = parFiche[f] || []).push(k.expressivite);
+  }
+  const moy = (l) => l.reduce((a, b) => a + b, 0) / l.length;
+  t('§27 six tempéraments : agressif, calme, expressif, réservé, énergique, confiant', ['agressif', 'calme', 'expressif', 'reserve', 'energique', 'confiant'].every((x) => types[x] > 30), JSON.stringify(types));
+  t('   subtils, et la fiche se voit : un « Showman » est plus expressif qu’un « Discret »', tous.every((j) => ['agressivite', 'calme', 'expressivite', 'energie', 'confiance'].every((k) => j.personnalite[k] >= 0.1 && j.personnalite[k] <= 0.9))
+    && moy(parFiche.Showman) > moy(parFiche.Discret) + 0.3, 'expressivité ' + moy(parFiche.Showman).toFixed(2) + ' contre ' + moy(parFiche.Discret).toFixed(2));
+  const sans = c.personnalitePont(p, {}, 'LF-k', []), avec = c.personnalitePont(p, {}, 'LF-k', [{ eid: 'calme' }]);
+  t('   une compétence aussi : le Sang-froid rend plus calme', avec.calme > sans.calme, sans.calme + ' → ' + avec.calme);
+}
+
 tete('§57 la chaîne entière : carte → attributs du moteur → mouvement → action');
 {
   // la vitesse de la carte des attaquants, seule, change

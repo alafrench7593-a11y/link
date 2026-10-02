@@ -10,3 +10,4 @@ unreal/LinkFoot/Saved/
 unreal/LinkFoot/DerivedDataCache/
 unreal/LinkFoot/.vs/
 unreal/LinkFoot/*.sln
+__pycache__/

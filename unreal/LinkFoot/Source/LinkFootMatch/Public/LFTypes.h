@@ -199,6 +199,64 @@ enum class ELFAnomalie : uint8
 	PiedsCorps
 };
 
+// Cahier « qualité visuelle » §17 : la bibliothèque de locomotion (LFLocomotion.h)
+UENUM(BlueprintType)
+enum class ELFTypeCourse : uint8
+{
+	Immobile,
+	Marche,
+	Trot,
+	Course,
+	Sprint,
+	Depart,
+	Acceleration,
+	Deceleration,
+	Arret,
+	Courbe,
+	Diagonale,
+	Laterale,
+	Recul,
+	Repli,
+	Pressing
+};
+
+// Cahier « qualité visuelle » §25 : les expressions du visage (LFVisage.h)
+UENUM(BlueprintType)
+enum class ELFExpression : uint8
+{
+	Concentration,
+	Frustration,
+	Joie,
+	Colere,
+	Douleur,
+	Surprise,
+	Soulagement,
+	Fatigue
+};
+
+// Cahier « qualité visuelle » §26 : le geste du haut du corps (LFVisage.h)
+UENUM(BlueprintType)
+enum class ELFGeste : uint8
+{
+	Aucun,
+	Appel,
+	Protestation,
+	MainsSurLaTete,
+	Applaudir,
+	Celebration,
+	Consigne,
+	PoingSerre
+};
+
+// Cahier « qualité visuelle » §20 et §31 : la porte de qualité d'une scène (LFDetecteurs.h)
+UENUM(BlueprintType)
+enum class ELFVerdictQualite : uint8
+{
+	Valide,
+	AReprendre,
+	NePasLivrer
+};
+
 // §60 les statistiques d'une équipe (les règles du moteur)
 USTRUCT(BlueprintType)
 struct LINKFOOTMATCH_API FLFStatsEquipe

@@ -61,7 +61,9 @@ void ULFMatchSubsystem::Deinitialize()
 
 void ULFMatchSubsystem::Vider()
 {
-	// la chronique lit la cinématique, qui lit le document : on les détruit dans l'autre sens
+	// les chroniques lisent la cinématique, qui lit le document : on les détruit dans l'autre sens
+	ChronPhysio.Reset();
+	ChronVisages.Reset();
 	Chron.Reset();
 	Cine.Reset();
 	Doc.Reset();
@@ -128,6 +130,8 @@ bool ULFMatchSubsystem::ChargerOctets(const FString& Nom, const TArray<uint8>& O
 	Parametres.lissageS = kLissageS;
 	Cine = MakeUnique<lf::Cinematique>(*Doc, Parametres);
 	Chron = MakeUnique<lf::ChroniqueMatch>(*Cine);
+	ChronVisages = MakeUnique<lf::ChroniqueVisages>(*Cine);
+	ChronPhysio = MakeUnique<lf::ChroniquePhysiologie>(*Cine);
 	TempsCourant = Doc->estScene ? Doc->scene.t0 : Debut();
 	++GenerationCourante;
 	Source = Nom;
@@ -136,7 +140,7 @@ bool ULFMatchSubsystem::ChargerOctets(const FString& Nom, const TArray<uint8>& O
 
 bool ULFMatchSubsystem::EstCharge() const
 {
-	return Doc.IsValid() && Cine.IsValid() && Chron.IsValid();
+	return Doc.IsValid() && Cine.IsValid() && Chron.IsValid() && ChronVisages.IsValid() && ChronPhysio.IsValid();
 }
 
 double ULFMatchSubsystem::Debut() const

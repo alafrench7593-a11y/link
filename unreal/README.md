@@ -2,16 +2,18 @@
 
 Le match que le moteur LinkFoot a joué, incarné par des footballeurs Unreal. Le moteur décide
 tout ; Unreal le montre (pourquoi : `docs/ue5/audit.md`). Le projet et ses modules :
-`docs/ue5/projet-unreal.md`. L'animation : `docs/ue5/animation.md`.
+`docs/ue5/projet-unreal.md`. L'animation : `docs/ue5/animation.md`. Les personnages (cahier
+« qualité visuelle ») : `docs/ue5/personnages.md`.
 
 ## Où on en est
 
 | Partie | État |
 | --- | --- |
-| Cœur C++ (`LinkFootCore`) | écrit, **compilé et testé ici** : 96 vérifications sur trois vrais matchs (le premier aussi en mode débogage) et les seize scènes (`tests-coeur`) |
-| Couche Unreal (4 modules, 15 fichiers .cpp) | écrite, **jamais compilée par Unreal** : ce dépôt n'a pas d'Unreal. Vérifiée en syntaxe contre les déclarations relevées dans la référence 5.8 (`verif-syntaxe`), y compris la compilation « unity » |
+| Cœur C++ (`LinkFootCore`) | écrit, **compilé et testé ici** : 130 vérifications sur trois vrais matchs (le premier aussi en mode débogage) et les seize scènes (`tests-coeur`) |
+| Couche Unreal (4 modules, 16 fichiers .cpp) | écrite, **jamais compilée par Unreal** : ce dépôt n'a pas d'Unreal. Vérifiée en syntaxe contre les déclarations relevées dans la référence 5.8 (`verif-syntaxe`), y compris la compilation « unity » et quelques règles de l'Unreal Header Tool |
+| Fabrique des MetaHumans (`Content/Python`) | écrite, **jamais lancée dans un éditeur** ; essayée contre un faux éditeur qui ne connaît que l'API documentée pour la 5.8 (`tests-python`) |
 | Scènes de test (§76) | 16 scènes tirées de vrais matchs, dans `LinkFoot/Content/LinkFoot/Scenes` |
-| Assets (Animation Blueprint, bases Pose Search, IK Rig, Blueprints, niveau) | **aucun** : ils se créent dans l'éditeur (ci-dessous) |
+| Assets (Animation Blueprint, bases Pose Search, IK Rig, Blueprints, niveau, MetaHumans) | **aucun** : ils se créent dans l'éditeur (ci-dessous, et `docs/ue5/personnages.md`) |
 | Animations de football | **aucune** : à capturer ou acheter (audit, section 8) |
 
 ## Vérifier sans Unreal
@@ -21,9 +23,11 @@ tout ; Unreal le montre (pourquoi : `docs/ue5/audit.md`). Le projet et ses modul
 cmake -S unreal/tests-coeur -B build/coeur -G Ninja && cmake --build build/coeur && ctest --test-dir build/coeur --output-on-failure
 # la couche Unreal, en syntaxe seulement
 python3 unreal/verif-syntaxe/verifier.py
+# la fabrique des MetaHumans, contre un faux éditeur
+python3 unreal/tests-python/test_metahumans.py
 ```
 
-L'intégration continue lance les deux à chaque envoi (`.github/workflows/verifications.yml`).
+L'intégration continue lance les trois à chaque envoi (`.github/workflows/verifications.yml`).
 
 ## Le premier footballeur (§78) : ce qui est fait, ce qu'il reste à faire dans Unreal
 
@@ -56,8 +60,8 @@ les autres en viennent.
 | Lancer les tests | Tools > Test Automation | cocher le groupe `LinkFoot`, puis Start Tests |
 | Ou en ligne de commande | `UnrealEditor-Cmd.exe "<chemin>\LinkFoot.uproject" -ExecCmds="Automation RunTest LinkFoot;Quit" -ReportExportPath="<dossier>"` | |
 
-Attendu : 4 tests verts (`LinkFoot.Coeur.Scenes`, `LinkFoot.Match.Repere`,
-`LinkFoot.Joueur.Trajectoire`, `LinkFoot.Match.Etat`).
+Attendu : 5 tests verts (`LinkFoot.Coeur.Scenes`, `LinkFoot.Match.Repere`,
+`LinkFoot.Joueur.Trajectoire`, `LinkFoot.Match.Etat`, `LinkFoot.Joueur.QualiteVisuelle`).
 
 ### 4. Les animations de locomotion : le Game Animation Sample
 
@@ -84,7 +88,11 @@ Licence : utilisable dans un jeu Unreal, y compris commercial ; pas hors d'Unrea
 ### 6. Jouer et juger
 
 Lancer le niveau (Play). Le HUD affiche, pour le joueur : écart au moteur, familles attendue et vue,
-contact, alertes. Passer ensuite aux scènes 2, 3 et 4 (champ Scene).
+contact, alertes ; et ce que son corps doit montrer : type de course, foulée, buste, tête et yeux,
+expression, geste, souffle, sueur, caractère. En haut, la porte de qualité de la boucle en cours ;
+à la fin de chaque boucle, le directeur écrit son verdict dans l'Output Log (`LinkFoot : porte de
+qualité : ...`). Passer ensuite aux scènes 2, 3 et 4 (champ Scene). `bModeReel` sur le HUD n'affiche
+plus rien (le test absolu, `docs/ue5/personnages.md`).
 
 Le palier 1 est atteint quand, sur les scènes 1 à 4 : aucun **DESYNC**, aucune **FOOT SLIDE
 WARNING**, aucune **ANIMATION DESYNC** sur la locomotion. **CONTACT MANQUÉ** à la scène 4

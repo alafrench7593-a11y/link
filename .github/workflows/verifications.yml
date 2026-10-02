@@ -73,9 +73,10 @@ jobs:
         run: npm run verifier
 
   # Le cœur C++ de LinkFoot pour Unreal, compilé et testé hors d'Unreal sur trois vrais
-  # matchs et les seize scènes (gcc puis clang, avertissements en erreurs), et la couche
+  # matchs et les seize scènes (gcc puis clang, avertissements en erreurs), la couche
   # Unreal vérifiée en syntaxe contre les déclarations relevées dans la référence
-  # d'Unreal 5.8. Ce job ne compile pas avec Unreal : aucun exécuteur GitHub ne l'a.
+  # d'Unreal 5.8, et le script des MetaHumans essayé contre un faux éditeur. Ce job ne
+  # compile pas avec Unreal : aucun exécuteur GitHub ne l'a.
   unreal:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -98,3 +99,5 @@ jobs:
           ctest --test-dir build/coeur-clang --output-on-failure
       - name: La couche Unreal, en syntaxe
         run: python3 unreal/verif-syntaxe/verifier.py
+      - name: La fabrique des MetaHumans, contre un faux éditeur
+        run: python3 unreal/tests-python/test_metahumans.py

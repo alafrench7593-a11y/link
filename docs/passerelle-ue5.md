@@ -183,8 +183,12 @@ Une entrée par personne : les 22 titulaires (`code` 0 à 21) et les bancs (`cod
 | `competences` | effet, condition, puissance, rareté de chaque compétence portée |
 | `etat` | forme, moral, énergie, blessure au coup d'envoi |
 | `pied`, `pied_faible` | pied fort, pied faible de 1 à 5 |
-| `morphologie` | `taille_cm`, `poids_kg` (ceux de la fiche), `carrure`, et des proportions de 0 à 1 : `epaules`, `muscles`, `masse`, `jambes`, `bras`, `bassin`, `posture`. Elles découlent des statistiques : un physique fort a les épaules et les muscles, un rapide les jambes, un gardien les bras. Le corps ne change pas le jeu : les attributs restent le facteur principal (§8 du cahier) |
-| `apparence` | une graine, 8 coefficients de visage, teint, coiffure, couleur des cheveux, barbe, sourcils, yeux. Tirés d'une graine propre au personnage : originaux, jamais copiés sur un vrai joueur, et rien n'est déduit de la nationalité |
+| `morphologie` | `taille_cm`, `poids_kg` (ceux de la fiche), `carrure`, et des proportions de 0 à 1 (0,5 : un footballeur moyen de ce gabarit) : `epaules`, `poitrine`, `ventre`, `bassin`, `bras`, `mains`, `jambes`, `cuisses`, `mollets`, `cou`, `tete`, `pieds`, `muscles`, `masse`, `masse_grasse`, `posture` ; et trois mesures : `masse_grasse_pct` (6,5 à 14,5 %), `envergure_cm`, `pointure`. Elles découlent des statistiques (un rapide a les cuisses et les mollets, un physique fort la poitrine, le cou et les épaules, un gardien l'envergure et les mains) et d'un bruit propre au personnage : deux joueurs du même poste n'ont pas la même silhouette (cahier « qualité visuelle » §7 à §10). Le corps ne change pas le jeu : les attributs restent le facteur principal (§8 du premier cahier) |
+| `apparence` | une graine, 8 coefficients de visage, teint (0 très clair à 9 très foncé), texture de cheveux (raides, ondulés, bouclés, crépus, liée au teint sans en dépendre), coiffure (ras, court, dégradé, boucles, frisés, afro, dreadlocks, tresses, long, attaché, selon la texture), couleur des cheveux, barbe (aucune, très courte, courte, moyenne, longue, moustache, bouc), sourcils, yeux. Tirés d'une graine propre au personnage : originaux, jamais copiés sur un vrai joueur, et rien n'est déduit de la nationalité (§2 à §6). Changer ce tirage change le visage de tous les joueurs : `test/passerelle.js` fige trois personnages pour qu'un tel changement soit voulu |
+| `personnalite` | le caractère qui se voit (§27) : `agressivite`, `calme`, `expressivite`, `energie`, `confiance` de 0,1 à 0,9, et le `type` dominant (agressif, calme, expressif, réservé, énergique, confiant). Il vient du profil du joueur (Leader, Showman, Discret...), de ses compétences et de sa graine. Il règle l'amplitude des expressions et des gestes (`LFVisage.h`), rien dans le match |
+
+Un adversaire n'a pas de carte : son corps et son caractère se tirent de statistiques stables propres
+à son personnage, pour qu'il garde la même silhouette d'un match à l'autre.
 
 Statistique → carte → moteur → mouvement, sur un exemple mesuré par `test/passerelle.js` : des
 attaquants passés de VIT 40 à VIT 95 sur la carte reçoivent du moteur une vitesse de pointe de
@@ -301,14 +305,18 @@ Ce que chaque donnée pilote :
 ## 5. Les personnages
 
 - **MetaHuman**, intégré à Unreal depuis la 5.6 : corps paramétrique (hauteur, poitrine, tour de
-  taille, longueur des jambes). Un outil LinkFoot lira les feuilles de match et fabriquera un
-  MetaHuman par personnage (`LF-00127` une fois pour toutes ; une carte améliorée garde son
-  visage) ; par script Python dans l'éditeur (la création par lot est à vérifier sur la 5.8).
+  taille, longueur des jambes). L'outil existe : `unreal/LinkFoot/Content/Python/metahumans_linkfoot.py`
+  lit une feuille de match et fabrique un MetaHuman par personnage (`LF-00127` une fois pour
+  toutes ; une carte améliorée garde son visage ; relancer met à jour sans doubler). Il n'appelle
+  que l'API Python de MetaHuman relevée dans la documentation d'Epic pour la 5.8, et il est essayé
+  hors d'Unreal contre un faux module (`unreal/tests-python`). Il n'a pas encore tourné dans un
+  éditeur : voir `docs/ue5/personnages.md`.
 - **Licence** : MetaHuman fait partie de la licence d'Unreal. Pour un jeu : 5 % du chiffre
   d'affaires brut au-delà d'un million de dollars par produit (les ventes sur l'Epic Games Store
   en sont exemptées). Les 1 850 dollars par poste et par an concernent les usages hors jeu.
-- **Aucun visage réel** : les coefficients viennent d'une graine. Un visage de joueur réel demanderait
-  une licence.
+- **Aucun visage réel** : les visages sont des modèles faits à la main dans MetaHuman Creator
+  (des mélanges de presets), déclinés joueur par joueur d'après sa graine. Un visage de joueur réel
+  demanderait une licence.
 - **Coût d'affichage** : vingt-deux MetaHumans proches de la caméra plus un public. Les cheveux sont
   le poste le plus cher ; il faudra des niveaux de détail stricts (cheveux en cartes au-delà de
   quelques mètres) et le public en instances.

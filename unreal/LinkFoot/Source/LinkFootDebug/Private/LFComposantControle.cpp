@@ -53,6 +53,13 @@ void ULFComposantControle::TickComponent(float DeltaTime, ELevelTick TickType, F
 	{
 		return;
 	}
+	if (M->Sauts() != SautsVus)
+	{
+		// un saut dans le temps (la scène reboucle, on revient en arrière) : la comparaison
+		// reprend de là, sinon elle attendrait de repasser l'instant d'avant le saut
+		SautsVus = M->Sauts();
+		DernierTemps = -1.0;
+	}
 	const double T = J->TempsMoteur();
 	if (T <= DernierTemps)
 	{
@@ -164,6 +171,29 @@ void ULFComposantControle::TickComponent(float DeltaTime, ELevelTick TickType, F
 	ContactsJuges = Contact.juges();
 	ContactsManques = Contact.manques();
 	EcartContactCm = static_cast<float>(Contact.dernierEcartCm());
+}
+
+lf::BilanQualite ULFComposantControle::Bilan() const
+{
+	lf::BilanQualite B;
+	B.desynchros = Desynchros - Depart.desynchros;
+	B.desynchrosAnimation = DesynchrosAnimation - Depart.desynchrosAnimation;
+	B.glissementsPied = GlissementsPied - Depart.glissementsPied;
+	B.mouvementsImpossibles = Anomalies - Depart.mouvementsImpossibles;
+	B.contactsJuges = ContactsJuges - Depart.contactsJuges;
+	B.contactsManques = ContactsManques - Depart.contactsManques;
+	B.animationSignalee = bAnimationSignalee;
+	return B;
+}
+
+void ULFComposantControle::DebuterBilan()
+{
+	Depart.desynchros = Desynchros;
+	Depart.desynchrosAnimation = DesynchrosAnimation;
+	Depart.glissementsPied = GlissementsPied;
+	Depart.mouvementsImpossibles = Anomalies;
+	Depart.contactsJuges = ContactsJuges;
+	Depart.contactsManques = ContactsManques;
 }
 
 TArray<FString> ULFComposantControle::Alertes() const

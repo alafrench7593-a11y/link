@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
+#include "LFComposantPeau.h"
 #include "LFDefinitionsPersonnages.h"
 #include "LFMatchSubsystem.h"
 
@@ -24,6 +25,7 @@ ALFFootballeur::ALFFootballeur()
 	// l'avant de l'acteur, et on pose ses pieds au bas de la capsule (à ajuster dans le Blueprint
 	// pour un autre maillage).
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0, 0.0, -kDemiHauteurCapsule), FRotator(0.0, -90.0, 0.0));
+	Peau = CreateDefaultSubobject<ULFComposantPeau>(TEXT("Peau"));
 }
 
 void ALFFootballeur::BeginPlay()
@@ -74,6 +76,7 @@ void ALFFootballeur::AppliquerFiche(const lf::FicheJoueur& F, const lf::Cinemati
 	Agilite = static_cast<float>(Profil.agilite);
 	Equilibre = static_cast<float>(Profil.equilibre);
 	Carrure = static_cast<float>(Profil.carrure);
+	LongueurJambeCm = static_cast<float>(Profil.longueurJambeM * 100.0);
 	if (bAppliquerTaille)
 	{
 		SetActorScale3D(FVector(Echelle));

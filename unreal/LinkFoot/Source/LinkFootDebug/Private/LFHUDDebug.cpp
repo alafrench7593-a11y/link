@@ -13,7 +13,11 @@
 
 #include "LFCore/LFContact.h"
 #include "LFCore/LFCorps.h"
+#include "LFCore/LFDetecteurs.h"
 #include "LFCore/LFFamilles.h"
+#include "LFCore/LFLocomotion.h"
+#include "LFCore/LFRegard.h"
+#include "LFCore/LFVisage.h"
 
 namespace
 {
@@ -31,6 +35,7 @@ namespace
 	const FLinearColor kGris(0.72f, 0.75f, 0.8f);
 	const FLinearColor kRouge(1.f, 0.28f, 0.28f);
 	const FLinearColor kVert(0.45f, 1.f, 0.55f);
+	const FLinearColor kOrange(1.f, 0.7f, 0.25f);
 
 	FString NomFamilleHUD(ELFFamille F)
 	{
@@ -47,6 +52,10 @@ void ALFHUDDebug::Ligne(const FString& Texte, float X, float& Y, const FLinearCo
 void ALFHUDDebug::DrawHUD()
 {
 	Super::DrawHUD();
+	if (bModeReel)
+	{
+		return;	// §31 : le test absolu, rien d'autre que le match à l'écran
+	}
 	UWorld* Monde = GetWorld();
 	const ULFMatchSubsystem* M = Monde ? Monde->GetSubsystem<ULFMatchSubsystem>() : nullptr;
 	if (!M || !M->EstCharge() || !Canvas)
@@ -67,10 +76,21 @@ void ALFHUDDebug::DrawHUD()
 
 	const int32 Suivi = JoueurSuivi >= 0 ? JoueurSuivi : M->Focus();
 	const ALFFootballeur* DuPanneau = nullptr;
+	lf::BilanQualite Bilan;
+	int32 Controles = 0;
 	for (TActorIterator<ALFFootballeur> It(Monde); It; ++It)
 	{
 		const ALFFootballeur* J = *It;
-		if (!J || !J->bSurLeTerrain || J->IsHidden())
+		if (!J)
+		{
+			continue;
+		}
+		if (const ULFComposantControle* Controle = J->FindComponentByClass<ULFComposantControle>())
+		{
+			Bilan += Controle->Bilan();
+			++Controles;
+		}
+		if (!J->bSurLeTerrain || J->IsHidden())
 		{
 			continue;
 		}
@@ -101,6 +121,14 @@ void ALFHUDDebug::DrawHUD()
 				Ligne(Alerte, XL, YL, kRouge);
 			}
 		}
+	}
+	// §20 §31 (qualité visuelle) la porte de qualité de la boucle en cours
+	if (Controles > 0)
+	{
+		const lf::ResultatQualite R = lf::porteQualite(Bilan);
+		const FLinearColor Couleur = R.verdict == lf::VerdictQualite::Valide ? kVert : (R.verdict == lf::VerdictQualite::AReprendre ? kOrange : kRouge);
+		Ligne(TexteHUD("porte de qualité : ") + TexteHUD(lf::nomVerdictQualite(R.verdict)) + (R.raisons.empty() ? FString() : TEXT(" : ") + ULFMatchSubsystem::Texte(R.raisons)),
+			16.f, Y, Couleur);
 	}
 	if (bPanneau && DuPanneau)
 	{
@@ -174,6 +202,28 @@ void ALFHUDDebug::Panneau(const ALFFootballeur& J, float X, float Y)
 				*TexteHUD(lf::nomSurface(static_cast<lf::Surface>(static_cast<uint8>(Anim->Surface)))),
 				Anim->TempsAvantContact, Anim->PointContactLocal.X, Anim->PointContactLocal.Y, *TexteHUD("à droite"), Anim->PointContactLocal.Z), X, Y, kBlanc);
 		}
+
+		// le cahier « qualité visuelle » : ce que le corps doit montrer à cet instant
+		Ligne(FString::Printf(TEXT("course : %s | pas %.0f cm, %.2f pas/s | buste %.0f deg"),
+			*TexteHUD(lf::nomTypeCourse(static_cast<lf::TypeCourse>(static_cast<uint8>(Anim->TypeCourse)))), Anim->LongueurPas, Anim->Cadence,
+			Anim->InclinaisonBuste), X, Y, kBlanc);
+		if (Anim->bRegardValide)
+		{
+			Ligne(FString::Printf(TEXT("regard : %s | %s %.0f / %.0f, yeux %.0f / %.0f%s"),
+				*TexteHUD(lf::nomSourceRegard(static_cast<lf::SourceRegard>(static_cast<uint8>(Anim->SourceRegard)))), *TexteHUD("tête"),
+				Anim->LacetTete, Anim->TangageTete, Anim->LacetYeux, Anim->TangageYeux, Anim->bCibleHorsDeVue ? TEXT(" (hors de vue)") : TEXT("")), X, Y, kBlanc);
+		}
+		const float PoidsVisage[lf::kExpressions] = { Anim->PoidsConcentration, Anim->PoidsFrustration, Anim->PoidsJoie, Anim->PoidsColere,
+			Anim->PoidsDouleur, Anim->PoidsSurprise, Anim->PoidsSoulagement, Anim->PoidsFatigueVisage };
+		const uint8 Dominante = static_cast<uint8>(Anim->ExpressionDominante);
+		Ligne(FString::Printf(TEXT("visage : %s %.2f | geste : %s %.2f"), *TexteHUD(lf::nomExpression(static_cast<lf::Expression>(Dominante))),
+			Dominante < lf::kExpressions ? PoidsVisage[Dominante] : 0.f, *TexteHUD(lf::nomGeste(static_cast<lf::Geste>(static_cast<uint8>(Anim->Geste)))),
+			Anim->PoidsGeste), X, Y, kBlanc);
+		Ligne(FString::Printf(TEXT("souffle %.0f /min (essoufflement %.2f) | sueur %.0f %% | %s %.0f %%"), Anim->FrequenceRespiration, Anim->Essoufflement,
+			Anim->Transpiration * 100.f, *TexteHUD("humidité"), Anim->Humidite * 100.f), X, Y, kBlanc);
+		Ligne(FString::Printf(TEXT("%s : %s (agressif %.2f, calme %.2f, expressif %.2f, %s %.2f, confiance %.2f)"), *TexteHUD("caractère"),
+			*ULFMatchSubsystem::Texte(F->personnalite.type), Anim->Agressivite, Anim->Calme, Anim->Expressivite, *TexteHUD("énergie"),
+			Anim->EnergieCaractere, Anim->Confiance), X, Y, kGris);
 	}
 	FString Competences;
 	for (const lf::Competence& C : F->competences)

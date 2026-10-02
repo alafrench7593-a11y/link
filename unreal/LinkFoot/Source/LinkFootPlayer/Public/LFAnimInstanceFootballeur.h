@@ -15,6 +15,13 @@
 //   Fatigue (§37)                   Energie et bFatigue : une couche de posture.
 //   Désynchronisation (§73)         FamilleAttendue (ce que fait le moteur) ; FamilleVue, que le
 //       graphe renseigne après la recherche de Motion Matching (SignalerAnimationChoisie).
+// Et, pour le cahier « qualité visuelle » :
+//   §4   la tête et les yeux séparés du corps (LacetTete, LacetYeux...) ;
+//   §17  le type de course (TypeCourse), pour choisir la base de mouvements ;
+//   §19 §21 la foulée de ce corps (LongueurPas, Cadence) et l'inclinaison du buste ;
+//   §24  le souffle et la posture de fatigue ; §3 la sueur et la pluie (paramètres de matériau) ;
+//   §25 §26 les expressions du visage (poids de 0 à 1) et le geste du haut du corps ;
+//   §27  le caractère du joueur, qui règle l'amplitude des gestes.
 //
 // Tout se lit dans le cœur portable, testé hors d'Unreal (unreal/tests-coeur).
 #pragma once
@@ -116,6 +123,20 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Locomotion")
 	bool bSprintVoulu = false;
 
+	// §17 (qualité visuelle) la bibliothèque de locomotion
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Locomotion")
+	ELFTypeCourse TypeCourse = ELFTypeCourse::Immobile;
+
+	// §19 §21 la foulée de ce corps : un pas (cm), des pas par seconde, le buste (degrés, + en avant)
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Locomotion")
+	float LongueurPas = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Locomotion")
+	float Cadence = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Locomotion")
+	float InclinaisonBuste = 0.f;
+
 	// Le moteur a replacé le joueur cette image (coup d'envoi, remise en jeu, entrée en jeu).
 	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Locomotion")
 	bool bCoupe = false;
@@ -139,6 +160,88 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Regard")
 	ELFSourceRegard SourceRegard = ELFSourceRegard::Ballon;
+
+	// §4 (qualité visuelle) la tête par rapport au corps, les yeux par rapport à la tête,
+	// degrés : + à droite (le sens du lacet), + vers le haut
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Regard")
+	float LacetTete = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Regard")
+	float TangageTete = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Regard")
+	float LacetYeux = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Regard")
+	float TangageYeux = 0.f;
+
+	// la cible est derrière lui : tête et yeux au bout de leur course
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Regard")
+	bool bCibleHorsDeVue = false;
+
+	// --- §25 §26 le visage et le geste ----------------------------------------------------------
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Visage")
+	float PoidsConcentration = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Visage")
+	float PoidsFrustration = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Visage")
+	float PoidsJoie = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Visage")
+	float PoidsColere = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Visage")
+	float PoidsDouleur = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Visage")
+	float PoidsSurprise = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Visage")
+	float PoidsSoulagement = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Visage")
+	float PoidsFatigueVisage = 0.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Visage")
+	ELFExpression ExpressionDominante = ELFExpression::Concentration;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Visage")
+	ELFGeste Geste = ELFGeste::Aucun;
+
+	// 0 à 1 : monte, tient, retombe
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Visage")
+	float PoidsGeste = 0.f;
+
+	// secondes depuis le début du geste
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Visage")
+	float TempsGeste = 0.f;
+
+	// --- §3 §24 le souffle, la sueur ------------------------------------------------------------
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Physiologie")
+	float Essoufflement = 0.f;
+
+	// cycles par minute
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Physiologie")
+	float FrequenceRespiration = 14.f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Physiologie")
+	float AmplitudeRespiration = 0.2f;
+
+	// 0 à 1 : à envoyer au matériau de la peau et du maillot (paramètre à créer, voir docs/ue5/personnages.md)
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Physiologie")
+	float Transpiration = 0.f;
+
+	// 0 à 1 : la pluie
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Physiologie")
+	float Humidite = 0.f;
+
+	// 0 à 1 : épaules qui tombent, tête plus basse
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Physiologie")
+	float PostureFatigue = 0.f;
 
 	// --- §22 §23 §82 le ballon ----------------------------------------------------------------
 
@@ -220,6 +323,22 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Corps")
 	float Foulee = 1.f;
+
+	// §27 (qualité visuelle) le caractère, de 0,1 à 0,9 : l'amplitude des gestes et des expressions
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Caractere")
+	float Agressivite = 0.5f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Caractere")
+	float Calme = 0.5f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Caractere")
+	float Expressivite = 0.5f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Caractere")
+	float EnergieCaractere = 0.5f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "LinkFoot|Caractere")
+	float Confiance = 0.5f;
 
 	// --- §73 ce que fait le moteur, ce que montre l'animation ---------------------------------
 

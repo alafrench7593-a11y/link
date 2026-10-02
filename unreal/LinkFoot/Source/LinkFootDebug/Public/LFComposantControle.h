@@ -13,7 +13,9 @@
 //   §82 CONTACT MANQUÉ      au contact du moteur, le pied (la tête, la poitrine, les mains) qui
 //                           joue reste à plus de 15 cm du ballon pendant les 0,05 s autour de l'instant.
 // Il compte, il ne corrige pas : c'est le rendu qu'il faut corriger. Le HUD de débogage affiche
-// ses alertes.
+// ses alertes ; le directeur du match fait de ses comptes, à chaque boucle de la scène, le verdict
+// de la porte de qualité (cahier « qualité visuelle » §20 et §31 : un pied qui glisse, et la
+// scène ne passe pas).
 #pragma once
 
 #include "CoreMinimal.h"
@@ -115,6 +117,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "LinkFoot|Controle")
 	TArray<FString> Alertes() const;
 
+	// Ce que les détecteurs ont compté depuis le dernier DebuterBilan (LFDetecteurs.h, porteQualite).
+	lf::BilanQualite Bilan() const;
+	void DebuterBilan();
+
 private:
 	lf::DetecteurDesynchro Position;
 	lf::DetecteurDesynchroAnimation Animation;
@@ -122,7 +128,9 @@ private:
 	lf::DetecteurPied PiedDroit;
 	lf::DetecteurMouvement Mouvement;
 	lf::DetecteurContact Contact;
+	lf::BilanQualite Depart;
 	double DernierTemps = -1.0;
+	uint32 SautsVus = 0;
 	double TempsAnomalie = -1.0e9;
 	double TempsContactManque = -1.0e9;
 	float EcartContactManqueCm = 0.f;

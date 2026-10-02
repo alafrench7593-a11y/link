@@ -51,7 +51,23 @@ namespace lf
 		double carrure = 0.5;		// 0 à 1 : épaules, muscles, masse
 		double inclinaison = 0.5;	// 0 à 1 : posture de course
 		double largeur = -1.0;		// distance moyenne à l'axe du terrain (m), -1 : inconnue
+		double longueurJambeM = 0.87;	// du sol à la hanche (§21 du cahier « qualité visuelle »)
 	};
+
+	// §19 et §21 du cahier « qualité visuelle » : la foulée de CE corps à cette vitesse. Une
+	// jambe plus longue fait des pas plus longs et une cadence plus basse ; un joueur explosif
+	// qui accélère fait des pas plus courts et plus rapides, le buste penché ; un joueur qui
+	// freine se redresse en arrière. De quoi régler le Stride Warping, la vitesse de lecture et
+	// l'inclinaison du buste, pour que deux corps ne courent pas pareil à la même vitesse.
+	struct Foulee
+	{
+		double longueurPasM = 0.0;		// d'un appui à l'autre
+		double cadenceHz = 0.0;			// pas par seconde (0 à l'arrêt)
+		double inclinaisonDeg = 0.0;	// le buste : + vers l'avant, − en arrière
+	};
+
+	// vitesse en m/s, accelerationLongitudinale en m/s² (+ accélère, − freine)
+	LFCORE_API Foulee foulee(double longueurJambeM, double explosivite, double vitesse, double accelerationLongitudinale);
 
 	// largeurMoyenne : la distance moyenne du joueur à l'axe du terrain pendant le match
 	// (largeurDeJeu), ou -1 si on ne la connaît pas (le rôle tactique décide alors).

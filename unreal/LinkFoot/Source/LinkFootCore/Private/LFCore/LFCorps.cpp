@@ -1,5 +1,7 @@
 #include "LFCore/LFCorps.h"
 
+#include "LFCore/LFRepere.h"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -98,6 +100,8 @@ namespace lf
 		p.carrure = borner01((m.epaules + m.muscles + m.masse) / 3.0);
 		p.inclinaison = borner01(m.posture);
 		p.largeur = largeurMoyenne;
+		// du sol à la hanche : de 45 à 51 % de la taille selon la longueur des jambes
+		p.longueurJambeM = m.tailleCm / 100.0 * (0.48 + 0.06 * (m.jambes - 0.5));
 
 		double acc = 0.0, agi = 0.0, bal = 0.0;
 		if (f.aMoteur && f.moteur.acceleration > 0.0)
@@ -141,6 +145,31 @@ namespace lf
 			}
 		}
 		return p;
+	}
+
+	Foulee foulee(double longueurJambeM, double explosivite, double vitesse, double accelerationLongitudinale)
+	{
+		Foulee f;
+		const double v = std::max(0.0, vitesse), a = accelerationLongitudinale;
+		if (v < 0.3)
+		{
+			return f;
+		}
+		// Le pas grandit avec la vitesse, en proportion de la jambe : 0,75 m en marchant à
+		// 1,4 m/s, 1,6 m à 6 m/s, 2,2 m en sprint à 9 m/s pour une jambe de 0,9 m (cadences
+		// de 1,9, 3,7 et 4,1 pas par seconde : celles de la marche, de la course, du sprint).
+		double pas = longueurJambeM * (0.53 + 0.213 * v);
+		// en pleine accélération, l'explosif raccourcit et accélère ses appuis
+		pas *= 1.0 - 0.18 * std::clamp(explosivite, 0.0, 1.0) * std::clamp(a / 6.0, 0.0, 1.0);
+		f.longueurPasM = pas;
+		f.cadenceHz = v / pas;
+		// le buste : penché vers l'avant à la vitesse de course, et de l'angle que demande
+		// l'accélération (tan θ = a / g), davantage chez l'explosif ; en arrière au freinage
+		const double course = 3.0 + 4.0 * std::clamp((v - 3.0) / 6.0, 0.0, 1.0);
+		const double accel = std::atan(a / 9.81) * kDegParRad;
+		f.inclinaisonDeg = a >= 0.0 ? course * std::clamp(v / 3.0, 0.0, 1.0) + accel * (0.75 + 0.25 * std::clamp(explosivite, 0.0, 1.0))
+			: course * std::clamp(v / 3.0, 0.0, 1.0) + accel * 0.8;
+		return f;
 	}
 
 	double largeurDeJeu(const Cinematique& c, int code)

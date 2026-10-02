@@ -343,6 +343,8 @@ class UPrimitiveComponent : public USceneComponent
 {
 public:
 	void SetCollisionEnabled(ECollisionEnabled::Type) {}
+	// « Set custom primitive data at index DataIndex » (UPrimitiveComponent, 5.8)
+	void SetCustomPrimitiveDataFloat(int32 DataIndex, float Value) { (void)DataIndex; (void)Value; }
 };
 class UStaticMeshComponent : public UPrimitiveComponent {};
 class UCapsuleComponent : public UPrimitiveComponent
@@ -393,6 +395,8 @@ public:
 	bool Destroy() { return true; }
 	bool SetRootComponent(USceneComponent* NewRootComponent) { (void)NewRootComponent; return true; }
 	template <typename T> T* FindComponentByClass() const { return nullptr; }
+	// AActor::GetComponents(TArray<ComponentType*, AllocatorType>&, bool bIncludeFromChildActors = false) const
+	template <typename T> void GetComponents(TArray<T*>& OutComponents, bool bIncludeFromChildActors = false) const { (void)OutComponents; (void)bIncludeFromChildActors; }
 	template <typename T> T* CreateDefaultSubobject(FName Name) { (void)Name; return new T(); }
 };
 class APawn : public AActor

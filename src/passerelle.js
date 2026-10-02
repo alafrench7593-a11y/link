@@ -67,41 +67,110 @@ export const Passerelle = {
   // même à chaque rencontre, et différente d'un club à l'autre (pas de onze clones).
   personnageAdverse(club, i) { return 'ADV-' + String(this.empreintePont(club || 'adv') % 100000).padStart(5, '0') + '-' + String(i).padStart(2, '0'); },
 
-  // §4 et §8 le corps. La taille et le poids sont ceux du profil (déjà affichés sur la fiche) ;
-  // les proportions découlent des statistiques, pour que le corps raconte la carte : un
-  // physique fort a les épaules et les muscles, un rapide les jambes, un gardien les bras.
-  // Le corps ne change pas le jeu : les attributs restent le facteur principal (§8).
+  // Un tirage propre à un personnage et à une clé : chaque trait a le sien. En ajouter un ne
+  // change aucun des autres, et un personnage garde son corps, son visage et son caractère
+  // d'une version à l'autre (§36 : LF-00127 une fois pour toutes).
+  tiragePont(perso, cle) { return this.seedR(this.empreintePont(perso + ':' + cle) % 2147483647 || 1)(); },
+
+  // §4 et §8 le corps (cahier de la passerelle), et §7 à §10 du cahier « qualité visuelle » :
+  // les seize mesures d'un corps paramétrique (MetaHuman), qui racontent la carte. La taille et
+  // le poids sont ceux du profil (déjà affichés sur la fiche) ; les proportions vont de 0 à 1
+  // (0,5 : un footballeur professionnel moyen) et découlent des statistiques : un rapide a les
+  // jambes, les cuisses et les mollets, et peu de masse grasse ; un physique fort les épaules,
+  // le torse, le cou et les muscles ; un défenseur central est plus large ; un gardien a
+  // l'envergure, les bras et les mains. Chaque mesure a aussi sa part propre au personnage :
+  // deux joueurs du même poste n'ont pas la même silhouette (§8). Le corps ne change pas le
+  // jeu : les attributs restent le facteur principal.
   morphologie(p, stats, perso) {
-    const pr = this.profile(p), r = this.seedR(this.empreintePont(perso + ':corps') % 2147483647 || 1);
-    const cl = (v) => Math.round(Math.max(0, Math.min(1, v)) * 100) / 100, bruit = () => (r() - 0.5) * 0.12;
-    const PHY = stats.PHY != null ? stats.PHY : 60, VIT = stats.VIT != null ? stats.VIT : 60, gb = p.pos === 'GB';
-    const imc = pr.weight / Math.pow(pr.height / 100, 2);
-    const muscles = cl((PHY - 40) / 60 + bruit()), masse = cl((imc - 19) / 7);
+    const pr = this.profile(p), st = stats || {};
+    const cl = (v) => Math.round(Math.max(0, Math.min(1, v)) * 100) / 100;
+    const bruit = (cle, a) => (this.tiragePont(perso, 'corps:' + cle) - 0.5) * 2 * (a || 0.07);
+    const n = (k, d) => (st[k] != null ? st[k] : d);
+    const VIT = n('VIT', 60), PHY = n('PHY', 60), DEF = n('DÉF', 55), gb = p.pos === 'GB', def = p.pos === 'DEF', att = p.pos === 'ATT';
+    const h = pr.height, kg = pr.weight, imc = kg / Math.pow(h / 100, 2);
+    const muscles = cl((PHY - 40) / 60 + bruit('muscles'));
+    const masse = cl((imc - 19) / 7);
+    const grasse = cl(0.5 + (imc - 22) * 0.1 - (VIT - 60) / 90 - (PHY - 60) / 220 + bruit('grasse'));
+    const bras = cl(gb ? 0.78 + (n('PLO', 60) - 60) / 160 + bruit('bras', 0.04) : 0.45 + bruit('bras'));
+    const pieds = cl(0.5 + bruit('pieds', 0.12));
     const carrure = muscles > 0.7 && masse > 0.55 ? 'massive' : muscles > 0.5 ? 'athletique' : muscles < 0.3 && masse < 0.4 ? 'fine' : 'equilibree';
     return {
-      taille_cm: pr.height, poids_kg: pr.weight, carrure,
-      epaules: cl(0.35 + (PHY - 50) / 100 + (gb || p.pos === 'DEF' ? 0.1 : 0) + bruit()),
-      muscles, masse,
-      jambes: cl(0.45 + (VIT - 60) / 120 + bruit()),
-      bras: cl(gb ? 0.78 + ((stats.PLO || 60) - 60) / 160 : 0.45 + bruit()),
-      bassin: cl(0.45 + (PHY - 60) / 200 + bruit()),
-      posture: cl(0.5 + bruit())
+      taille_cm: h, poids_kg: kg, carrure,
+      epaules: cl(0.35 + (PHY - 50) / 100 + (gb || def ? 0.1 : 0) + bruit('epaules')),
+      poitrine: cl(0.3 + (PHY - 50) / 90 + (def ? 0.08 : 0) + (att && PHY > 70 ? 0.05 : 0) + bruit('poitrine')),
+      ventre: cl(0.3 + grasse * 0.45 + (imc - 22) * 0.04 + bruit('ventre', 0.05)),
+      bassin: cl(0.45 + (PHY - 60) / 200 + bruit('bassin')),
+      bras,
+      mains: cl(0.45 + (gb ? 0.18 + (n('MAI', 60) - 60) / 220 : 0) + bruit('mains', 0.08)),
+      jambes: cl(0.45 + (VIT - 60) / 120 + bruit('jambes')),
+      cuisses: cl(0.35 + (VIT - 60) / 100 + (PHY - 60) / 120 + (def ? 0.04 : 0) + bruit('cuisses')),
+      mollets: cl(0.35 + (VIT - 60) / 110 + (PHY - 60) / 200 + bruit('mollets')),
+      cou: cl(0.3 + (PHY - 50) / 100 + (def || gb ? 0.05 : 0) + (DEF - 55) / 400 + bruit('cou')),
+      tete: cl(0.5 + bruit('tete', 0.1)),
+      pieds,
+      muscles, masse, masse_grasse: grasse,
+      // en unités : ce qu'un corps paramétrique sait viser directement
+      masse_grasse_pct: Math.round((6.5 + grasse * 8) * 10) / 10,
+      envergure_cm: Math.round(h * (1 + (bras - 0.5) * 0.12)),
+      pointure: Math.round((h * 0.15 * (0.96 + 0.08 * pieds) + 1.5) * 1.5),
+      posture: cl(0.5 + bruit('posture'))
     };
   },
 
-  // §5 à §7 le visage et les cheveux : originaux, tirés d'une graine propre au personnage.
-  // Jamais copiés sur un vrai joueur, et rien n'est déduit de la nationalité.
+  // §5 à §7 du cahier de la passerelle, §2 à §6 du cahier « qualité visuelle » : le visage, la
+  // peau, les yeux, les cheveux et la barbe. Originaux, tirés d'une graine propre au
+  // personnage, jamais copiés sur un vrai joueur, et rien n'est déduit de la nationalité.
+  // teint : 0 (très clair) à 9 (très foncé). La texture des cheveux et la couleur des yeux et
+  // des cheveux tiennent compte du teint, sans rien exclure : un corps crédible, pas un cliché.
   apparencePont(perso) {
-    const r = this.seedR(this.empreintePont(perso + ':visage') % 2147483647 || 1), pick = (l) => l[Math.floor(r() * l.length)];
+    const r = this.seedR(this.empreintePont(perso + ':visage') % 2147483647 || 1);
+    const t = (cle) => this.tiragePont(perso, 'visage:' + cle);
+    // un tirage pondéré : [[valeur, poids], ...]
+    const pese = (cle, liste) => { const tot = liste.reduce((a, x) => a + x[1], 0); let u = t(cle) * tot; for (const [v, w] of liste) { if ((u -= w) < 0) return v; } return liste[liste.length - 1][0]; };
+    const teint = Math.min(9, Math.floor(t('teint') * 10)), f = teint / 9;
+    const texture = pese('texture', [['raides', 0.10 + 0.40 * (1 - f)], ['ondules', 0.10 + 0.30 * (1 - f)], ['boucles', 0.20 + 0.10 * f], ['crepus', 0.05 + 0.55 * f]]);
+    // §5 les coiffures : courts, dégradés, afro, boucles, frisés, dreadlocks, longs, attachés, rasés
+    const styles = { raides: [['ras', 1], ['court', 3], ['degrade', 3], ['long', 1], ['attache', 1]],
+      ondules: [['ras', 1], ['court', 3], ['degrade', 2], ['long', 1.5], ['attache', 1]],
+      boucles: [['ras', 1], ['court', 2], ['degrade', 2], ['boucles', 3], ['long', 0.7], ['attache', 0.8], ['dreadlocks', 0.5]],
+      crepus: [['ras', 1.5], ['court', 2], ['degrade', 3], ['afro', 1.5], ['frises', 1.5], ['dreadlocks', 1], ['tresses', 0.8]] }[texture];
     return {
       graine: this.empreintePont(perso) % 2147483647,
       visage: Array.from({ length: 8 }, () => Math.round(r() * 1000) / 1000),
-      teint: Math.floor(r() * 10),
-      coiffure: pick(['ras', 'court', 'court', 'degrade', 'degrade', 'boucle', 'afro', 'tresses', 'attache', 'long']),
-      cheveux: pick(['noir', 'noir', 'brun_fonce', 'brun', 'chatain', 'blond', 'roux']),
-      barbe: pick(['aucune', 'aucune', 'naissante', 'courte', 'pleine', 'bouc', 'moustache']),
-      sourcils: Math.floor(r() * 6), yeux: Math.floor(r() * 6)
+      teint,
+      texture_cheveux: texture,
+      coiffure: pese('coiffure', styles),
+      cheveux: pese('cheveux', [['noir', 0.3 + 0.6 * f], ['brun_fonce', 0.3], ['brun', 0.25 * (1 - f) + 0.05], ['chatain', 0.2 * (1 - f)], ['blond', 0.12 * (1 - f) + 0.01], ['roux', 0.05 * (1 - f) + 0.005]]),
+      // §6 la pilosité faciale : rasé, très courte, courte, moyenne, longue, moustache, bouc
+      barbe: pese('barbe', [['aucune', 0.3], ['tres_courte', 0.25], ['courte', 0.17], ['moyenne', 0.1], ['longue', 0.03], ['moustache', 0.04], ['bouc', 0.11]]),
+      sourcils: Math.floor(t('sourcils') * 6),
+      // 0 marron foncé, 1 marron, 2 noisette, 3 vert, 4 bleu, 5 gris
+      yeux: pese('yeux', [[0, 0.25 + 0.5 * f], [1, 0.3], [2, 0.12 * (1 - f) + 0.02], [3, 0.08 * (1 - f) + 0.01], [4, 0.15 * (1 - f) + 0.01], [5, 0.05 * (1 - f) + 0.005]])
     };
+  },
+
+  // §27 du cahier « qualité visuelle » : la personnalité qui se voit, en six tempéraments
+  // subtils (agressif, calme, expressif, réservé, énergique, confiant). Elle prolonge la
+  // personnalité de la fiche (profile().perso) et les compétences ; chaque trait garde sa
+  // part propre au personnage. Elle ne change rien au match : le rendu s'en sert pour
+  // l'expressivité du visage, la façon de célébrer, de protester, de réclamer le ballon.
+  personnalitePont(p, stats, perso, competences) {
+    const pr = this.profile(p), st = stats || {}, eff = new Set((competences || []).map((k) => k.eid || k.effet));
+    const cl = (v) => Math.round(Math.max(0.1, Math.min(0.9, v)) * 100) / 100;
+    const bruit = (cle) => (this.tiragePont(perso, 'caractere:' + cle) - 0.5) * 0.24;
+    const fiche = { Leader: { confiance: 0.2, expressivite: 0.05 }, Solitaire: { expressivite: -0.2, calme: 0.05 }, Travailleur: { energie: 0.2 },
+      'Talent naturel': { confiance: 0.1, calme: 0.1 }, Showman: { expressivite: 0.3, confiance: 0.05 }, 'Compétiteur': { agressivite: 0.15, energie: 0.1 },
+      Professionnel: { calme: 0.15, agressivite: -0.1 }, Instable: { agressivite: 0.2, calme: -0.25, expressivite: 0.1 }, 'Généreux': { energie: 0.1, expressivite: 0.1 },
+      Ambitieux: { confiance: 0.1, agressivite: 0.1 }, Discret: { expressivite: -0.25, agressivite: -0.1 }, Charismatique: { confiance: 0.15, expressivite: 0.15 } }[pr.perso] || {};
+    const c = (k, d) => (st[k] != null ? st[k] : d), a = (k) => fiche[k] || 0, s = (...l) => l.filter((e) => eff.has(e)).length * 0.12;
+    const agressivite = cl(0.4 + (c('DÉF', 55) - 55) / 250 + (c('PHY', 60) - 60) / 300 + s('gladiateur', 'mur', 'grinta', 'pressing') + a('agressivite') + bruit('agressivite'));
+    const calme = cl(0.5 + s('calme', 'clutch', 'acier') + a('calme') - (agressivite - 0.5) * 0.3 + bruit('calme'));
+    const expressivite = cl(0.45 + s('leader', 'chef') * 0.5 + a('expressivite') + bruit('expressivite'));
+    const energie = cl(0.45 + (c('VIT', 60) - 60) / 150 + s('moteur', 'pressing', 'sprinter') + a('energie') + bruit('energie'));
+    const confiance = cl(0.45 + ((p.ovr || 65) - 65) / 80 + s('leader', 'chef', 'meneur', 'clutch', 'tueur') * 0.7 + a('confiance') + bruit('confiance'));
+    const traits = { agressif: agressivite, calme, expressif: expressivite, reserve: Math.round((1 - expressivite) * 100) / 100, energique: energie, confiant: confiance };
+    const type = Object.keys(traits).reduce((m, k) => (traits[k] > traits[m] ? k : m), 'calme');
+    return { type, agressivite, calme, expressivite, energie, confiance };
   },
 
   // La feuille de match : tout ce qui ne bouge pas pendant le match. `ctx` vient de
@@ -125,17 +194,23 @@ export const Passerelle = {
         numero: code != null ? code + 1 : null, note: p.ovr, rarete: p.rar || this.rarityFor(p).id, niveau: p.plv || 1,
         stats: st, moteur: code != null ? moteur(E.player(code)) : null, competences: competences(this.skillsOf(p)),
         etat: { forme: p.form != null ? p.form : 70, moral: p.morale != null ? p.morale : 72, energie: p.energy != null ? p.energy : (p.fit != null ? p.fit : 100), blessure: p.inj || 0 },
-        pied: pr.foot, pied_faible: pr.wf, morphologie: this.morphologie(p, st, perso), apparence: this.apparencePont(perso) };
+        pied: pr.foot, pied_faible: pr.wf, morphologie: this.morphologie(p, st, perso), apparence: this.apparencePont(perso),
+        personnalite: this.personnalitePont(p, st, perso, this.skillsOf(p)) };
     };
     const adverse = (d, i, code) => {
       const perso = this.personnageAdverse(opp.club, i), st = d.st || {};
       const p = { id: 90000 + (this.empreintePont(perso) % 9000), pos: d.pos || d.line || 'MIL', ovr: d.ovr };
+      // un adversaire n'a pas de carte, et ses notes sont retirées à chaque match : son corps et
+      // son caractère se tirent de son personnage seul, pour qu'il reste le même d'un match à l'autre
+      const u = (k) => Math.round(45 + 45 * this.tiragePont(perso, 'stable:' + k));
+      const stable = { VIT: u('VIT'), PHY: u('PHY'), 'DÉF': u('DEF'), PLO: u('PLO'), MAI: u('MAI') };
+      const pStable = { id: p.id, pos: p.pos, ovr: 60 + Math.round(20 * this.tiragePont(perso, 'stable:note')) };
       return { code, camp: 'A', id: null, carte: null, personnage: perso, nom: d.name, poste: p.pos, ligne: d.line || p.pos, poste_tactique: null,
         role: d.role || null, devoir: d.duty || null,
         numero: code != null ? code - 10 : null, note: d.ovr, rarete: null, niveau: null,
         stats: st, moteur: code != null ? moteur(E.player(code)) : null, competences: [],
         etat: { forme: 70, moral: 72, energie: 100, blessure: 0 }, pied: 'Droit', pied_faible: 3,
-        morphologie: this.morphologie(p, st, perso), apparence: this.apparencePont(perso) };
+        morphologie: this.morphologie(pStable, stable, perso), apparence: this.apparencePont(perso), personnalite: this.personnalitePont(pStable, stable, perso, []) };
     };
     const A = cfg.sides.A;
     const joueurs = xi.map((p, i) => notre(p, i))

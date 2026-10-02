@@ -174,21 +174,40 @@ namespace lf
 		int reflexes = 0, prise = 0, plongeon = 0, degagement = 0, placement = 0;
 	};
 
+	// Le corps (cahier « qualité visuelle » §7 à §10) : les proportions vont de 0 à 1 (0,5 : un
+	// footballeur professionnel moyen) ; le reste est en unités.
 	struct Morphologie
 	{
 		int tailleCm = 180;
 		int poidsKg = 75;
 		std::string carrure;	// massive, athletique, fine, equilibree
-		double epaules = 0.5, muscles = 0.5, masse = 0.5, jambes = 0.5, bras = 0.5, bassin = 0.5, posture = 0.5;
+		double epaules = 0.5, poitrine = 0.5, ventre = 0.5, bassin = 0.5, bras = 0.5, mains = 0.5, jambes = 0.5;
+		double cuisses = 0.5, mollets = 0.5, cou = 0.5, tete = 0.5, pieds = 0.5, muscles = 0.5, masse = 0.5, masseGrasse = 0.5;
+		double masseGrassePct = 10.0;
+		int envergureCm = 180;
+		int pointure = 43;
+		double posture = 0.5;
 	};
 
+	// Le visage, la peau, les cheveux, la barbe (cahier « qualité visuelle » §2 à §6).
 	struct Apparence
 	{
 		std::int64_t graine = 0;
 		std::array<double, 8> visage{};
-		int teint = 0;
-		std::string coiffure, cheveux, barbe;
-		int sourcils = 0, yeux = 0;
+		int teint = 0;					// 0 très clair à 9 très foncé
+		std::string textureCheveux;		// raides, ondules, boucles, crepus
+		std::string coiffure;			// ras, court, degrade, boucles, frises, afro, dreadlocks, tresses, long, attache
+		std::string cheveux;			// noir, brun_fonce, brun, chatain, blond, roux
+		std::string barbe;				// aucune, tres_courte, courte, moyenne, longue, moustache, bouc
+		int sourcils = 0;
+		int yeux = 0;					// 0 marron foncé, 1 marron, 2 noisette, 3 vert, 4 bleu, 5 gris
+	};
+
+	// Le caractère qui se voit (cahier « qualité visuelle » §27), subtil : de 0,1 à 0,9.
+	struct Personnalite
+	{
+		std::string type = "calme";		// agressif, calme, expressif, reserve, energique, confiant
+		double agressivite = 0.5, calme = 0.5, expressivite = 0.5, energie = 0.5, confiance = 0.5;
 	};
 
 	struct EtatFiche
@@ -212,6 +231,7 @@ namespace lf
 		EtatFiche etat;
 		Morphologie morphologie;
 		Apparence apparence;
+		Personnalite personnalite;
 
 		int stat(std::string_view cle, int defaut) const;
 		bool aCompetence(std::string_view effet) const;

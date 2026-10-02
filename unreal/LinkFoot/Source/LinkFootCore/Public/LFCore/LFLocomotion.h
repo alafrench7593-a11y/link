@@ -57,6 +57,31 @@ namespace lf
 		V180
 	};
 
+	// §17 du cahier « qualité visuelle » : la bibliothèque de locomotion. Le type de course que
+	// le corps fait à cet instant : un seul, le premier qui s'applique dans cet ordre (départ et
+	// arrêt, pressing, repli, recul, pas chassés, accélération, décélération, course en courbe,
+	// course en diagonale, puis l'allure). Chacun peut avoir sa base de mouvements.
+	enum class TypeCourse : std::uint8_t
+	{
+		Immobile,
+		Marche,			// Walk
+		Trot,			// Jog
+		Course,			// Run
+		Sprint,			// 8 m/s et plus, ou lancé à plus de 6 m/s en sprint voulu ou à 85 % de sa pointe
+		Depart,			// Start : part d'un arrêt
+		Acceleration,
+		Deceleration,
+		Arret,			// Stop : finit de s'arrêter
+		Courbe,			// CurvedRun
+		Diagonale,		// DiagonalRun : il court de biais par rapport à son buste
+		Laterale,		// LateralRun : pas chassés
+		Recul,			// Backpedal
+		Repli,			// RecoveryRun : il rentre vers son but (intention « recover » de l'IA)
+		Pressing		// PressingRun : il presse le porteur
+	};
+
+	constexpr int kTypesCourse = 15;
+
 	struct ParametresLocomotion
 	{
 		double seuilArret = 0.3;			// m/s
@@ -84,6 +109,7 @@ namespace lf
 		double energie = 100.0;
 		bool sprintVoulu = false;				// le moteur veut sprinter (bit Sprint)
 		bool fatigue = false;
+		TypeCourse type = TypeCourse::Immobile;	// §17 du cahier « qualité visuelle »
 	};
 
 	LFCORE_API DescriptionLocomotion decrireLocomotion(const Cinematique& c, int code, double t, const ParametresLocomotion& p = {});
@@ -95,4 +121,5 @@ namespace lf
 	LFCORE_API const char* nomPhase(PhaseVitesse p);
 	LFCORE_API const char* nomAllure(Allure a);
 	LFCORE_API const char* nomVirage(ClasseVirage v);
+	LFCORE_API const char* nomTypeCourse(TypeCourse t);
 }

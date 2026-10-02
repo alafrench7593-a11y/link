@@ -30,10 +30,12 @@
 #include "LFCore/LFFamilles.h"
 #include "LFCore/LFJson.h"
 #include "LFCore/LFLocomotion.h"
+#include "LFCore/LFPhysiologie.h"
 #include "LFCore/LFRegard.h"
 #include "LFCore/LFRepere.h"
 #include "LFCore/LFScene.h"
 #include "LFCore/LFTrajectoire.h"
+#include "LFCore/LFVisage.h"
 #include "mini_test.h"
 
 #include <algorithm>
@@ -44,6 +46,7 @@
 #include <fstream>
 #include <map>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -1372,6 +1375,410 @@ namespace
 		verifier("des décisions hors de l'ordre du temps : document refusé", refuse);
 	}
 
+
+	// ------------------------------------------------------------------ cahier « qualité visuelle »
+	void testsQualiteFiche(const std::vector<const lf::DocumentMatch*>& docs)
+	{
+		titre("Qualité visuelle §5 à §10, §27 : le corps, le visage et le caractère, lus dans la feuille");
+		const std::set<std::string> coiffures = { "ras", "court", "degrade", "boucles", "frises", "afro", "dreadlocks", "tresses", "long", "attache" };
+		const std::set<std::string> barbes = { "aucune", "tres_courte", "courte", "moyenne", "longue", "moustache", "bouc" };
+		const std::set<std::string> types = { "agressif", "calme", "expressif", "reserve", "energique", "confiant" };
+		int fiches = 0, justes = 0;
+		for (const lf::DocumentMatch* d : docs)
+		{
+			for (const lf::FicheJoueur& f : d->joueurs)
+			{
+				++fiches;
+				const lf::Morphologie& m = f.morphologie;
+				const bool corps = m.tailleCm >= 160 && m.tailleCm <= 210 && m.pointure >= 38 && m.pointure <= 50 && m.masseGrassePct >= 6.0 && m.masseGrassePct <= 15.0
+					&& std::abs(m.envergureCm - m.tailleCm) < m.tailleCm * 0.08 && m.cuisses >= 0.0 && m.cuisses <= 1.0 && m.mollets >= 0.0 && m.mollets <= 1.0;
+				const bool visage = coiffures.count(f.apparence.coiffure) == 1 && barbes.count(f.apparence.barbe) == 1 && !f.apparence.textureCheveux.empty()
+					&& f.apparence.teint >= 0 && f.apparence.teint <= 9;
+				const lf::Personnalite& k = f.personnalite;
+				const bool caractere = types.count(k.type) == 1 && k.agressivite >= 0.1 && k.agressivite <= 0.9 && k.expressivite >= 0.1 && k.expressivite <= 0.9;
+				justes += corps && visage && caractere ? 1 : 0;
+			}
+		}
+		verifier("chaque fiche porte ses seize mesures, son visage et son caractère, dans les bornes", fiches > 60 && justes == fiches,
+			std::to_string(justes) + " sur " + std::to_string(fiches));
+	}
+
+	void testsRegardTete(const std::vector<const lf::DocumentMatch*>& docs)
+	{
+		titre("Qualité visuelle §4 : le corps court, la tête suit en partie, les yeux vont au ballon");
+		// le corps regarde x croissant (angle 0) ; la cible tout droit, à 10°, à 80°, derrière
+		const auto vers = [](double angleDeg, double distance) { const double a = angleDeg / lf::kDegParRad; return std::pair<double, double>{ distance * std::cos(a), distance * std::sin(a) }; };
+		const auto [x1, y1] = vers(0.0, 10.0);
+		const lf::OrientationRegard droit = lf::orienterRegard(0.0, 0.0, 0.0, 1.68, x1, y1, 1.68);
+		const auto [x2, y2] = vers(10.0, 10.0);
+		const lf::OrientationRegard petit = lf::orienterRegard(0.0, 0.0, 0.0, 1.68, x2, y2, 1.68);
+		const auto [x3, y3] = vers(80.0, 10.0);
+		const lf::OrientationRegard cote = lf::orienterRegard(0.0, 0.0, 0.0, 1.68, x3, y3, 1.68);
+		const auto [x4, y4] = vers(-150.0, 10.0);
+		const lf::OrientationRegard derriere = lf::orienterRegard(0.0, 0.0, 0.0, 1.68, x4, y4, 1.68);
+		verifier("tout droit : ni la tête ni les yeux ne bougent", std::fabs(droit.lacetTeteDeg) < 1e-9 && std::fabs(droit.lacetYeuxDeg) < 1e-9);
+		verifier("à 10° : les yeux seuls", std::fabs(petit.lacetTeteDeg) < 1e-9 && std::fabs(std::fabs(petit.lacetYeuxDeg) - 10.0) < 1e-6);
+		verifier("à 80° : la tête en partie, les yeux finissent, la cible est vue", std::fabs(cote.lacetTeteDeg) > 40.0 && std::fabs(cote.lacetTeteDeg) < 60.0 && !cote.horsDeVue
+			&& std::fabs(cote.lacetTeteDeg + cote.lacetYeuxDeg - cote.lacetCibleDeg) < 1e-6, "tête " + nombre(cote.lacetTeteDeg, 1) + "°, yeux " + nombre(cote.lacetYeuxDeg, 1) + "°");
+		verifier("derrière (150°) : tête et yeux au bout de leur course, cible hors de vue", std::fabs(std::fabs(derriere.lacetTeteDeg) - 70.0) < 1e-9 && std::fabs(std::fabs(derriere.lacetYeuxDeg) - 35.0) < 1e-9 && derriere.horsDeVue);
+		const auto [x5, y5] = vers(-80.0, 10.0);
+		const lf::OrientationRegard autreCote = lf::orienterRegard(0.0, 0.0, 0.0, 1.68, x5, y5, 1.68);
+		verifier("la droite et la gauche (au sens du lacet d'Unreal) ne se confondent pas", cote.lacetTeteDeg > 0.0 && autreCote.lacetTeteDeg < 0.0
+			&& std::fabs(cote.lacetTeteDeg + autreCote.lacetTeteDeg) < 1e-9);
+		const lf::OrientationRegard sol = lf::orienterRegard(0.0, 0.0, 0.0, 1.68, 2.0, 0.0, 0.11);
+		verifier("un ballon au sol à 2 m : la tête baisse, les yeux plus encore", sol.tangageTeteDeg < -10.0 && sol.tangageYeuxDeg < 0.0 && !sol.horsDeVue,
+			"tête " + nombre(sol.tangageTeteDeg, 1) + "°, yeux " + nombre(sol.tangageYeuxDeg, 1) + "°");
+		// sur de vrais matchs : jamais au-delà des limites, et les yeux sur la cible quand elle est visible
+		int n = 0, horsLimites = 0, ratees = 0, horsVue = 0;
+		for (const lf::DocumentMatch* d : docs)
+		{
+			const lf::Cinematique c(*d);
+			for (double t = d->images.front().temps(); t < d->images.back().temps(); t += 2.0)
+			{
+				for (int k = 0; k < lf::kJoueurs; ++k)
+				{
+					const lf::Regard r = lf::cibleRegard(c, k, t);
+					const lf::EtatCinematique e = c.etat(k, t);
+					if (!r.valide || !e.valide)
+					{
+						continue;
+					}
+					const lf::OrientationRegard o = lf::orienterRegard(e.x, e.y, e.angleCorps, 1.68, r.x, r.y, r.z + lf::kRayonBallonM);
+					if (!o.valide)
+					{
+						continue;
+					}
+					++n;
+					horsLimites += std::fabs(o.lacetTeteDeg) > 70.0 + 1e-9 || std::fabs(o.lacetYeuxDeg) > 35.0 + 1e-9 || o.tangageTeteDeg < -40.0 - 1e-9 || o.tangageTeteDeg > 30.0 + 1e-9 ? 1 : 0;
+					if (o.horsDeVue)
+					{
+						++horsVue;
+					}
+					else if (std::fabs(o.lacetTeteDeg + o.lacetYeuxDeg - o.lacetCibleDeg) > 0.5)
+					{
+						++ratees;
+					}
+				}
+			}
+		}
+		verifier("sur trois matchs : jamais au-delà des limites du cou et des yeux ; quand la cible est visible, les yeux sont dessus (à 0,5° près)", n > 10000 && horsLimites == 0 && ratees == 0,
+			std::to_string(n) + " regards");
+		constat("cible du regard hors de vue (derrière lui : il faudra tourner le buste ou jeter un coup d'œil)", nombre(100.0 * horsVue / std::max(1, n), 1) + " % des regards");
+	}
+
+	void testsVisage(const std::vector<const lf::DocumentMatch*>& docs)
+	{
+		titre("Qualité visuelle §25 à §27 : le visage et le geste suivent le match, la personnalité règle l'amplitude");
+		int buts = 0, buteursJoie = 0, encaisseursFrustres = 0, decrues = 0;
+		int rates = 0, ratesFrustres = 0, fautes = 0, victimes = 0, cartons = 0, colereCartons = 0, protestations = 0;
+		std::vector<double> expressivite, joie, energies, fatigues;
+		for (const lf::DocumentMatch* d : docs)
+		{
+			const lf::Cinematique c(*d);
+			const lf::ChroniqueVisages V(c);
+			for (const lf::Action& a : d->actions)
+			{
+				if (a.type == lf::TypeAction::But && !a.vrai("csc"))
+				{
+					++buts;
+					const lf::EtatVisage v = V.etat(a.code, a.t + 1.0);
+					buteursJoie += v.poids[static_cast<std::size_t>(lf::Expression::Joie)] >= 0.75 && v.dominante == lf::Expression::Joie && v.geste == lf::Geste::Celebration ? 1 : 0;
+					double fr = 0.0, jo = 0.0;
+					int n = 0;
+					for (int k = 0; k < lf::kJoueurs; ++k)
+					{
+						const lf::EtatVisage w = V.etat(k, a.t + 2.0);
+						if (!w.valide)
+						{
+							continue;
+						}
+						if (lf::equipeDe(k) != lf::equipeDe(a.code))
+						{
+							fr += w.poids[static_cast<std::size_t>(lf::Expression::Frustration)];
+							jo += w.poids[static_cast<std::size_t>(lf::Expression::Joie)];
+							++n;
+						}
+						else if (k != a.code)
+						{
+							const lf::FicheJoueur* f = d->ficheA(k, a.t);
+							if (f)
+							{
+								expressivite.push_back(f->personnalite.expressivite);
+								joie.push_back(V.etat(k, a.t + 1.0).poids[static_cast<std::size_t>(lf::Expression::Joie)]);
+							}
+						}
+					}
+					encaisseursFrustres += n > 0 && fr / n >= 0.25 && fr > jo ? 1 : 0;
+					decrues += V.etat(a.code, a.t + 40.0).poids[static_cast<std::size_t>(lf::Expression::Joie)] < 0.2 ? 1 : 0;
+				}
+				if (a.type == lf::TypeAction::Tir && a.texteVaut("issue", "miss") && a.nombre("xg", 0.0) >= 0.12)
+				{
+					++rates;
+					const double avant = V.etat(a.code, a.t - 0.5).poids[static_cast<std::size_t>(lf::Expression::Frustration)];
+					const double apres = V.etat(a.code, a.t + 0.5).poids[static_cast<std::size_t>(lf::Expression::Frustration)];
+					ratesFrustres += apres >= 0.25 && apres > avant ? 1 : 0;
+				}
+				if (a.type == lf::TypeAction::Faute)
+				{
+					++fautes;
+					const int victime = static_cast<int>(std::lround(a.nombre("victime", -1.0)));
+					if (victime >= 0 && V.etat(victime, a.t + 0.5).poids[static_cast<std::size_t>(lf::Expression::Douleur)] >= 0.4)
+					{
+						++victimes;
+					}
+					const std::string* carton = a.texte("carton");
+					// un carton jaune : un rouge le sort du terrain, son visage n'est plus à l'écran
+					if (carton && *carton == "Y")
+					{
+						++cartons;
+						const lf::EtatVisage v = V.etat(a.code, a.t + 0.5);
+						colereCartons += v.poids[static_cast<std::size_t>(lf::Expression::Colere)] > 0.2 ? 1 : 0;
+						protestations += v.geste == lf::Geste::Protestation ? 1 : 0;
+					}
+				}
+			}
+			for (double t = d->images.front().temps(); t < d->images.back().temps(); t += 30.0)
+			{
+				for (int k = 0; k < lf::kJoueurs; ++k)
+				{
+					const lf::EtatVisage v = V.etat(k, t);
+					const lf::EtatCinematique e = c.etat(k, t);
+					if (v.valide && e.valide)
+					{
+						energies.push_back(e.energie);
+						fatigues.push_back(v.poids[static_cast<std::size_t>(lf::Expression::Fatigue)]);
+					}
+				}
+			}
+		}
+		verifier("§25 un but : la joie du buteur, sa célébration, une seconde après", buts > 5 && buteursJoie == buts, std::to_string(buteursJoie) + " buts sur " + std::to_string(buts));
+		verifier("   ceux qui encaissent : la frustration l'emporte sur la joie", encaisseursFrustres == buts);
+		verifier("   et la joie retombe : moins de 0,2 quarante secondes plus tard", decrues == buts);
+		verifier("une grosse occasion manquée : le tireur se frustre", rates > 3 && ratesFrustres == rates, std::to_string(ratesFrustres) + " sur " + std::to_string(rates));
+		verifier("une faute : la douleur de la victime", fautes > 10 && victimes == fautes, std::to_string(victimes) + " sur " + std::to_string(fautes));
+		verifier("un carton jaune : la colère de l'averti, qui proteste", cartons > 0 && colereCartons == cartons && protestations > 0,
+			std::to_string(protestations) + " protestations sur " + std::to_string(cartons) + " cartons");
+		// la fatigue n'apparaît qu'en dessous de 75 d'énergie, puis grandit à mesure qu'elle baisse
+		std::vector<double> eBas, fBas;
+		bool fraisSansFatigue = true;
+		double fatigueMax = 0.0;
+		for (std::size_t i = 0; i < energies.size(); ++i)
+		{
+			fatigueMax = std::max(fatigueMax, fatigues[i]);
+			if (energies[i] >= 75.0)
+			{
+				fraisSansFatigue = fraisSansFatigue && fatigues[i] == 0.0;
+			}
+			else
+			{
+				eBas.push_back(energies[i]);
+				fBas.push_back(fatigues[i]);
+			}
+		}
+		verifier("§24 la fatigue se lit sur le visage : rien quand il est frais, puis de plus en plus à mesure que l'énergie baisse",
+			fraisSansFatigue && eBas.size() > 50 && correlation(eBas, fBas) < -0.99 && fatigueMax > 0.3,
+			std::to_string(eBas.size()) + " mesures sous 75 d'énergie, fatigue jusqu'à " + nombre(fatigueMax, 2));
+		verifier("§27 un partenaire plus expressif montre plus de joie au même but", expressivite.size() > 20 && correlation(expressivite, joie) > 0.8,
+			"corrélation " + nombre(correlation(expressivite, joie), 2) + " sur " + std::to_string(expressivite.size()) + " partenaires");
+	}
+
+	void testsPhysiologie(const std::vector<const lf::DocumentMatch*>& docs, const std::filesystem::path& scenes)
+	{
+		titre("Qualité visuelle §3 §24 : le souffle, la sueur, la pluie, la posture de fatigue");
+		std::vector<double> souffles, efforts;
+		int recuperations = 0, recuperees = 0, joueurs = 0, monotones = 0, plusTrempes = 0;
+		for (const lf::DocumentMatch* d : docs)
+		{
+			const lf::Cinematique c(*d);
+			const lf::ChroniquePhysiologie P(c);
+			const double t0 = d->images.front().temps(), t1 = d->images.back().temps();
+			for (int k = 0; k < lf::kJoueurs; ++k)
+			{
+				// l'essoufflement suit l'effort des dernières secondes
+				for (double t = t0 + 10.0; t < t1; t += 7.0)
+				{
+					const lf::EtatPhysiologique s = P.etat(k, t);
+					if (!s.valide)
+					{
+						continue;
+					}
+					double effort = 0.0;
+					int n = 0;
+					for (double u = t - 8.0; u <= t; u += 0.5)
+					{
+						const lf::EtatCinematique e = c.etat(k, u);
+						if (e.valide)
+						{
+							effort += lf::ChroniquePhysiologie::effort(e.vitesse, d->vitesseMax(k, u));
+							++n;
+						}
+					}
+					souffles.push_back(s.essoufflement);
+					efforts.push_back(n ? effort / n : 0.0);
+					// et redescend quand il souffle : 30 s sans courir après un gros effort
+					if (s.essoufflement > 0.6)
+					{
+						bool calme = true;
+						for (double u = t; u <= t + 30.0 && calme; u += 0.5)
+						{
+							const lf::EtatCinematique e = c.etat(k, u);
+							calme = e.valide && e.vitesse < 2.5;
+						}
+						if (calme)
+						{
+							++recuperations;
+							recuperees += P.etat(k, t + 30.0).essoufflement < 0.5 * s.essoufflement ? 1 : 0;
+						}
+					}
+				}
+				// la sueur s'accumule pendant une mi-temps, et plus à la 80e qu'à la 10e
+				const lf::EtatPhysiologique a = P.etat(k, t0 + 600.0), b = P.etat(k, t0 + 4800.0);
+				if (a.valide && b.valide)
+				{
+					++joueurs;
+					plusTrempes += b.transpiration > a.transpiration ? 1 : 0;
+					bool monotone = true;
+					double prec = -1.0;
+					int miTemps = 1;
+					for (std::size_t i = 0; i < d->images.size(); i += 50)
+					{
+						const lf::Image& im = d->images[i];
+						const lf::EtatPhysiologique s = P.etat(k, im.temps());
+						if (!s.valide)
+						{
+							continue;
+						}
+						if (im.miTemps != miTemps)
+						{
+							miTemps = im.miTemps;
+							prec = -1.0;
+						}
+						monotone = monotone && s.transpiration >= prec - 1e-6;
+						prec = s.transpiration;
+					}
+					monotones += monotone ? 1 : 0;
+				}
+			}
+		}
+		verifier("§24 l'essoufflement suit l'effort des huit dernières secondes", correlation(souffles, efforts) > 0.6,
+			"corrélation " + nombre(correlation(souffles, efforts), 2) + " sur " + std::to_string(souffles.size()) + " mesures");
+		verifier("   et redescend de moitié en trente secondes sans courir", recuperations >= 3 && recuperees == recuperations,
+			std::to_string(recuperees) + " sur " + std::to_string(recuperations));
+		verifier("§3 la sueur s'accumule pendant chaque mi-temps, et plus à la 80e qu'à la 10e", joueurs > 40 && monotones == joueurs && plusTrempes == joueurs,
+			std::to_string(joueurs) + " joueurs");
+		// la pluie, une scène qui l'a, une qui ne l'a pas
+		auto pluie = charger(scenes / "15-pluie.json"), soleil = charger(scenes / "01-sprint_droit.json");
+		if (pluie->ok && soleil->ok)
+		{
+			const lf::Cinematique cp(pluie->doc), cs(soleil->doc);
+			const lf::ChroniquePhysiologie pp(cp), ps(cs);
+			const int fp = pluie->doc.scene.focus, fs = soleil->doc.scene.focus;
+			verifier("la pluie mouille (« " + pluie->doc.meteo + " »), le soleil non (« " + soleil->doc.meteo + " »)",
+				pp.etat(fp, pluie->doc.scene.instant).humidite > 0.99 && ps.etat(fs, soleil->doc.scene.instant).humidite < 0.01);
+			// le sprint de la scène 1 : il s'essouffle
+			const lf::EtatPhysiologique debut = ps.etat(fs, soleil->doc.scene.t0 + 0.5), fin = ps.etat(fs, soleil->doc.scene.instant + 1.5);
+			verifier("le sprint de la scène 1 l'essouffle", fin.essoufflement > debut.essoufflement + 0.1 && fin.frequenceRespiration > debut.frequenceRespiration + 5.0,
+				nombre(debut.frequenceRespiration, 0) + " → " + nombre(fin.frequenceRespiration, 0) + " cycles par minute");
+		}
+	}
+
+	void testsTypesCourse(const std::vector<const lf::DocumentMatch*>& docs)
+	{
+		titre("Qualité visuelle §17 §18 : la bibliothèque de locomotion, et les virages de 10° à 180°");
+		std::map<lf::TypeCourse, int> comptes;
+		int incoherents = 0, echantillons = 0;
+		for (const lf::DocumentMatch* d : docs)
+		{
+			const lf::Cinematique c(*d);
+			for (double t = d->images.front().temps(); t < d->images.back().temps(); t += 0.7)
+			{
+				for (int k = 0; k < lf::kJoueurs; ++k)
+				{
+					const lf::DescriptionLocomotion D = lf::decrireLocomotion(c, k, t);
+					if (!D.valide)
+					{
+						continue;
+					}
+					++echantillons;
+					++comptes[D.type];
+					const lf::EtatCinematique e = c.etat(k, t);
+					const bool faux = (D.type == lf::TypeCourse::Pressing && (e.etats & lf::etat::Presse) == 0)
+						|| (D.type == lf::TypeCourse::Repli && e.intention != static_cast<std::uint8_t>(lf::Intention::Recover))
+						|| (D.type == lf::TypeCourse::Sprint && D.vitesse < 6.0)
+						|| (D.type == lf::TypeCourse::Recul && D.allure != lf::Allure::Recul);
+					incoherents += faux ? 1 : 0;
+				}
+			}
+		}
+		std::string liste;
+		for (int i = 0; i < lf::kTypesCourse; ++i)
+		{
+			liste += std::string(lf::nomTypeCourse(static_cast<lf::TypeCourse>(i))) + " " + std::to_string(comptes[static_cast<lf::TypeCourse>(i)]) + ", ";
+		}
+		int presents = 0;
+		for (int i = 0; i < lf::kTypesCourse; ++i)
+		{
+			presents += comptes[static_cast<lf::TypeCourse>(i)] >= 20 ? 1 : 0;
+		}
+		verifier("§17 les quinze types de course se rencontrent sur trois matchs", presents == lf::kTypesCourse, liste);
+		verifier("   et chacun dit vrai (pressing : il presse ; repli : l'IA le replie ; sprint : 6 m/s et plus ; recul : il recule)", incoherents == 0,
+			std::to_string(echantillons) + " échantillons");
+		verifier("§18 les virages ont leurs classes : 10° (correction), 30°, 45°, 60°, 90°, 135°, 180°",
+			lf::classeVirage(15.0) == lf::ClasseVirage::Correction && lf::classeVirage(30.0) == lf::ClasseVirage::V30 && lf::classeVirage(45.0) == lf::ClasseVirage::V45
+			&& lf::classeVirage(60.0) == lf::ClasseVirage::V60 && lf::classeVirage(-90.0) == lf::ClasseVirage::V90 && lf::classeVirage(135.0) == lf::ClasseVirage::V135
+			&& lf::classeVirage(180.0) == lf::ClasseVirage::V180);
+	}
+
+	void testsFoulee(const std::vector<const lf::DocumentMatch*>& docs)
+	{
+		titre("Qualité visuelle §19 §21 : la foulée de CE corps (jambes, explosivité), le buste qui penche");
+		const lf::Foulee marche = lf::foulee(0.9, 0.5, 1.4, 0.0), course = lf::foulee(0.9, 0.5, 6.0, 0.0), sprint = lf::foulee(0.9, 0.5, 9.0, 0.0);
+		verifier("des cadences humaines : marche, course, sprint", marche.cadenceHz > 1.6 && marche.cadenceHz < 2.2 && course.cadenceHz > 3.2 && course.cadenceHz < 4.0
+			&& sprint.cadenceHz > 3.8 && sprint.cadenceHz < 4.8, nombre(marche.cadenceHz, 2) + ", " + nombre(course.cadenceHz, 2) + ", " + nombre(sprint.cadenceHz, 2) + " pas par seconde");
+		const lf::Foulee longues = lf::foulee(0.97, 0.5, 6.0, 0.0), courtes = lf::foulee(0.83, 0.5, 6.0, 0.0);
+		verifier("§21 à la même vitesse, des jambes plus longues : des pas plus longs, une cadence plus basse", longues.longueurPasM > courtes.longueurPasM && longues.cadenceHz < courtes.cadenceHz,
+			nombre(courtes.longueurPasM, 2) + " m contre " + nombre(longues.longueurPasM, 2) + " m");
+		const lf::Foulee explosif = lf::foulee(0.9, 0.9, 4.0, 5.0), lourd = lf::foulee(0.9, 0.1, 4.0, 5.0), freine = lf::foulee(0.9, 0.5, 6.0, -5.0);
+		verifier("§19 en pleine accélération, l'explosif : buste plus penché, appuis plus rapides", explosif.inclinaisonDeg > lourd.inclinaisonDeg && explosif.cadenceHz > lourd.cadenceHz
+			&& explosif.inclinaisonDeg > 20.0 && explosif.inclinaisonDeg < 40.0, nombre(lourd.inclinaisonDeg, 1) + "° contre " + nombre(explosif.inclinaisonDeg, 1) + "°");
+		verifier("   au freinage, le buste se redresse en arrière", freine.inclinaisonDeg < 0.0, nombre(freine.inclinaisonDeg, 1) + "°");
+		// sur un vrai match : la longueur de jambe vient de la fiche
+		const lf::Cinematique c(*docs.front());
+		std::vector<double> jambes, pas;
+		for (int k = 0; k < lf::kJoueurs; ++k)
+		{
+			const lf::FicheJoueur* f = docs.front()->fiche(k);
+			if (f)
+			{
+				const lf::ProfilCorps p = lf::profilCorps(*f);
+				jambes.push_back(p.longueurJambeM);
+				pas.push_back(lf::foulee(p.longueurJambeM, p.explosivite, 6.0, 0.0).longueurPasM);
+			}
+		}
+		verifier("   chaque joueur du match a sa foulée : la jambe vient de sa taille et de ses proportions", correlation(jambes, pas) > 0.999 && *std::max_element(jambes.begin(), jambes.end()) - *std::min_element(jambes.begin(), jambes.end()) > 0.08,
+			"jambes de " + nombre(*std::min_element(jambes.begin(), jambes.end()), 2) + " à " + nombre(*std::max_element(jambes.begin(), jambes.end()), 2) + " m");
+	}
+
+	void testsPorteQualite()
+	{
+		titre("Qualité visuelle §20 §31 : la porte de qualité d'une scène");
+		lf::BilanQualite propre;
+		propre.contactsJuges = 4;
+		verifier("rien à redire : VALIDE", lf::porteQualite(propre).verdict == lf::VerdictQualite::Valide);
+		lf::BilanQualite pied = propre;
+		pied.glissementsPied = 1;
+		verifier("un seul pied qui glisse : NE PAS LIVRER (porte dure du §20)", lf::porteQualite(pied).verdict == lf::VerdictQualite::NePasLivrer, lf::porteQualite(pied).raisons);
+		lf::BilanQualite contact = propre;
+		contact.contactsManques = 2;
+		verifier("des contacts manqués : À REPRENDRE", lf::porteQualite(contact).verdict == lf::VerdictQualite::AReprendre, lf::porteQualite(contact).raisons);
+		lf::BilanQualite somme = contact;
+		somme += pied;
+		verifier("deux bilans s'additionnent, et le pire verdict l'emporte", somme.glissementsPied == 1 && somme.contactsManques == 2 && lf::porteQualite(somme).verdict == lf::VerdictQualite::NePasLivrer);
+		lf::BilanQualite aveugle = propre;
+		aveugle.animationSignalee = false;
+		verifier("sans savoir quelle animation est jouée, le contrôle est incomplet : À REPRENDRE", lf::porteQualite(aveugle).verdict == lf::VerdictQualite::AReprendre);
+	}
+
 	// ------------------------------------------------------------------ §76 les scènes
 	void testsScenes(const std::filesystem::path& dossier)
 	{
@@ -1470,7 +1877,14 @@ int main(int argc, char** argv)
 		testsContact(trois);
 		testsDetecteurContact(trois);
 		testsCorps(trois);
+		testsQualiteFiche(trois);
+		testsRegardTete(trois);
+		testsVisage(trois);
+		testsPhysiologie(trois, argc >= 3 ? std::filesystem::path(argv[2]) : std::filesystem::path());
+		testsTypesCourse(trois);
+		testsFoulee(trois);
 	}
+	testsPorteQualite();
 	const std::string texteDebug = lireFichier(fixtures / "match-77-debug.json");
 	lf::DocumentMatch debug;
 	const lf::ResultatChargement rd = lf::chargerDocument(texteDebug, debug);

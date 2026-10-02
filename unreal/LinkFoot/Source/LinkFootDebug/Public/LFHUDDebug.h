@@ -8,6 +8,11 @@
 // et sa dernière décision : l'option choisie, son rang, les options écartées avec l'espérance
 // que le moteur leur donnait, et si sa compétence a fait basculer le choix. Ces délibérations
 // ne sont dans le document qu'en mode débogage (les scènes de test les portent).
+//
+// Pour le cahier « qualité visuelle » : le panneau dit aussi ce que le corps doit montrer (type
+// de course, foulée, buste, tête et yeux, expression, geste, souffle, sueur, caractère), et
+// l'en-tête la porte de qualité de la boucle en cours (§20). bModeReel (§31, le test absolu)
+// n'affiche plus rien : ni nom, ni note, ni statistique, ni débogage.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -37,6 +42,13 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LinkFoot|Debug")
 	float TailleTexte = 1.f;
+
+	// §31 du cahier « qualité visuelle » : l'écran sans rien d'autre que le match.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LinkFoot|Debug")
+	bool bModeReel = false;
+
+	UFUNCTION(BlueprintCallable, Category = "LinkFoot|Debug")
+	void ModeReel(bool bActif) { bModeReel = bActif; }
 
 	UFUNCTION(BlueprintCallable, Category = "LinkFoot|Debug")
 	void SuivreJoueur(int32 Code) { JoueurSuivi = Code; }

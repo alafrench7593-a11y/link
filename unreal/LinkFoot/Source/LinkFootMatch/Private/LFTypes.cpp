@@ -8,6 +8,7 @@
 #include "LFCore/LFFamilles.h"
 #include "LFCore/LFLocomotion.h"
 #include "LFCore/LFRegard.h"
+#include "LFCore/LFVisage.h"
 
 #define LF_MEME_VALEUR(TypeUE, TypeCoeur, Valeur) \
 	static_assert(static_cast<uint8>(TypeUE::Valeur) == static_cast<uint8>(TypeCoeur::Valeur), #TypeUE "::" #Valeur " diffère du cœur")
@@ -28,5 +29,12 @@ LF_MEME_VALEUR(ELFTypeCorps, lf::TypeCorps, GardienGrand);
 LF_MEME_VALEUR(ELFStatut, lf::Statut, Desynchro);
 LF_MEME_VALEUR(ELFDefautPied, lf::DefautPied, Penetration);
 LF_MEME_VALEUR(ELFAnomalie, lf::Anomalie, PiedsCorps);
+LF_MEME_VALEUR(ELFTypeCourse, lf::TypeCourse, Sprint);
+LF_MEME_VALEUR(ELFTypeCourse, lf::TypeCourse, Pressing);
+LF_MEME_VALEUR(ELFExpression, lf::Expression, Joie);
+LF_MEME_VALEUR(ELFExpression, lf::Expression, Fatigue);
+LF_MEME_VALEUR(ELFGeste, lf::Geste, Celebration);
+LF_MEME_VALEUR(ELFGeste, lf::Geste, PoingSerre);
+LF_MEME_VALEUR(ELFVerdictQualite, lf::VerdictQualite, NePasLivrer);
 
 #undef LF_MEME_VALEUR

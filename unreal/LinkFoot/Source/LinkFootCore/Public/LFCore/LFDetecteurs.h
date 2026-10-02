@@ -20,6 +20,7 @@
 
 #include <array>
 #include <cstdint>
+#include <string>
 
 namespace lf
 {
@@ -230,4 +231,39 @@ namespace lf
 		double pireEcart_ = 0.0;
 		VerdictContact clore();
 	};
+
+	// La porte de qualité d'une scène (cahier « qualité visuelle » §20 et §31) : ce que les
+	// détecteurs ont compté pendant qu'on la regardait, et le verdict. Un pied qui glisse est une
+	// porte dure (§20) : la scène ne passe pas, comme une désynchronisation (l'écran ne montre
+	// plus le match). Le reste se reprend : contacts manqués (tant que les gestes de football ne
+	// sont pas capturés), animation en désaccord avec le moteur, mouvement impossible, ou un
+	// contrôle incomplet faute de savoir quelle animation est jouée.
+	struct BilanQualite
+	{
+		int desynchros = 0;
+		int desynchrosAnimation = 0;
+		int glissementsPied = 0;
+		int mouvementsImpossibles = 0;
+		int contactsJuges = 0;
+		int contactsManques = 0;
+		bool animationSignalee = true;
+
+		BilanQualite& operator+=(const BilanQualite& autre);
+	};
+
+	enum class VerdictQualite : std::uint8_t
+	{
+		Valide,
+		AReprendre,
+		NePasLivrer		// DO NOT SHIP (§31)
+	};
+
+	struct ResultatQualite
+	{
+		VerdictQualite verdict = VerdictQualite::Valide;
+		std::string raisons;	// en clair, séparées par « ; » (UTF-8)
+	};
+
+	LFCORE_API ResultatQualite porteQualite(const BilanQualite& b);
+	LFCORE_API const char* nomVerdictQualite(VerdictQualite v);
 }

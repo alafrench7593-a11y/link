@@ -1,10 +1,41 @@
 #include "LFCore/LFRegard.h"
 
+#include "LFCore/LFRepere.h"
+
 #include <algorithm>
 #include <cmath>
 
 namespace lf
 {
+	OrientationRegard orienterRegard(double x, double y, double angleCorps, double hauteurYeuxM, double cx, double cy, double cz, const LimitesRegard& l)
+	{
+		OrientationRegard o;
+		const double dx = cx - x, dy = cy - y;
+		const double devant = dx * std::cos(angleCorps) + dy * std::sin(angleCorps);
+		const double droite = -dx * std::sin(angleCorps) + dy * std::cos(angleCorps);
+		const double horizontal = std::hypot(dx, dy);
+		if (horizontal < 1e-6 && std::fabs(cz - hauteurYeuxM) < 1e-6)
+		{
+			return o;
+		}
+		o.valide = true;
+		o.lacetCibleDeg = std::atan2(droite, devant) * kDegParRad;
+		o.tangageCibleDeg = std::atan2(cz - hauteurYeuxM, horizontal) * kDegParRad;
+		// le lacet : les yeux seuls, puis la tête prend sa part, puis les yeux finissent
+		const double a = std::fabs(o.lacetCibleDeg), signe = o.lacetCibleDeg < 0.0 ? -1.0 : 1.0;
+		const double tete = std::min(l.lacetTeteMaxDeg, std::max(0.0, a - l.seuilYeuxDeg) * l.partTete);
+		o.lacetTeteDeg = signe * tete;
+		o.lacetYeuxDeg = std::clamp(o.lacetCibleDeg - o.lacetTeteDeg, -l.lacetYeuxMaxDeg, l.lacetYeuxMaxDeg);
+		// le tangage : la même règle, avec un seuil plus court (on baisse les yeux avant la tête)
+		const double seuilT = l.seuilYeuxDeg * 0.67;
+		const double b = std::fabs(o.tangageCibleDeg), signeT = o.tangageCibleDeg < 0.0 ? -1.0 : 1.0;
+		o.tangageTeteDeg = std::clamp(signeT * std::max(0.0, b - seuilT) * l.partTete, l.tangageTeteMinDeg, l.tangageTeteMaxDeg);
+		o.tangageYeuxDeg = std::clamp(o.tangageCibleDeg - o.tangageTeteDeg, -l.tangageYeuxMaxDeg, l.tangageYeuxMaxDeg);
+		o.horsDeVue = std::fabs(o.lacetTeteDeg + o.lacetYeuxDeg - o.lacetCibleDeg) > 0.5
+			|| std::fabs(o.tangageTeteDeg + o.tangageYeuxDeg - o.tangageCibleDeg) > 0.5;
+		return o;
+	}
+
 	double periodeBalayage(int decision, const ParametresRegard& p)
 	{
 		const double s = std::clamp((decision - 40.0) / 50.0, 0.0, 1.0);

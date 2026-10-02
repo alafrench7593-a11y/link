@@ -8,10 +8,17 @@
 // Le premier palier de qualité (§78) : bSeulementLeFocus montre le seul joueur que la scène
 // met en avant, avec le ballon. Les autres paliers (§79 à §81) : deux joueurs, cinq, puis les
 // vingt-deux, avec les mêmes acteurs.
+//
+// La porte de qualité (cahier « qualité visuelle » §20 et §31) : à la fin de chaque boucle de la
+// scène, il additionne ce que les contrôles des footballeurs ont compté et rend un verdict,
+// VALIDE, À REPRENDRE ou NE PAS LIVRER (un pied qui glisse, ou l'écran qui ne suit plus le
+// moteur), écrit dans le journal et lisible dans ses propriétés.
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+
+#include "LFTypes.h"
 
 #include "LFDirecteurMatch.generated.h"
 
@@ -71,6 +78,24 @@ public:
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "LinkFoot|Directeur")
 	TObjectPtr<ALFBallon> Ballon;
+
+	// La porte de qualité de la dernière boucle complète (faux tant qu'aucune n'a été jugée,
+	// ou si les contrôles ne sont pas posés).
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "LinkFoot|Qualite")
+	bool bQualiteJugee = false;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "LinkFoot|Qualite")
+	ELFVerdictQualite VerdictQualite = ELFVerdictQualite::Valide;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "LinkFoot|Qualite")
+	FString RaisonsQualite;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "LinkFoot|Qualite")
+	int32 BouclesJugees = 0;
+
+	// Juge ce que les contrôles ont compté depuis le dernier départ, puis repart de zéro.
+	UFUNCTION(BlueprintCallable, Category = "LinkFoot|Qualite")
+	ELFVerdictQualite JugerQualite();
 
 	UFUNCTION(BlueprintCallable, Category = "LinkFoot|Directeur")
 	bool Charger();

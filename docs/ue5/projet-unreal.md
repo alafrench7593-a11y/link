@@ -69,13 +69,15 @@ du débogage, sauf le module de jeu qui assemble tout.
 | `LFRepere` | le repère du moteur vers celui d'Unreal, au bit près de `src/passerelle.js` ; le rayon du ballon |
 | `LFCinematique` | la position, la vitesse, l'accélération et l'orientation de chaque joueur à n'importe quel instant (courbe qui passe par chaque image du moteur, lissage borné à 25 cm) ; le ballon, par la formule même de chaque vol |
 | `LFTrajectoire` | la trajectoire de Motion Matching : le vrai passé, le vrai futur |
-| `LFLocomotion` | le mouvement en mots de locomotion : bande de vitesse, phase, allure, virage, effort |
-| `LFRegard` | où le joueur regarde |
+| `LFLocomotion` | le mouvement en mots de locomotion : bande de vitesse, phase, allure, virage, effort ; l'un des 15 types de course du cahier « qualité visuelle » |
+| `LFRegard` | où le joueur regarde ; la tête et les yeux séparés du corps, dans leurs limites |
+| `LFVisage` | 8 expressions et 8 gestes, nés des actions du match, à l'amplitude du caractère du joueur |
+| `LFPhysiologie` | le souffle, la sueur, la pluie, la posture de fatigue, tirés de ce que le joueur a couru |
 | `LFContact` | le prochain contact avec le ballon : instant, genre, surface, pied, qualité de contrôle, point dans le repère du corps |
 | `LFFamilles` | la famille d'animation attendue (moteur) et vue (nom de la base choisie) |
-| `LFDetecteurs` | DESYNC, ANIMATION DESYNC, FOOT SLIDE WARNING, IMPOSSIBLE MOVEMENT, CONTACT MANQUÉ |
+| `LFDetecteurs` | DESYNC, ANIMATION DESYNC, FOOT SLIDE WARNING, IMPOSSIBLE MOVEMENT, CONTACT MANQUÉ ; la porte de qualité (VALIDE, À REPRENDRE, NE PAS LIVRER) |
 | `LFEtatMatch` | l'état du match à tout instant (score, horloge, possession, statistiques d'équipe et de joueur), recalculé des actions selon les règles du moteur |
-| `LFCorps` | de la carte au corps : dix morphotypes, échelle, foulée, explosivité, agilité, équilibre |
+| `LFCorps` | de la carte au corps : dix morphotypes, échelle, foulée, explosivité, agilité, équilibre, longueur de jambe ; la foulée de ce corps à cette vitesse (pas, cadence, buste) |
 | `LFScene` | ce que chaque scène de test doit montrer, vérifié |
 
 ### La couche Unreal
@@ -86,13 +88,14 @@ du débogage, sauf le module de jeu qui assemble tout.
 | `FLinkFootMatchState` et les types `ELF*`, `FLF*` | Match | l'état du match pour les Blueprints et l'interface ; chaque énumération est vérifiée égale à celle du cœur à la compilation (`static_assert`) |
 | `ALFBallon` | Match | le ballon, posé par le moteur ; il roule sans glisser |
 | `ALFFootballeur` | Player | un `ACharacter` dont le mouvement d'Unreal est éteint : la capsule est posée par le moteur ; morphotype, échelle, maillage, classe d'animation ; caché hors du terrain |
-| `ULFAnimInstanceFootballeur` | Player | la classe parente des Animation Blueprint (docs/ue5/animation.md) |
+| `ULFAnimInstanceFootballeur` | Player | la classe parente des Animation Blueprint (docs/ue5/animation.md) ; pour le cahier « qualité visuelle » : tête et yeux, type de course, foulée, expressions, geste, souffle, sueur, caractère |
+| `ULFComposantPeau` | Player | sur chaque footballeur : la sueur, la pluie et l'effort envoyés aux matériaux (données de primitive) |
 | `ULFDefinitionsPersonnages` | Player | un Data Asset : un maillage par morphotype, la classe d'animation |
-| `ULFComposantControle` | Debug | les détecteurs, sur les os de chaque image |
-| `ALFHUDDebug` | Debug | étiquettes au-dessus des joueurs et panneau du §71, dernière décision comprise |
+| `ULFComposantControle` | Debug | les détecteurs, sur les os de chaque image ; ce qu'ils ont compté depuis le dernier bilan |
+| `ALFHUDDebug` | Debug | étiquettes au-dessus des joueurs et panneau du §71, dernière décision comprise ; la porte de qualité ; `bModeReel` n'affiche rien |
 | `ALFModeDeJeu` | LinkFoot | pion spectateur, HUD de débogage |
-| `ALFDirecteurMatch` | LinkFoot | posé dans un niveau : charge, fait entrer les joueurs (le seul joueur mis en avant au palier 1), avance l'horloge, ralenti, boucle |
-| tests `LinkFoot.*` | LinkFoot | scènes, repère, trajectoire, état du match |
+| `ALFDirecteurMatch` | LinkFoot | posé dans un niveau : charge, fait entrer les joueurs (le seul joueur mis en avant au palier 1), avance l'horloge, ralenti, boucle ; à chaque boucle, le verdict de la porte de qualité |
+| tests `LinkFoot.*` | LinkFoot | scènes, repère, trajectoire, état du match, données du cahier « qualité visuelle » |
 
 Le contrat de la passerelle (`docs/passerelle-ue5.md`, section 4) prévoyait d'autres noms
 (`ULFBridgeSubsystem`, `ALFFootballer`...) ; les classes ci-dessus les remplacent. Restent à écrire,

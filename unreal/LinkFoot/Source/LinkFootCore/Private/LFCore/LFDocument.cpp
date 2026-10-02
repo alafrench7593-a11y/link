@@ -191,11 +191,23 @@ namespace lf
 				mo.poidsKg = entierOu(*m, "poids_kg", 75);
 				mo.carrure = texteDe(*m, "carrure");
 				mo.epaules = m->nombreOu("epaules", 0.5);
+				mo.poitrine = m->nombreOu("poitrine", 0.5);
+				mo.ventre = m->nombreOu("ventre", 0.5);
+				mo.bassin = m->nombreOu("bassin", 0.5);
+				mo.bras = m->nombreOu("bras", 0.5);
+				mo.mains = m->nombreOu("mains", 0.5);
+				mo.jambes = m->nombreOu("jambes", 0.5);
+				mo.cuisses = m->nombreOu("cuisses", 0.5);
+				mo.mollets = m->nombreOu("mollets", 0.5);
+				mo.cou = m->nombreOu("cou", 0.5);
+				mo.tete = m->nombreOu("tete", 0.5);
+				mo.pieds = m->nombreOu("pieds", 0.5);
 				mo.muscles = m->nombreOu("muscles", 0.5);
 				mo.masse = m->nombreOu("masse", 0.5);
-				mo.jambes = m->nombreOu("jambes", 0.5);
-				mo.bras = m->nombreOu("bras", 0.5);
-				mo.bassin = m->nombreOu("bassin", 0.5);
+				mo.masseGrasse = m->nombreOu("masse_grasse", 0.5);
+				mo.masseGrassePct = m->nombreOu("masse_grasse_pct", 10.0);
+				mo.envergureCm = entierOu(*m, "envergure_cm", mo.tailleCm);
+				mo.pointure = entierOu(*m, "pointure", 43);
 				mo.posture = m->nombreOu("posture", 0.5);
 			}
 			if (const json::Valeur* a = o.champ("apparence"); a && a->estObjet())
@@ -210,11 +222,22 @@ namespace lf
 					}
 				}
 				ap.teint = entierOu(*a, "teint", 0);
+				ap.textureCheveux = texteDe(*a, "texture_cheveux");
 				ap.coiffure = texteDe(*a, "coiffure");
 				ap.cheveux = texteDe(*a, "cheveux");
 				ap.barbe = texteDe(*a, "barbe");
 				ap.sourcils = entierOu(*a, "sourcils", 0);
 				ap.yeux = entierOu(*a, "yeux", 0);
+			}
+			if (const json::Valeur* pe = o.champ("personnalite"); pe && pe->estObjet())
+			{
+				Personnalite& k = f.personnalite;
+				k.type = pe->texteOu("type", "calme");
+				k.agressivite = pe->nombreOu("agressivite", 0.5);
+				k.calme = pe->nombreOu("calme", 0.5);
+				k.expressivite = pe->nombreOu("expressivite", 0.5);
+				k.energie = pe->nombreOu("energie", 0.5);
+				k.confiance = pe->nombreOu("confiance", 0.5);
 			}
 		}
 

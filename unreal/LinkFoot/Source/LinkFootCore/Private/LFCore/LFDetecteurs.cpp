@@ -411,4 +411,65 @@ namespace lf
 		clos_ = true;
 		meilleur_ = 0.0;
 	}
+
+	BilanQualite& BilanQualite::operator+=(const BilanQualite& autre)
+	{
+		desynchros += autre.desynchros;
+		desynchrosAnimation += autre.desynchrosAnimation;
+		glissementsPied += autre.glissementsPied;
+		mouvementsImpossibles += autre.mouvementsImpossibles;
+		contactsJuges += autre.contactsJuges;
+		contactsManques += autre.contactsManques;
+		animationSignalee = animationSignalee && autre.animationSignalee;
+		return *this;
+	}
+
+	ResultatQualite porteQualite(const BilanQualite& b)
+	{
+		ResultatQualite r;
+		const auto raison = [&](VerdictQualite v, const std::string& texte)
+		{
+			if (static_cast<int>(v) > static_cast<int>(r.verdict))
+			{
+				r.verdict = v;
+			}
+			r.raisons += (r.raisons.empty() ? "" : " ; ") + texte;
+		};
+		if (b.glissementsPied > 0)
+		{
+			raison(VerdictQualite::NePasLivrer, std::to_string(b.glissementsPied) + " glissement(s) de pied (§20, porte dure)");
+		}
+		if (b.desynchros > 0)
+		{
+			raison(VerdictQualite::NePasLivrer, std::to_string(b.desynchros) + " désynchronisation(s) avec le moteur");
+		}
+		if (b.contactsManques > 0)
+		{
+			raison(VerdictQualite::AReprendre, std::to_string(b.contactsManques) + " contact(s) manqué(s) sur " + std::to_string(b.contactsJuges));
+		}
+		if (b.desynchrosAnimation > 0)
+		{
+			raison(VerdictQualite::AReprendre, std::to_string(b.desynchrosAnimation) + " animation(s) en désaccord avec le moteur");
+		}
+		if (b.mouvementsImpossibles > 0)
+		{
+			raison(VerdictQualite::AReprendre, std::to_string(b.mouvementsImpossibles) + " mouvement(s) impossible(s)");
+		}
+		if (!b.animationSignalee)
+		{
+			raison(VerdictQualite::AReprendre, "animation jouée inconnue : le contrôle des familles n'a pas pu se faire");
+		}
+		return r;
+	}
+
+	const char* nomVerdictQualite(VerdictQualite v)
+	{
+		switch (v)
+		{
+		case VerdictQualite::Valide: return "VALIDE";
+		case VerdictQualite::AReprendre: return "À REPRENDRE";
+		case VerdictQualite::NePasLivrer: return "NE PAS LIVRER";
+		}
+		return "?";
+	}
 }

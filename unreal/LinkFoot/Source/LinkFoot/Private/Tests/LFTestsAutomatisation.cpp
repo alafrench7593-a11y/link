@@ -3,7 +3,8 @@
 //
 // Ils rejouent, dans Unreal, une partie de ce que unreal/tests-coeur vérifie hors d'Unreal : les
 // seize scènes montrent ce que leur nom promet, le repère d'Unreal est celui de la passerelle, la
-// trajectoire donnée à Motion Matching est celle que le moteur a jouée, l'état du match se lit.
+// trajectoire donnée à Motion Matching est celle que le moteur a jouée, l'état du match se lit,
+// et ce que le cahier « qualité visuelle » demande au corps se calcule dans Unreal comme dehors.
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -14,10 +15,14 @@
 #include "LFMatchSubsystem.h"
 
 #include "LFCore/LFCinematique.h"
+#include "LFCore/LFCorps.h"
 #include "LFCore/LFDocument.h"
 #include "LFCore/LFEtatMatch.h"
+#include "LFCore/LFPhysiologie.h"
+#include "LFCore/LFRegard.h"
 #include "LFCore/LFRepere.h"
 #include "LFCore/LFScene.h"
+#include "LFCore/LFVisage.h"
 
 #include <memory>
 #include <string_view>
@@ -137,6 +142,56 @@ bool FLFTestEtat::RunTest(const FString& Parameters)
 		TestTrue(Fichier + TEXT(" : l'etat se lit au debut et a la fin"), Debut.valide && Fin.valide);
 		TestTrue(Fichier + TEXT(" : l'horloge avance"), Fin.horloge >= Debut.horloge);
 		TestTrue(Fichier + TEXT(" : les statistiques ne reculent pas"), Fin.equipes[0].passes >= Debut.equipes[0].passes && Fin.equipes[1].tirs >= Debut.equipes[1].tirs);
+	}
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLFTestQualiteVisuelle, "LinkFoot.Joueur.QualiteVisuelle", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FLFTestQualiteVisuelle::RunTest(const FString& Parameters)
+{
+	const TArray<FString> Fichiers = ULFMatchSubsystem::ListerScenes();
+	for (const FString& Fichier : Fichiers)
+	{
+		lf::DocumentMatch Doc;
+		FString Erreur;
+		if (!ChargerSceneTest(Fichier, Doc, Erreur))
+		{
+			continue;
+		}
+		const lf::Cinematique C(Doc);
+		const lf::ChroniqueVisages Visages(C);
+		const lf::ChroniquePhysiologie Physio(C);
+		const int32 Code = Doc.scene.focus;
+		const double T = Doc.scene.instant;
+		const lf::FicheJoueur* F = Doc.ficheA(Code, T);
+		if (!TestTrue(Fichier + TEXT(" : la fiche du joueur en avant"), F != nullptr))
+		{
+			continue;
+		}
+		// §8 §27 le corps et le caractère viennent de la passerelle
+		TestTrue(Fichier + TEXT(" : une taille humaine"), F->morphologie.tailleCm >= 150 && F->morphologie.tailleCm <= 210);
+		TestTrue(Fichier + TEXT(" : une longueur de jambe humaine"), lf::profilCorps(*F).longueurJambeM > 0.6 && lf::profilCorps(*F).longueurJambeM < 1.1);
+		TestTrue(Fichier + TEXT(" : un caractere"), !F->personnalite.type.empty());
+		// §25 le visage, §24 le souffle, §4 la tete et les yeux, a l'instant cle
+		const lf::EtatVisage V = Visages.etat(Code, T);
+		bool PoidsBornes = V.valide;
+		for (const double P : V.poids)
+		{
+			PoidsBornes = PoidsBornes && P >= 0.0 && P <= 1.0;
+		}
+		TestTrue(Fichier + TEXT(" : des expressions entre 0 et 1"), PoidsBornes);
+		const lf::EtatPhysiologique S = Physio.etat(Code, T);
+		TestTrue(Fichier + TEXT(" : une respiration humaine"), S.valide && S.frequenceRespiration >= 10.0 && S.frequenceRespiration <= 70.0);
+		const lf::Regard R = lf::cibleRegard(C, Code, T);
+		const lf::EtatCinematique E = C.etat(Code, T);
+		if (R.valide && E.valide)
+		{
+			const lf::LimitesRegard L;
+			const lf::OrientationRegard O = lf::orienterRegard(E.x, E.y, E.angleCorps, 1.68, R.x, R.y, R.z, L);
+			TestTrue(Fichier + TEXT(" : la tete reste dans ses limites"), FMath::Abs(O.lacetTeteDeg) <= L.lacetTeteMaxDeg + 1e-6);
+			TestTrue(Fichier + TEXT(" : les yeux restent dans leurs limites"), FMath::Abs(O.lacetYeuxDeg) <= L.lacetYeuxMaxDeg + 1e-6);
+		}
 	}
 	return true;
 }
