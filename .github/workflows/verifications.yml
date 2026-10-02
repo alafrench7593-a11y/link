@@ -1,0 +1,50 @@
+# Les vérifications de LinkFoot.
+#
+# À chaque push et chaque pull request : les neuf vérifications rapides, cinq minutes.
+# Elles protègent ce qui casse le plus souvent sans qu'on le voie : le canvas qui
+# diverge du moteur, le serveur qui accepte une triche, un match découpé qui ne donne
+# plus le même score, un pack dont les probabilités affichées ne sont plus celles du
+# tirage.
+#
+# Chaque lundi, et à la demande : les trois longues, qui jouent des centaines de
+# matchs pour vérifier l'équilibre du jeu (les leviers tactiques, la valeur des cartes,
+# les promesses des styles). Trop lentes pour chaque push, indispensables avant de
+# toucher au moteur.
+name: Vérifications
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      longues:
+        description: 'Lancer aussi les vérifications longues (une demi-heure)'
+        type: boolean
+        default: true
+  schedule:
+    - cron: '17 4 * * 1'
+
+jobs:
+  rapides:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Les neuf vérifications rapides
+        run: node test/tout.js
+
+  longues:
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.longues)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Toutes les vérifications, longues comprises
+        run: node test/tout.js --long
