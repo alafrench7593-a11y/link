@@ -53,7 +53,8 @@ function Vue3D({ club, d, onPanne, onInfo }) {
     } catch (e) { onPanne(); return; }
     let n = 0;
     const boucle = () => {
-      if (!vivant.current) { v.detruire(); renderer.dispose(); return; }
+      // le GLView peut avoir déjà rendu son contexte : libérer sans faire tomber l'écran
+      if (!vivant.current) { try { v.detruire(); renderer.dispose(); } catch (e) { /* contexte déjà perdu */ } return; }
       const f = d.vue();
       v.image(f.A, f.B, f.fr, f.evs);
       if (gl.endFrameEXP) gl.endFrameEXP();

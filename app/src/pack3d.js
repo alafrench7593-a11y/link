@@ -37,7 +37,8 @@ export const Pack3D = forwardRef(function Pack3D({ club, def, hauteur }, ref) {
     vue.current = v;
     let avant = Date.now();
     const boucle = () => {
-      if (!vivant.current) { vue.current = null; v.detruire(); renderer.dispose(); return; }
+      // le GLView peut avoir déjà rendu son contexte : libérer sans faire tomber l'écran
+      if (!vivant.current) { vue.current = null; try { v.detruire(); renderer.dispose(); } catch (e) { /* contexte déjà perdu */ } return; }
       const now = Date.now();
       v.image((now - avant) / 1000); avant = now;
       if (gl.endFrameEXP) gl.endFrameEXP();
