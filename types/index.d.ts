@@ -34,9 +34,32 @@ export interface DivisionRow {
 export interface SideStats { sh: number; on: number; xg: number; pa: number; pc: number; tk: number; off: number; cor: number; fou: number; yc: number; rc: number; }
 
 export interface Decision { minute: number; texte: string; }
+/** Une image du moteur (dix par seconde de jeu) : ce que lisent les vues 2D et 3D. */
+export interface MatchFrame {
+  /** temps de jeu en secondes, horloge, mi-temps */
+  t: number; m: number; h: 1 | 2;
+  /** x, y des 22 joueurs (code 0 à 10 : nous, 11 à 21 : l'adversaire), -9 si exclu */
+  P: Float32Array;
+  /** le ballon : x, y, hauteur */
+  b: [number, number, number];
+  /** porteur (code) ou -1, destinataire visé */
+  o: number; to: number;
+  /** trajectoire en cours : x0, y0, x1, y1, nature */
+  fl: [number, number, number, number, string] | null;
+  ev: Array<{ k: string; s?: 'H' | 'A'; c?: number; name?: string; text?: string; col?: string }> | null;
+  /** joueurs au sol, coup de pied arrêté et tireur, plongeon du gardien [code, côté, avancement], score */
+  fa: number[] | null; set: string | null; tk: number; dv: [number, number, number] | null; sc: [number, number];
+}
+/** Ce que la vue du direct montre maintenant : deux images, l'avancement entre elles, les
+ *  événements des images sautées, et si l'on est entre deux actions (avance rapide). */
+export interface VueDirect { A: MatchFrame | null; B?: MatchFrame; fr?: number; evs?: MatchFrame['ev']; saut?: boolean; }
 /** §2 Le match en direct (src/direct.js). */
 export interface MatchDirect {
   opp: Opponent; amical: boolean;
+  /** §54 la météo du match : soleil, nuit, pluie ou neige */
+  meteo: string;
+  /** le nom court d'un joueur, pour l'écrire au-dessus de lui dans la vue */
+  nomJoueur(code: number): string;
   etat(): {
     done: boolean; fini: boolean; minute?: number; clock?: string; score?: [number, number]; poss?: number; tirs?: [number, number];
     xi?: Array<Player & { slot: string; line: string; energy: number; yc: number; red: boolean; note: number }>;
@@ -46,6 +69,12 @@ export interface MatchDirect {
     resultat?: MatchResult;
   };
   avancer(ms?: number): { done: boolean; minute: number; clock: string; pas: number };
+  /** exactement n pas de moteur (un dixième de seconde de jeu chacun) */
+  avancerPas(n: number): { done: boolean; minute: number; clock: string; pas: number };
+  /** §22 regarder le match : les images autour de chaque action en temps réel, le reste sauté.
+   *  Le match joué reste le même (le moteur calcule toujours en rapide). */
+  spectacle(oui: boolean): void;
+  vue(): VueDirect;
   remplacer(slot: string, playerId: number): ActionResult;
   crier(id: string): ActionResult;
   carte(id: string): ActionResult;
@@ -94,6 +123,13 @@ export declare class Club {
   /** Rejoue à l'identique, jusqu'au bout, un match engagé puis interrompu (l'app fermée pendant le direct). */
   reprendreMatch(): (MatchResult & { repris: true; decisions: Decision[] }) | null;
   REGLES_DIRECT(): { remplacements: number };
+  /** §28 le match en 3D, le même rendu dans l'écran Mon Club et dans l'app (three.js passé en T). */
+  stade3d(T: unknown, o: { renderer: unknown; largeur: number; hauteur: number; maillot?: { c1?: string; c2?: string }; adverse?: string; meteo?: string; ombres?: boolean }): Vue3D;
+  /** §11 le pack en 3D : il flotte, tremble, éclate dans la couleur de la meilleure rareté. */
+  pack3d(T: unknown, o: { renderer: unknown; largeur: number; hauteur: number; couleur?: string; nom?: string; tirages?: number; distance?: number; halo?: boolean }): Pack3DVue;
+  /** Une texture peinte en JavaScript pur (pas de <canvas> sur téléphone), en RGBA, ligne du bas d'abord. */
+  facePack(o: { couleur?: string; nom?: string; tirages?: number }): ImagePeinte;
+  panneauPub(): ImagePeinte;
   CRIS(): Array<{ id: 'encourager' | 'exiger' | 'resserrer' | 'calme'; label: string; effet: string }>;
   /** §2 Composition : un joueur à un poste (échange s'il était titulaire). Un blessé est refusé. */
   assignSlot(slot: string, playerId: number): ActionResult;
@@ -314,6 +350,27 @@ export interface KiosqueEntry {
 /** Le résultat commun à toutes les actions qui peuvent refuser : la raison est toujours dite. */
 export interface ActionResult { ok: boolean; why?: string; lvl?: number; }
 
+export interface ImagePeinte { data: Uint8Array; largeur: number; hauteur: number; }
+export interface Vue3D {
+  scene: unknown; camera: unknown;
+  /** dessine l'instant entre deux images du moteur (fr de 0 à 1) ; evs : événements des images sautées */
+  image(A: MatchFrame | null, B?: MatchFrame, fr?: number, evs?: MatchFrame['ev']): void;
+  taille(largeur: number, hauteur: number): void;
+  /** où se trouve un joueur à l'écran, en pixels du rendu */
+  projeter(code: number): { x: number; y: number } | null;
+  detruire(): void;
+}
+export interface Pack3DVue {
+  secouer(force?: number): void;
+  /** l'éclat, dans une couleur (#RRGGBB ou dégradé CSS : la première teinte compte) */
+  ouvrir(couleur?: string): void;
+  /** un pack neuf prend la place de celui qu'on vient d'ouvrir */
+  nouveau(): void;
+  image(dt: number): void;
+  taille(largeur: number, hauteur: number): void;
+  detruire(): void;
+}
+
 export interface Rarity { id: string; label: string; rate: number; lo: number; hi: number; pw: [number, number]; shards: number; tint: string; color: string; ink: string; }
 export interface Card { id: number; name: string; pos: string; ovr: number; rar: string; }
 export interface PackDef { key: string; name: string; n: number; cost: number; req: number; w: Record<string, number>; color: string; fx: string; content?: string; }
@@ -328,6 +385,11 @@ export interface Track {
 export interface MatchEngine {
   next(): unknown;
   finish(): void;
+  /** n pas de calcul rapide (un dixième de seconde de jeu chacun) */
+  runTicks(n: number): { done: boolean; minute: number; clock: string; pas: number };
+  /** garder les n dernières images même en calcul rapide (sans changer le match) */
+  capture(n: number): void;
+  images(): MatchFrame[];
   step(): boolean;
   frame(): unknown;
   state(): { score: { H: number; A: number }; st: { H: SideStats; A: SideStats }; [k: string]: unknown };

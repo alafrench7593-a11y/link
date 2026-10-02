@@ -33,7 +33,7 @@ const TABS = [
 
 export default function App() {
   const store = useMemo(() => new PhoneStore('linkfoot.save.v1'), []);
-  const { club, state, ready, fresh, act } = useClub({ store, delay: 600 });
+  const { club, state, ready, fresh, act, save } = useClub({ store, delay: 600 });
   const [tab, setTab] = useState('home');
 
   // Première partie : on crée le club, avec son effectif normal et son joueur rare offert
@@ -62,7 +62,7 @@ export default function App() {
   }
 
   const go = (id) => setTab(id);
-  const props = { club, state, act, go };
+  const props = { club, state, act, go, save };
   const Screen = {
     home: HomeScreen, squad: SquadScreen, match: MatchScreen,
     train: TrainScreen, packs: PacksScreen, skills: SkillsScreen, online: OnlineScreen,

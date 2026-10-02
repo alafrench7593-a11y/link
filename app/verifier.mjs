@@ -111,9 +111,15 @@ console.log('\n§8 et §19 Le pack unique s’ouvre, et ce qu’on fait se garde
 await touche(p1, 'Packs');
 await p1.waitForTimeout(700);
 t('§9 la part de chaque famille est affichée avant l’ouverture', /CE QUE PEUT DONNER CHAQUE TIRAGE/.test(await lit(p1)));
+const avant3d = await p1.evaluate(() => document.querySelectorAll('canvas').length);
+t('§11 le pack est en 3D au centre de l’écran Pack', avant3d >= 1, avant3d + ' canvas');
 await touche(p1, 'OUVRIR LE PACK · 250 jetons');
-await p1.waitForTimeout(1800);
-t('le pack s’ouvre et dit ce qu’il a donné', /Dernier tirage/.test(await lit(p1)));
+// l'éclat du pack 3D, puis les trois lots un par un : 1,6 s environ
+await p1.waitForTimeout(2600);
+const apres = await lit(p1);
+t('le pack s’ouvre et dit ce qu’il a donné', /Dernier tirage/.test(apres));
+const lots = await p1.evaluate(() => { const r = document.querySelector('[data-testid="revelation"]'); return r ? [...r.children].map((x) => x.innerText.replace(/\s+/g, ' ')) : []; });
+t('§11 les trois lots se révèlent sous le pack, avec leur rareté', lots.length === 3 && lots.every((l) => /^(Normal|Rare|Épique|Élite|Gold|Legendary) /.test(l)), lots.join(' | '));
 // le pack a pu donner un joueur : on relève l'effectif tel qu'il est APRÈS l'ouverture
 await touche(p1, 'Accueil');
 await p1.waitForTimeout(600);
@@ -159,6 +165,15 @@ const m1 = ((await lit(p2)).match(/EN DIRECT · (\d+)/) || [])[1];
 await p2.waitForTimeout(1200);
 const m2 = ((await lit(p2)).match(/EN DIRECT · (\d+)/) || [])[1];
 t('la pause arrête le temps', !!m1 && m1 === m2, m1 + "' puis " + m2 + "'");
+// §28 le match se regarde en 3D, la vue 2D reste à un geste
+const en3d = await p2.evaluate(() => document.querySelectorAll('canvas').length);
+await touche(p2, 'VUE 2D');
+await p2.waitForTimeout(500);
+const en2d = await p2.evaluate(() => document.querySelectorAll('canvas').length);
+await touche(p2, 'VUE 3D');
+await p2.waitForTimeout(800);
+const retour = await p2.evaluate(() => document.querySelectorAll('canvas').length);
+t('§28 le match se regarde en 3D, et la vue 2D reste en bascule', en3d >= 1 && en2d === 0 && retour >= 1, en3d + ' canvas en 3D, ' + en2d + ' en 2D, ' + retour + ' au retour');
 await touche(p2, 'Exiger plus');
 await p2.waitForTimeout(400);
 t('une consigne de la voix s’applique, et son effet est écrit', /Exiger plus : Pressing plus large/.test(await lit(p2)));

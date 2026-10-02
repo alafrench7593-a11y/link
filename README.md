@@ -554,6 +554,43 @@ lire dans la phrase en manquait un sur quatre (« centre de », « lancé par »
 joueurs d'un même club n'ont jamais le même nom (`nomUnique`) : un club neuf sur cinq en
 avait deux, et l'un volait les buts de l'autre.
 
+### Le match et le pack en 3D
+
+`src/stade3d.js` dessine le match en 3D pour les deux écrans : l'écran Mon Club (three.js
+chargé depuis cdn.jsdelivr.net) et l'app téléphone (three.js de npm, dans un `GLView`
+d'expo-gl). Le rendu ne décide rien : il lit les images que le moteur enregistre dix fois
+par seconde de jeu (positions, ballon et sa hauteur, porteur, trajectoire, joueurs au sol,
+plongeon du gardien, coup de pied arrêté, but, carton). Ce qu'on voit est ce que le moteur
+a joué. La caméra suit le ballon et part en plan serré sur le buteur (§49), le camp qui
+marque célèbre (§50), le public se lève sur un but (§53), la météo du match change la
+lumière et fait tomber la pluie ou la neige (§54).
+
+```js
+const v = club.stade3d(THREE, { renderer, largeur, hauteur, maillot, adverse, meteo });
+const d = club.matchEnDirect(club.prochainMatch().opp);
+d.spectacle(true);                 // regarder : chaque action en temps réel, le reste sauté
+d.lancer();
+// à chaque image d'écran
+const f = d.vue(); v.image(f.A, f.B, f.fr, f.evs);
+```
+
+En spectacle, le moteur calcule toujours en rapide et garde ses images (`capture`) ; l'écran
+les montre en temps réel autour de chaque frappe, penalty, corner, coup franc direct, carton
+et but, et saute le reste (« jusqu'à la prochaine action »). Un match se regarde en cinq
+minutes environ à ×1. Le match joué reste celui de `playMatch`, au chiffre près, décisions
+comprises. La vue 2D reste à un geste (VUE 2D / VUE 3D), et prend le relais si l'appareil
+n'a pas WebGL.
+
+Le pack de l'écran Packs est en 3D lui aussi (`pack3d`, cahier design §11) : il flotte,
+tremble quand on l'ouvre, éclate dans la couleur de la meilleure rareté tirée (la rareté se
+voit avant le résultat), puis les lots se révèlent un par un. Le tirage est encaissé et
+sauvegardé avant l'animation : fermer l'app pendant l'éclat ne rejoue pas le tirage.
+
+L'app native n'a pas de `<canvas>` pour écrire du texte dans une texture. La face du pack
+et les panneaux du stade sont donc peints en JavaScript pur (`peintre` : formes lissées et
+un alphabet en traits), la même image dans un navigateur et sur téléphone. Aucun modèle,
+sprite, son ni code n'est repris d'un autre jeu : tout est construit en géométrie.
+
 ### La création du club
 
 L'effectif de départ fait 14 joueurs **normaux**, note moyenne 51, potentiel moyen 69, plus

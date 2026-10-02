@@ -21,6 +21,7 @@ import { Impact } from './impact.js';
 import { LeagueRules } from './league.js';
 import { Division } from './division.js';
 import { Direct } from './direct.js';
+import { Stade3D } from './stade3d.js';
 import { News } from './news.js';
 
 export class Club {
@@ -150,4 +151,4 @@ export class Club {
 }
 
 // §80 : chaque domaine vit dans son fichier et vient se mélanger ici.
-Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs, News, Impact, LeagueRules, Division, Direct);
+Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs, News, Impact, LeagueRules, Division, Direct, Stade3D);

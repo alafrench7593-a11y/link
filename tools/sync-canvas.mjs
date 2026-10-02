@@ -86,7 +86,9 @@ const METHODS = ['rand', 'seedR', 'statW', 'ovrOf', 'genStats', 'cardStats', 'pr
   // §2 composition et décisions pendant le match : les mêmes règles que l'app téléphone (tactics.js, direct.js)
   'joueurMoteur', 'assignSlot', 'compositionAuto', 'candidatsPoste',
   'REGLES_DIRECT', 'CRIS', 'entrant', 'remplacementInfo', 'issueDuMatch', 'joueursDuMatch',
-  'nomUnique'];
+  'nomUnique',
+  // §28 le match en 3D et §11 le pack en 3D : le même rendu que l'app téléphone (stade3d.js)
+  'stade3d', 'pack3d', 'peintre', 'texture3d', 'facePack', 'panneauPub'];
 // Les méthodes retirées des sources. Le sync ne sait qu'ajouter et remplacer : sans
 // cette liste, une méthode supprimée de src/ resterait dans l'artboard, morte mais
 // toujours appelable par l'écran. Ici, elle est effacée, et --check échoue tant
@@ -95,7 +97,7 @@ const RETIREES = ['PACK_REGISTRY', 'kiosqueSummary',
   'SKILL_PACK', 'skillPackOdds', 'skillPackState', 'openSkillPack', 'commitSkillPack',
   'TRAIN_PACK', 'trainPackOdds', 'drawTrainLot', 'openTrainPack', 'commitTrainPack', 'trainPackState',
   'COACH_PACK', 'coachPackOdds', 'coachPackState', 'openCoachPack', 'commitCoachPack'];
-const SOURCES = ['club.js', 'players.js', 'skills.js', 'cards.js', 'staff.js', 'training.js', 'transfer.js', 'progression.js', 'tactics.js', 'tracks.js', 'playerxp.js', 'quests.js', 'creation.js', 'onlineui.js', 'trainpack.js', 'packs.js', 'news.js', 'impact.js', 'league.js', 'division.js', 'direct.js'];
+const SOURCES = ['club.js', 'players.js', 'skills.js', 'cards.js', 'staff.js', 'training.js', 'transfer.js', 'progression.js', 'tactics.js', 'tracks.js', 'playerxp.js', 'quests.js', 'creation.js', 'onlineui.js', 'trainpack.js', 'packs.js', 'news.js', 'impact.js', 'league.js', 'division.js', 'direct.js', 'stade3d.js'];
 const club = SOURCES.map((f) => read('src/' + f)).join('\n');
 // Une méthode du club ne se cherche JAMAIS dans le corps du moteur : le moteur a ses
 // propres fonctions internes (setTac, shoot…), et un nom partagé faisait remplacer

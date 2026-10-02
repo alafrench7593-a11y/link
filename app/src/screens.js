@@ -5,10 +5,12 @@
 // de l'afficher. C'est ce qui garantit que l'app native et l'app web racontent
 // exactement la même chose.
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
-import { C, S } from './theme';
+import { View, Text, ScrollView, Pressable, StyleSheet, Animated } from 'react-native';
+import { C, S, rarityTint } from './theme';
 import { Card, Title, Row, Btn, Bar, Tag, Stat, Empty } from './ui';
 import { Composition, EnDirect } from './direct';
+import { Terrain } from './terrain';
+import { Pack3D } from './pack3d';
 
 // ---------- accueil ----------
 export function HomeScreen({ club, state, act, go }) {
@@ -219,6 +221,8 @@ export function MatchScreen({ club, state, act, go }) {
     if (club.enDirect) return;
     setRes(null);
     const d = club.matchEnDirect(opp, Object.assign({ seed: Math.floor(Math.random() * 1e6) }, opts || {}));
+    // §22 on regarde le match : les actions en temps réel, en 3D (ou en 2D), le reste sauté
+    d.spectacle(true);
     suivre(d); setVue(d.etat()); d.lancer();
   };
   const occupe = direct ? 'Un match est en cours' : '';
@@ -226,6 +230,7 @@ export function MatchScreen({ club, state, act, go }) {
     <ScrollView contentContainerStyle={st.page}>
       <Title sub="Les 22 joueurs sont pilotés par l’IA. Tu décides depuis le banc : changements, consignes, cartes.">Match</Title>
 
+      {direct && vue && !vue.fini ? <Terrain club={club} d={direct} hauteur={300} /> : null}
       {direct && vue && !vue.fini ? <EnDirect club={club} d={direct} vue={vue} /> : null}
 
       {res ? (
@@ -413,11 +418,39 @@ const SOUS_FAMILLE = {
   objet: 'séance, carte d’amélioration, causerie, plan tactique'
 };
 
-export function PacksScreen({ club, state, act, go }) {
+export function PacksScreen({ club, state, act, go, save }) {
   const col = club.collection();
   const k = club.packPrincipal();
+  const defil = useRef(null), pack3d = useRef(null);
+  const [ouvre, setOuvre] = useState(false);
+  const [tirage, setTirage] = useState(null);   // { got, vus } : la révélation sous le pack
+  const minuteurs = useRef([]);
+  useEffect(() => () => minuteurs.current.forEach(clearTimeout), []);
+  const plusTard = (fn, ms) => { minuteurs.current.push(setTimeout(fn, ms)); };
+  // Le tirage (openPack), l'encaissement (commitPack) et la sauvegarde d'abord, l'animation
+  // ensuite : fermer l'app pendant l'éclat ne rejoue pas le tirage, même si sa couleur a déjà
+  // trahi la rareté. Puis les lots se montrent un par un, le meilleur en dernier.
+  const ouvrir = () => {
+    if (ouvre) return;
+    const res = club.openPack({});
+    if (!res.ok) return;
+    act((c) => c.commitPack(res));
+    const fini = Promise.resolve(save ? save() : null).catch(() => {});
+    const p = pack3d.current;
+    if (!p || !p.pret()) return;
+    const best = club.RARITY().find((x) => x.id === res.got[0].rar);
+    setOuvre(true); setTirage({ got: res.got.slice().reverse(), vus: 0 });
+    if (defil.current) defil.current.scrollTo({ y: 0, animated: true });
+    fini.then(() => {
+      p.secouer(1);
+      p.ouvrir(best ? best.tint : C.green);
+      res.got.forEach((_, i) => plusTard(() => setTirage((t) => (t ? { got: t.got, vus: i + 1 } : t)), 700 + i * 300));
+      plusTard(() => setOuvre(false), 700 + res.got.length * 300);
+      plusTard(() => { if (pack3d.current) pack3d.current.nouveau(); }, 1800);
+    });
+  };
   return (
-    <ScrollView contentContainerStyle={st.page}>
+    <ScrollView ref={defil} contentContainerStyle={st.page}>
       <Title sub="Un seul pack dans tout le jeu, et il peut tout donner. Les probabilités sont affichées avant l’ouverture et ne changent jamais.">Le pack</Title>
       <Card>
         <Row>
@@ -429,6 +462,12 @@ export function PacksScreen({ club, state, act, go }) {
         </Row>
       </Card>
       <Card tint={C.green + '99'}>
+        <Pack3D ref={pack3d} club={club} def={k} hauteur={190} />
+        {tirage ? (
+          <View style={st.lots} testID="revelation">
+            {tirage.got.slice(0, tirage.vus).map((g, i) => <CarteLot key={i} club={club} g={g} />)}
+          </View>
+        ) : null}
         <View style={{ alignSelf: 'flex-start' }}><Tag color={C.green}>PACK UNIQUE</Tag></View>
         <Text style={st.name}>{k.name}</Text>
         <Text style={st.hint}>{k.desc}</Text>
@@ -450,14 +489,35 @@ export function PacksScreen({ club, state, act, go }) {
           </Row>
         ))}
         <Text style={st.hint}>La rareté vaut pour les trois familles : un objet Gold est aussi rare qu’un joueur Gold.</Text>
-        {k.got ? <Text style={[st.hint, { color: C.green }]}>Dernier tirage : {k.got}</Text> : null}
-        <Btn label={'OUVRIR LE PACK · ' + k.cost + ' jetons'} why={k.why} onPress={() => act((c) => c.commitPack(c.openPack({})))} />
+        {k.got && !ouvre ? <Text style={[st.hint, { color: C.green }]}>Dernier tirage : {k.got}</Text> : null}
+        <Btn label={ouvre ? 'Ouverture…' : 'OUVRIR LE PACK · ' + k.cost + ' jetons'} why={ouvre ? '' : k.why} onPress={ouvrir} />
         <Row>
           <Text style={[st.hint, { flex: 1 }]}>{k.useLabel}</Text>
           <Btn label="Y aller" small onPress={() => go(k.useView)} />
         </Row>
       </Card>
     </ScrollView>
+  );
+}
+
+// Un lot révélé, en carte (§11 « révélation progressive, carte joueur ») : la rareté en
+// haut et dans la couleur du cadre, la note d'un joueur ou la puissance d'une compétence,
+// le poste ou la famille, le nom. Elle apparaît en glissant, une après l'autre.
+const FAMILLE_LOT = { player: 'Joueur', skill: 'Compétence', objet: 'Objet', shards: 'Doublon' };
+function CarteLot({ club, g }) {
+  const v = useRef(new Animated.Value(0)).current;
+  useEffect(() => { Animated.timing(v, { toValue: 1, duration: 260, useNativeDriver: false }).start(); }, []);
+  const tint = rarityTint(club, g.rar);
+  const grand = g.kind === 'shards' ? '+' + g.shards : g.ovr != null ? String(g.ovr) : '';
+  const sous = g.kind === 'player' ? g.pos : g.kind === 'shards' ? 'fragments' : g.kind === 'skill' ? 'puissance' : '';
+  return (
+    <Animated.View style={[st.lot, { borderColor: tint, backgroundColor: tint + '22', opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] }]}>
+      <Text style={[st.lotRar, { color: tint }]}>{g.label}</Text>
+      {grand ? <Text style={st.lotNote}>{grand}</Text> : null}
+      {sous ? <Text style={st.lotSous}>{sous}</Text> : null}
+      <Text style={st.lotNom} numberOfLines={2}>{g.name}</Text>
+      <Text style={st.lotFam}>{FAMILLE_LOT[g.kind] || ''}</Text>
+    </Animated.View>
   );
 }
 
@@ -609,5 +669,12 @@ const st = StyleSheet.create({
   score: { color: C.text, fontSize: 34, fontWeight: '800', textAlign: 'center' },
   tab: { paddingHorizontal: 13, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   tabOn: { backgroundColor: '#2A313B', borderColor: 'rgba(255,255,255,0.16)' },
-  tabTxt: { color: C.faint, fontSize: 12, fontWeight: '700' }
+  tabTxt: { color: C.faint, fontSize: 12, fontWeight: '700' },
+  lots: { flexDirection: 'row', gap: 8 },
+  lot: { flex: 1, minHeight: 118, borderRadius: 10, borderWidth: 1.5, padding: 8, gap: 2 },
+  lotRar: { fontSize: 10, fontWeight: '800', letterSpacing: 0.3 },
+  lotNote: { color: C.text, fontSize: 26, fontWeight: '900', lineHeight: 30 },
+  lotSous: { color: C.dim, fontSize: 10.5, fontWeight: '700' },
+  lotNom: { color: C.text, fontSize: 12, fontWeight: '700', marginTop: 'auto' },
+  lotFam: { color: C.faint, fontSize: 10 }
 });

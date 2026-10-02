@@ -1457,7 +1457,10 @@ export function makeEngine(cfg) {
     // ---------- enregistrement ----------
     let pend = null, lastEnd = -99, shown = 0;
     const rec = () => {
-      if (W.skip) { curEv = []; return; }
+      // en calcul rapide (runFor, runTicks, finish), rien n'est enregistré... sauf si l'écran
+      // a demandé à regarder le match (capture) : l'image est alors gardée à part. L'image se
+      // fabrique sans rien tirer au hasard ni rien changer au monde : le match reste le même.
+      if (W.skip && !W.capt) { curEv = []; return; }
       const P = new Float32Array(44);
       for (let i = 0; i < 11; i++) { const h = TM.H.ps[i], a = TM.A.ps[i]; P[i * 2] = !h || h.red ? -9 : h.x; P[i * 2 + 1] = !h || h.red ? -9 : h.y; P[22 + i * 2] = !a || a.red ? -9 : a.x; P[23 + i * 2] = !a || a.red ? -9 : a.y; }
       const fa = []; all().forEach((p) => { if (p.fall > 0) fa.push(p.code); });
@@ -1465,6 +1468,7 @@ export function makeEngine(cfg) {
         fl: W.fl ? [W.fl.x0, W.fl.y0, W.fl.x1, W.fl.y1, W.fl.kind] : null, ev: curEv.length ? curEv : null, fa: fa.length ? fa : null, set: W.set ? W.set.kind : null, tk: W.set && W.set.taker ? W.set.taker.code : -1,
         dv: W.dive && W.t - W.dive.t0 < W.dive.dur + 1 ? [W.dive.c, W.dive.dir, Math.min(1, (W.t - W.dive.t0) / Math.max(0.2, W.dive.dur))] : null, sc: [W.score.H, W.score.A] };
       curEv = [];
+      if (W.skip) { W.capt.push(f); if (W.capt.length > W.captMax) W.capt.shift(); return; }
       ring.push(f); if (ring.length > 300) ring.shift();
       if (pend) pend.frames.push(f);
     };
@@ -1543,6 +1547,10 @@ export function makeEngine(cfg) {
         W.minVue = Math.max(W.minVue || 0, brut);
         return { done: !!W.ended, minute: W.minVue, clock: clockLabel(W.clk, W.half), pas: g };
       },
+      // Regarder un match joué en calcul rapide : garder les n dernières images (dix par
+      // seconde de jeu). C'est ce que lit la vue 3D de l'app pendant le direct (direct.js).
+      capture(n) { W.capt = n > 0 ? [] : null; W.captMax = n; },
+      images() { return W.capt || []; },
       snapAt(t) { let lo = null; for (let i = hist.length - 1; i >= 0; i--) if (hist[i].t <= t + 1e-6) { lo = hist[i]; break; } return lo || hist[0] || null; },
       state() { snap(); return Object.assign({}, hist[hist.length - 1], { cnt: W.cnt || {} }); },
       sub(side, i, d) {
