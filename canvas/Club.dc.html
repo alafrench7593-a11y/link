@@ -3537,6 +3537,25 @@ class Component extends DCLogic {
       const L2 = { DEF: [], MIL: [], ATT: [] };
       for (const p of LV[s]) { if (p.line === 'GB') continue; p.press = false; p.prep = null; p.run = null; p.boxM = false; p.intent = regroup ? 'RECOVER' : 'HOLD'; L2[p.line].push(p); }
       Object.values(L2).forEach((arr) => arr.sort((p1, p2) => p1.bx - p2.bx));
+      // §41 UN 3-5-2 DÉFEND À CINQ, PAS À TROIS. Les pistons sont des milieux de couloir
+      // quand on a le ballon, et des défenseurs dès qu'on le perd : c'est tout l'intérêt
+      // du système, et c'est ce que sa description promet (« largeur et solidité »).
+      //
+      // Le moteur les laissait dans la ligne du milieu même en phase défensive, donc
+      // trois centraux couvraient soixante-huit mètres, avec des intervalles PLUS larges
+      // qu'une défense à quatre : 10,5 mètres contre 9,6. Mesuré, le 3-5-2 encaissait
+      // 20,7 de danger contre 8,3 pour le 4-3-3. Le système le plus solide du football
+      // était le plus perméable du jeu.
+      // Sauf en marquage individuel strict : là, chacun suit son homme au lieu de tenir
+      // une ligne, et placer les pistons dans la défense les tiraille entre les deux.
+      // Mesuré, ça empirait : 21 buts encaissés contre 31.
+      if (L2.DEF.length === 3 && T.tac.mark !== 2) {
+        const pistons = L2.MIL.filter((q) => q.kind === 'WB');
+        if (pistons.length) {
+          L2.DEF = L2.DEF.concat(pistons).sort((p1, p2) => p1.bx - p2.bx);
+          L2.MIL = L2.MIL.filter((q) => q.kind !== 'WB');
+        }
+      }
       const nD = L2.DEF.length, nM = L2.MIL.length;
       const place = (arr, a, gap, lim) => { const n = arr.length; arr.forEach((p, k) => { const x = cl(34 + (k - (n - 1) / 2) * gap + shiftX, lim, 68 - lim); setTL(p, a, x, urg * (0.75 + 0.25 * T.coh)); }); };
       const dGap = (nD >= 5 ? 8.2 : nD === 3 ? 10.5 : 9.6) * (nearBox ? 0.8 : 1);

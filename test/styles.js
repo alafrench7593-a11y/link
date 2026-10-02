@@ -78,13 +78,18 @@ const PROMESSES = [
   ['ailes', 'donc plus de corners', brut('cor'), '>'],
   ['catenaccio', 'marquage strict et contres : on concède peu', brut('adv_xg'), '<'],
   ['total', 'tout le monde attaque : plus de présence dans la surface', pm('boxRcv'), '>'],
-  ['pistons', 'les pistons montent : plus de présence dans la surface', pm('boxRcv'), '>']
+  // « Plus de présence dans la surface » n'est pas dans la description : je l'avais
+  // ajouté pour avoir quelque chose à vérifier. Des pistons qui redescendent défendre
+  // arrivent forcément moins devant. La description promet largeur et solidité.
+  // Vraie maintenant que les pistons redescendent dans la ligne en phase défensive.
+  // Avant : 20,7 de danger concédé contre 8,3, et 1-26 sur dix matchs.
+  ['pistons', 'et solidité : cinq joueurs derrière dès qu’on perd le ballon', brut('encaisses'), '<', 0]
 ];
 
 const N = Number(process.argv[2] || 10);
 // Les constats plus bas regardent des styles qui n'ont plus de promesse testée en dur :
 // il faut quand même les jouer, sinon le constat lit un résultat qui n'existe pas.
-const CONSTATES = ['bus', 'blocbas', 'gegen', 'kick', 'tiki', 'pistons', 'surcharge'];
+const CONSTATES = ['bus', 'blocbas', 'gegen', 'kick', 'tiki', 'pistons', 'surcharge', 'homme'];
 const styles = [...new Set(['equilibre'].concat(PROMESSES.map((p) => p[0])).concat(CONSTATES))];
 
 function joue(nom) {
@@ -167,6 +172,15 @@ console.log('\nCe qui ne tient pas, mesuré');
   console.log('             le ballon, donc elle tacle moins. Il manque un compteur de');
   console.log('             récupérations par zone pour le mesurer honnêtement.)');
 
+  dit('le marquage individuel se fait démonter',
+    R.homme.adv_xg - neutre.adv_xg, 'un système risqué, pas un système perdant d’avance',
+    (v) => v > 30,
+    'Pressing homme à homme ' + f1(R.homme.adv_xg) + ' de danger concédé contre ' + f1(neutre.adv_xg));
+  console.log('            (3-5-2 plus marquage individuel plus ligne haute : chaque');
+  console.log('             défenseur suit son homme, donc plus personne ne tient la ligne,');
+  console.log('             et le moindre décalage ouvre tout. Les pistons ne redescendent');
+  console.log('             pas dans ce cas : les y forcer empirait le résultat, mesuré.)');
+
   dit('le Tiki-taka garde le ballon au lieu de le faire circuler',
     R.tiki.passesParPossession - neutre.passesParPossession,
     'sa description dit « passes courtes à l’infini »', (v) => v < -4,
@@ -222,5 +236,5 @@ console.log('\n§42 Aucun style ne domine tous les autres');
 
 console.log('\n' + (fails
   ? 'ÉCHECS : ' + fails + ' sur ' + checks + ' — une promesse a cédé'
-  : 'OK : ' + checks + ' vérifications, dont 5 constats de promesses non tenues'));
+  : 'OK : ' + checks + ' vérifications, dont 6 constats de promesses non tenues'));
 process.exit(fails ? 1 : 0);
