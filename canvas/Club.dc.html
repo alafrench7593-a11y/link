@@ -557,9 +557,22 @@ button:disabled{cursor:default}
 <sc-if value="{{showShouts}}" hint-placeholder-val="{{true}}">
 <div style="flex-shrink: 0; display: flex; gap: 6px; overflow-x: auto">
 <button onClick="{{toggleSubs}}" style="flex-shrink: 0; min-height: 36px; padding: 0 14px; border-radius: 18px; border: none; background: #2ECC71; color: #0E1116; font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35)">{{subsLabel}}</button>
+<button onClick="{{toggleTac}}" aria-pressed="{{tacOpen}}" style="flex-shrink: 0; min-height: 36px; padding: 0 14px; border-radius: 18px; border: 1px solid rgba(242,198,107,0.6); background: {{tacBg}}; color: #F2C66B; font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer">Tactique · {{tacForm}}</button>
 <sc-for list="{{shouts}}" as="sh" hint-placeholder-count="5">
 <button onClick="{{sh.pick}}" style="flex-shrink: 0; min-height: 36px; padding: 0 12px; border-radius: 18px; border: 1px solid {{sh.border}}; background: {{sh.bg}}; color: {{sh.fg}}; font-family: inherit; font-size: 11px; font-weight: 600; cursor: pointer">{{sh.label}}</button>
 </sc-for>
+</div>
+</sc-if>
+<sc-if value="{{tacOpen}}" hint-placeholder-val="{{false}}">
+<div class="lf-up" style="flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(242,198,107,0.55)">
+<div style="display: flex; align-items: center; gap: 8px"><span style="flex-grow: 1; font-size: 12px; font-weight: 700">Tactique en direct · {{tacForm}}</span><span style="padding: 3px 8px; border-radius: 8px; background: rgba(242,198,107,0.14); font-size: 9px; color: #F2C66B; font-weight: 800; letter-spacing: 0.4px">S’APPLIQUE TOUT DE SUITE</span></div>
+<sc-for list="{{tacRows}}" as="tr" hint-placeholder-count="6">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 10.5px; color: #79828F; font-weight: 700">{{tr.label}}</span>
+<div style="display: flex; gap: 5px; overflow-x: auto"><sc-for list="{{tr.opts}}" as="o" hint-placeholder-count="4"><button onClick="{{o.pick}}" aria-pressed="{{o.on}}" style="flex-shrink: 0; min-height: 30px; padding: 0 10px; border-radius: 15px; border: 1px solid {{o.bd}}; background: {{o.bg}}; color: {{o.fg}}; font-family: inherit; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap">{{o.label}}</button></sc-for></div>
+</div>
+</sc-for>
+<span style="font-size: 10.5px; color: #79828F; line-height: 1.4">Les joueurs changent de place, de hauteur ou d’intensité : le moteur applique le réglage aux onze joueurs. Tu ne contrôles jamais un joueur.</span>
 </div>
 </sc-if>
 <sc-if value="{{subsOpen}}" hint-placeholder-val="{{false}}">
@@ -1357,6 +1370,8 @@ class Component extends DCLogic {
       S('kick', 'Direct', 'Kick and rush', '4-4-2', 5, { width: 2, tempo: 2, pass: 2, behind: 1, cross: 2, longshot: 1, engage: 2, press: 2, tackle: 2, gk: 1 }, 'On balance devant et on court : intensité maximale, peu de construction.', 'Le football d’avant, 100 % engagement', ['gegen', 'homme'], ['blocbas', 'blocmed', 'tiki'], 'space'),
       S('ailes', 'Couloirs', 'Jeu sur les ailes', '4-3-3', 4, { width: 2, cross: 2, dribble: 1, fullbacks: 1 }, 'Débordements et centres : on étire le bloc adverse sur toute la largeur.', 'Idéal avec des ailiers rapides', ['blocbas', 'bus', 'catenaccio'], ['contre', 'blocmed'], 'wide'),
       S('surcharge', 'Couloirs', 'Surcharge et renversement', '4-3-3', 4, { width: 2, pass: 1, patience: 1, overload: 1, fullbacks: 2 }, 'On attire l’adversaire d’un côté à 5 contre 3, puis on renverse vers un ailier seul de l’autre côté.', 'Très utilisé dans le foot moderne', ['homme', 'blocmed', 'catenaccio'], ['gegen', 'contre'], 'wide'),
+      // §5 du cahier du match : le jeu axial, l'inverse du jeu sur les ailes
+      S('axial', 'Couloirs', 'Jeu axial', '4-2-3-1', 4, { width: 0, cross: 0, pass: 1, behind: 1, dribble: 1, fullbacks: 0 }, 'On attaque par l’axe : passes entre les lignes, appels dans l’intervalle des centraux, presque pas de centres.', 'Les équipes à meneur de jeu', ['blochaut', 'homme', 'ailes'], ['blocbas', 'catenaccio', 'bus'], 'mid'),
       S('pistons', 'Couloirs', 'Pistons en 3-5-2', '3-5-2', 4, { width: 2, cross: 2, behind: 1, fullbacks: 2, line: 1 }, 'Trois défenseurs centraux et deux pistons qui font tout le couloir : largeur et solidité.', 'Système favori de nombreux entraîneurs italiens', ['blocbas', 'bus', 'kick'], ['contre', 'homme'], 'wide')
     ];
     this._styles = {};
@@ -1810,33 +1825,71 @@ class Component extends DCLogic {
       { id: 'finition', label: 'Boost finition', desc: 'Tir +5, 15 minutes', icon: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8z' }
     ];
   }
-  useMatchCard(id) {
-    const s = this.state, inv = Object.assign({}, s.inv || {}), mt = s.match; if (!mt || mt.done || !this.eng || !(inv[id] > 0)) return;
-    if (!this.eng.card(id)) return; inv[id]--; this.buzz([30, 30, 60]);
+  useMatchCard(id, motif) {
+    const s = this.state, inv = Object.assign({}, s.inv || {}), mt = s.match; if (!mt || mt.done || !this.eng || !(inv[id] > 0)) return { ok: false };
+    if (!this.eng.card(id)) return { ok: false }; inv[id]--; this.buzz([30, 30, 60]);
     const c = this.MATCH_CARDS().find((x) => x.id === id);
-    this.setState({ inv, match: Object.assign({}, mt, { events: mt.events.concat([{ text: mt.minute + "' Carte " + c.label + ' utilisée', color: '#2ECC71' }]) }) });
+    this.setState({ inv, coachAdvice: null, match: Object.assign({}, mt, { events: mt.events.concat([{ text: mt.minute + "' " + this.parQui(motif) + 'Carte ' + c.label + ' utilisée' + this.pourquoi(motif), color: '#2ECC71' }]) }) });
+    return { ok: true };
   }
-  // IA coach : lit la situation chaque minute et agit (auto) ou conseille (assisté)
-  coachTick() {
-    const s = this.state, mt = s.match, E = this.eng; if (!mt || mt.done || !E || s.coachMode === 'manuel') return;
-    const S = E.situation(), min = S.min; if (min === (this.lastCoachMin || -1)) return; this.lastCoachMin = min;
-    const advice = [];
-    if (S.tired.length && S.subs < 5 && min >= 55 && mt.bench.length) {
-      const t = S.tired.sort((a, b) => a.e - b.e)[0], out = mt.xi[t.i], bench = mt.bench.filter((b) => !b.inj).sort((a, b) => (b.pos === out.line ? 1 : 0) - (a.pos === out.line ? 1 : 0) || b.ovr - a.ovr)[0];
-      if (out && bench) advice.push({ text: out.name.split(' ').slice(1).join(' ') + ' est cuit (' + Math.round(t.e) + ' %) : faire entrer ' + bench.name.split(' ').slice(1).join(' '), act: () => this.doSub(out.slot, bench.id) });
+  // §7 une décision de l'AUTO COACH le dit, avec sa raison
+  parQui(motif) { return motif && motif.auto ? 'Coach IA : ' : ''; }
+  pourquoi(motif) { return motif && motif.pourquoi ? ' (' + motif.pourquoi + ')' : ''; }
+  // §6 du cahier du match : changer la tactique pendant le match. Les réglages, la valeur en
+  // cours et le placement d'une nouvelle formation viennent de src/direct.js, comme dans l'app.
+  changerTactique(k, v, motif) {
+    const mt = this.state.match; if (!mt || mt.done || !this.eng) return { ok: false, why: 'Aucun match en cours' };
+    const def = this.TACTIQUE_DIRECT().find((x) => x.k === k);
+    if (!def || !(v >= 0 && v < def.options.length)) return { ok: false, why: 'Réglage inconnu' };
+    const t = mt.tactique; if (this.valeurTactique(t, k) === v) return { ok: false, why: 'C’est déjà le réglage en cours' };
+    let xi = mt.xi, tac = t.tac, ment = t.ment, formation = t.formation;
+    if (k === 'formation') {
+      const pl = this.placementFormation(mt.xi, t.formation, def.options[v]); if (!pl) return { ok: false, why: 'Formation inconnue' };
+      this.eng.formation('H', pl.coords);
+      xi = mt.xi.map((p, i) => Object.assign({}, p, { line: pl.coords[i].line, slot: pl.slots[i] }));
+      formation = def.options[v];
+    } else {
+      const patch = this.patchTactique(k, v); tac = Object.assign({}, tac, patch); if (k === 'mentalite') ment = v;
+      this.eng.reglage('H', patch, k === 'mentalite' ? v : null);
     }
-    if (S.diff < 0 && min >= 70 && mt.shout !== 'exiger') advice.push({ text: 'Mené : exiger plus et pousser', act: () => this.applyShout('exiger') });
-    if (S.diff > 0 && min >= 78 && mt.shout !== 'resserrer') advice.push({ text: 'On mène : resserrer le bloc', act: () => this.applyShout('resserrer') });
-    if (S.diff === 0 && min >= 80 && (s.inv || {}).finition > 0) advice.push({ text: 'Match nul en fin de partie : carte Boost finition', act: () => this.useMatchCard('finition') });
-    if (S.diff < 0 && min >= 60 && (s.inv || {}).pressing > 0 && !mt.cardUsed) advice.push({ text: 'Mené : carte Pressing pour récupérer haut', act: () => this.useMatchCard('pressing') });
-    if (!advice.length) return;
-    if (s.coachMode === 'auto') { advice[0].act(); const m2 = this.state.match; if (m2) this.setState({ match: Object.assign({}, m2, { events: m2.events.concat([{ text: min + "' Coach IA : " + advice[0].text, color: '#4FA8E8' }]) }) }); }
-    else this.setState({ coachAdvice: { text: advice[0].text, act: advice[0].act, min } });
+    this.buzz(20);
+    this.setState({ coachAdvice: null, match: Object.assign({}, mt, { xi, tactique: { formation, tac, ment },
+      events: mt.events.concat([{ text: mt.minute + "' " + (this.parQui(motif) || 'Tactique : ') + def.label + ' : ' + def.options[v] + this.pourquoi(motif), color: '#F2C66B' }]) }) });
+    return { ok: true };
   }
-  applyShout(k) {
-    const m = this.state.match; if (!m || m.done) return; if (this.eng) this.eng.shout(k);
+  jouerConseil(c, motif) {
+    if (c.k === 'sub') return this.doSub(c.slot, c.id, motif);
+    if (c.k === 'tac') return this.changerTactique(c.champ, c.v, motif);
+    if (c.k === 'form') return this.changerTactique('formation', this.FORMATIONS().indexOf(c.formation), motif);
+    if (c.k === 'cri') return this.applyShout(c.id, motif);
+    if (c.k === 'carte') return this.useMatchCard(c.id, motif);
+    return { ok: false };
+  }
+  // IA coach : lit la situation chaque minute et agit (auto) ou conseille (assisté).
+  // §7 du cahier du match : les règles sont celles de l'app (conseilsCoach, src/direct.js).
+  coachTick() {
+    const s = this.state, mt = s.match, E = this.eng; if (!mt || mt.done || !E || (s.coachMode || 'manuel') === 'manuel') return;
+    const S = E.situation(), min = S.min; if (min === (this.lastCoachMin || -1)) return; this.lastCoachMin = min;
+    const f = E.state(), t = mt.tactique, valeurs = {};
+    this.TACTIQUE_DIRECT().forEach((x) => { valeurs[x.k] = this.valeurTactique(t, x.k); });
+    const e = { minute: min, score: [f.score.H, f.score.A], cri: mt.shout, faits: mt.subs, max: this.REGLES_DIRECT().remplacements, banc: mt.bench,
+      xi: mt.xi.map((p, i) => Object.assign({}, p, f.en ? { energy: f.en[i], yc: f.cards[i][0], red: f.cards[i][1] } : {})),
+      cartes: this.MATCH_CARDS().map((c) => ({ id: c.id, n: (s.inv || {})[c.id] || 0 })), tactique: { formation: t.formation, valeurs } };
+    const liste = this.conseilsCoach(e).filter((c) => !(c.k === 'sub' && min - (this.lastCoachSub || -99) < 4));
+    if (!liste.length) { if (s.coachAdvice) this.setState({ coachAdvice: null }); return; }
+    if (s.coachMode === 'auto') {
+      if (min - (this.lastCoachAct || -99) < 2) return;
+      for (const c of liste) { const r = this.jouerConseil(c, { auto: true, pourquoi: c.pourquoi }); if (r && r.ok) { this.lastCoachAct = min; if (c.k === 'sub') this.lastCoachSub = min; break; } }
+    } else {
+      const c = liste[0];
+      this.setState({ coachAdvice: { text: c.texte + ' : ' + c.pourquoi, act: () => this.jouerConseil(c, { pourquoi: c.pourquoi }), min } });
+    }
+  }
+  applyShout(k, motif) {
+    const m = this.state.match; if (!m || m.done) return { ok: false }; if (this.eng) this.eng.shout(k);
     const L = (this.CRIS().find((c) => c.id === k) || {}).label || k;
-    this.setState({ match: Object.assign({}, m, { shout: k, events: m.events.concat([{ text: m.minute + "' Consigne du coach : " + L, color: '#F2C66B' }]) }), coachAdvice: null });
+    this.setState({ match: Object.assign({}, m, { shout: k, events: m.events.concat([{ text: m.minute + "' " + (this.parQui(motif) || 'Consigne du coach : ') + L + this.pourquoi(motif), color: '#F2C66B' }]) }), coachAdvice: null });
+    return { ok: true };
   }
   // ================= STAFF, STADE, CENTRE DE FORMATION, SYNERGIES =================
   STAFF_DEFS() {
@@ -2247,13 +2300,17 @@ class Component extends DCLogic {
     };
     draw();
   }
+
   formCoords(f) {
     return {
       '4-3-3': { GB: [[50, 88]], DEF: [[14, 68], [38, 73], [62, 73], [86, 68]], MIL: [[26, 49], [50, 54], [74, 49]], ATT: [[20, 24], [50, 17], [80, 24]] },
       '4-4-2': { GB: [[50, 88]], DEF: [[14, 68], [38, 73], [62, 73], [86, 68]], MIL: [[12, 46], [37, 51], [63, 51], [88, 46]], ATT: [[36, 20], [64, 20]] },
       '4-2-3-1': { GB: [[50, 88]], DEF: [[14, 68], [38, 73], [62, 73], [86, 68]], MIL: [[36, 56], [64, 56], [16, 34], [50, 36], [84, 34]], ATT: [[50, 15]] },
       '3-5-2': { GB: [[50, 88]], DEF: [[25, 72], [50, 75], [75, 72]], MIL: [[9, 46], [30, 52], [50, 42], [70, 52], [91, 46]], ATT: [[36, 19], [64, 19]] },
-      '5-3-2': { GB: [[50, 88]], DEF: [[8, 64], [29, 72], [50, 75], [71, 72], [92, 64]], MIL: [[26, 48], [50, 52], [74, 48]], ATT: [[36, 20], [64, 20]] }
+      '5-3-2': { GB: [[50, 88]], DEF: [[8, 64], [29, 72], [50, 75], [71, 72], [92, 64]], MIL: [[26, 48], [50, 52], [74, 48]], ATT: [[36, 20], [64, 20]] },
+      '4-2-4': { GB: [[50, 88]], DEF: [[14, 68], [38, 73], [62, 73], [86, 68]], MIL: [[36, 52], [64, 52]], ATT: [[12, 27], [38, 18], [62, 18], [88, 27]] },
+      '3-4-3': { GB: [[50, 88]], DEF: [[25, 72], [50, 75], [75, 72]], MIL: [[10, 48], [37, 53], [63, 53], [90, 48]], ATT: [[20, 24], [50, 17], [80, 24]] },
+      '4-1-4-1': { GB: [[50, 88]], DEF: [[14, 68], [38, 73], [62, 73], [86, 68]], MIL: [[12, 44], [37, 46], [50, 60], [63, 46], [88, 44]], ATT: [[50, 16]] }
     }[f];
   }
   penalty(pos, line) {
@@ -2265,7 +2322,7 @@ class Component extends DCLogic {
 
   pickXI(formation, lineup) {
     const s = this.state; lineup = lineup || s.lineup || {};
-    const need = { '4-3-3': [1, 4, 3, 3], '4-4-2': [1, 4, 4, 2], '4-2-3-1': [1, 4, 5, 1], '3-5-2': [1, 3, 5, 2], '5-3-2': [1, 5, 3, 2] }[formation];
+    const need = this.lignesFormation(formation) || this.lignesFormation('4-3-3');
     const slots = [];
     ['GB', 'DEF', 'MIL', 'ATT'].forEach((pos, k) => { for (let i = 0; i < need[k]; i++) slots.push({ line: pos, slot: pos + i }); });
     const byId = {}; s.squad.forEach((p) => { byId[p.id] = p; });
@@ -2302,10 +2359,10 @@ class Component extends DCLogic {
   // §2 un remplacement pendant le match. Les règles sont celles de direct.js : cinq
   // changements, pas d'expulsé remplacé, le remplaçant entre avec ses compétences, sa
   // forme et son moral (joueurMoteur), et le remplacé est crédité de ses minutes.
-  doSub(outSlot, inId) {
+  doSub(outSlot, inId, motif) {
     const mt = this.state.match;
     const info = this.remplacementInfo({ xi: mt && mt.xi, banc: mt && mt.bench, faits: mt && mt.subs, done: !mt || mt.done }, outSlot, inId);
-    if (!info.can) { if (mt) this.setState({ match: Object.assign({}, mt, { subOut: null, events: mt.events.concat([{ text: info.why, color: '#FF4757' }]) }) }); return; }
+    if (!info.can) { if (mt) this.setState({ match: Object.assign({}, mt, { subOut: null, events: mt.events.concat([{ text: info.why, color: '#FF4757' }]) }) }); return { ok: false, why: info.why }; }
     const idx = mt.xi.findIndex((p) => p.slot === outSlot), out = mt.xi[idx];
     const inP = this.entrant(out, mt.bench.find((p) => p.id === inId));
     const f = this.eng ? this.eng.state() : null;
@@ -2315,12 +2372,14 @@ class Component extends DCLogic {
     this.setState({ match: Object.assign({}, mt, { xi, bench: mt.bench.filter((p) => p.id !== inId), M: this.metrics(xi), subs: mt.subs + 1, subsOpen: false, subOut: null,
       sortis: (mt.sortis || []).concat([Object.assign({}, out, { min: Math.max(1, mt.minute), note: f && f.rat ? f.rat.H[idx] : 6, energy: f && f.en ? f.en[idx] : out.energy })]),
       entres: Object.assign({}, mt.entres, { [inP.id]: mt.minute }),
-      events: mt.events.concat([{ text: mt.minute + "' Changement : " + inP.name + ' remplace ' + out.name + (inP.pen ? ' (hors poste, −' + inP.pen + ')' : ''), color: '#4FA8E8' }]) }) });
+      events: mt.events.concat([{ text: mt.minute + "' " + this.parQui(motif) + 'Changement : ' + inP.name + ' remplace ' + out.name + (inP.pen ? ' (hors poste, −' + inP.pen + ')' : '') + this.pourquoi(motif), color: '#4FA8E8' }]) }), coachAdvice: null });
+    return { ok: true };
   }
+
   ROLE_OPTS(line, slot, formation) {
     if (line === 'GB') return ['Gardien classique', 'Gardien libéro'];
     if (line === 'DEF') {
-      const n = { '4-3-3': 4, '4-4-2': 4, '4-2-3-1': 4, '3-5-2': 3, '5-3-2': 5 }[formation];
+      const n = (this.lignesFormation(formation) || [1, 4])[1];
       const i = Number(slot.slice(3));
       const wide = n >= 4 && (i === 0 || i === n - 1);
       return wide ? ['Latéral', 'Latéral offensif', 'Piston', 'Latéral inversé'] : ['Défenseur central', 'Défenseur relanceur', 'Stoppeur', 'Libéro'];
@@ -2384,7 +2443,9 @@ class Component extends DCLogic {
     // l'état d'après ne saurait plus dire ce qui avait été préparé.
     const plan = this.matchPlan();
     const mt = { opp, friendly: !!opp.friendly, M, minute: 0, clock: "1'", hs: 0, as: 0, showH: 0, showA: 0, shotsH: 0, shotsA: 0, possAcc: 0, possNow: 50, events: [], shout: null, done: false, ended: false, xi, bench, oxi, subs: 0, subsOpen: false, subOut: null, warned: false,
-      plan, cnt: {},
+      plan, cnt: {}, tacOpen: false,
+      // §6 du cahier du match : la tactique au coup d'envoi, point de départ du coaching en direct
+      tactique: { formation: this.state.formation, tac: Object.assign({}, this.state.tac), ment: this.state.mentality },
       rat: { H: xi.map(() => 6.0), A: oxi.map(() => 6.0) }, st: { H: Z(), A: Z() }, marks: [], oppForm, ball: { x: 50, y: 50 }, poss: 'H', flash: null, comment: 'Coup d’envoi', weather: null };
     this.eng = this.makeEngine(Object.assign(this.engineCfg(opp, xi, oxi, obench), {}));
     mt.weather = this.eng.weather();
@@ -2411,8 +2472,8 @@ class Component extends DCLogic {
     return { sides: { H, A } };
   }
   startClock() { clearInterval(this.timer); this.timer = setInterval(() => { this.pbTick(); this.coachTick(); }, 100); }
-  // ---- entrée du joueur (joystick + boutons) ----
-  // boucle temps réel : le moteur avance pendant que tu joues
+  // ---- la lecture du match ----
+  // boucle temps réel : le moteur joue seul, l'écran montre ses images (aucun contrôle direct)
   pbTick() {
     const mt = this.state.match, pb = this.pb, E = this.eng;
     if (!mt || !pb || !E || mt.done) return;
@@ -2579,9 +2640,12 @@ class Component extends DCLogic {
       const t = T.tac, m = T.ment - 3, sh = T.shout;
       T.lineH = [23, 32, 41][t.line] + m * 1.6 + (sh === 'resserrer' ? -5 : 0);
       T.len = (t.line === 0 ? 25 : t.line === 2 ? 30 : 28) * (sh === 'resserrer' ? 0.9 : 1);
-      T.engageA = [36, 56, 80][t.engage] + m * 2 + (sh === 'exiger' ? 6 : 0) - (sh === 'resserrer' ? 8 : 0);
-      T.pressR = [5, 9, 14][t.press] + (sh === 'exiger' ? 3 : 0);
-      T.pressN = t.press === 2 ? 2 : 1;
+      // le pressing très intense va chercher le ballon plus haut que la ligne d'engagement réglée
+      T.engageA = [36, 56, 80][t.engage] + m * 2 + (sh === 'exiger' ? 6 : 0) - (sh === 'resserrer' ? 8 : 0) + (t.press >= 3 ? 14 : 0);
+      // §5 du cahier du match : quatre niveaux de pressing, le quatrième (« très intense »)
+      // sort trois joueurs au pressing et va chercher le ballon plus loin, au prix du souffle
+      T.pressR = [5, 9, 14, 17][t.press] + (sh === 'exiger' ? 3 : 0);
+      T.pressN = t.press >= 3 ? 3 : t.press === 2 ? 2 : 1;
       T.width = [0.84, 1, 1.12][t.width];
       T.rest = [37, 32, 27][t.line] - m * 1.8;
       T.tempoInt = [0.8, 0.56, 0.38][t.tempo] * (sh === 'exiger' ? 0.85 : 1);
@@ -2594,6 +2658,9 @@ class Component extends DCLogic {
     const adaptToSituation = (T) => {
       const o = OT[T.s], diff = W.score[T.s] - W.score[o], min = W.clk / 60;
       if (T.ment0 == null) T.ment0 = T.ment;
+      // §6 une mentalité choisie par le manager pendant le match est appliquée telle quelle :
+      // l'équipe ne la corrige plus d'elle-même selon le score
+      if (T.mentManuelle) { T.phase = phaseOf(T); return; }
       let adj = 0;
       if (diff < 0 && min >= 78) adj = 2; else if (diff < 0 && min >= 60) adj = 1;          // mené : on pousse, ligne plus haute
       if (diff > 0 && min >= 80) adj = T.tac.timewaste ? -2 : -1;                             // mène : on ferme, on baisse le bloc
@@ -3919,7 +3986,7 @@ class Component extends DCLogic {
       api.sub('A', cand.i, Object.assign({}, d, { role: cand.role, duty: cand.duty }));
       logE('Changement pour ' + club('A') + ' : ' + d.name + ' remplace ' + cand.name, '#4FA8E8', 'sub', 'A');
     };
-    // ============ CONTRÔLE DIRECT ============
+    // ============ LA BOUCLE DU MATCH (le moteur joue seul, §1 : aucun contrôle direct) ============
     const tick = () => {
       if (lastMin < 0) { lastMin = 0; applySkills(); }
       refreshLV();
@@ -4084,6 +4151,21 @@ class Component extends DCLogic {
       intents(side) { return TM[side].ps.map((p) => p.intent || ''); },
       situation() { const T = TM.H; return { min: Math.floor(W.clk / 60), diff: W.score.H - W.score.A, tired: T.ps.map((p, i) => ({ i, e: p.energy, red: p.red, line: p.line })).filter((p) => !p.red && p.e < 45), poss: W.poss, subs: T.subs, phase: T.phase }; },
       setTac(side, tac, ment) { TM[side].tac = Object.assign({}, tac); if (ment != null) TM[side].ment = ment; setTP(TM[side]); },
+      // §6 le coaching en direct : quelques réglages changés (les autres restent, cartes de
+      // match comprises), et la mentalité, si le manager la fixe, n'est plus corrigée par le score
+      reglage(side, patch, ment) {
+        const T = TM[side]; T.tac = Object.assign({}, T.tac, patch || {});
+        if (ment != null) { T.ment = ment; T.ment0 = ment; T.mentManuelle = true; }
+        setTP(T); W.dirty = true;
+      },
+      // §6 changer de formation en cours de match : chaque joueur reçoit sa nouvelle place
+      // (coords dans l'ordre des joueurs, { line, fx, fy } comme au coup d'envoi)
+      formation(side, coords) {
+        const T = TM[side];
+        T.ps.forEach((p, i) => { const c = coords[i]; if (!c) return; p.line = c.line; p.bx = c.fx * 0.68; p.ba = (100 - c.fy) * 1.05; });
+        classify(T); setTP(T); salirLV(); W.dirty = true;
+      },
+      tactique(side) { const T = TM[side]; return { tac: Object.assign({}, T.tac), ment: T.ment }; },
       clockLabel,
       weather() { return { id: W.wx, label: WX.l }; },
       // §51 séance de tirs au but : 5 tireurs chacun, puis mort subite.
@@ -5516,7 +5598,7 @@ class Component extends DCLogic {
       trainLog: m.name + ' rejoint le club pour ' + m.price + ' jetons' });
     return { ok: true, price: m.price };
   }
-  FORMATIONS() { return ['4-3-3', '4-4-2', '4-2-3-1', '3-5-2', '5-3-2']; }
+  FORMATIONS() { return ['4-3-3', '4-4-2', '4-2-3-1', '3-5-2', '5-3-2', '4-2-4', '3-4-3', '4-1-4-1']; }
   TAC_GROUPS() {
     return [
       { title: 'Avec le ballon', color: '#2ECC71', items: [
@@ -5532,7 +5614,7 @@ class Component extends DCLogic {
       { title: 'Sans le ballon', color: '#5ED6C0', items: [
         ['line', 'Ligne défensive', ['Basse', 'Normale', 'Haute']],
         ['engage', 'Ligne d’engagement', ['Basse', 'Moyenne', 'Haute']],
-        ['press', 'Intensité du pressing', ['Faible', 'Normale', 'Intense']],
+        ['press', 'Intensité du pressing', ['Faible', 'Normale', 'Intense', 'Très intense']],
         ['trap', 'Piège du hors-jeu', ['Non', 'Oui']],
         ['tackle', 'Tacles', ['Prudents', 'Normaux', 'Rugueux']]
       ] },
@@ -6546,6 +6628,98 @@ class Component extends DCLogic {
     mots.forEach((t, i) => { p.texte(t, x, 44, 24, 1.3, '#0B1210', 1, true); x += larg[i] + blanc; });
     return (this.__panneauPub = { data: p.octets(), largeur: 1024, hauteur: 64 });
   }
+  TACTIQUE_DIRECT() {
+    return [
+      { k: 'formation', label: 'Formation', options: this.FORMATIONS() },
+      { k: 'mentalite', label: 'Mentalité', options: this.MENTALITES() },
+      { k: 'pressing', label: 'Pressing', options: ['Faible', 'Moyen', 'Intense', 'Très intense'] },
+      { k: 'bloc', label: 'Bloc', options: ['Bas', 'Moyen', 'Haut'] },
+      { k: 'rythme', label: 'Rythme', options: ['Lent', 'Normal', 'Rapide'] },
+      { k: 'largeur', label: 'Largeur', options: ['Étroite', 'Normale', 'Large'] }
+    ];
+  }
+  valeurTactique(t, k) {
+    if (k === 'formation') return this.FORMATIONS().indexOf(t.formation);
+    if (k === 'mentalite') return t.ment;
+    const tac = t.tac || {};
+    return k === 'pressing' ? tac.press : k === 'bloc' ? tac.line : k === 'rythme' ? tac.tempo : k === 'largeur' ? tac.width : null;
+  }
+  patchTactique(k, v) {
+    return k === 'pressing' ? { press: v } : k === 'bloc' ? { line: v, engage: v } : k === 'rythme' ? { tempo: v } : k === 'largeur' ? { width: v } : {};
+  }
+  placementFormation(xi, ancienne, nouvelle) {
+    const C = this.formCoords(nouvelle), A = this.formCoords(ancienne) || C;
+    if (!C) return null;
+    const rang = { GB: 0, DEF: 1, MIL: 2, ATT: 3 };
+    const ici = xi.map((p, i) => {
+      const n = Number(String(p.slot || '').replace(/\D/g, '')) || 0, c = (A[p.line] || [])[n] || [50, 50];
+      return { i, p, fx: c[0], score: (p.red ? 1000 : 0) + rang[p.line] * 10 + (rang[p.pos] != null ? rang[p.pos] : rang[p.line]) * 2 + (100 - c[1]) / 50 };
+    });
+    const coords = new Array(xi.length), slots = new Array(xi.length);
+    ici.filter((q) => q.p.line === 'GB').forEach((q) => { coords[q.i] = { line: 'GB', fx: C.GB[0][0], fy: C.GB[0][1] }; slots[q.i] = 'GB0'; });
+    const champ = ici.filter((q) => q.p.line !== 'GB').sort((a, b) => a.score - b.score);
+    let k = 0;
+    ['DEF', 'MIL', 'ATT'].forEach((l) => {
+      const places = (C[l] || []).map((c, n) => ({ c, n })).sort((a, b) => a.c[0] - b.c[0]);
+      champ.slice(k, k + places.length).sort((a, b) => a.fx - b.fx).forEach((q, j) => {
+        const pl = places[j]; coords[q.i] = { line: l, fx: pl.c[0], fy: pl.c[1] }; slots[q.i] = l + pl.n;
+      });
+      k += places.length;
+    });
+    return { coords, slots };
+  }
+  conseilsCoach(e) {
+    const out = [], min = e.minute || 0, diff = e.score[0] - e.score[1], v = (e.tactique && e.tactique.valeurs) || {};
+    const xi = (e.xi || []).filter((p) => !p.red), champ = xi.filter((p) => p.line !== 'GB');
+    const nom = (p) => p.name.split(' ').slice(1).join(' ') || p.name;
+    const moy = champ.length ? champ.reduce((a, p) => a + p.energy, 0) / champ.length : 100;
+    const cartes = {}; (e.cartes || []).forEach((c) => { cartes[c.id] = c.n; });
+    // 1. les remplacements : le plus fatigué, ou un averti qu'un second jaune exclurait
+    // jamais un gardien dans le champ ni un joueur de champ dans les buts, et pas un
+    // remplaçant tellement plus faible que le changement ferait plus de mal que de bien
+    const meilleur = (sortant) => (e.banc || []).filter((b) => !b.inj && (b.pos === 'GB') === (sortant.line === 'GB'))
+      .map((b) => { const pen = this.penalty(b.pos, sortant.line); return { b, pen, eff: b.ovr - pen - (pen ? 4 : 0) + ((b.energy != null ? b.energy : 100) - 100) / 10 }; })
+      .filter((x) => x.b.ovr - x.pen >= sortant.ovr - 14)
+      .sort((a, c) => c.eff - a.eff)[0];
+    if ((e.faits || 0) < (e.max || 5) && (e.banc || []).length && min >= 55) {
+      const fatigue = champ.filter((p) => p.energy < 52).sort((a, c) => a.energy - c.energy)[0];
+      const averti = min >= 60 && diff >= 0 ? champ.filter((p) => p.yc >= 1 && p.line !== 'ATT')[0] : null;
+      const out1 = fatigue || averti;
+      const r = out1 ? meilleur(out1) : null;
+      if (r) out.push({ k: 'sub', slot: out1.slot, id: r.b.id, texte: r.b.name + ' remplace ' + out1.name,
+        pourquoi: out1 === fatigue ? nom(out1) + ' est à ' + Math.round(out1.energy) + ' % d’énergie' : nom(out1) + ' est averti, un second jaune laisserait l’équipe à dix' });
+      // mené dans le dernier quart d'heure : un attaquant frais à la place d'un attaquant qui
+      // n'a pas marqué (le remplaçant prend la place de celui qui sort : un attaquant mis en
+      // défense jouerait hors poste, d'où la formation à 4-2-4 plus bas pour ajouter du monde devant)
+      if (diff < 0 && min >= 72) {
+        const att = champ.filter((p) => p.line === 'ATT' && !p.buts).sort((a, c) => a.energy - c.energy)[0];
+        const r2 = att ? meilleur(att) : null;
+        if (att && r2 && r2.b.pos === 'ATT' && r2.b.ovr >= att.ovr - 4 && att.energy < 80) out.push({ k: 'sub', slot: att.slot, id: r2.b.id, texte: r2.b.name + ' remplace ' + att.name,
+          pourquoi: 'mené à la ' + min + 'e : des jambes fraîches devant' });
+      }
+    }
+    // 2. la tactique selon le score et la minute (le moteur lit chaque réglage)
+    if (diff < 0 && min >= 70 && v.mentalite < 5) out.push({ k: 'tac', champ: 'mentalite', v: 5, texte: 'Mentalité : Offensive', pourquoi: 'mené à la ' + min + 'e' });
+    if (diff < 0 && min >= 75 && v.pressing < 2 && moy >= 50) out.push({ k: 'tac', champ: 'pressing', v: 2, texte: 'Pressing : Intense', pourquoi: 'récupérer le ballon plus haut' });
+    if (diff < 0 && min >= 82) {
+      const f = e.tactique && e.tactique.formation, l = f ? this.lignesFormation(f) : null;
+      if (l && l[3] < 4 && this.FORMATIONS().indexOf('4-2-4') >= 0) out.push({ k: 'form', formation: '4-2-4', texte: 'Formation : 4-2-4', pourquoi: 'tout pour revenir au score' });
+    }
+    if (diff > 0 && min >= 80 && v.mentalite > 2) out.push({ k: 'tac', champ: 'mentalite', v: 2, texte: 'Mentalité : Prudente', pourquoi: 'on mène : conserver' });
+    if (diff > 0 && min >= 83 && v.bloc > 0) out.push({ k: 'tac', champ: 'bloc', v: 0, texte: 'Bloc : Bas', pourquoi: 'fermer les espaces dans le dos' });
+    if (moy < 55 && v.pressing >= 2 && diff >= 0) out.push({ k: 'tac', champ: 'pressing', v: 1, texte: 'Pressing : Moyen', pourquoi: 'l’équipe est à ' + Math.round(moy) + ' % d’énergie' });
+    // 3. la voix
+    if (diff < 0 && min >= 70 && e.cri !== 'exiger') out.push({ k: 'cri', id: 'exiger', texte: 'Consigne : Exiger plus', pourquoi: 'mené en fin de match' });
+    if (diff > 0 && min >= 78 && e.cri !== 'resserrer') out.push({ k: 'cri', id: 'resserrer', texte: 'Consigne : Resserrer le bloc', pourquoi: 'protéger l’avance' });
+    // 4. les cartes de match (elles se gagnent : le coach ne les joue qu'au bon moment)
+    if (diff === 0 && min >= 80 && cartes.finition > 0) out.push({ k: 'carte', id: 'finition', texte: 'Carte : Boost finition', pourquoi: 'match nul en fin de partie' });
+    if (diff < 0 && min >= 60 && cartes.pressing > 0) out.push({ k: 'carte', id: 'pressing', texte: 'Carte : Pressing', pourquoi: 'mené : récupérer haut' });
+    return out;
+  }
+  lignesFormation(f) {
+    const C = this.formCoords(f);
+    return C ? ['GB', 'DEF', 'MIL', 'ATT'].map((l) => (C[l] || []).length) : null;
+  }
   renderVals() {
     const s = this.state, t = s.tac;
     const color = (o) => (o >= 80 ? 'linear-gradient(135deg, #FFE59A, #E9A93A)' : o >= 70 ? 'linear-gradient(135deg, #F2F6F4, #AEB9C2)' : 'linear-gradient(135deg, #E8B585, #B7773F)');
@@ -7138,7 +7312,16 @@ class Component extends DCLogic {
       progress: mtc ? Math.round(mtc.minute / 90 * 100) + '%' : '0%',
       showShouts: !!mtc && !mtc.done,
       subsLabel: mtc ? 'Changements ' + mtc.subs + '/5' : '',
-      toggleSubs: () => { const m = this.state.match; if (m && !m.done && m.subs < 5) this.setState({ match: Object.assign({}, m, { subsOpen: !m.subsOpen, subOut: null }) }); },
+      toggleSubs: () => { const m = this.state.match; if (m && !m.done && m.subs < 5) this.setState({ match: Object.assign({}, m, { subsOpen: !m.subsOpen, subOut: null, tacOpen: false }) }); },
+      // §6 du cahier du match : le panneau Tactique en direct
+      toggleTac: () => { const m = this.state.match; if (m && !m.done) this.setState({ match: Object.assign({}, m, { tacOpen: !m.tacOpen, subsOpen: false, subOut: null }) }); },
+      tacOpen: !!(mtc && mtc.tacOpen && !mtc.done), tacBg: mtc && mtc.tacOpen ? 'rgba(242,198,107,0.16)' : '#242A33',
+      tacForm: mtc && mtc.tactique ? mtc.tactique.formation : s.formation,
+      tacRows: mtc && mtc.tacOpen && mtc.tactique ? this.TACTIQUE_DIRECT().map((x) => {
+        const cur = this.valeurTactique(mtc.tactique, x.k);
+        return { label: x.label, opts: x.options.map((o, i) => ({ label: o, on: cur === i, pick: () => this.changerTactique(x.k, i),
+          bg: cur === i ? 'rgba(242,198,107,0.18)' : '#242A33', fg: cur === i ? '#F2C66B' : '#F2F4F7', bd: cur === i ? 'rgba(242,198,107,0.6)' : 'transparent' })) };
+      }) : [],
       subsOpen: !!(mtc && mtc.subsOpen && !mtc.done),
       subsTitle: mtc && mtc.subOut ? 'Qui entre ? (touche pour valider)' : 'Qui sort ? (énergie)',
       subRows: mtc && mtc.subsOpen ? (mtc.subOut ? mtc.bench.map((p) => { const line = mtc.subOut.replace(/[0-9]/g, ''), pen = this.penalty(p.pos, line), e = Math.round(p.energy != null ? p.energy : 100); return { pos: p.pos, name: p.name + (pen ? ' · hors poste −' + pen : ''), eW: e + '%', eC: e >= 60 ? '#2ECC71' : '#FF4757', eL: e + '%', ovr: Math.max(30, p.ovr - pen), ovrBg: tierC(Math.max(30, p.ovr - pen)), bg: 'transparent', op: 1, off: false, pick: () => this.doSub(mtc.subOut, p.id) }; })

@@ -72,9 +72,12 @@ export function makeEngine(cfg) {
       const t = T.tac, m = T.ment - 3, sh = T.shout;
       T.lineH = [23, 32, 41][t.line] + m * 1.6 + (sh === 'resserrer' ? -5 : 0);
       T.len = (t.line === 0 ? 25 : t.line === 2 ? 30 : 28) * (sh === 'resserrer' ? 0.9 : 1);
-      T.engageA = [36, 56, 80][t.engage] + m * 2 + (sh === 'exiger' ? 6 : 0) - (sh === 'resserrer' ? 8 : 0);
-      T.pressR = [5, 9, 14][t.press] + (sh === 'exiger' ? 3 : 0);
-      T.pressN = t.press === 2 ? 2 : 1;
+      // le pressing très intense va chercher le ballon plus haut que la ligne d'engagement réglée
+      T.engageA = [36, 56, 80][t.engage] + m * 2 + (sh === 'exiger' ? 6 : 0) - (sh === 'resserrer' ? 8 : 0) + (t.press >= 3 ? 14 : 0);
+      // §5 du cahier du match : quatre niveaux de pressing, le quatrième (« très intense »)
+      // sort trois joueurs au pressing et va chercher le ballon plus loin, au prix du souffle
+      T.pressR = [5, 9, 14, 17][t.press] + (sh === 'exiger' ? 3 : 0);
+      T.pressN = t.press >= 3 ? 3 : t.press === 2 ? 2 : 1;
       T.width = [0.84, 1, 1.12][t.width];
       T.rest = [37, 32, 27][t.line] - m * 1.8;
       T.tempoInt = [0.8, 0.56, 0.38][t.tempo] * (sh === 'exiger' ? 0.85 : 1);
@@ -87,6 +90,9 @@ export function makeEngine(cfg) {
     const adaptToSituation = (T) => {
       const o = OT[T.s], diff = W.score[T.s] - W.score[o], min = W.clk / 60;
       if (T.ment0 == null) T.ment0 = T.ment;
+      // §6 une mentalité choisie par le manager pendant le match est appliquée telle quelle :
+      // l'équipe ne la corrige plus d'elle-même selon le score
+      if (T.mentManuelle) { T.phase = phaseOf(T); return; }
       let adj = 0;
       if (diff < 0 && min >= 78) adj = 2; else if (diff < 0 && min >= 60) adj = 1;          // mené : on pousse, ligne plus haute
       if (diff > 0 && min >= 80) adj = T.tac.timewaste ? -2 : -1;                             // mène : on ferme, on baisse le bloc
@@ -1412,7 +1418,7 @@ export function makeEngine(cfg) {
       api.sub('A', cand.i, Object.assign({}, d, { role: cand.role, duty: cand.duty }));
       logE('Changement pour ' + club('A') + ' : ' + d.name + ' remplace ' + cand.name, '#4FA8E8', 'sub', 'A');
     };
-    // ============ CONTRÔLE DIRECT ============
+    // ============ LA BOUCLE DU MATCH (le moteur joue seul, §1 : aucun contrôle direct) ============
     const tick = () => {
       if (lastMin < 0) { lastMin = 0; applySkills(); }
       refreshLV();
@@ -1577,6 +1583,21 @@ export function makeEngine(cfg) {
       intents(side) { return TM[side].ps.map((p) => p.intent || ''); },
       situation() { const T = TM.H; return { min: Math.floor(W.clk / 60), diff: W.score.H - W.score.A, tired: T.ps.map((p, i) => ({ i, e: p.energy, red: p.red, line: p.line })).filter((p) => !p.red && p.e < 45), poss: W.poss, subs: T.subs, phase: T.phase }; },
       setTac(side, tac, ment) { TM[side].tac = Object.assign({}, tac); if (ment != null) TM[side].ment = ment; setTP(TM[side]); },
+      // §6 le coaching en direct : quelques réglages changés (les autres restent, cartes de
+      // match comprises), et la mentalité, si le manager la fixe, n'est plus corrigée par le score
+      reglage(side, patch, ment) {
+        const T = TM[side]; T.tac = Object.assign({}, T.tac, patch || {});
+        if (ment != null) { T.ment = ment; T.ment0 = ment; T.mentManuelle = true; }
+        setTP(T); W.dirty = true;
+      },
+      // §6 changer de formation en cours de match : chaque joueur reçoit sa nouvelle place
+      // (coords dans l'ordre des joueurs, { line, fx, fy } comme au coup d'envoi)
+      formation(side, coords) {
+        const T = TM[side];
+        T.ps.forEach((p, i) => { const c = coords[i]; if (!c) return; p.line = c.line; p.bx = c.fx * 0.68; p.ba = (100 - c.fy) * 1.05; });
+        classify(T); setTP(T); salirLV(); W.dirty = true;
+      },
+      tactique(side) { const T = TM[side]; return { tac: Object.assign({}, T.tac), ment: T.ment }; },
       clockLabel,
       weather() { return { id: W.wx, label: WX.l }; },
       // §51 séance de tirs au but : 5 tireurs chacun, puis mort subite.

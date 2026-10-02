@@ -177,6 +177,19 @@ t('§28 le match se regarde en 3D, et la vue 2D reste en bascule', en3d >= 1 && 
 await touche(p2, 'Exiger plus');
 await p2.waitForTimeout(400);
 t('une consigne de la voix s’applique, et son effet est écrit', /Exiger plus : Pressing plus large/.test(await lit(p2)));
+// §6 du cahier du match : la tactique change pendant le match
+await touche(p2, 'Très intense');
+await p2.waitForTimeout(300);
+await touche(p2, '4-2-4');
+await p2.waitForTimeout(400);
+vu = await lit(p2);
+t('§6 la tactique change en direct : pressing très intense, 4-2-4', /Toi : Formation : 4-2-4/.test(vu) && /Toi : Pressing : Très intense/.test(vu) && /TACTIQUE EN DIRECT · 4-2-4/.test(vu));
+// §7 l'AUTO COACH se choisit, et dit ce qu'il fera
+await touche(p2, 'Auto coach');
+await p2.waitForTimeout(300);
+t('§7 l’AUTO COACH se met en route', /Le coach IA décide seul/.test(await lit(p2)));
+await touche(p2, 'Manuel');
+await p2.waitForTimeout(300);
 await touche(p2, 'ATT');
 await p2.waitForTimeout(400);
 const ok1 = await p2.evaluate(() => {

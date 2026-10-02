@@ -24,6 +24,8 @@ export const Tactics = {
       S('kick', 'Direct', 'Kick and rush', '4-4-2', 5, { width: 2, tempo: 2, pass: 2, behind: 1, cross: 2, longshot: 1, engage: 2, press: 2, tackle: 2, gk: 1 }, 'On balance devant et on court : intensité maximale, peu de construction.', 'Le football d’avant, 100 % engagement', ['gegen', 'homme'], ['blocbas', 'blocmed', 'tiki'], 'space'),
       S('ailes', 'Couloirs', 'Jeu sur les ailes', '4-3-3', 4, { width: 2, cross: 2, dribble: 1, fullbacks: 1 }, 'Débordements et centres : on étire le bloc adverse sur toute la largeur.', 'Idéal avec des ailiers rapides', ['blocbas', 'bus', 'catenaccio'], ['contre', 'blocmed'], 'wide'),
       S('surcharge', 'Couloirs', 'Surcharge et renversement', '4-3-3', 4, { width: 2, pass: 1, patience: 1, overload: 1, fullbacks: 2 }, 'On attire l’adversaire d’un côté à 5 contre 3, puis on renverse vers un ailier seul de l’autre côté.', 'Très utilisé dans le foot moderne', ['homme', 'blocmed', 'catenaccio'], ['gegen', 'contre'], 'wide'),
+      // §5 du cahier du match : le jeu axial, l'inverse du jeu sur les ailes
+      S('axial', 'Couloirs', 'Jeu axial', '4-2-3-1', 4, { width: 0, cross: 0, pass: 1, behind: 1, dribble: 1, fullbacks: 0 }, 'On attaque par l’axe : passes entre les lignes, appels dans l’intervalle des centraux, presque pas de centres.', 'Les équipes à meneur de jeu', ['blochaut', 'homme', 'ailes'], ['blocbas', 'catenaccio', 'bus'], 'mid'),
       S('pistons', 'Couloirs', 'Pistons en 3-5-2', '3-5-2', 4, { width: 2, cross: 2, behind: 1, fullbacks: 2, line: 1 }, 'Trois défenseurs centraux et deux pistons qui font tout le couloir : largeur et solidité.', 'Système favori de nombreux entraîneurs italiens', ['blocbas', 'bus', 'kick'], ['contre', 'homme'], 'wide')
     ];
     this._styles = {};
@@ -40,7 +42,14 @@ export const Tactics = {
   // n'avait donc aucun écran Tactique, et rien n'empêchait deux écrans de régler la même
   // chose différemment. Les règles et les libellés sont ici (§3). Chaque réglage listé
   // est lu par le moteur ; test/leviers.js vérifie qu'il change vraiment le match.
-  FORMATIONS() { return ['4-3-3', '4-4-2', '4-2-3-1', '3-5-2', '5-3-2']; },
+  // §5 et §6 du cahier du match : 4-2-4 pour forcer en fin de match, 3-4-3 et 4-1-4-1 en plus
+  FORMATIONS() { return ['4-3-3', '4-4-2', '4-2-3-1', '3-5-2', '5-3-2', '4-2-4', '3-4-3', '4-1-4-1']; },
+
+  // Combien de joueurs par ligne (gardien, défense, milieu, attaque), lu dans les places.
+  lignesFormation(f) {
+    const C = this.formCoords(f);
+    return C ? ['GB', 'DEF', 'MIL', 'ATT'].map((l) => (C[l] || []).length) : null;
+  },
 
   // [clé lue par le moteur, libellé, options dans l'ordre des valeurs 0, 1, 2…]
   TAC_GROUPS() {
@@ -58,7 +67,7 @@ export const Tactics = {
       { title: 'Sans le ballon', color: '#5ED6C0', items: [
         ['line', 'Ligne défensive', ['Basse', 'Normale', 'Haute']],
         ['engage', 'Ligne d’engagement', ['Basse', 'Moyenne', 'Haute']],
-        ['press', 'Intensité du pressing', ['Faible', 'Normale', 'Intense']],
+        ['press', 'Intensité du pressing', ['Faible', 'Normale', 'Intense', 'Très intense']],
         ['trap', 'Piège du hors-jeu', ['Non', 'Oui']],
         ['tackle', 'Tacles', ['Prudents', 'Normaux', 'Rugueux']]
       ] },
@@ -129,7 +138,10 @@ export const Tactics = {
       '4-4-2': { GB: [[50, 88]], DEF: [[14, 68], [38, 73], [62, 73], [86, 68]], MIL: [[12, 46], [37, 51], [63, 51], [88, 46]], ATT: [[36, 20], [64, 20]] },
       '4-2-3-1': { GB: [[50, 88]], DEF: [[14, 68], [38, 73], [62, 73], [86, 68]], MIL: [[36, 56], [64, 56], [16, 34], [50, 36], [84, 34]], ATT: [[50, 15]] },
       '3-5-2': { GB: [[50, 88]], DEF: [[25, 72], [50, 75], [75, 72]], MIL: [[9, 46], [30, 52], [50, 42], [70, 52], [91, 46]], ATT: [[36, 19], [64, 19]] },
-      '5-3-2': { GB: [[50, 88]], DEF: [[8, 64], [29, 72], [50, 75], [71, 72], [92, 64]], MIL: [[26, 48], [50, 52], [74, 48]], ATT: [[36, 20], [64, 20]] }
+      '5-3-2': { GB: [[50, 88]], DEF: [[8, 64], [29, 72], [50, 75], [71, 72], [92, 64]], MIL: [[26, 48], [50, 52], [74, 48]], ATT: [[36, 20], [64, 20]] },
+      '4-2-4': { GB: [[50, 88]], DEF: [[14, 68], [38, 73], [62, 73], [86, 68]], MIL: [[36, 52], [64, 52]], ATT: [[12, 27], [38, 18], [62, 18], [88, 27]] },
+      '3-4-3': { GB: [[50, 88]], DEF: [[25, 72], [50, 75], [75, 72]], MIL: [[10, 48], [37, 53], [63, 53], [90, 48]], ATT: [[20, 24], [50, 17], [80, 24]] },
+      '4-1-4-1': { GB: [[50, 88]], DEF: [[14, 68], [38, 73], [62, 73], [86, 68]], MIL: [[12, 44], [37, 46], [50, 60], [63, 46], [88, 44]], ATT: [[50, 16]] }
     }[f];
   },
 
@@ -142,7 +154,7 @@ export const Tactics = {
 
   pickXI(formation, lineup) {
     const s = this.state; lineup = lineup || s.lineup || {};
-    const need = { '4-3-3': [1, 4, 3, 3], '4-4-2': [1, 4, 4, 2], '4-2-3-1': [1, 4, 5, 1], '3-5-2': [1, 3, 5, 2], '5-3-2': [1, 5, 3, 2] }[formation];
+    const need = this.lignesFormation(formation) || this.lignesFormation('4-3-3');
     const slots = [];
     ['GB', 'DEF', 'MIL', 'ATT'].forEach((pos, k) => { for (let i = 0; i < need[k]; i++) slots.push({ line: pos, slot: pos + i }); });
     const byId = {}; s.squad.forEach((p) => { byId[p.id] = p; });
@@ -202,7 +214,7 @@ export const Tactics = {
   ROLE_OPTS(line, slot, formation) {
     if (line === 'GB') return ['Gardien classique', 'Gardien libéro'];
     if (line === 'DEF') {
-      const n = { '4-3-3': 4, '4-4-2': 4, '4-2-3-1': 4, '3-5-2': 3, '5-3-2': 5 }[formation];
+      const n = (this.lignesFormation(formation) || [1, 4])[1];
       const i = Number(slot.slice(3));
       const wide = n >= 4 && (i === 0 || i === n - 1);
       return wide ? ['Latéral', 'Latéral offensif', 'Piston', 'Latéral inversé'] : ['Défenseur central', 'Défenseur relanceur', 'Stoppeur', 'Libéro'];

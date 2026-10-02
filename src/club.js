@@ -90,8 +90,10 @@ export class Club {
     // la graine, les tirages déjà faits (la note de chaque adversaire) et le moteur tel qu'il
     // est au coup d'envoi, puisque l'effectif ou la tactique peuvent changer d'ici là
     const depart = o.depart ? { seed, tirages: oxi.length, cfg: JSON.parse(JSON.stringify(cfg)) } : null;
+    // §6 la tactique au coup d'envoi : le point de départ du coaching en direct
+    const tactique = { formation: s.formation, tac: Object.assign({}, cfg.sides.H.tac), ment: cfg.sides.H.ment };
     const E = makeEngine(Object.assign(cfg, { rnd }));
-    return { E, xi, oxi, opp, plan, amical, depart };
+    return { E, xi, oxi, opp, plan, amical, depart, tactique };
   }
 
   // Tout ce qui suit le coup de sifflet final.

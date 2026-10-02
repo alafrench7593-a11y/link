@@ -87,6 +87,8 @@ const METHODS = ['rand', 'seedR', 'statW', 'ovrOf', 'genStats', 'cardStats', 'pr
   'joueurMoteur', 'assignSlot', 'compositionAuto', 'candidatsPoste',
   'REGLES_DIRECT', 'CRIS', 'entrant', 'remplacementInfo', 'issueDuMatch', 'joueursDuMatch',
   'nomUnique',
+  // §6 et §7 du cahier du match : la tactique en direct et l'AUTO COACH, les mêmes règles partout
+  'TACTIQUE_DIRECT', 'valeurTactique', 'patchTactique', 'placementFormation', 'conseilsCoach', 'lignesFormation',
   // §28 le match en 3D et §11 le pack en 3D : le même rendu que l'app téléphone (stade3d.js)
   'stade3d', 'pack3d', 'peintre', 'texture3d', 'facePack', 'panneauPub'];
 // Les méthodes retirées des sources. Le sync ne sait qu'ajouter et remplacer : sans
