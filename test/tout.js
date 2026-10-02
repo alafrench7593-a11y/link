@@ -68,7 +68,16 @@ for (const r of rates) {
   console.log('\n── ' + r.nom + ' : ' + r.promesse);
   // les lignes qui ont cédé, pas tout le journal
   const lignes = r.sortie.split('\n').filter((l) => /ÉCHEC|ALERTE|Error|error/.test(l)).slice(0, 12);
-  console.log(lignes.length ? lignes.join('\n') : r.sortie.trim().split('\n').slice(-12).join('\n'));
+  const extrait = lignes.length ? lignes.join('\n') : r.sortie.trim().split('\n').slice(-12).join('\n');
+  console.log(extrait);
+  // Dans l'intégration continue, chaque échec devient aussi une ANNOTATION : elle
+  // s'affiche en tête de la page du run, et l'API de GitHub la rend directement,
+  // alors que le journal complet passe par un stockage que tout le monde ne peut pas
+  // lire.
+  if (process.env.GITHUB_ACTIONS) {
+    const net = (x) => x.replace(/%/g, '%25').replace(/\r/g, '').replace(/\n/g, '%0A');
+    console.log('::error title=' + net(r.nom + ' : ' + r.promesse) + '::' + net(extrait.slice(0, 1800)));
+  }
 }
 if (!long && !rates.length) console.log('Les trois vérifications longues ne sont pas lancées : node test/tout.js --long');
 process.exit(rates.length ? 1 : 0);
