@@ -3200,7 +3200,10 @@ class Component extends DCLogic {
     const execSet = () => {
       const S = W.set, s = S.s, T = TM[s], p = S.taker, o = OT[s];
       if (!p || p.red) { W.set = null; return; }
-      if (hy(p.x - S.x, p.y - S.y) > 1.6 && W.t < S.ready + 2.5) return;
+      // Le tireur vient au ballon. Il y était téléporté 2,5 s après la mise en place, d'où qu'il
+      // vienne (jusqu'à 38 m d'un coup, mesuré par la passerelle) : il court, le temps passe, et
+      // seul un cas sans issue (15 s plus tard) le replace encore.
+      if (hy(p.x - S.x, p.y - S.y) > 1.6 && W.t < S.ready + 15) return;
       p.x = S.x - (S.kind === 'throw' ? 0 : 0.5 * Math.sign(34 - S.x)); p.y = S.kind === 'throw' ? S.y : S.y + (s === 'H' ? 0.6 : -0.6);
       W.set = null; W.owner = p; p.ctrlT = W.t; p.rcvT = W.t; W.last = s;
       if (W.poss !== s) { W.poss = s; W.possT = W.t; TM[s].counterUntil = 0; TM[o].cpressUntil = 0; if (TM[o].tac.mark >= 1) assignMarks(TM[o]); }
@@ -3257,6 +3260,14 @@ class Component extends DCLogic {
       for (const q of LV[s]) { if (q === p) continue; const d = hy(q.x - p.x, q.y - p.y); if (d < 4 || d > (k === 'throw' ? 22 : 34)) continue;
         const e = passEval(p, q, q.x, q.y, k === 'throw', 'pass'); if (!e) continue; const ev = e.pS * V(s, q.x, q.y, e.space) - (1 - e.pS) * lossCost(s, q.x, q.y); if (!best || ev > best.ev) best = { q, ev }; }
       if (best) { kick(p, best.q.x + best.q.vx * 0.4, best.q.y + best.q.vy * 0.4, 'pass', best.q, { aerial: k === 'throw', apex: k === 'throw' ? 1.6 : 0 }); if (k === 'throw') W.fl.dur = Math.max(0.5, W.fl.dur * 0.8); }
+      else if (k === 'throw') {
+        // Une touche se lance à la main : sans partenaire démarqué, le lanceur partait balle au
+        // pied. Il la donne au plus proche à portée, sinon il la lance le long de la ligne.
+        const q = LV[s].filter((q2) => q2 !== p && q2.line !== 'GB' && hy(q2.x - p.x, q2.y - p.y) >= 3).sort((a2, b2) => hy(a2.x - p.x, a2.y - p.y) - hy(b2.x - p.x, b2.y - p.y))[0];
+        if (q && hy(q.x - p.x, q.y - p.y) <= 25) kick(p, q.x, q.y, 'pass', q, { aerial: true, apex: 1.6 });
+        else kick(p, cl(S.x + (S.x < 34 ? 4 : -4), 2, PW - 2), yOf(s, cl(aOf(s, S.y) + 10, 2, PL - 2)), 'pass', null, { aerial: true, apex: 1.8 });
+        W.fl.dur = Math.max(0.5, W.fl.dur * 0.8);
+      }
       else { W.owner = p; p.ctrlT = W.t; p.nextDec = W.t; }
     };
     // ---------- valeur des positions ----------
@@ -4013,6 +4024,10 @@ class Component extends DCLogic {
     };
     // ============ LA BOUCLE DU MATCH (le moteur joue seul, §1 : aucun contrôle direct) ============
     const tick = () => {
+      // Le coup d'envoi. Le mode temps forts (next) replaçait les vingt-deux joueurs ; le calcul
+      // rapide (playMatch, le direct, le serveur) les laissait tous sur le rond central, où ils
+      // se taclaient dès la première seconde. La passerelle l'a vu (docs/passerelle-ue5.md, §9).
+      if (!W.started) { W.started = true; kickoffReset('H'); }
       if (lastMin < 0) { lastMin = 0; applySkills(); }
       refreshLV();
       if (W.cel > 0 && W.t >= W.cel) { if (!W.celCut) { W.celCut = true; W.cut = true; W.t += DT; return; } W.celCut = false; W.clk += W.celK === 'ballon' ? 22 : W.celK === 'calme' ? 40 : 55; kickoffReset(OT[W.celS]); }

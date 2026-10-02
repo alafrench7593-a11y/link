@@ -77,9 +77,9 @@ de jeu). Tirée au sort par une graine : même graine, même configuration, mêm
 | Pas d'orientation du corps, pas d'énergie, pas d'intention dans les images | posture, fatigue visible (§40), débogueur (§54) | **fait : images de passerelle** |
 | Pas d'identité stable du personnage ; les adversaires partageaient les mêmes numéros | §36 carte → personnage ; « pas 22 clones » (§5) | **fait : identités** |
 | La taille et le poids existent (fiche du joueur) mais pas les proportions | §4 et §8 la morphologie | **fait : morphologie** (visuelle, voir §8 du cahier) |
-| Le coup d'envoi des matchs officiels part avec les 22 joueurs sur le rond central | mêlée visible et duels dès la première seconde | **trouvé par la passerelle**, phase 6 |
-| Un tireur de corner ou de touche trop loin est téléporté au ballon (jusqu'à 38 m) | téléportation visible | **trouvé par la passerelle**, phase 6 |
-| Une touche sans partenaire libre : le lanceur part balle au pied | geste impossible | **trouvé par la passerelle**, phase 6 |
+| Le coup d'envoi des matchs officiels partait avec les 22 joueurs sur le rond central | mêlée visible et duels dès la première seconde | **trouvé par la passerelle, corrigé** |
+| Un tireur de corner ou de touche trop loin était téléporté au ballon (jusqu'à 38 m) | téléportation visible | **trouvé par la passerelle, corrigé** |
+| Une touche sans partenaire libre : le lanceur partait balle au pied | geste impossible | **trouvé par la passerelle, corrigé** |
 | Les contacts se règlent en déplaçant les joueurs (jusqu'à 25 cm en un pas) | à-coups, pieds qui glissent : à lisser côté rendu, puis côté moteur | phase 2 et 6 |
 | Le ballon suit son porteur à 0,5 à 1,4 m, sans touches distinctes | §31 « le ballon ne doit jamais être collé au pied » | phase 3 (rendu), phase 6 (moteur) |
 | Le placement du gardien ne dépend pas de son attribut PLA (seulement ses arrêts) | §28 un gardien faible doit être mal placé | phase 6 |
@@ -316,8 +316,9 @@ Côté LinkFoot, `test/passerelle.js` (dans `npm test`) :
 - §57 la chaîne : carte → moteur → mouvement → action (vitesse, profondeur, gestes de dribble,
   énergie) ;
 - §55 sur le document : personne hors du terrain, personne l'un dans l'autre, ballon au pied de
-  son porteur, gardien dans l'angle, aucun joueur immobile loin de sa place ; et, mesurés en
-  constats, les à-coups, les vitesses au-dessus de la pointe, les téléportations, la ligne
+  son porteur, gardien dans l'angle, aucun joueur immobile loin de sa place, aucune
+  téléportation hors des coupes, un coup d'envoi où chacun est à sa place, une touche toujours
+  lancée ; et, mesurés en constats, les à-coups, les vitesses au-dessus de la pointe, la ligne
   étirée.
 
 Côté Unreal, à écrire avec le plugin (critères d'acceptation) :
@@ -338,23 +339,30 @@ Côté Unreal, à écrire avec le plugin (critères d'acceptation) :
 | 3 | les gestes : passes, frappes, contrôles, dribbles, tacles, duels, gardien | contact pied-ballon dans la tolérance |
 | 4 | personnages MetaHuman par lot, maillots, stade, public, lumière, son | 22 personnages distincts, 60 images par seconde sur la machine cible |
 | 5 | direct par flux, ralentis, débogueur, contrôles côté rendu | un match en direct suivi de bout en bout |
-| 6 | le moteur : ce que la passerelle a trouvé (coup d'envoi, tireurs téléportés, touche sans partenaire), contacts lissés, touches de balle, gardien selon PLA, blessures en match, taille dans les duels aériens | chaque changement mesuré par `test/leviers.js`, `test/styles.js`, `test/coherence.js` et `test/passerelle.js` |
+| 6 | le moteur : contacts lissés, touches de balle, gardien selon PLA, blessures en match, taille dans les duels aériens (le coup d'envoi, les tireurs téléportés et la touche sans partenaire sont déjà corrigés) | chaque changement mesuré par `test/leviers.js`, `test/styles.js`, `test/coherence.js` et `test/passerelle.js` |
 
 ## 9. Ce que la passerelle a déjà trouvé dans le moteur
 
-Mesuré sur deux matchs (graine 77, contre deux adversaires) par `verifierPont` :
+Mesuré sur deux matchs (graine 77, contre deux adversaires) par `verifierPont`. Les trois premiers
+points sont corrigés, et `test/passerelle.js` vérifie qu'ils ne reviennent pas :
 
 - **Le coup d'envoi des matchs officiels** (calcul rapide : `playMatch`, le direct, le serveur)
-  part avec les vingt-deux joueurs sur le rond central : premiers tacles et une faute dans la
-  première demi-seconde. Le mode temps forts, lui, replace tout le monde. Visible aujourd'hui
-  dans la 3D de l'app.
-- **Les tireurs de corner et de touche** qui ne sont pas arrivés au ballon 2,5 s après la mise en
-  place y sont téléportés : 5 à 10 fois par match, jusqu'à 38 m d'un coup.
-- **Une touche sans partenaire à portée** laisse le lanceur partir balle au pied.
+  partait avec les vingt-deux joueurs sur le rond central : premiers tacles et une faute dans la
+  première demi-seconde, visibles dans la 3D de l'app. Le mode temps forts, lui, replaçait tout le
+  monde. Corrigé : chacun est à sa place dès la première image.
+- **Les tireurs de corner et de touche** qui n'étaient pas arrivés au ballon 2,5 s après la mise en
+  place y étaient téléportés : 5 à 10 fois par match, jusqu'à 38 m d'un coup. Corrigé : le tireur
+  court au ballon, et le temps passe ; zéro téléportation mesurée.
+- **Une touche sans partenaire à portée** laissait le lanceur partir balle au pied. Corrigé : il la
+  donne au plus proche à 25 m, sinon il la lance le long de la ligne.
 - **Les contacts** se règlent en déplaçant les joueurs, pas en les freinant : plus de 2 000 à-coups
   au-dessus de 14 m/s² par match, presque tous au contact d'un autre joueur. À lisser côté rendu
   (tolérance de 30 cm), puis à reprendre dans le moteur.
-- **Le gardien** est hors de l'angle de tir dans 13 à 17 % des images où un adversaire a le ballon
+- **Le gardien** est hors de l'angle de tir dans 13 à 22 % des images où un adversaire a le ballon
   à moins de 30 m, surtout quand il revient d'une sortie.
 - **La ligne défensive** s'étire sur plus de 12 m dans 17 à 33 % des images où l'équipe défend,
   surtout quand les latéraux sont montés.
+
+Ces deux derniers points ne sont pas des bugs au sens strict (un gardien qui revient d'une sortie,
+un latéral pris haut existent au football) ; leur fréquence est suivie en constat, et elle dira si
+le placement du gardien selon PLA et le repli des latéraux (phase 6) changent quelque chose.

@@ -149,7 +149,17 @@ tete('§55 ce que le rendu ne doit jamais avoir à cacher');
   t('aucun joueur immobile alors que sa place est ailleurs', C.immobile === 0, C.immobile + ' fois');
   constat('vitesses au-dessus de la pointe du joueur (contacts, replacements)', C.vitesse + ' fois sur ' + C.images + ' images');
   constat('à-coups au-dessus de 14 m/s² (les contacts se règlent en déplaçant les joueurs)', C.acceleration + ' fois');
-  constat('téléportations (plus de 4 m en un dixième de seconde, hors coupe)', C.teleportation + ' fois' + (v.exemples.find((e) => e.k === 'teleportation') ? ', par exemple ' + JSON.stringify(v.exemples.find((e) => e.k === 'teleportation')) : ''));
+  // un tireur de corner ou de touche y était téléporté (jusqu'à 38 m) : il court au ballon
+  t('aucune téléportation hors des coupes annoncées', C.teleportation === 0, C.teleportation + ' fois' + (v.exemples.find((e) => e.k === 'teleportation') ? ', par exemple ' + JSON.stringify(v.exemples.find((e) => e.k === 'teleportation')) : ''));
+  // les matchs officiels partaient avec les vingt-deux joueurs sur le rond central
+  const premiere = c.lireImagePont(D1, 0), auCentre = premiere.joueurs.filter((j) => Math.hypot(j.x - 34, j.y - 52.5) < 3).length;
+  t('le coup d’envoi : chacun à sa place dès la première image, annoncée comme une coupe', premiere.coupe && auCentre <= 2, auCentre + ' joueur(s) dans le rond au départ');
+  // chaque touche accordée finit par un lancer (et pas par un lanceur qui repart balle au pied)
+  const iTouche = P.cpa.indexOf('throw'), Dm = D1.images.donnees;
+  let accordees = 0; for (let i = 1; i < Dm.length; i++) if (Dm[i - 1][10] === iTouche && Dm[i][10] !== iTouche) accordees++;
+  const touches = D1.actions.filter((a) => a.a === 'touche');
+  t('une touche se lance toujours : le lanceur ne repart jamais balle au pied', accordees > 0 && touches.length === accordees && touches.every((a) => a.aerien),
+    accordees + ' touches accordées, ' + touches.length + ' lancées, dont ' + touches.filter((a) => a.vers < 0).length + ' le long de la ligne');
   constat('ligne défensive étirée sur plus de 12 m', v.taux.ligne_cassee + ' % des images où l’équipe défend');
 }
 
