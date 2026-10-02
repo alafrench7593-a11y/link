@@ -112,6 +112,20 @@ instant, le choix fait à celui du même joueur sans elle). Les résultats reste
 constats. Ces compteurs ne changent pas le match (vérifié sur 27 matchs, avec et sans
 compétences).
 
+Les correctifs du moteur déjà faits sur la branche `ue5` (coup d'envoi, tireurs qui courent au
+ballon, touche lancée, tireur qui frappe de sa place, tête qui part de sa hauteur) changent les
+matchs, et la suite longue le montre (2 octobre 2026, 12 matchs par série) :
+
+| Suite | `main` | `ue5` |
+| --- | --- | --- |
+| leviers | 27 sur 27 | 24 sur 27 : à cinq derrière on ne concède pas moins de tirs ; le pressing fort ne fait pas tacler davantage ; une équipe fraîche ne garde pas plus le ballon |
+| styles | 27 sur 27 | 23 sur 27 : presse fort sans plus de fautes, piège du hors-jeu, espace dans le dos, longs ballons |
+| cohérence | 22 sur 22 | 21 sur 22 : à note égale, un effectif athlétique prend 36 points sur 36, un technique 19 (sur `main` : 29 contre 27) |
+
+L'écart athlètes contre techniciens dépasse le bruit de douze matchs (environ deux écarts-types).
+Il faut trouver lequel de ces correctifs le provoque avant de les porter sur `main` ; jusque-là,
+`main` garde le moteur d'avant.
+
 ## 4. WHAT MOVES TO UNREAL : ce qui passe dans Unreal
 
 La présentation, et seulement elle : les personnages (MetaHuman, morphotypes du §44), l'animation
