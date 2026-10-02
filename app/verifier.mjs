@@ -9,7 +9,8 @@
 //     démonstration, niveau 7, 1 000 jetons, sans passer par la création du §2.
 //
 // Ce fichier construit l'app pour le navigateur, la sert, et la parcourt comme un
-// joueur : premier lancement, les six onglets, un pack ouvert, second lancement.
+// joueur : premier lancement, les six onglets, les neuf entrées du directeur sportif,
+// le pack principal ouvert, second lancement.
 //
 //   npm run verifier        depuis app/, après npm install
 import { spawn } from 'node:child_process';
@@ -83,25 +84,47 @@ t('avec 600 jetons', /\b600\b/.test(a));
 t('et quinze joueurs : quatorze normaux et le joueur rare offert', /15 joueurs/.test(a), (a.match(/(\d+) joueurs/) || [])[0]);
 
 console.log('\nLes six onglets s’ouvrent sans erreur');
-for (const o of ['Effectif', 'Match', 'Entraîn.', 'Packs', 'En ligne', 'Club']) {
+for (const o of ['Effectif', 'Match', 'Entraîn.', 'Packs', 'En ligne', 'Accueil']) {
   erreurs.length = 0;
   const trouve = await touche(p1, o);
   await p1.waitForTimeout(900);
   t(o, trouve && !erreurs.length, erreurs[0] || '');
 }
 
-console.log('\n§19 Ce qu’on fait se garde');
+// §17 la section DIRECTEUR SPORTIF : ses neuf entrées, chacune vers un vrai écran.
+console.log('\n§17 DIRECTEUR SPORTIF : les neuf entrées mènent à leur écran');
+t('la section est sur l’accueil', /DIRECTEUR SPORTIF/.test(await lit(p1)));
+const ENTREES = [['Mon effectif', /Effectif/], ['Compétences', /combinaisons possibles/], ['Pack', /OUVRIR LE PACK/],
+  ['Entraînement', /Séances disponibles/], ['Transferts', /VENDRE/], ['Quêtes', /Plafond du jour/],
+  ['Finances', /JOURNAL DES TRANSACTIONS/], ['Tactique', /FORMATION/], ['Club', /PROGRESSION DU CLUB/]];
+for (const [entree, attendu] of ENTREES) {
+  erreurs.length = 0;
+  await touche(p1, 'Accueil');
+  await p1.waitForTimeout(500);
+  const trouve = await touche(p1, entree);
+  await p1.waitForTimeout(900);
+  const vu = await lit(p1);
+  t(entree, trouve && attendu.test(vu) && !erreurs.length, erreurs[0] || (trouve ? '' : 'entrée introuvable'));
+}
+
+console.log('\n§8 et §19 Le pack principal s’ouvre, et ce qu’on fait se garde');
 await touche(p1, 'Packs');
 await p1.waitForTimeout(700);
-await touche(p1, 'OUVRIR · 180 jetons');
+t('§9 la part de chaque famille est affichée avant l’ouverture', /CE QUE PEUT DONNER CHAQUE TIRAGE/.test(await lit(p1)));
+await touche(p1, 'OUVRIR LE PACK · 250 jetons');
 await p1.waitForTimeout(1800);
-t('le Pack Entraînement s’ouvre et dit ce qu’il a donné', /Dernier tirage/.test(await lit(p1)));
+t('le pack principal s’ouvre et dit ce qu’il a donné', /Dernier tirage/.test(await lit(p1)));
+// le pack a pu donner un joueur : on relève l'effectif tel qu'il est APRÈS l'ouverture
+await touche(p1, 'Accueil');
+await p1.waitForTimeout(600);
+const effectif = ((await lit(p1)).match(/(\d+) joueurs/) || [])[1];
 await p1.close();
 
 const p2 = await ouvre();
 const c = await lit(p2);
-t('au second lancement, la partie est retrouvée : 420 jetons', /\b420\b/.test(c));
-t('et le club n’est pas recréé : toujours quinze joueurs', /15 joueurs/.test(c));
+t('au second lancement, la partie est retrouvée : 350 jetons', /\b350\b/.test(c));
+t('et le club n’est pas recréé : le même effectif qu’avant de fermer', !!effectif && new RegExp('\\b' + effectif + ' joueurs').test(c),
+  effectif + ' joueurs avant, ' + ((c.match(/(\d+) joueurs/) || [])[1]) + ' après');
 t('aucune erreur dans la console sur tout le parcours', !erreurs.length, erreurs[0] || '');
 
 await b.close();

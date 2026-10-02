@@ -50,6 +50,18 @@ export declare class Club {
   synergy(xi: Player[]): { score: number; labels: string[] };
   finances(state: ClubState, res: 'w' | 'd' | 'l'): { gate: number; wages: number; net: number };
   marketList(): Array<Player & { price: number }>;
+  /** §17 Transferts : la règle d'achat, une seule fois pour tous les écrans. */
+  MARKET_RULES(): { maxSquad: number };
+  buyInfo(m: (Player & { price: number }) | undefined): { can: boolean; why: string };
+  buyPlayer(id: number): { ok: boolean; why?: string; price?: number };
+  sellPlayer(id: number): { ok: boolean; why?: string; price?: number };
+  /** §17 Tactique : formations, consignes et styles, réglés par le module. */
+  FORMATIONS(): string[];
+  TAC_GROUPS(): Array<{ title: string; color: string; items: Array<[string, string, string[]]> }>;
+  setFormation(f: string): ActionResult;
+  applyStyle(key: string, opts?: { formation?: boolean }): ActionResult;
+  setMentality(level: number): ActionResult;
+  setConsigne(key: string, value: number): ActionResult;
   hireStaff(id: 'adjoint' | 'physique' | 'recruteur' | 'kine'): ActionResult;
   staffLv(id: string): number;
   staffWages(): number;
@@ -146,6 +158,10 @@ export declare class Club {
   rollQuests(level: number): Quest[];
   bumpQuest(kind: string, n?: number): Quest[];
   claimQuest(id: string): { ok: boolean; why?: string; got?: number; xp?: number };
+  /** §7 Connexion et missions : leurs gains passent aussi par earn(). */
+  DAILY_REWARDS(): Array<number | string>;
+  claimDaily(): { ok: boolean; why?: string; reward?: number | string; got?: number };
+  claimMission(id: string): { ok: boolean; why?: string; got?: number; capped?: string[] | null };
 
   CREATION_STEPS(): Array<{ id: string; label: string; hint: string }>;
   COUNTRIES(): Array<{ id: string; label: string; div: number }>;
@@ -169,7 +185,17 @@ export declare class Club {
   unlocksAt(level: number): string[];
   PACK_DEFS(): PackDef[];
   THE_PACK(): PackDef;
-  PACK_SLOTS(): Array<{ kind: string; w: number }>;
+  /** §8 Les familles du pack principal et leur part, la table même du tirage. */
+  PACK_SLOTS(): Array<{ kind: 'player' | 'skill' | 'objet'; w: number; label: string }>;
+  /** §9 Les mêmes parts, en pourcentage, pour l'affichage avant l'ouverture. */
+  packFamilies(): Array<{ kind: 'player' | 'skill' | 'objet'; label: string; pct: number }>;
+  /** Ce qu'un objet fait, en quelques mots, lu dans ses propres champs. */
+  objetCourt(o: PackObjet): string;
+  /** Le pack principal tel que le kiosque l'affiche. */
+  packPrincipal(): KiosqueEntry;
+  kiosque(): KiosqueEntry[];
+  appliquerObjetsEntrainement(lots: PackObjet[]): { sessions: number; xp: number; cards: string[] };
+  rangerObjetsCoach(lots: PackObjet[]): { plans: number; morale: number; coh: number };
   drawLot(rnd?: () => number, owned?: Set<number>): PackLot;
   openPack(opts?: { free?: boolean; rnd?: () => number }): { ok: boolean; why?: string; def?: PackDef; got?: PackLot[]; shards?: number; free?: boolean };
   commitPack(res: unknown): { ok: boolean };
@@ -212,7 +238,24 @@ export interface Quest { id: string; kind: string; goal: number; label: string; 
 export type PackLot =
   | { kind: 'player'; rar: string; id: number; name: string; pos: string; ovr: number; label: string; color: string; shards: number }
   | { kind: 'skill'; rar: string; skill: Skill; name: string; ovr: number; label: string; color: string; shards: number }
-  | { kind: 'shards'; rar: string; id: number; name: string; ovr: number; label: string; color: string; dup: true; shards: number; pos: string };
+  | { kind: 'shards'; rar: string; id: number; name: string; ovr: number; label: string; color: string; dup: true; shards: number; pos: string }
+  | { kind: 'objet'; rar: string; name: string; label: string; color: string; shards: number; objet: PackObjet };
+
+/** Un objet sorti d'un pack : séance, carte d'amélioration, stage, causerie, plan… */
+export interface PackObjet {
+  id: string; rar: string; label: string; desc: string; famille?: 'entrainement' | 'tactique'; kind?: string;
+  sessions?: number; up?: number; stat?: string | null; stats?: string[] | null; squadXp?: number;
+  morale?: number; coh?: number; adv?: number; plans?: number;
+}
+
+/** Une entrée du kiosque : le pack principal (principal: true) ou un pack ciblé. */
+export interface KiosqueEntry {
+  key: string; name: string; family: string; question: string; principal: boolean;
+  n: number; cost: number; color: string; content?: string; desc: string;
+  can: boolean; why: string; locked: boolean; useView: string; useLabel: string; got: string;
+  kind: 'rarete' | 'lots'; odds: Array<{ label: string; pct: number; color: string; rarLabel?: string; desc?: string }>;
+  familles: Array<{ kind: string; label: string; pct: number }> | null;
+}
 
 /** Le résultat commun à toutes les actions qui peuvent refuser : la raison est toujours dite. */
 export interface ActionResult { ok: boolean; why?: string; lvl?: number; }

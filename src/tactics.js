@@ -35,6 +35,87 @@ export const Tactics = {
   // La liste des styles, dans l'ordre d'affichage.
   styleList() { this.styles(); return this._styleList; },
 
+  // ---------- §17 TACTIQUE : les réglages, une seule fois pour tous les écrans ----------
+  // L'écran Mon Club les écrivait en ligne, avec ses propres libellés : l'app téléphone
+  // n'avait donc aucun écran Tactique, et rien n'empêchait deux écrans de régler la même
+  // chose différemment. Les règles et les libellés sont ici (§3). Chaque réglage listé
+  // est lu par le moteur ; test/leviers.js vérifie qu'il change vraiment le match.
+  FORMATIONS() { return ['4-3-3', '4-4-2', '4-2-3-1', '3-5-2', '5-3-2']; },
+
+  // [clé lue par le moteur, libellé, options dans l'ordre des valeurs 0, 1, 2…]
+  TAC_GROUPS() {
+    return [
+      { title: 'Avec le ballon', color: '#2ECC71', items: [
+        ['width', 'Largeur', ['Étroite', 'Normale', 'Large']],
+        ['tempo', 'Tempo', ['Lent', 'Normal', 'Rapide']],
+        ['pass', 'Style de passes', ['Courtes', 'Mixtes', 'Directes']],
+        ['cross', 'Centres', ['Rasants', 'Mixtes', 'Aériens']],
+        ['behind', 'Jeu dans le dos de la défense', ['Non', 'Oui']],
+        ['dribble', 'Dribbles', ['Normal', 'Plus de dribbles']],
+        ['longshot', 'Frappes de loin', ['Rarement', 'Souvent']],
+        ['patience', 'Patience dans la construction', ['Normale', 'Travailler le ballon']]
+      ] },
+      { title: 'Sans le ballon', color: '#5ED6C0', items: [
+        ['line', 'Ligne défensive', ['Basse', 'Normale', 'Haute']],
+        ['engage', 'Ligne d’engagement', ['Basse', 'Moyenne', 'Haute']],
+        ['press', 'Intensité du pressing', ['Faible', 'Normale', 'Intense']],
+        ['trap', 'Piège du hors-jeu', ['Non', 'Oui']],
+        ['tackle', 'Tacles', ['Prudents', 'Normaux', 'Rugueux']]
+      ] },
+      { title: 'Organisation', color: '#C39BFF', items: [
+        ['mark', 'Marquage', ['En zone', 'Mixte', 'Individuel']],
+        ['fullbacks', 'Latéraux', ['Restent', 'Montent', 'Inversés']],
+        ['overload', 'Surcharger un côté', ['Non', 'Gauche', 'Axe', 'Droite']],
+        ['ptrap', 'Pièges de pressing', ['Aucun', 'Sur les côtés', 'Dans l’axe']],
+        ['timewaste', 'Gagner du temps quand on mène', ['Non', 'Oui']]
+      ] },
+      { title: 'Transitions', color: '#4FA8E8', items: [
+        ['lost', 'À la perte du ballon', ['Contre-pressing', 'Se replacer']],
+        ['won', 'À la récupération', ['Contre-attaque', 'Construire']],
+        ['gk', 'Relance du gardien', ['Courte', 'Longue']]
+      ] },
+      { title: 'Coups de pied arrêtés', color: '#F5C84C', items: [
+        ['corners', 'Corners', ['1er poteau', '2e poteau', 'Point de penalty', 'À la remise']],
+        ['freekicks', 'Coups francs', ['Frappe directe', 'Centre', 'Combinaison']]
+      ] }
+    ];
+  },
+
+  setFormation(f) {
+    if (this.FORMATIONS().indexOf(f) < 0) return { ok: false, why: 'Formation inconnue' };
+    this.setState({ formation: f, roles: {}, duties: {}, sel: null });
+    return { ok: true };
+  },
+
+  // Appliquer un style : ses consignes et sa mentalité, et sa formation sauf si on
+  // demande de garder la sienne (les raccourcis de l'écran Tactique la gardent).
+  applyStyle(k, opts) {
+    const x = this.styles()[k];
+    if (!x) return { ok: false, why: 'Style inconnu' };
+    const patch = { preset: k, mentality: x.m, tac: Object.assign({}, this.state.tac, x.tac) };
+    if (!opts || opts.formation !== false) Object.assign(patch, { formation: x.form, roles: {}, duties: {}, sel: null });
+    this.setState(patch);
+    return { ok: true };
+  },
+
+  // Toucher à une consigne ou à la mentalité, c'est quitter le style : plus de bonus
+  // ni de malus de confrontation (matchup), et l'écran le dit.
+  setMentality(i) {
+    const m = Math.round(i);
+    if (!(m >= 0 && m <= 6)) return { ok: false, why: 'Mentalité hors limites' };
+    this.setState({ mentality: m, preset: 'perso' });
+    return { ok: true };
+  },
+
+  setConsigne(k, v) {
+    let it = null;
+    this.TAC_GROUPS().forEach((g) => g.items.forEach((x) => { if (x[0] === k) it = x; }));
+    if (!it) return { ok: false, why: 'Réglage inconnu' };
+    if (!(v >= 0 && v < it[2].length && v === Math.round(v))) return { ok: false, why: 'Valeur hors limites' };
+    this.setState({ tac: Object.assign({}, this.state.tac, { [k]: v }), preset: 'perso' });
+    return { ok: true };
+  },
+
   matchup(a, b) {
     const S = this.styles(), A = S[a], B = S[b];
     if (!A || !B) return 0;

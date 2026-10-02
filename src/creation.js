@@ -90,6 +90,8 @@ export const Creation = {
       nextId: 200, nextSkillUid: 1, skillInv: [], collected: [], seenPlayers: [],
       balance: 600, shards: 0, xp: 0, level: 1,
       record: { w: 0, d: 0, l: 0 }, seasonP: 0, winStreak: 0,
+      // la série de connexion repart de zéro : l'état de démonstration en était au jour 4
+      dayStreak: 0, dayClaimed: false, market: null,
       quests: this.rollQuests(1), caps: { day: this.dayKey() }, ledger: [],
       freeQueue: ['linkfoot'],                      // un seul pack offert pour démarrer
       created: true,

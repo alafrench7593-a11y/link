@@ -22,13 +22,22 @@ npx expo start --tunnel
 
 ## Ce qu'il y a dedans
 
+Six onglets en bas : Accueil, Effectif, Match, Entraînement, Packs, En ligne. Sur
+l'accueil, la section **DIRECTEUR SPORTIF** mène aux neuf écrans du cahier des charges.
+
 | Écran | Ce qu'on y fait |
 | --- | --- |
-| Club | le résumé : note, niveau, séances, solde, et l'accès au reste |
-| Effectif | la liste, puis la fiche d'un joueur : niveau, XP, compétences, rapport du recruteur |
+| Accueil | le résumé (note, niveau, séances, solde) et la section DIRECTEUR SPORTIF |
+| Mon effectif | la liste, puis la fiche d'un joueur : niveau, XP, compétences, rapport du recruteur, vente |
+| Compétences | l'inventaire, et le choix du joueur qui porte chaque compétence |
+| Pack | le pack principal et ses deux tables de probabilités, puis les packs ciblés |
+| Entraînement | les séances disponibles, les cartes d'amélioration, la réunion d'équipe |
+| Transferts | acheter sur le marché, vendre son effectif |
+| Quêtes | les objectifs en cours et leurs récompenses, sous le plafond du jour |
+| Finances | le solde, ce qui a été gagné aujourd'hui par source, le journal des transactions |
+| Tactique | formation, mentalité, style de jeu et toutes les consignes lues par le moteur |
+| Club | la progression du club, le staff, le stade, le centre de formation |
 | Match | choisir un adversaire, miser trois pronostics, jouer, lire le rapport |
-| Entraînement | les séances disponibles, la réunion d'équipe, le Pack Entraînement et le Pack Entraîneur |
-| Packs | le LinkFoot Pack et le Pack Compétence, avec leurs probabilités |
 | En ligne | le journal, le classement, les meilleures équipes, les meilleurs joueurs |
 
 ## La sauvegarde
@@ -76,8 +85,8 @@ npm test --prefix ..      # les règles du jeu, sans interface
 ```
 
 `npm run verifier` construit l'app pour le navigateur, la sert, et fait ce qu'un
-joueur ferait : premier lancement, les six onglets, un pack ouvert, second
-lancement. Quatorze vérifications. C'est ce parcours qui a trouvé, au premier vrai
+joueur ferait : premier lancement, les six onglets, les neuf entrées du directeur
+sportif, le pack principal ouvert, second lancement. Vingt-cinq vérifications. C'est ce parcours qui a trouvé, au premier vrai
 lancement de l'app, qu'elle ne se construisait pas (il manquait `expo-asset`) et
 qu'elle ne créait jamais le club : tout nouveau joueur commençait sur le club de
 démonstration, niveau 7, 1 000 jetons.

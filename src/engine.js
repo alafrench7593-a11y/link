@@ -118,7 +118,8 @@ export function makeEngine(cfg) {
       laser: 'pass', visionnaire: 'pass', chef: 'pass', meneur: 'pass',
       tueur: 'shot', renard: 'shot', clutch: 'shot', acier: 'shot',
       mur: 'tackle', gladiateur: 'tackle', pressing: 'press', grinta: 'press',
-      aerien: 'aerial', gk_reflex: 'gk', gk_mains: 'hands', calme: 'calm', leader: 'lead'
+      aerien: 'aerial', gk_reflex: 'gk', gk_mains: 'hands', calme: 'calm', leader: 'lead',
+      perforateur: 'run', eclair: 'trans'
     };
     // Lecture d'un trait, sûre même avant la première minute.
     const TR = (p, k) => ((p && p.tr && p.tr[k]) || 0);
@@ -230,6 +231,14 @@ export function makeEngine(cfg) {
         if (how !== 'set' && how !== 'gk' && T.tac.won === 0 && bA < 70 && ahead <= 6) {
           T.counterUntil = W.t + 7.5;
           if (ahead <= 5 && bA < 62) { com('Contre-attaque ! ' + p.short + ' lance le mouvement'); key(12, p.s, 'counter'); }
+        } else if (how !== 'set' && how !== 'gk' && TR(p, 'trans') && bA < 70 && ahead <= 6) {
+          // §10 le Contre éclair lance la transition LUI-MÊME, même quand la consigne de
+          // l'équipe ne dit pas de contre-attaquer. Sans ça, il voulait jouer vers
+          // l'avant mais ses attaquants ne partaient pas, puisqu'ils ne courent qu'en
+          // phase de contre : il n'avait personne à servir. La fenêtre est plus courte
+          // que celle d'une équipe réglée pour contrer, et grandit avec sa compétence.
+          T.counterUntil = W.t + 3.5 + TR(p, 'trans') * 3;
+          if (ahead <= 5 && bA < 62) { com('Contre éclair de ' + p.short + ' !'); key(12, p.s, 'counter'); }
         }
         O.cpressUntil = O.tac.lost === 0 && how !== 'set' && how !== 'gk' ? W.t + 5 : 0;
         O.regroupUntil = O.tac.lost === 1 ? W.t + 4 : 0;
@@ -308,6 +317,10 @@ export function makeEngine(cfg) {
       const s = p.s, o = OT[s], T = TM[s], a = aOf(s, p.y), gk = TM[o].ps[0];
       const est = fk ? { xg: fk.xg, blocker: null, pBlock: 0 } : shotEst(p, head);
       const xg = est.xg; W.st[s].sh++; W.st[s].xg += xg;
+      // Les frappes de TRANSITION : moins de huit secondes après que l'équipe a récupéré
+      // le ballon. C'est le terrain de la compétence Contre éclair ; le total des tirs
+      // la noyait. Simple compteur, sans effet sur le match.
+      if (W.poss === s && W.t - W.possT < 8) { W.cnt = W.cnt || {}; W.cnt['tir_transition_' + s] = (W.cnt['tir_transition_' + s] || 0) + 1; }
       const lp = W.lastPass, rec2 = lp && lp.to === p && W.t - lp.t < 5;
       const orig = head ? 'head' : fk ? 'fk' : a < 84 ? 'long' : rec2 && lp.kind === 'through' ? 'through' : rec2 && lp.kind === 'cross' ? 'cross' : W.t < T.counterUntil ? 'counter' : rec2 ? 'pass' : 'solo';
       if (cfg.shotDbg) cfg.shotDbg(p, { a, x: p.x, xg, orig, nd: nearestOpp(p).d, head, held: W.t - p.rcvT, lp: lp && lp.from ? lp.from.kind + '>' + lp.kind : '-' , defBehind: LV[o].filter((q) => aOf(s, q.y) > a).length });
@@ -704,6 +717,22 @@ export function makeEngine(cfg) {
         const tA = aOf(s, ty); let ev = e.pS * V(s, tx, ty, e.space) - (1 - e.pS) * lossCost(s, tx, ty) * (T.tac.patience ? 1.25 : 1) * (isGK ? 1.5 : 1);
         const prog = tA - a0;
         if (counter) ev *= prog > 5 ? 1.25 : prog < -3 ? 0.55 : 1;
+        // §10 le Contre éclair joue vers l'avant dès la récupération. Au premier jet, son
+        // facteur multipliait l'espérance directement ; une espérance négative devenait
+        // alors PLUS négative, et la compétence faisait jouer moins vers l'avant
+        // (56 passes en profondeur pour mille devenaient 55, et le danger créé
+        // tombait de 13,9 à 9,9). On grandit le gain et on réduit la perte.
+        //
+        // Et la phase de contre de l'équipe ne s'ouvre qu'avec un réglage précis (« après
+        // la récupération : contre-attaquer ») : avec la tactique par défaut, elle ne
+        // s'ouvrait jamais et la compétence ne se déclenchait pas. Le porteur qui l'a
+        // joue donc vers l'avant dans les quatre secondes qui suivent CHAQUE
+        // récupération de son équipe : c'est sa compétence, pas la consigne du coach.
+        const eclair = TR(p, 'trans');
+        if (eclair && (counter || (W.poss === s && W.t - W.possT < 4))) {
+          const kt = prog > 5 ? 1 + eclair * 0.6 : prog < -3 ? 1 / (1 + eclair * 0.6) : 1;
+          ev = ev > 0 ? ev * kt : ev / kt;
+        }
         if (T.tac.pass === 0 && e.d > 26) ev *= 0.85; if (T.tac.pass === 2 && prog > 12) ev *= 1.15;
         // §42 Jeu court ou jeu long. Les deux lignes au-dessus ne jugeaient que la
         // distance et la progression, jamais le BALLON joué : une équipe réglée en jeu
@@ -719,6 +748,10 @@ export function makeEngine(cfg) {
         // une option raisonnable, et le receveur rapide est davantage servi dans la profondeur.
         const tp = TR(p, 'pass');
         if (kind === 'through') ev *= (T.tac.behind ? 1.3 : 1.1) * (1 + tp * 0.45) * (1 + TR(q, 'sprint') * 0.3);
+        // Le passeur sait que le Perforateur fait l'appel : la passe en profondeur vers
+        // lui pèse plus. Sans ce lien, ses courses ne servaient à rien. Même précaution
+        // de signe qu'ailleurs : on grandit le gain, on réduit la perte.
+        if ((kind === 'through' || kind === 'space') && TR(q, 'run')) { const kr = 1 + TR(q, 'run') * 0.5; ev = ev > 0 ? ev * kr : ev / kr; }
         if (kind === 'space') ev *= (1 + tp * 0.3) * (1 + TR(q, 'sprint') * 0.35);
         if (kind === 'long') ev *= 1 + tp * 0.4;
         if (kind === 'switch') ev *= (1.05 + Math.max(0, p.pas - 70) / 260) * (1 + tp * 0.5);
@@ -1042,7 +1075,11 @@ export function makeEngine(cfg) {
           // plat : le meilleur avant-centre du jeu faisait autant d'appels que le pire.
           // t0 sert au temps de réaction du défenseur, plus bas : c'est le décalage
           // entre le départ de l'appel et le moment où il est vu.
-          const flair = 0.05 + Math.max(0, p.att + p.dec - 130) * 0.0006;
+          // §10 le Perforateur fait jusqu'à deux fois plus d'appels. Au premier jet c'était
+          // deux fois et demie, et ça le sortait de la surface sans qu'on le serve
+          // davantage : 124 tirs devenaient 106. Ce qui compte, c'est que l'appel soit
+          // VU par le passeur, plus bas, dans addPass.
+          const flair = (0.05 + Math.max(0, p.att + p.dec - 130) * 0.0006) * (1 + TR(p, 'run') * 1.0);
           if (!p.prep && R() < flair * (1 + T.tac.behind + Math.max(0, T.ment - 3) * 0.3)) p.prep = { t0: W.t, until: W.t + 2.2 + R(), dx: (R() < 0.5 ? -1 : 1) * (3 + R() * 4), err: gauss() * 0.9 * (1.3 - p.dec / 100) + 0.3 };
         }
         if (p.prep) { if (W.t > p.prep.until || !carSettled) p.prep = null; else { a = off - 0.7 + p.prep.err; x += p.prep.dx; urg = 0.95; } }
@@ -1133,7 +1170,7 @@ export function makeEngine(cfg) {
         // Un attaquant qui sait masquer son appel gagne du terrain sans courir plus
         // vite ; un défenseur qui lit le jeu ne se laisse pas prendre.
         const reaction = best.prep
-          ? cl(0.85 + (best.att + best.dec - 130) * 0.0045 - (p.def + p.dec - 130) * 0.0045, 0.20, 1.6)
+          ? cl(0.85 + (best.att + best.dec - 130) * 0.0045 - (p.def + p.dec - 130) * 0.0045 + TR(best, 'run') * 0.3, 0.20, 1.6)
           : 0;
         const vu = !best.prep || W.t - best.prep.t0 >= reaction;
         if (vu && p.line === 'DEF' && ra < D - 1 && Math.abs(xl(s, best.x) - p.tl.x) < 7) na = Math.max(ra - 1.2, 3);   // suit l'appel dans son dos

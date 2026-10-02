@@ -8,7 +8,40 @@ export const Quests = {
   // Plafonds quotidiens, par source. `null` = pas de plafond (le match en est un :
   // il coûte du temps réel, donc il s'auto-limite).
   CAPS() {
-    return { quest: 900, pack: null, match: null, prono: 400, mission: 600, vente: null, total: 2600 };
+    return { quest: 900, pack: null, match: null, prono: 400, mission: 600, vente: null, connexion: null, total: 2600 };
+  },
+
+  // Les récompenses de connexion : sept jours, dont deux packs. Elles passaient par
+  // l'écran, sans plafond ni journal ; elles passent par earn() comme tout le reste (§7).
+  DAILY_REWARDS() { return [100, 150, 200, 'linkfoot', 300, 400, 'linkfoot']; },
+
+  claimDaily() {
+    const s = this.state, D = this.DAILY_REWARDS(), i = s.dayStreak || 0;
+    if (s.dayClaimed) return { ok: false, why: 'Déjà récupérée aujourd’hui' };
+    if (i >= D.length) return { ok: false, why: 'Série de connexion complète' };
+    const rw = D[i];
+    this.setState({ dayClaimed: true, dayStreak: i + 1,
+      freeQueue: typeof rw === 'string' ? (s.freeQueue || []).concat([rw]) : s.freeQueue });
+    const got = typeof rw === 'number' ? this.earn(rw, 'connexion', 'Connexion, jour ' + (i + 1)) : null;
+    this.buzz([30, 30, 60]);
+    return { ok: true, reward: rw, got: got ? got.given : 0 };
+  },
+
+  // Les missions du jour. Même règle : la récompense passe par earn(), donc par le
+  // plafond « mission » qui existait déjà mais que l'écran contournait.
+  claimMission(id) {
+    const s = this.state, m = (s.missions || []).find((x) => x.id === id);
+    if (!m) return { ok: false, why: 'Mission inconnue' };
+    if (m.claimed) return { ok: false, why: 'Déjà récupérée' };
+    if (m.prog < m.goal) return { ok: false, why: 'Objectif non atteint (' + m.prog + ' sur ' + m.goal + ')' };
+    const L = this.addXp(s, m.xp);
+    this.setState({ missions: s.missions.map((x) => (x.id === id ? Object.assign({}, x, { claimed: true }) : x)),
+      xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: s.balance + L.bonusBal,
+      levelUp: L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : s.levelUp });
+    if (L.bonusBal) this.logMoney(L.bonusBal, 'Niveau ' + L.level + ' atteint');
+    const got = this.earn(m.reward, 'mission', 'Mission : ' + m.label);
+    this.buzz([30, 30, 60]);
+    return { ok: true, got: got.given, capped: got.capped };
   },
 
   // §29 : le journal des transactions. 60 lignes gardées, assez pour une vérification
@@ -123,6 +156,7 @@ export const Quests = {
     this.setState({ quests: next, xp: L.xp, level: L.level, freeQueue: L.freeQueue,
       balance: this.state.balance + L.bonusBal,
       levelUp: L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : this.state.levelUp });
+    if (L.bonusBal) this.logMoney(L.bonusBal, 'Niveau ' + L.level + ' atteint');   // §7 tout ce qui entre est tracé
     this.buzz([30, 30, 60]);
     return { ok: true, got: got.given, capped: got.capped, xp: q.xp };
   },

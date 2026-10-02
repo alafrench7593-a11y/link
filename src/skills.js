@@ -15,13 +15,13 @@ export const Skills = {
     // [id, nom, catégorie, effets, description, prérequis]
     // `req` : statistiques minimum à la rareté Élite, mises à l'échelle selon la rareté.
     const E = [
-      ['tueur', 'Tueur', 'Attaque', { sht: 6 }, 'finition sur les grosses occasions', { TIR: 72, ATQ: 66 }],
+      ['tueur', 'Tueur', 'Tir', { sht: 6 }, 'finition sur les grosses occasions', { TIR: 72, ATQ: 66 }],
       ['visionnaire', 'Visionnaire', 'Passe', { pas: 5, dec: 4 }, 'passes qui créent le danger', { PAS: 72 }],
       ['laser', 'Passe laser', 'Passe', { pas: 7 }, 'précision des passes longues', { PAS: 75 }],
       ['chef', 'Chef d’orchestre', 'Tactique', { dec: 6, pas: 3 }, 'contrôle du rythme', { PAS: 68 }],
-      ['renard', 'Renard des surfaces', 'Attaque', { sht: 4, dec: 4 }, 'déplacements dans la surface', { ATQ: 70 }],
-      ['sprinter', 'Sprinter', 'Physique', { pace: 7 }, 'exploitation des espaces en contre', { VIT: 75 }],
-      ['pressing', 'Pressing fou', 'Défense', { def: 4, pace: 3, drain: 1.25 }, 'pressing plus intense, plus fatigant', { PHY: 68, VIT: 64 }],
+      ['renard', 'Renard des surfaces', 'Finition', { sht: 4, dec: 4 }, 'déplacements dans la surface', { ATQ: 70 }],
+      ['sprinter', 'Sprinter', 'Vitesse', { pace: 7 }, 'exploitation des espaces en contre', { VIT: 75 }],
+      ['pressing', 'Pressing fou', 'Pressing', { def: 4, pace: 3, drain: 1.25 }, 'pressing plus intense, plus fatigant', { PHY: 68, VIT: 64 }],
       ['gladiateur', 'Gladiateur', 'Physique', { phy: 7 }, 'duels physiques', { PHY: 75 }],
       ['calme', 'Calme absolu', 'Mental', { dec: 6, pas: 2 }, 'moins d’erreurs sous pression', {}],
       ['mur', 'Mur', 'Défense', { def: 8 }, 'interventions dans sa surface', { 'DÉF': 75 }],
@@ -32,9 +32,14 @@ export const Skills = {
       ['leader', 'Leader', 'Leadership', { team: { dec: 2 } }, 'concentration des coéquipiers', {}],
       ['meneur', 'Meneur', 'Collectif', { team: { pas: 2 } }, 'jeu collectif autour de lui', { PAS: 66 }],
       ['grinta', 'Grinta', 'Mental', { phy: 5, def: 3, pace: 3, team: { phy: 1 } }, 'agressivité et pressing quand l’équipe est menée', { PHY: 66 }],
-      ['clutch', 'Clutch', 'Spécial', { sht: 5, dec: 5 }, 'dernières minutes d’un match serré', { TIR: 66 }],
+      ['clutch', 'Clutch', 'Situationnel', { sht: 5, dec: 5 }, 'dernières minutes d’un match serré', { TIR: 66 }],
       ['gk_reflex', 'Réflexes félins', 'Gardien', { ref: 7 }, 'parades réflexes', { 'RÉF': 72 }],
-      ['gk_mains', 'Mains sûres', 'Gardien', { han: 7 }, 'ballons captés, pas de rebond', { MAI: 72 }]
+      ['gk_mains', 'Mains sûres', 'Gardien', { han: 7 }, 'ballons captés, pas de rebond', { MAI: 72 }],
+      // §10 les deux catégories qui manquaient. Elles ont un vrai effet en match
+      // (§13) : le Perforateur multiplie ses appels dans le dos de la défense et les
+      // masque mieux, le Contre éclair joue vers l'avant dès la récupération.
+      ['perforateur', 'Perforateur', 'Attaque', { pace: 3, dec: 3 }, 'appels dans le dos de la défense', { ATQ: 72, VIT: 70 }],
+      ['eclair', 'Contre éclair', 'Transition', { pace: 4, pas: 3 }, 'joue vers l’avant dès la récupération', { VIT: 68, PAS: 66 }]
     ];
     // [id, libellé, multiplicateur, raccourci]
     // Plus la condition est étroite, plus l'effet est fort quand elle se produit.
@@ -47,10 +52,17 @@ export const Skills = {
     const POSOK = {
       GB: ['gk_reflex', 'gk_mains', 'calme', 'leader', 'acier', 'moteur'],
       DEF: ['mur', 'gladiateur', 'aerien', 'leader', 'calme', 'moteur', 'grinta', 'pressing', 'laser', 'sprinter', 'acier'],
-      MIL: ['visionnaire', 'laser', 'chef', 'meneur', 'moteur', 'pressing', 'dribbleur', 'calme', 'grinta', 'clutch', 'gladiateur', 'sprinter'],
-      ATT: ['tueur', 'renard', 'sprinter', 'dribbleur', 'clutch', 'aerien', 'grinta', 'acier', 'gladiateur', 'visionnaire']
+      MIL: ['visionnaire', 'laser', 'chef', 'meneur', 'moteur', 'pressing', 'dribbleur', 'calme', 'grinta', 'clutch', 'gladiateur', 'sprinter', 'eclair'],
+      ATT: ['tueur', 'renard', 'sprinter', 'dribbleur', 'clutch', 'aerien', 'grinta', 'acier', 'gladiateur', 'visionnaire', 'perforateur', 'eclair']
     };
-    return (this._skill = { E, C, POSOK, LVL: ['I', 'II', 'III', 'IV', 'V'] });
+    // Les compétences avec lesquelles un joueur peut NAÎTRE. Figées sur les vingt
+    // d'origine : une compétence ajoutée au jeu s'obtient (pack, récompense) et
+    // s'équipe, mais ne change pas rétroactivement les joueurs déjà générés. Sans ce
+    // gel, ajouter une compétence redistribuait les compétences innées de tout
+    // l'effectif de départ, et donc changeait tous les matchs déjà joués.
+    const INNEES = new Set(['tueur', 'visionnaire', 'laser', 'chef', 'renard', 'sprinter', 'pressing', 'gladiateur',
+      'calme', 'mur', 'acier', 'dribbleur', 'aerien', 'moteur', 'leader', 'meneur', 'grinta', 'clutch', 'gk_reflex', 'gk_mains']);
+    return (this._skill = { E, C, POSOK, INNEES, LVL: ['I', 'II', 'III', 'IV', 'V'] });
   },
 
   // Le nombre réel de combinaisons : l'objectif du §12 est de dépasser 10 000.
@@ -199,8 +211,9 @@ export const Skills = {
       for (let k = 0; k < R.length; k++) { q -= R[k].rate; if (q <= 0) { ri = k; break; } }
       ri = Math.min(ri, capIdx);
       // une compétence innée reste compatible avec le poste du joueur
-      const band = (idx[R[ri].id] || []).filter((x) => pool.indexOf(x[0]) >= 0);
-      const list = band.length ? band : (idx[R[0].id] || []).filter((x) => pool.indexOf(x[0]) >= 0);
+      const nee = this.SKILL_DEF().INNEES;
+      const band = (idx[R[ri].id] || []).filter((x) => pool.indexOf(x[0]) >= 0 && nee.has(x[0]));
+      const list = band.length ? band : (idx[R[0].id] || []).filter((x) => pool.indexOf(x[0]) >= 0 && nee.has(x[0]));
       if (!list.length) continue;
       const pick = list[Math.floor(r() * list.length)];
       out.push(this.makeSkill(pick[0], pick[1], pick[2], pick[3]));

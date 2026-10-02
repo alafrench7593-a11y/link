@@ -67,9 +67,13 @@ export const Progression = {
     const F = this.finances(st, res); const inv = Object.assign({}, st.inv || {}); if (win) { const drop = ['energie', 'motivation', 'pressing', 'bloc', 'contre', 'finition', 'up_VIT', 'up_TIR', 'up_PAS', 'up_DÉF'][this.rand(0, 9)]; inv[drop] = (inv[drop] || 0) + 1; }
     const L = this.addXp(st, xpGain);
     // §7, §29 : tout ce qui entre passe par le journal. Le match n'est pas plafonné
-    // (il coûte du temps réel), mais il est tracé comme le reste.
+    // (il coûte du temps réel), mais il est tracé comme le reste : la prime du
+    // résultat et le bonus de niveau entraient au solde sans laisser de ligne, si bien
+    // que l'écran Finances ne pouvait pas expliquer le solde.
+    if (mt.reward) this.logMoney(mt.reward, 'Match : prime de ' + (win ? 'victoire' : res === 'd' ? 'nul' : 'défaite'));
     this.logMoney(F.net, 'Match : recette ' + F.gate + ', salaires −' + F.wages);
     if (bonus) this.logMoney(bonus, 'Série de ' + winStreak + ' victoires');
+    if (L.bonusBal) this.logMoney(L.bonusBal, 'Niveau ' + L.level + ' atteint');
     const patch = { nextAdv: 0, winStreak, missions, squad, inv, lastFin: 'Recette ' + F.gate + ' · salaires −' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net + ' jetons', coachAdvice: null, xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: st.balance + bonus + L.bonusBal + F.net,
       lastGain: '+' + xpGain + ' XP' + (bonus ? ' · série de ' + winStreak + ' victoires x' + mult + ' (+' + bonus + ' jetons)' : '') + (prog ? ' · ' + prog : '') };
     let over = L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : null;
@@ -81,7 +85,7 @@ export const Progression = {
       const yg = this.youthPlayer(st);
       let ygTxt = '';
       if (yg) { patch.squad = (patch.squad || st.squad).concat([yg]); patch.youth = (st.youth || []).concat([yg.id]); ygTxt = ' Le centre sort ' + yg.name + ' (' + yg.pos + ' ' + yg.ovr + ', potentiel ' + yg.pot + ').'; }
-      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; patch.freeQueue = patch.freeQueue.concat(['linkfoot']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un LinkFoot Pack. Les adversaires seront plus forts.' + ygTxt }; }
+      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; this.logMoney(500, 'Promotion en division ' + patch.division); patch.freeQueue = patch.freeQueue.concat(['linkfoot']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un LinkFoot Pack. Les adversaires seront plus forts.' + ygTxt }; }
       else if (rank === last && st.division < 5) { patch.division = st.division + 1; over = { title: 'RELÉGUÉ EN DIVISION ' + patch.division, sub: 'Fin de saison : ' + rank + 'e sur ' + last + '. Les adversaires seront plus faibles, mais la recette du match baisse.' + ygTxt }; }
       else over = over || { title: 'FIN DE SAISON', sub: rank + 'e de la division ' + st.division + '. Termine dans les 2 premiers pour monter, évite la dernière place.' + ygTxt };
       patch.seasonP = 0; patch.record = { w: 0, d: 0, l: 0 };
@@ -92,6 +96,10 @@ export const Progression = {
     // §9 : les pronostics se règlent sur le match qui vient d'être joué, jamais sur un match réel.
     const pr = this.settlePronos(mt);
     if (pr.lines.length) patch.lastProno = pr.lines;
+    // earn() vient de verser les gains au solde, mais `patch.balance` a été calculé
+    // avant : sans cette ligne, l'appelant écrasait le solde et les pronostics gagnés
+    // n'étaient jamais payés, alors que le journal les affichait.
+    if (pr.won) patch.balance += pr.won;
     if (patch.division && patch.division < st.division) this.bumpQuest('division', 1);
     return patch;
   },

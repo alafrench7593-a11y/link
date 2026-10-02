@@ -65,30 +65,39 @@ const METHODS = ['rand', 'seedR', 'statW', 'ovrOf', 'genStats', 'cardStats', 'pr
   'table', 'bumpMission', 'afterMatch', 'applyFitness', 'TRAININGS', 'train', 'COACHES',
   'MATCH_CARDS', 'UPGRADE_CARDS', 'useUpgrade', 'STAFF_DEFS', 'staffLv', 'staffWages', 'hireStaff',
   'STADES', 'upgradeStade', 'ACADEMIES', 'upgradeAcademy', 'youthPlayer', 'synergy', 'finances',
-  'marketList', 'formCoords', 'penalty', 'pickXI', 'benchOf', 'ROLE_OPTS', 'metrics', 'baseShape', 'engineCfg',
+  'marketList', 'MARKET_RULES', 'buyInfo', 'buyPlayer', 'formCoords', 'penalty', 'pickXI', 'benchOf', 'ROLE_OPTS', 'metrics', 'baseShape', 'engineCfg',
   'RARITY', 'rarityOf', 'rarityOfPower', 'CARD_POOL', 'drawCard', 'PACK_DEFS', 'THE_PACK', 'packOdds', 'collection', 'sellPlayer', 'ageSquad', 'valueOf', 'valueBreakdown',
-  'rarityFor', 'packState', 'packByKey', 'packName', 'PACK_SLOTS', 'drawSlot', 'drawLot', 'openPack', 'commitPack', 'cardToPlayer',
+  'rarityFor', 'packState', 'packByKey', 'packName', 'PACK_SLOTS', 'drawSlot', 'packFamilies', 'objetCourt', 'drawLot', 'openPack', 'commitPack', 'cardToPlayer',
   'GATES', 'gateOf', 'lockOf', 'progressBoard', 'trackLine', 'unlocksAt',
   'GRADES', 'rawPower', 'skillPower', 'SKILL_INDEX', 'skillReq', 'canEquip', 'skillSlots', 'equippedOn', 'makeSkill', 'rollSkill', 'innateSkills',
   'equipSkill', 'unequipSkill', 'skillInventory', 'reqLine', 'skillCount',
   'playerXpNeed', 'playerLevel', 'playerXp', 'playerProgress', 'hiddenOf', 'hiddenMods', 'injuryRisk', 'xpRate', 'matchXp', 'addPlayerXp', 'grantPlayerXp',
   'SHARD_XP', 'shardTrainInfo', 'shardTrain',
   'SESSION_RULES', 'sessions', 'takeSession', 'addSessions', 'trainInfo', 'TRAIN_PACK', 'TRAIN_LOTS', 'trainPackOdds',
-  'drawTrainLot', 'UPGRADE_CARDS', 'useUpgrade', 'openTrainPack', 'commitTrainPack', 'trainPackState', 'trainingOptions', 'TRAININGS', 'train', 'engineCfg',
-  'PACK_REGISTRY', 'KIOSQUE', 'kiosque', 'kiosqueSummary',
+  'drawTrainLot', 'UPGRADE_CARDS', 'useUpgrade', 'openTrainPack', 'appliquerObjetsEntrainement', 'commitTrainPack', 'trainPackState', 'trainingOptions', 'TRAININGS', 'train', 'engineCfg',
+  'PACK_REGISTRY', 'KIOSQUE', 'kiosque', 'packPrincipal', 'kiosqueSummary',
   'SKILL_PACK', 'skillPackOdds', 'skillPackState', 'openSkillPack', 'commitSkillPack',
-  'COACH_PACK', 'COACH_ITEMS', 'coachPackOdds', 'coachPackState', 'openCoachPack', 'commitCoachPack',
-  'meetings', 'holdMeeting', 'plansLeft', 'usePlan', 'styleList',
-  'CAPS', 'logMoney', 'dayKey', 'earn', 'spend', 'PRONO_DEFS', 'MAX_STAKE', 'placeProno', 'settlePronos', 'QUEST_DEFS', 'activeQuests', 'rollQuests', 'bumpQuest', 'claimQuest', 'questsAfterMatch',
+  'COACH_PACK', 'COACH_ITEMS', 'coachPackOdds', 'coachPackState', 'openCoachPack', 'rangerObjetsCoach', 'commitCoachPack',
+  'meetings', 'holdMeeting', 'plansLeft', 'usePlan', 'styleList', 'FORMATIONS', 'TAC_GROUPS', 'setFormation', 'applyStyle', 'setMentality', 'setConsigne',
+  'CAPS', 'DAILY_REWARDS', 'claimDaily', 'claimMission', 'logMoney', 'dayKey', 'earn', 'spend', 'PRONO_DEFS', 'MAX_STAKE', 'placeProno', 'settlePronos', 'QUEST_DEFS', 'activeQuests', 'rollQuests', 'bumpQuest', 'claimQuest', 'questsAfterMatch',
   'matchPlan', 'MENTALITES', 'IMPACT_DEFS', 'impactFigures', 'impactReport', 'impactLine',
   'isOnline', 'onlineSummary', 'onlineActions', 'NEWS_SECTIONS', 'buildNews', 'newsBySection', 'onlineSlides', 'demoFeed', 'CREATION_STEPS', 'COUNTRIES', 'starterSquad', 'starterRare', 'canEquipRaw', 'genStatsFor', 'createClub', 'creationSummary'];
 const SOURCES = ['club.js', 'players.js', 'skills.js', 'cards.js', 'staff.js', 'training.js', 'transfer.js', 'progression.js', 'tactics.js', 'tracks.js', 'playerxp.js', 'quests.js', 'creation.js', 'onlineui.js', 'trainpack.js', 'packs.js', 'news.js', 'impact.js'];
 const club = SOURCES.map((f) => read('src/' + f)).join('\n');
+// Une méthode du club ne se cherche JAMAIS dans le corps du moteur : le moteur a ses
+// propres fonctions internes (setTac, shoot…), et un nom partagé faisait remplacer
+// une fonction du moteur par une méthode du club, en silence.
+const horsMoteur = (name) => {
+  const eng = findMethod(artboard, 'makeEngine');
+  let hit = findMethod(artboard, name);
+  while (hit && eng && hit.start >= eng.start && hit.start < eng.end) hit = findMethod(artboard, name, eng.end);
+  return hit;
+};
 for (const name of METHODS) {
   const from = findMethod(club, name);
   if (!from) throw new Error('méthode absente des sources : ' + name);
   const body = club.slice(from.start, from.end);
-  const hit = findMethod(artboard, name);
+  const hit = horsMoteur(name);
   if (!hit) {
     // méthode nouvelle : on l'insère avant renderVals
     const anchor = findMethod(artboard, 'renderVals');

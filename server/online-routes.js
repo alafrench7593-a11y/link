@@ -392,7 +392,7 @@ export function onlineRoutes(opts) {
       const led = await getOr(storage, K.ledger(uid), []);
       led.unshift({ at: now(), a: free ? 0 : -def.cost, l: 'Ouverture ' + def.name, src: 'pack' });
       await storage.put(K.ledger(uid), led.slice(0, 200));
-      return [200, { got: res.got, shards: res.shards, cost: free ? 0 : def.cost, balance: u.balance, odds: ref.packOdds(def) }];
+      return [200, { got: res.got, shards: res.shards, cost: free ? 0 : def.cost, balance: u.balance, odds: ref.packOdds(def), familles: ref.packFamilies() }];
     },
 
     // Le solde que le serveur reconnaît à ce joueur. C'est lui qui compte pour tout

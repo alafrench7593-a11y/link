@@ -41,6 +41,35 @@ export const Transfer = {
     return list;
   },
 
+  // §17 Transferts : acheter. La règle vivait dans l'écran Mon Club et nulle part
+  // ailleurs : l'app téléphone ne pouvait pas acheter, et un achat n'apparaissait pas
+  // dans le journal des finances. Elle est ici, une seule fois (§3), et l'argent passe
+  // par spend(), le même chemin que toutes les dépenses du club (§7).
+  MARKET_RULES() { return { maxSquad: 20 }; },
+
+  buyInfo(m) {
+    const s = this.state, R = this.MARKET_RULES();
+    if (!m) return { can: false, why: 'Ce joueur n’est plus sur le marché' };
+    const why = s.match && !s.match.done ? 'Impossible pendant un match'
+      : s.squad.some((p) => p.id === m.id) ? 'Déjà dans ton effectif'
+      : s.squad.length >= R.maxSquad ? 'Effectif complet (' + R.maxSquad + ' joueurs) : vends d’abord'
+      : s.balance < m.price ? 'Il te manque ' + (m.price - s.balance) + ' jetons' : '';
+    return { can: !why, why };
+  },
+
+  buyPlayer(id) {
+    const s = this.state, list = this.marketList(), m = list.find((x) => x.id === id);
+    const info = this.buyInfo(m);
+    if (!info.can) return { ok: false, why: info.why };
+    const pay = this.spend(m.price, 'Achat de ' + m.name);
+    if (!pay.ok) return pay;
+    this.buzz([30, 30, 60]);
+    this.setState({ squad: this.state.squad.concat([Object.assign({}, m, { fresh: true })]),
+      market: { week: s.seasonP + s.division * 10, list: list.filter((x) => x.id !== id) },
+      trainLog: m.name + ' rejoint le club pour ' + m.price + ' jetons' });
+    return { ok: true, price: m.price };
+  },
+
   sellPlayer(id) {
     const s = this.state;
     if (s.match && !s.match.done) return { ok: false, why: 'Impossible pendant un match' };

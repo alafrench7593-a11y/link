@@ -57,7 +57,7 @@ export const Cards = {
     return [
       { key: 'linkfoot', name: 'LinkFoot Pack', n: 3, cost: 250, req: 0, w: {},
         color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', fx: 'gold',
-        content: 'joueur, compétence ou fragments' }
+        content: 'joueur, compétence, objet ou fragments' }
     ];
   },
 
@@ -92,7 +92,18 @@ export const Cards = {
   // §10 : le contenu d'un pack. Un tirage = une rareté (taux du §11), puis le lot :
   // un joueur, une compétence de cette rareté, ou des fragments si le lot est un doublon.
   // Tirage côté système, jamais côté affichage (§29).
-  PACK_SLOTS() { return [{ kind: 'player', w: 0.45 }, { kind: 'skill', w: 0.55 }]; },
+  // §8 LE pack principal donne TOUT : joueurs, compétences, objets (séances, cartes
+  // d'amélioration, causeries, plans tactiques) et ressources (fragments, quand un
+  // joueur tiré est déjà au club). Chaque tirage choisit d'abord sa FAMILLE selon ces
+  // parts, puis sa RARETÉ selon RARITY. Les deux sont affichées avant l'ouverture
+  // (§9) : jusqu'ici, la part joueur / compétence n'était écrite nulle part.
+  PACK_SLOTS() {
+    return [
+      { kind: 'player', w: 0.40, label: 'Joueur' },
+      { kind: 'skill', w: 0.45, label: 'Compétence' },
+      { kind: 'objet', w: 0.15, label: 'Objet' }
+    ];
+  },
 
   drawSlot(rnd) {
     const S = this.PACK_SLOTS(), q = (rnd || Math.random)();
@@ -100,14 +111,56 @@ export const Cards = {
     return S[S.length - 1].kind;
   },
 
-  // Un tirage complet : rareté, puis joueur ou compétence de cette rareté.
+  // §9 : la part de chaque famille, en pourcentage, pour l'affichage avant l'ouverture.
+  // Lue dans PACK_SLOTS, la table même du tirage : changer une part ici change le
+  // tirage ET l'affichage, jamais l'un sans l'autre.
+  packFamilies() {
+    const S = this.PACK_SLOTS(), t = S.reduce((a, x) => a + x.w, 0) || 1;
+    return S.map((x) => ({ kind: x.kind, label: x.label, pct: x.w / t * 100 }));
+  },
+
+  // Ce qu'un objet fait, en quelques mots, lu dans ses propres champs : la carte
+  // révélée ne peut donc pas promettre autre chose que ce que l'objet applique.
+  // Une réunion se range en réserve et agit le jour où on la tient : la carte le dit.
+  objetCourt(o) {
+    if (!o) return '';
+    const p = [];
+    if (o.kind === 'meeting') p.push('à tenir');
+    if (o.sessions) p.push('+' + o.sessions + ' séance' + (o.sessions > 1 ? 's' : ''));
+    const cartes = o.stats || (o.stat ? [o.stat] : []);
+    if (cartes.length) p.push('carte' + (cartes.length > 1 ? 's' : '') + ' +2 ' + cartes.join(', '));
+    if (o.squadXp) p.push('+' + o.squadXp + ' XP à l’effectif');
+    if (o.kind === 'plan') p.push((o.plans || 1) + ' plan' + ((o.plans || 1) > 1 ? 's' : '') + ' tactique' + ((o.plans || 1) > 1 ? 's' : ''));
+    if (o.morale) p.push('moral +' + o.morale);
+    if (o.coh) p.push('cohésion +' + Math.round(o.coh * 100) + ' %');
+    if (o.adv && o.kind !== 'plan') p.push('+' + o.adv + ' d’avantage');
+    return p.join(' · ');
+  },
+
+  // Un tirage complet : rareté, puis famille (joueur, compétence ou objet) de cette rareté.
   drawLot(rnd, owned) {
     const R = this.RARITY(), r = rnd || Math.random;
     let q = r(), pick = R[0];
     for (let i = 0; i < R.length; i++) { q -= R[i].rate; if (q <= 0) { pick = R[i]; break; } }
-    if (this.drawSlot(r) === 'skill') {
+    const slot = this.drawSlot(r);
+    if (slot === 'skill') {
       const sk = this.rollSkill(pick.id, r);
       return { kind: 'skill', rar: pick.id, skill: sk, name: sk.name, ovr: sk.power, label: pick.label, color: pick.color, shards: pick.shards };
+    }
+    if (slot === 'objet') {
+      // Un objet de la rareté tirée, pris dans les deux mêmes tables que le Pack
+      // Entraînement et le Pack Entraîneur : une seule source pour ce qu'un objet fait.
+      const tous = this.TRAIN_LOTS().map((x) => Object.assign({ famille: 'entrainement' }, x))
+        .concat(this.COACH_ITEMS().map((x) => Object.assign({ famille: 'tactique' }, x)));
+      const ici = tous.filter((x) => x.rar === pick.id);
+      const liste = ici.length ? ici : tous.filter((x) => x.rar === 'normal');
+      const obj = liste[Math.floor(r() * liste.length)];
+      const U = this.UPGRADE_CARDS();
+      return { kind: 'objet', rar: pick.id, name: obj.label, label: pick.label, color: pick.color, shards: pick.shards,
+        objet: Object.assign({}, obj, {
+          stat: obj.up ? U[Math.floor(r() * U.length)][0] : null,
+          stats: obj.up > 1 ? Array.from({ length: obj.up }, () => U[Math.floor(r() * U.length)][0]) : null
+        }) };
     }
     const pool = this.CARD_POOL().filter((c) => c.rar === pick.id);
     const c = pool[Math.floor(r() * pool.length)];
@@ -147,6 +200,7 @@ export const Cards = {
       if (g.kind === 'player') { squad.push(this.cardToPlayer(g)); collected.push(g.id); }
       else if (g.kind === 'skill') { inv.push(Object.assign({}, g.skill, { uid: uid++, on: null })); }
     });
+    const objets = res.got.filter((g) => g.kind === 'objet').map((g) => g.objet);
     const cost = res.free ? 0 : def.cost;
     this.setState({ squad, skillInv: inv, collected, nextSkillUid: uid,
       shards: (s.shards || 0) + res.shards,
@@ -156,6 +210,10 @@ export const Cards = {
       missions: this.bumpMission(s.missions, 'pack', 1),
       freeQueue: res.free ? s.freeQueue.slice(1) : s.freeQueue });
     if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
+    // §3 une seule source de vérité : un objet sorti du pack principal passe par les
+    // MÊMES fonctions que s'il sortait du Pack Entraînement ou du Pack Entraîneur.
+    this.appliquerObjetsEntrainement(objets.filter((o) => o.famille !== 'tactique'));
+    this.rangerObjetsCoach(objets.filter((o) => o.famille === 'tactique'));
     this.bumpQuest('pack', 1);
     return { ok: true };
   },

@@ -131,29 +131,38 @@ export const TrainPack = {
   },
 
   // §19 : tout ce que le pack donne arrive immédiatement là où ça sert.
-  commitTrainPack(res) {
-    if (!res || !res.ok) return { ok: false };
-    const s = this.state, def = res.def, R = this.SESSION_RULES();
-    const inv = Object.assign({}, s.inv || {});
-    let add = 0, xp = 0, cards = [];
-    res.got.forEach((g) => {
+  // Ce que des objets d'entraînement donnent au club : séances, cartes d'amélioration,
+  // XP de stage. Appelé par le Pack Entraînement ET par le pack principal (§3, une
+  // seule source de vérité) : un objet fait la même chose d'où qu'il vienne.
+  appliquerObjetsEntrainement(lots) {
+    if (!lots || !lots.length) return { sessions: 0, xp: 0, cards: [] };
+    const s = this.state, R = this.SESSION_RULES(), inv = Object.assign({}, s.inv || {});
+    let add = 0, xp = 0;
+    const cards = [];
+    lots.forEach((g) => {
       add += g.sessions || 0;
       xp += g.squadXp || 0;
-      const list = g.stats || (g.stat ? [g.stat] : []);
-      list.forEach((k) => { inv['up_' + k] = (inv['up_' + k] || 0) + 1; cards.push(k); });
+      (g.stats || (g.stat ? [g.stat] : [])).forEach((k) => { inv['up_' + k] = (inv['up_' + k] || 0) + 1; cards.push(k); });
     });
-    const cost = res.free ? 0 : def.cost;
+    this.setState({ inv, sessions: Math.min(R.max, (s.sessions || 0) + add) });
+    // un stage profite à tout l'effectif : c'est ce qui rend les lots rares désirables
+    if (xp) this.state.squad.forEach((p) => this.grantPlayerXp(p.id, xp, 'stage'));
+    return { sessions: add, xp, cards };
+  },
+
+  commitTrainPack(res) {
+    if (!res || !res.ok) return { ok: false };
+    const def = res.def, cost = res.free ? 0 : def.cost;
+    const recu = this.appliquerObjetsEntrainement(res.got);
+    const add = recu.sessions, xp = recu.xp, cards = recu.cards;
     this.setState({
-      sessions: Math.min(R.max, (s.sessions || 0) + add),
-      inv, balance: s.balance - cost,
+      balance: this.state.balance - cost,
       lastTrainPack: res.got.map((g) => g.label).join(' · ')
         + (add ? ' → +' + add + ' séance' + (add > 1 ? 's' : '') : '')
         + (cards.length ? ', cartes ' + cards.join(', ') : '')
         + (xp ? ', +' + xp + ' XP à tout l’effectif' : '')
     });
     if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
-    // un stage profite à tout l'effectif : c'est ce qui rend les lots rares désirables
-    if (xp) this.state.squad.forEach((p) => this.grantPlayerXp(p.id, xp, 'stage'));
     this.bumpQuest('pack', 1);
     return { ok: true, sessions: add, xp, cards };
   },

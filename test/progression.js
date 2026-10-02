@@ -77,9 +77,12 @@ ok(m1.dec !== m2.dec, '§19 : les attributs cachés changent vraiment le joueur 
 console.log('§19 pack → inventaire → joueur → match');
 const pk = c.openPack({ free: true });
 ok(pk.ok && pk.got.length === c.THE_PACK().n, 'le pack rend bien ' + c.THE_PACK().n + ' lots');
-ok(pk.got.every((g) => ['player', 'skill', 'shards'].indexOf(g.kind) >= 0), 'chaque lot est un joueur, une compétence ou des fragments');
+ok(pk.got.every((g) => ['player', 'skill', 'objet', 'shards'].indexOf(g.kind) >= 0), 'chaque lot est un joueur, une compétence, un objet ou des fragments');
+const tout = () => c.state.skillInv.length + c.state.squad.length + (c.state.shards || 0) + (c.state.sessions || 0)
+  + Object.values(c.state.inv || {}).reduce((a, v) => a + v, 0) + Object.values(c.state.coachInv || {}).reduce((a, v) => a + v, 0);
+const avantPack = tout();
 c.commitPack(pk);
-ok((c.state.skillInv.length + c.state.squad.length + (c.state.shards > 0 ? 1 : 0)) > 15, 'le contenu du pack arrive dans l’effectif, l’inventaire ou les fragments');
+ok(tout() > avantPack, 'le contenu du pack arrive dans l’effectif, l’inventaire, l’entraînement ou les fragments');
 // la compétence Normal la plus modeste du catalogue doit être portable par un effectif de départ
 const weakest = c.SKILL_INDEX().normal.slice().sort((a, b2) => a[4] - b2[4])[0];
 const starter = c.makeSkill(weakest[0], weakest[1], weakest[2], weakest[3]);
@@ -134,8 +137,8 @@ ok(tc.useUpgrade(pU.id, anyCard).ok === false, 'et elle est bien consommée');
 console.log('§10 les quatre packs, une famille chacun');
 const reg = tc.PACK_REGISTRY();
 ok(reg.length === 4, 'quatre packs', reg.map((r) => r.name).join(' · '));
-ok(new Set(reg.map((r) => r.family)).size === 4, 'chacun donne une seule famille, et une famille différente',
-  reg.map((r) => r.family).join(', '));
+ok(new Set(reg.map((r) => r.family)).size === 4 && reg.filter((r) => r.principal).length === 1 && reg[0].family === 'tout',
+  'un pack principal qui donne tout, et trois packs ciblés d’une famille chacun', reg.map((r) => r.family).join(', '));
 ok(new Set(reg.map((r) => r.key)).size === 4, 'chacun a sa propre clé');
 tc.setState({ balance: 5000, skillInv: [], coachInv: {} });
 const sp2 = tc.openSkillPack({});

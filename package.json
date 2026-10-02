@@ -42,7 +42,8 @@
     "test:tournoi": "node test/tournament.js 16",
     "test:serveur": "node test/serveur-http.js",
     "test:online": "node test/online.js",
-    "test:e2e": "node test/e2e-online.mjs"
+    "test:e2e": "node test/e2e-online.mjs",
+    "test:directeur": "node test/directeur.js"
   },
   "license": "UNLICENSED",
   "types": "types/index.d.ts",

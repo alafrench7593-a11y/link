@@ -119,11 +119,29 @@ ok(spec(shot) > 0, 'les frappes spectaculaires restent possibles',
 ok(partSpec < 0.25, 'sans devenir la norme',
   Math.round(partSpec * 100) + ' % des frappes, plafond 25 %');
 
+// §10 les deux compétences des catégories Attaque et Transition, ajoutées pour que les
+// dix-sept catégories du cahier des charges existent. Mesurées d'abord sur douze
+// matchs, elles semblaient AFFAIBLIR l'équipe ; sur vingt, le bruit disparaît et elles
+// l'aident nettement. On mesure donc sur les tirs, qui se comptent par centaines, et
+// pas sur le danger créé, qui varie de vingt pour cent d'une série de douze à l'autre.
+console.log('\n§10 Perforateur : des appels dans le dos, et servis');
+const perf = run(strong('perforateur'));
+ok((perf.shots || 0) > (base.shots || 0) * 1.04, 'l’équipe se crée plus d’occasions de frapper',
+  (base.shots || 0) + ' → ' + (perf.shots || 0) + ' frappes');
+
+console.log('\n§10 Contre éclair : vers l’avant dès la récupération');
+const ecl = run(strong('eclair'));
+// Sur son terrain : les frappes qui arrivent moins de huit secondes après la
+// récupération. Le total des tirs la noyait (139 → 138 sur douze matchs, alors que
+// sur vingt elle fait gagner sept points).
+ok((ecl.tir_transition_H || 0) > (base.tir_transition_H || 0) * 1.08, 'les récupérations débouchent plus souvent sur une frappe rapide',
+  (base.tir_transition_H || 0) + ' → ' + (ecl.tir_transition_H || 0) + ' frappes dans les huit secondes qui suivent la récupération');
+
 console.log('\n§21 aucune compétence ne garantit la victoire');
-const wins = [base, drib, pass, shot].map((o) => o.wins || 0);
+const wins = [base, drib, pass, shot, perf, ecl].map((o) => o.wins || 0);
 ok(Math.max(...wins) < N, 'aucune série ne gagne tous ses matchs', 'victoires sur ' + N + ' : ' + wins.join(', '));
-ok([base, drib, pass, shot].every((o) => (o.losses || 0) > 0), 'chaque série perd au moins un match',
-  'défaites : ' + [base, drib, pass, shot].map((o) => o.losses || 0).join(', '));
+ok([base, drib, pass, shot, perf, ecl].every((o) => (o.losses || 0) > 0), 'chaque série perd au moins un match',
+  'défaites : ' + [base, drib, pass, shot, perf, ecl].map((o) => o.losses || 0).join(', '));
 
 console.log(fails ? '\nÉCHEC : ' + fails + ' vérification(s)' : '\nOK : les compétences se voient sur le terrain');
 process.exit(fails ? 1 : 0);

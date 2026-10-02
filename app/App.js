@@ -16,6 +16,7 @@ import { createClubHooks } from '../src/react.js';
 import { PhoneStore } from './src/store';
 import { C } from './src/theme';
 import { HomeScreen, SquadScreen, MatchScreen, TrainScreen, PacksScreen, SkillsScreen, OnlineScreen } from './src/screens';
+import { TransfersScreen, QuestsScreen, FinancesScreen, TacticScreen, ClubScreen } from './src/directeur';
 
 const { useClub } = createClubHooks(React);
 
@@ -26,7 +27,7 @@ const { useClub } = createClubHooks(React);
 //   connectOnline(club, new OnlineClient({ url: 'https://ton-serveur/online', headers: { 'x-club-id': monId } }));
 
 const TABS = [
-  ['home', 'Club'], ['squad', 'Effectif'], ['match', 'Match'],
+  ['home', 'Accueil'], ['squad', 'Effectif'], ['match', 'Match'],
   ['train', 'Entraîn.'], ['packs', 'Packs'], ['online', 'En ligne']
 ];
 
@@ -58,7 +59,9 @@ export default function App() {
   const props = { club, state, act, go };
   const Screen = {
     home: HomeScreen, squad: SquadScreen, match: MatchScreen,
-    train: TrainScreen, packs: PacksScreen, skills: SkillsScreen, online: OnlineScreen
+    train: TrainScreen, packs: PacksScreen, skills: SkillsScreen, online: OnlineScreen,
+    // §17 les entrées du directeur sportif qui n'avaient pas d'écran ici
+    transfers: TransfersScreen, quests: QuestsScreen, finances: FinancesScreen, tactic: TacticScreen, club: ClubScreen
   }[tab] || HomeScreen;
 
   return (

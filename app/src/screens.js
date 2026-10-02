@@ -17,6 +17,7 @@ export function HomeScreen({ club, state, act, go }) {
   const ti = club.trainInfo();
   const quests = club.activeQuests().filter((q) => q.prog >= q.goal && !q.claimed).length;
   const inv = club.skillInventory();
+  const main = club.packPrincipal();
   return (
     <ScrollView contentContainerStyle={st.page}>
       <Card>
@@ -37,12 +38,23 @@ export function HomeScreen({ club, state, act, go }) {
         <Text style={st.hint}>{state.xp} / {need} XP avant le niveau {state.level + 1}</Text>
       </Card>
 
+      {/* §17 DIRECTEUR SPORTIF : les neuf entrées, dans l'ordre du cahier des charges. */}
+      <Text style={st.lbl}>DIRECTEUR SPORTIF</Text>
+      <Text style={st.hint}>Tu ne touches jamais au ballon : tu construis l’équipe qui le joue.</Text>
       <NavRow go={go} items={[
-        ['squad', 'Effectif', xi.length + ' titulaires · ' + state.squad.length + ' joueurs'],
-        ['match', 'Jouer un match', 'Le moteur joue, tu as préparé'],
+        ['squad', 'Mon effectif', xi.length + ' titulaires · ' + state.squad.length + ' joueurs'],
+        ['skills', 'Compétences', inv.length ? inv.filter((k) => k.onName).length + ' équipée(s) · ' + inv.filter((k) => !k.onName).length + ' en réserve' : 'Aucune compétence en réserve'],
+        ['packs', 'Pack', main.name + ' · ' + main.cost + ' jetons · ' + (main.can ? 'ouvrable' : main.why.toLowerCase())],
         ['train', 'Entraînement', ti.line],
-        ['packs', 'Packs', '4 packs · ' + state.balance + ' jetons'],
-        ['skills', 'Compétences et quêtes', inv.length + ' en réserve' + (quests ? ' · ' + quests + ' quête(s) à récupérer' : '')],
+        ['transfers', 'Transferts', state.balance + ' jetons · ' + club.marketList().length + ' joueurs à vendre'],
+        ['quests', 'Quêtes', club.activeQuests().length + ' en cours' + (quests ? ' · ' + quests + ' à récupérer' : '')],
+        ['finances', 'Finances', state.balance + ' jetons · journal et plafonds du jour'],
+        ['tactic', 'Tactique', state.formation + ' · ' + (state.preset === 'perso' ? 'tactique perso' : club.styles()[state.preset].name)],
+        ['club', 'Club', 'Niveau ' + state.level + ' · staff, stade, centre de formation']
+      ]} />
+      <Text style={st.lbl}>COMPÉTITIONS</Text>
+      <NavRow go={go} items={[
+        ['match', 'Jouer un match', 'Le moteur joue, tu as préparé'],
         ['online', 'En ligne', club.onlineSummary().state]
       ]} />
 
@@ -137,7 +149,7 @@ function PlayerScreen({ club, p, act, back }) {
       <Card>
         <Text style={st.lbl}>COMPÉTENCES</Text>
         {club.skillsOf(p).length === 0
-          ? <Empty>Aucune compétence. Ouvre un Pack Compétence et équipe-la ici.</Empty>
+          ? <Empty>Aucune compétence. Ouvre le {club.packPrincipal().name} (ou le Pack Compétence) et équipe-la depuis Compétences.</Empty>
           : club.skillsOf(p).map((k, i) => (
             <View key={i} style={{ gap: 3 }}>
               <Row>
@@ -161,6 +173,10 @@ function PlayerScreen({ club, p, act, back }) {
         ))}
         <Text style={st.hint}>Ces qualités ne s’affichent pas comme des statistiques : elles agissent pendant le match.</Text>
       </Card>
+
+      <Btn label={'Vendre · ' + Math.round(pr.value * 0.6) + ' jetons'} tone="ghost"
+        why={club.state.squad.length <= 12 ? 'Il te faut au moins 12 joueurs' : ''}
+        onPress={() => { act((c) => c.sellPlayer(p.id)); back(); }} />
     </ScrollView>
   );
 }
@@ -326,11 +342,11 @@ export function TrainScreen({ club, state, act, go }) {
         ))}
       </Card>
 
-      {/* L'achat est passé dans le kiosque : ici on se sert de ce qu'on a. */}
+      {/* L'achat se fait dans l'onglet Packs : ici on se sert de ce qu'on a. */}
       <Card tint="rgba(92,200,255,0.35)">
-        <Text style={st.body}>{tp.name} {tp.cost} · {cp.name} {cp.cost} jetons</Text>
-        <Text style={st.hint}>Les deux sont dans le kiosque, avec les deux autres packs. Tu les ouvres là-bas, tu t’en sers ici.</Text>
-        <Btn label="Le kiosque" small onPress={() => go('packs')} />
+        <Text style={st.body}>{club.packPrincipal().name} {club.packPrincipal().cost} jetons, {Math.round(club.packFamilies().find((f) => f.kind === 'objet').pct)} % d’objets · {tp.name} {tp.cost} · {cp.name} {cp.cost}</Text>
+        <Text style={st.hint}>Séances, cartes, causeries et plans sortent du pack principal ou des packs ciblés, dans l’onglet Packs. Tu les ouvres là-bas, tu t’en sers ici.</Text>
+        <Btn label="Les packs" small onPress={() => go('packs')} />
       </Card>
 
       {state.trainLog ? <Card><Text style={st.body}>{state.trainLog}</Text></Card> : null}
@@ -338,10 +354,10 @@ export function TrainScreen({ club, state, act, go }) {
   );
 }
 
-// ---------- le kiosque ----------
-// Les quatre packs au même endroit. L'écran ne connaît aucun pack par son nom : il
-// affiche ce que club.kiosque() lui donne, donc un pack ajouté dans le moteur apparaît
-// ici sans qu'on touche à ce fichier.
+// ---------- les packs ----------
+// §8 UN pack principal, mis en avant, et les packs ciblés dessous. L'écran ne connaît
+// aucun pack par son nom : il affiche ce que club.kiosque() lui donne, donc un pack
+// ajouté dans le moteur apparaît ici sans qu'on touche à ce fichier.
 const OUVRIR = {
   linkfoot: (c) => c.commitPack(c.openPack({})),
   skill: (c) => c.commitSkillPack(c.openSkillPack({})),
@@ -349,24 +365,33 @@ const OUVRIR = {
   coach: (c) => c.commitCoachPack(c.openCoachPack({}))
 };
 const TEINTE = { linkfoot: '#2ECC71', skill: '#C39BFF', train: '#5CC8FF', coach: '#F2C66B' };
+const POURCENT = (v) => (v >= 10 ? v.toFixed(0) : v.toFixed(1).replace('.', ',')) + ' %';
+const SOUS_FAMILLE = {
+  player: 'une carte du catalogue ; un joueur déjà au club devient des fragments',
+  skill: 'une compétence à équiper sur un joueur compatible',
+  objet: 'séance, carte d’amélioration, causerie, plan tactique'
+};
 
 export function PacksScreen({ club, state, act, go }) {
   const col = club.collection();
-  const q = club.kiosqueSummary();
+  const k = club.kiosque();
+  const main = k.find((x) => x.principal), cibles = k.filter((x) => !x.principal);
   return (
     <ScrollView contentContainerStyle={st.page}>
-      <Title sub="Chacun ne donne qu’une seule famille de choses, donc tu sais toujours lequel ouvrir.">Le kiosque</Title>
+      <Title sub="Un seul pack principal, qui peut tout donner. Les probabilités sont affichées avant l’ouverture et ne changent jamais.">Le pack</Title>
       <Card>
         <Row>
           <View style={{ flex: 1 }}>
             <Text style={st.body}>Collection de cartes</Text>
-            <Text style={st.hint}>{state.shards || 0} fragments · {q.n} packs, {q.open} ouvrable(s)</Text>
+            <Text style={st.hint}>{state.shards || 0} fragments · solde {state.balance} jetons</Text>
           </View>
           <Text style={[st.ovr, { color: C.green }]}>{col.have} / {col.total}</Text>
         </Row>
       </Card>
-      {club.kiosque().map((k) => (
-        <PackCard key={k.key} k={k} act={act} go={go} />
+      {main ? <PackCard k={main} act={act} go={go} /> : null}
+      <Title sub="Pour viser une seule famille quand tu sais ce qui te manque. Ils ne contiennent rien que le pack principal ne puisse donner.">Packs ciblés</Title>
+      {cibles.map((x) => (
+        <PackCard key={x.key} k={x} act={act} go={go} />
       ))}
     </ScrollView>
   );
@@ -374,28 +399,42 @@ export function PacksScreen({ club, state, act, go }) {
 
 function PackCard({ k, act, go }) {
   return (
-    <Card tint={TEINTE[k.key] + '59'}>
+    <Card tint={TEINTE[k.key] + (k.principal ? '99' : '59')}>
       <Row>
         <View style={{ flex: 1 }}>
-          <Tag color={TEINTE[k.key]}>{k.family}</Tag>
+          <View style={{ alignSelf: 'flex-start' }}><Tag color={TEINTE[k.key]}>{k.principal ? 'PACK PRINCIPAL' : k.family}</Tag></View>
           <Text style={st.name}>{k.name}</Text>
           <Text style={st.hint}>{k.desc}</Text>
           <Text style={st.hint}>{k.question}</Text>
         </View>
       </Row>
-      <Text style={st.lbl}>PROBABILITÉS PAR TIRAGE</Text>
+      {k.familles ? (
+        <View>
+          <Text style={st.lbl}>CE QUE PEUT DONNER CHAQUE TIRAGE</Text>
+          {k.familles.map((f) => (
+            <View key={f.kind}>
+              <Row>
+                <Text style={[st.hint, { flex: 1 }]}>{f.label}</Text>
+                <Text style={st.body}>{POURCENT(f.pct)}</Text>
+              </Row>
+              <Text style={st.hint}>{SOUS_FAMILLE[f.kind]}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      <Text style={st.lbl}>{k.familles ? 'RARETÉ DE CHAQUE TIRAGE' : 'PROBABILITÉS PAR TIRAGE'}</Text>
       {k.odds.map((o, i) => (
         <View key={i}>
           <Row>
             <Text style={[st.hint, { flex: 1 }]}>{o.label}</Text>
             {o.rarLabel ? <Tag color={o.color}>{o.rarLabel}</Tag> : null}
-            <Text style={st.body}>{o.pct >= 10 ? o.pct.toFixed(0) : o.pct.toFixed(1).replace('.', ',')} %</Text>
+            <Text style={st.body}>{POURCENT(o.pct)}</Text>
           </Row>
           {o.desc ? <Text style={st.hint}>{o.desc}</Text> : null}
         </View>
       ))}
       {k.got ? <Text style={[st.hint, { color: C.green }]}>Dernier tirage : {k.got}</Text> : null}
-      <Btn label={'OUVRIR · ' + k.cost + ' jetons'} why={k.why} onPress={() => act(OUVRIR[k.key])} />
+      <Btn label={(k.principal ? 'OUVRIR LE PACK · ' : 'Ouvrir · ') + k.cost + ' jetons'} why={k.why} onPress={() => act(OUVRIR[k.key])} />
       <Row>
         <Text style={[st.hint, { flex: 1 }]}>{k.useLabel}</Text>
         <Btn label="Y aller" small onPress={() => go(k.useView === 'squad' ? 'squad' : k.useView)} />
@@ -407,14 +446,16 @@ function PackCard({ k, act, go }) {
 // ---------- compétences et quêtes ----------
 export function SkillsScreen({ club, state, act, go }) {
   const inv = club.skillInventory();
-  const quests = club.activeQuests();
+  // §22 « je les attribue aux joueurs compatibles » : c'est le directeur sportif qui
+  // choisit le porteur, parmi ceux que le moteur déclare compatibles.
+  const [choix, setChoix] = useState(null);
   return (
     <ScrollView contentContainerStyle={st.page}>
       <Title sub={club.skillCount().toLocaleString('fr-FR') + ' combinaisons possibles'}>Compétences</Title>
       <Card tint="rgba(195,155,255,0.35)">
-        <Text style={st.body}>{club.SKILL_PACK().name} · {club.SKILL_PACK().cost} jetons</Text>
-        <Text style={st.hint}>Tous les packs sont regroupés dans le kiosque. Ici on équipe, là-bas on ouvre.</Text>
-        <Btn label="Le kiosque" small onPress={() => go('packs')} />
+        <Text style={st.body}>{club.packPrincipal().name} {club.packPrincipal().cost} jetons, {Math.round(club.packFamilies().find((f) => f.kind === 'skill').pct)} % de compétences · {club.SKILL_PACK().name} {club.SKILL_PACK().cost}, 100 %</Text>
+        <Text style={st.hint}>Les compétences sortent du pack principal ou du Pack Compétence, dans l’onglet Packs. Ici on équipe, là-bas on ouvre.</Text>
+        <Btn label="Les packs" small onPress={() => go('packs')} />
       </Card>
       {inv.length === 0 ? <Empty>Aucune compétence en réserve pour l’instant.</Empty> : null}
       {inv.map((k) => (
@@ -429,31 +470,27 @@ export function SkillsScreen({ club, state, act, go }) {
             <Text style={[st.hint, { flex: 1, color: k.onName ? C.green : k.fitCount ? C.dim : C.amber }]}>
               {k.onName ? 'Portée par ' + k.onName : k.fitCount ? k.fitCount + ' joueur(s) compatible(s)' : (k.miss || 'Aucun joueur compatible')}
             </Text>
-            <Btn label={k.onName ? 'Retirer' : 'Équiper'} small
+            <Btn label={k.onName ? 'Retirer' : choix === k.uid ? 'Fermer' : 'Équiper'} small
               why={k.onName || k.fitCount ? '' : 'Personne ne peut la porter'}
-              onPress={() => act((c) => (k.onName ? c.unequipSkill(k.uid) : c.equipSkill(k.uid, k.fits[0].id)))} />
+              onPress={() => {
+                if (k.onName) act((c) => c.unequipSkill(k.uid));
+                else if (k.fitCount === 1) act((c) => c.equipSkill(k.uid, k.fits[0].id));
+                else setChoix(choix === k.uid ? null : k.uid);
+              }} />
           </Row>
+          {choix === k.uid ? k.fits.map((f) => (
+            <Row key={f.id}>
+              <Text style={[st.hint, { flex: 1 }]}>{f.name} · {f.pos} {f.ovr}</Text>
+              <Btn label="Équiper" small onPress={() => { act((c) => c.equipSkill(k.uid, f.id)); setChoix(null); }} />
+            </Row>
+          )) : null}
         </Card>
       ))}
 
-      <Title sub={'Plafond du jour : ' + ((state.caps || {}).total || 0) + ' / ' + club.CAPS().total + ' jetons'}>Quêtes</Title>
-      {quests.map((q) => {
-        const done = q.prog >= q.goal;
-        return (
-          <Card key={q.id}>
-            <Row>
-              <Text style={[st.body, { flex: 1 }]}>{q.label}</Text>
-              <Text style={st.hint}>{q.prog} / {q.goal}</Text>
-            </Row>
-            <Bar pct={(q.prog / q.goal) * 100} />
-            <Row>
-              <Text style={[st.hint, { flex: 1 }]}>+{q.reward} jetons · +{q.xp} XP</Text>
-              <Btn label={done ? 'Récupérer' : 'En cours'} small why={done ? '' : 'Objectif non atteint'}
-                onPress={() => act((c) => c.claimQuest(q.id))} />
-            </Row>
-          </Card>
-        );
-      })}
+      <Card>
+        <Text style={st.hint}>Les quêtes ont maintenant leur propre écran, depuis l’accueil du club.</Text>
+        <Btn label="Les quêtes" small onPress={() => go('quests')} />
+      </Card>
     </ScrollView>
   );
 }

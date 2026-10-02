@@ -12,7 +12,10 @@ const PERSIST = [
   'staff', 'stade', 'academy', 'youth', 'inv', 'coach', 'coachMode', 'cohBonus', 'trainDone',
   // directeur sportif : inventaire de compétences, économie encadrée, quêtes, identité du club
   'skillInv', 'nextSkillUid', 'collected', 'seenPlayers', 'shards',
-  'caps', 'ledger', 'quests', 'clubName', 'country', 'created', 'pronos', 'sessions', 'coachInv', 'nextAdv'
+  'caps', 'ledger', 'quests', 'clubName', 'country', 'created', 'pronos', 'sessions', 'coachInv', 'nextAdv',
+  // §17 transferts et finances : un joueur acheté ne revient pas sur le marché au
+  // rechargement, et l'écran Finances garde le bilan du dernier match
+  'market', 'lastFin'
 ];
 
 export function serialize(club) {

@@ -31,7 +31,7 @@ src/playerxp.js niveau et XP d'un joueur, courbe exponentielle, attributs caché
 src/quests.js   quêtes et économie encadrée : plafonds par source, journal (§7, §8, §29).
 src/creation.js création du club, effectif normal de départ et joueur rare offert (§2, §3).
 src/trainpack.js le Pack Entraînement et les séances : l'entraînement est limité (§6, §10).
-src/packs.js    le registre des quatre packs, plus le Pack Compétence et le Pack Entraîneur.
+src/packs.js    le registre des packs : le pack principal, puis les trois packs ciblés.
 src/news.js     le journal : transforme de vrais résultats en articles (§26).
 src/versus.js   match entre deux vrais clubs, rejouable à l'identique depuis une graine.
 src/online.js   le client en ligne : il parle au serveur et rejoue, il ne décide rien.
@@ -150,7 +150,9 @@ npm install
 npx expo start        # puis scanner le QR code avec Expo Go
 ```
 
-Six écrans : Club, Effectif, Match, Entraînement, Packs, En ligne. La partie est
+Six onglets (Accueil, Effectif, Match, Entraînement, Packs, En ligne) et, sur l'accueil,
+la section **DIRECTEUR SPORTIF** et ses neuf entrées : Mon effectif, Compétences, Pack,
+Entraînement, Transferts, Quêtes, Finances, Tactique, Club. La partie est
 sauvegardée sur le téléphone (AsyncStorage) ; remplacer `PhoneStore` par `HttpStore`
 la fait suivre d'un appareil à l'autre. Détails dans `app/README.md`.
 
@@ -229,16 +231,16 @@ Ne corrige jamais directement dans l'artboard : le prochain `sync` écraserait t
 
 ## Cartes et collection
 
-Les taux de rareté sont centralisés dans `Club.RARITY()` : Normal 55 %, Commun 25 %,
-Rare 12 %, Épique 5 %, Élite 2 %, Or 0,9 %, Légendaire 0,1 %. Changer une valeur
-change le jeu partout, y compris les probabilités affichées au joueur.
+Les taux de rareté sont centralisés dans `Club.RARITY()` : Normal 70 %, Rare 20 %,
+Épique 7 %, Élite 2 %, Gold 0,9 %, Legendary 0,1 %. Changer une valeur change le jeu
+partout, y compris les probabilités affichées au joueur.
 
 `Club.CARD_POOL()` est un catalogue fixe de 500 cartes, identifiants stables. Les packs
 tirent dedans, donc les doublons sont réels : un doublon se convertit en fragments
 selon sa rareté (1 pour une Normale, 200 pour une Légendaire). La collection se compte
 sur 500.
 
-Cinq packs (`Club.PACK_DEFS()`) avec des tables de poids différentes, et
+Un seul pack principal (`Club.THE_PACK()`), plus trois packs ciblés, et
 `Club.packOdds(def)` calcule les probabilités réelles affichées sur l'écran Packs.
 Une carte Or n'est pas automatiquement meilleure : sa rareté fixe une fourchette de
 note, ce sont les statistiques et les compétences qui décident ensuite.
@@ -325,32 +327,51 @@ LinkFoot Pack → inventaire → joueur compatible → IA → décision → acti
 
 Chaque flèche existe dans le code, et `test/progression.js` échoue si l'une d'elles se casse.
 
-### Le pack
+### Le pack (§8, §9)
 
-Un seul pack dans tout le jeu, le **LinkFoot Pack** : 250 jetons, 3 tirages, probabilités
-affichées avant l'ouverture et calculées côté système (§10, §11, §28, §29).
+**Un seul pack principal**, le **LinkFoot Pack** : 250 jetons, 3 tirages, un bouton
+« OUVRIR LE PACK ». Chaque tirage choisit d'abord une **famille**, puis une **rareté**.
+Les deux tables sont affichées avant l'ouverture, calculées côté système et jamais
+modifiables par le client (§29). Elles se règlent dans `PACK_SLOTS()` et `RARITY()` :
+changer une part change le tirage *et* l'affichage, jamais l'un sans l'autre.
+
+| Famille | Part | Ce qu'elle donne |
+| --- | --- | --- |
+| Joueur | 40 % | une carte du catalogue ; un joueur déjà au club devient des fragments |
+| Compétence | 45 % | une compétence, à équiper sur un joueur compatible |
+| Objet | 15 % | séance, carte d'amélioration, stage, causerie, plan tactique |
 
 | Rareté | Taux | Puissance d'une compétence | Combinaisons |
 | --- | --- | --- | --- |
-| Normal | 70 % | 0 à 19 | 8 749 |
-| Rare | 20 % | 20 à 39 | 1 873 |
-| Épique | 7 % | 40 à 59 | 383 |
+| Normal | 70 % | 0 à 19 | 9 769 |
+| Rare | 20 % | 20 à 39 | 1 970 |
+| Épique | 7 % | 40 à 59 | 386 |
 | Élite | 2 % | 60 à 74 | 97 |
 | Gold | 0,9 % | 75 à 89 | 51 |
 | Legendary | 0,1 % | 90 à 100 | 47 |
 
-La rareté n'est jamais écrite à la main : elle **découle** de la puissance calculée de la
-compétence (§16, §17). Une compétence très forte est donc rare dans le catalogue *et* rare
-au tirage. Les six raretés servent aussi aux cartes de joueurs.
+La rareté vaut pour les trois familles : un objet Gold est aussi rare qu'un joueur Gold.
+Celle d'une compétence n'est jamais écrite à la main : elle **découle** de sa puissance
+calculée (§12). Une compétence très forte est donc rare dans le catalogue *et* au tirage.
 
-### Les compétences
+Un objet sorti du pack principal passe par les **mêmes fonctions** que s'il sortait de son
+pack ciblé (`appliquerObjetsEntrainement`, `rangerObjetsCoach`) : il fait la même chose
+d'où qu'il vienne, et `test/kiosque.js` le vérifie objet par objet.
 
-11 200 combinaisons (20 effets x 14 conditions x 5 niveaux x 8 grades), générées à la
-demande. Chacune porte un effet lu par le moteur de match : aucune n'est décorative (§14).
+### Les compétences (§10 à §13)
+
+12 320 combinaisons (22 effets x 14 conditions x 5 niveaux x 8 grades), générées à la
+demande, en dix-sept catégories : attaque, défense, dribble, passe, tir, finition, vitesse,
+physique, mental, tactique, gardien, pressing, transition, leadership, coups de pied
+arrêtés, situationnel, collectif. Chacune porte un effet lu par le moteur de match :
+aucune n'est décorative (§13). Les deux dernières arrivées, Perforateur (appels dans le
+dos de la défense) et Contre éclair (jouer vers l'avant dès la récupération), changent
+ce que les joueurs font, pas seulement un chiffre.
 
 Chaque compétence a des prérequis (poste, statistiques, niveau du joueur) et un joueur ne
 peut en porter qu'un nombre limité, qui augmente avec son niveau : 1 emplacement, 2 au
-niveau 6, 3 au niveau 15, 4 au niveau 25. Un refus nomme toujours ce qui manque (§15).
+niveau 6, 3 au niveau 15, 4 au niveau 25. Un refus nomme toujours ce qui manque (§11).
+Le directeur sportif choisit qui la porte, parmi les joueurs compatibles.
 
 ### Le niveau d'un joueur
 
@@ -398,15 +419,15 @@ Avant chaque match, trois pronostics au maximum, mise plafonnée, cotes calculé
 l'écart de niveau. Ils portent sur le match du jeu, jamais sur un match réel, et les gains
 passent par `earn('prono')`, donc par le plafond quotidien.
 
-### Quatre packs, une famille chacun (§10)
+### Le pack principal et les packs ciblés (§8, §19)
 
-La règle qui les rend lisibles : **un pack ne donne qu'une seule famille de choses**.
-S'il en donnait deux, personne ne saurait lequel ouvrir, et c'est exactement ce que
-le §10 voulait éviter.
+Le pack principal peut tout donner. Les trois packs ciblés existaient et marchaient : ils
+restent, en second plan sur l'écran Packs, pour le directeur sportif qui sait déjà ce qui
+lui manque. Ils ne contiennent rien que le pack principal ne puisse donner.
 
 | Pack | Coût | Il répond à | Il donne |
 | --- | --- | --- | --- |
-| LinkFoot Pack | 250 | « il me faut des joueurs » | des cartes du catalogue |
+| **LinkFoot Pack** (principal) | 250 | « je veux de tout » | joueurs, compétences, objets, fragments |
 | Pack Compétence | 320 | « il me faut des compétences » | des compétences, aucun joueur |
 | Pack Entraînement | 180 | « il me faut du temps » | des séances et des cartes d'amélioration |
 | Pack Entraîneur | 260 | « il me faut des idées » | causeries, ateliers, plans tactiques |
@@ -417,9 +438,9 @@ Chaque séance consomme **une séance en stock**. On en reçoit deux par jour, v
 maximum en réserve, et on en gagne en ouvrant des **Packs Entraînement**. Entraîner
 devient une décision : avec trois séances en poche, on choisit qui on fait progresser.
 
-Le Pack Entraînement est un objet à part du LinkFoot Pack : il ne contient **ni joueur
-ni compétence**, seulement du temps d'entraînement. Deux packs, deux écrans, aucune
-confusion (§10). Ses taux suivent les six raretés du jeu.
+Le Pack Entraînement ne contient **ni joueur ni compétence**, seulement du temps
+d'entraînement ; ses objets sortent aussi du pack principal, à la part « Objet ». Ses taux
+suivent les six raretés du jeu.
 
 | Lot | Rareté | Taux | Effet |
 | --- | --- | --- | --- |
@@ -442,7 +463,7 @@ et chaque objet a un effet réel, pas un chiffre affiché :
 | Atelier tactique | Épique | 17 % | cohésion +4 %, durable |
 | Plan tactique | Élite | 8 % | applique un style et donne +2 d'avantage au prochain match |
 | Réunion de groupe | Gold | 2,6 % | moral +15, cohésion +6 %, +40 XP à tout l'effectif |
-| Plan de campagne | Legendary | 0,4 % | trois plans, moral +20, cohésion +8 % |
+| Plan de campagne | Legendary | 0,4 % | trois plans, moral +20 et cohésion +8 % dès réception |
 
 L'avantage préparé ne vaut que pour **un** match : il retombe à zéro au coup de sifflet
 final. C'est ce qui donne du poids à la préparation sans la rendre permanente.
@@ -462,8 +483,37 @@ ne peut produire une quantité infinie d'argent (§7, §29).
 | Quêtes | 900 |
 | Missions | 600 |
 | Pronostics | 400 |
-| Matchs, packs, ventes | non plafonnés |
+| Matchs | non plafonnés : un match prend du temps réel |
+| Ventes, connexion quotidienne | pas de plafond propre, comptent dans le total |
 | Toutes sources | 2 600 |
+
+Les dépenses passent par `spend()` (packs, achats, staff, stade, centre, pronostics), les
+gains par `earn()`, et chaque mouvement écrit sa ligne. Le journal explique donc le solde
+**au jeton près** : `test/directeur.js` joue packs, match, pronostics, quête, achat, vente
+et recrutement, puis vérifie que la somme du journal égale le solde. C'est ce contrôle qui
+a trouvé que les pronostics gagnés étaient annoncés mais jamais versés.
+
+### La section DIRECTEUR SPORTIF (§17)
+
+Sur l'accueil de Mon Club, et sur celui de l'app téléphone, neuf entrées dans l'ordre du
+cahier des charges. Chacune mène à un vrai écran, et chaque règle qu'il applique vit dans
+`src/`, une seule fois, pour tous les écrans :
+
+| Entrée | Ce qu'on y fait | Règles |
+| --- | --- | --- |
+| Mon effectif | composition, fiches, vente | `pickXI`, `sellPlayer` |
+| Compétences | équiper sur le joueur choisi | `canEquip`, `equipSkill` |
+| Pack | ouvrir le pack unique | `openPack`, `commitPack` |
+| Entraînement | séances, cartes, réunions | `train`, `useUpgrade`, `holdMeeting` |
+| Transferts | acheter, vendre | `buyInfo`, `buyPlayer`, `sellPlayer` |
+| Quêtes | objectifs et récompenses | `claimQuest` |
+| Finances | solde, plafonds du jour, journal | `CAPS`, `earn`, `spend` |
+| Tactique | formation, style, mentalité, consignes | `setFormation`, `applyStyle`, `setConsigne` |
+| Club | progression, staff, stade, centre | `progressBoard`, `hireStaff`, `upgradeStade` |
+
+```bash
+node test/directeur.js     # le parcours du §22, de la création du club au match
+```
 
 ### La création du club
 

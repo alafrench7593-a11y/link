@@ -24,7 +24,8 @@ export const Staff = {
     const cost = d.cost[lv];
     if (s.balance < cost) { const why = 'Il te manque ' + (cost - s.balance) + ' jetons'; this.setState({ staffLog: d.label + ' : ' + why }); return { ok: false, why }; }
     this.buzz([25, 25, 50]);
-    this.setState({ balance: s.balance - cost, staff: Object.assign({}, s.staff, { [id]: lv + 1 }), staffLog: d.label + ' niveau ' + (lv + 1) + ' recruté · ' + d.eff[lv + 1] });
+    this.spend(cost, 'Staff : ' + d.label + ' niveau ' + (lv + 1));   // §7 la dépense entre au journal
+    this.setState({ staff: Object.assign({}, s.staff, { [id]: lv + 1 }), staffLog: d.label + ' niveau ' + (lv + 1) + ' recruté · ' + d.eff[lv + 1] });
     return { ok: true, lvl: lv + 1 };
   },
 
@@ -46,7 +47,8 @@ export const Staff = {
     const cost = L[lv + 1].cost;
     if (s.balance < cost) { const why = 'Il te manque ' + (cost - s.balance) + ' jetons'; this.setState({ staffLog: 'Stade : ' + why }); return { ok: false, why }; }
     this.buzz([25, 25, 60]);
-    this.setState({ balance: s.balance - cost, stade: lv + 1, staffLog: L[lv + 1].name + ' construit · ' + L[lv + 1].cap + ' places' });
+    this.spend(cost, 'Stade : ' + L[lv + 1].name);
+    this.setState({ stade: lv + 1, staffLog: L[lv + 1].name + ' construit · ' + L[lv + 1].cap + ' places' });
     return { ok: true, lvl: lv + 1 };
   },
 
@@ -67,7 +69,8 @@ export const Staff = {
     const cost = A[lv + 1].cost;
     if (s.balance < cost) { const why = 'Il te manque ' + (cost - s.balance) + ' jetons'; this.setState({ staffLog: 'Centre : ' + why }); return { ok: false, why }; }
     this.buzz([25, 25, 60]);
-    this.setState({ balance: s.balance - cost, academy: lv + 1, staffLog: A[lv + 1].name + ' ouvert' });
+    this.spend(cost, 'Centre de formation : ' + A[lv + 1].name);
+    this.setState({ academy: lv + 1, staffLog: A[lv + 1].name + ' ouvert' });
     return { ok: true, lvl: lv + 1 };
   },
 

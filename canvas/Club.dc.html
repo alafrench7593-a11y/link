@@ -107,10 +107,19 @@ button:disabled{cursor:default}
 <span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 11px; font-weight: 700; opacity: 0.7">PROCHAIN MATCH</span><span style="font-size: 16px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{nextOpp}}</span><span style="font-size: 11px; font-weight: 600; opacity: 0.8">{{nextOppSub}}</span></span>
 <span style="flex-shrink: 0; height: 38px; display: flex; align-items: center; padding: 0 16px; border-radius: 19px; background: #171B21; color: #2ECC71; font-size: 13px; font-weight: 800">Jouer</span>
 </button>
-<button onClick="{{nav.squad.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Équipe</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Note {{teamOvr}} · {{formation}} · {{squadCountLabel}}</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
+<div style="display: flex; flex-direction: column; gap: 3px; margin-top: 4px"><span style="font-size: 11px; color: #79828F; font-weight: 600; letter-spacing: 0.4px">DIRECTEUR SPORTIF</span><span style="font-size: 11.5px; color: #AEB6C2; line-height: 1.4">Tu ne touches jamais au ballon : tu construis l’équipe qui le joue.</span></div>
+<button onClick="{{nav.squad.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Mon effectif</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Note {{teamOvr}} · {{formation}} · {{squadCountLabel}}</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
+<button onClick="{{goSkills}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9z"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Compétences</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{skillOnlyLine}}</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
+<button onClick="{{nav.packs.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="3" width="12" height="16" rx="2"></rect><path d="M5 6.5v12A2.5 2.5 0 0 0 7.5 21H15"></path><path d="m14 8 1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Pack</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{packHubLine}}</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
+<button onClick="{{goTrain}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5h11v11h-11z"></path><path d="M3 9v6M21 9v6M6.5 12h11"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Entraînement</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{trainDone}} · énergie moyenne {{fitAvg}} · {{injuredCount}} blessé(s)</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
+<button onClick="{{goMarket}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18l-2 12H5z"></path><path d="M8 10v2a4 4 0 0 0 8 0v-2"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Transferts</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{balance}} jetons · {{marketCount}} joueurs à vendre · vends depuis la fiche</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
+<button onClick="{{goQuests}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"></path><path d="M5 4h11l-2 4 2 4H5"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Quêtes</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{questHubLine}}</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
+<button onClick="{{goFinances}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3"></ellipse><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"></path><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Finances</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{finHubLine}}</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
 <button onClick="{{nav.tactic.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="8" cy="8" r="1.6"></circle><path d="m14.5 6.5 3 3m0-3-3 3"></path><path d="M8 12.5v1.5a3 3 0 0 0 3 3h4.5"></path><path d="m13.5 15 2 2-2 2"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Tactique</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{presetLabel}}</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
-<button onClick="{{nav.packs.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="3" width="12" height="16" rx="2"></rect><path d="M5 6.5v12A2.5 2.5 0 0 0 7.5 21H15"></path><path d="m14 8 1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Packs</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{balance}} jetons disponibles</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
-<button onClick="{{nav.league.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Ligue</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{divLabel}} · match {{seasonLabel}}</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button onClick="{{goOnlineView}}" style="position: relative; overflow: hidden; display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: linear-gradient(105deg, rgba(92,200,255,0.14) 0%, #1E232B 60%); border: 1px solid rgba(92,200,255,0.35); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #5CC8FF; color: #0B1210; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">En ligne</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{onlineHubLine}}</span></span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button onClick="{{goSkills}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9z"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Compétences et quêtes</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{skillHubLine}}</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button onClick="{{goTrain}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5h11v11h-11z"></path><path d="M3 9v6M21 9v6M6.5 12h11"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Entraînement</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{trainDone}} · énergie moyenne {{fitAvg}} · {{injuredCount}} blessé(s)</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button onClick="{{goMarket}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18l-2 12H5z"></path><path d="M8 10v2a4 4 0 0 0 8 0v-2"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Marché des transferts</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{balance}} jetons · 6 joueurs disponibles</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><button onClick="{{goStaff}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"></circle><path d="M3.5 20a5.5 5.5 0 0 1 11 0"></path><path d="M17 8h4M19 6v4M15.5 20a4 4 0 0 1 6 0"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Staff, cartes et finances</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{coachModeLabel}} · {{finLine}}</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none"><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; font-weight: 700">Cohésion d'équipe</span><span style="font-size: 10.5px; color: #79828F">{{cohHint}}</span></span><span style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 26px; color: #2ECC71">{{cohLabel}}</span></div>
+<button onClick="{{goStaff}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 20 5v6c0 5-3.4 9.3-8 11-4.6-1.7-8-6-8-11V5z"></path><path d="M9 11.5 11 13.5 15 9.5"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Club</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{clubHubLine}}</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
+<div style="display: flex; flex-direction: column; gap: 3px; margin-top: 4px"><span style="font-size: 11px; color: #79828F; font-weight: 600; letter-spacing: 0.4px">COMPÉTITIONS</span></div>
+<button onClick="{{nav.league.pick}}" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #2ECC71; color: #171B21; display: flex; align-items: center; justify-content: center; box-shadow: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">Ligue</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{divLabel}} · match {{seasonLabel}}</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button>
+<button onClick="{{goOnlineView}}" style="position: relative; overflow: hidden; display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: linear-gradient(105deg, rgba(92,200,255,0.14) 0%, #1E232B 60%); border: 1px solid rgba(92,200,255,0.35); box-shadow: none; color: #F2F4F7; font-family: inherit; text-align: left; cursor: pointer"><span style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 22px; background: #5CC8FF; color: #0B1210; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"></path></svg></span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; font-weight: 700">En ligne</span><span style="font-size: 11px; color: #79828F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{onlineHubLine}}</span></span><svg width="18" height="18" sc-camel-view-box="0 0 24 24" fill="none" stroke="#79828F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg></button><div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none"><span style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; font-weight: 700">Cohésion d'équipe</span><span style="font-size: 10.5px; color: #79828F">{{cohHint}}</span></span><span style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 26px; color: #2ECC71">{{cohLabel}}</span></div>
 </div>
 </sc-if>
 <sc-if value="{{isSquad}}" hint-placeholder-val="{{true}}">
@@ -302,12 +311,66 @@ button:disabled{cursor:default}
 <span style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 26px; color: #2ECC71">{{collLine}}</span>
 </div>
 <div style="display: flex; flex-direction: column; gap: 4px">
-<span style="font-size: 15px; font-weight: 700">Le kiosque</span>
-<span style="font-size: 12px; color: #79828F; line-height: 1.5">Tous les packs du jeu sont ici. Chacun ne donne qu’une seule famille de choses, donc tu sais toujours lequel ouvrir. Joueurs 100 % fictifs. Les probabilités sont affichées avant l’ouverture et ne changent jamais.</span>
-<span style="font-size: 11px; font-weight: 700; color: #2ECC71">{{kiosqueLine}}</span>
+<span style="font-size: 15px; font-weight: 700">Le pack</span>
+<span style="font-size: 12px; color: #79828F; line-height: 1.5">Un seul pack principal, qui peut tout donner. Les probabilités sont affichées avant l’ouverture, calculées par le jeu et jamais modifiables. Joueurs 100 % fictifs.</span>
+<span style="font-size: 11px; font-weight: 700; color: {{kiosqueFg}}">{{kiosqueLine}}</span>
 </div>
 <sc-if value="{{hasPackLog}}"><div style="padding: 10px 12px; border-radius: 9px; background: rgba(245,200,76,0.1); border: 1px solid rgba(245,200,76,0.35); font-size: 11.5px; font-weight: 600; color: #F5C84C">{{packLog}}</div></sc-if>
-<sc-for list="{{packs}}" as="pk" hint-placeholder-count="4">
+<sc-for list="{{packMain}}" as="pk" hint-placeholder-count="1">
+<div style="position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 12px; padding: 16px 14px; border-radius: 10px; background: {{pk.cardBg}}; border: 1.5px solid {{pk.border}}; box-shadow: 0 12px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)">
+<div style="display: flex; align-items: center; gap: 14px">
+<div style="position: relative; overflow: hidden; width: 84px; height: 112px; flex-shrink: 0; border-radius: 12px; background: {{pk.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #0E1116; box-shadow: 0 10px 22px rgba(0,0,0,0.5), inset 0 0 0 1.5px rgba(255,255,255,0.5)">
+<span class="lf-shine" style="position: absolute; top: -20px; left: 0; width: 30px; height: 170px; background: rgba(255,255,255,0.45)"></span>
+<span style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 38px; line-height: 1">{{pk.count}}</span>
+<span style="font-size: 8.5px; font-weight: 800; letter-spacing: 0.6px">TIRAGES</span>
+</div>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<span style="align-self: flex-start; padding: 2px 7px; border-radius: 9px; background: {{pk.famBg}}; color: {{pk.famFg}}; font-size: 9px; font-weight: 800; letter-spacing: 0.5px">PACK PRINCIPAL</span>
+<span style="font-weight: 800; font-size: 18px">{{pk.name}}</span>
+<span style="font-size: 11px; color: #79828F; line-height: 1.4">{{pk.desc}}</span>
+<span style="font-size: 10.5px; color: #AEB6C2; line-height: 1.35">{{pk.question}}</span>
+<sc-if value="{{pk.hasNote}}"><span style="font-size: 10.5px; font-weight: 600; color: {{pk.noteFg}}; line-height: 1.35">{{pk.note}}</span></sc-if>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 7px; padding: 11px 12px; border-radius: 9px; background: rgba(11,18,16,0.5)">
+<span style="font-size: 10px; font-weight: 800; letter-spacing: 0.5px; color: #79828F">CE QUE PEUT DONNER CHAQUE TIRAGE</span>
+<sc-for list="{{pk.familles}}" as="fa" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 3px">
+<div style="display: flex; align-items: center; gap: 9px">
+<span style="flex-grow: 1; min-width: 0; font-size: 11px; font-weight: 600">{{fa.label}}</span>
+<span style="width: 46px; flex-shrink: 0; text-align: right; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums">{{fa.pct}}</span>
+</div>
+<span style="display: block; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.07)"><span style="display: block; height: 5px; width: {{fa.w}}; border-radius: 3px; background: #2ECC71"></span></span>
+<span style="font-size: 9.5px; color: #79828F; line-height: 1.3">{{fa.sub}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 7px; padding: 11px 12px; border-radius: 9px; background: rgba(11,18,16,0.5)">
+<span style="font-size: 10px; font-weight: 800; letter-spacing: 0.5px; color: #79828F">RARETÉ DE CHAQUE TIRAGE</span>
+<sc-for list="{{pk.odds}}" as="od" hint-placeholder-count="6">
+<div style="display: flex; flex-direction: column; gap: 3px">
+<div style="display: flex; align-items: center; gap: 9px">
+<span style="flex-grow: 1; min-width: 0; font-size: 11px; font-weight: 600">{{od.label}}</span>
+<span style="width: 46px; flex-shrink: 0; text-align: right; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums">{{od.pct}}</span>
+</div>
+<span style="display: block; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.07)"><span style="display: block; height: 5px; width: {{od.w}}; border-radius: 3px; background: {{od.color}}"></span></span>
+</div>
+</sc-for>
+<span style="font-size: 9.5px; color: #79828F; line-height: 1.35">La rareté vaut pour les trois familles : un objet Gold est aussi rare qu’un joueur Gold.</span>
+</div>
+<sc-if value="{{pk.hasGot}}"><div style="padding: 9px 11px; border-radius: 9px; background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.3); font-size: 11px; font-weight: 600; color: #2ECC71; line-height: 1.4">Dernier tirage : {{pk.gotLine}}</div></sc-if>
+<button onClick="{{pk.open}}" disabled="{{pk.locked}}" style="width: 100%; min-height: 54px; border-radius: 27px; border: none; background: {{pk.btnBg}}; color: {{pk.btnFg}}; font-family: inherit; font-weight: 800; font-size: 16px; letter-spacing: 0.4px; cursor: pointer; box-shadow: {{pk.btnSh}}">OUVRIR LE PACK · {{pk.price}}</button>
+<div style="display: flex; align-items: center; gap: 9px">
+<span style="flex-grow: 1; min-width: 0; font-size: 10px; color: #79828F; line-height: 1.35">{{pk.useLabel}}</span>
+<button onClick="{{pk.goUse}}" style="flex-shrink: 0; min-height: 28px; padding: 0 11px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.14); background: transparent; color: #F2F4F7; font-family: inherit; font-size: 10.5px; font-weight: 600; cursor: pointer">Y aller</button>
+</div>
+</div>
+</sc-for>
+<div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px">
+<span style="font-size: 13px; font-weight: 700">Packs ciblés</span>
+<span style="font-size: 11px; color: #79828F; line-height: 1.45">{{ciblesLine}}</span>
+</div>
+<sc-for list="{{packsCibles}}" as="pk" hint-placeholder-count="3">
 <div style="position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 10px; background: {{pk.cardBg}}; border: 1px solid {{pk.border}}; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05)">
 <div style="display: flex; align-items: center; gap: 14px">
 <div style="position: relative; overflow: hidden; width: 66px; height: 88px; flex-shrink: 0; border-radius: 12px; background: {{pk.color}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #0E1116; box-shadow: 0 8px 18px rgba(0,0,0,0.45), inset 0 0 0 1.5px rgba(255,255,255,0.45)">
@@ -337,7 +400,7 @@ button:disabled{cursor:default}
 </sc-for>
 </div>
 <sc-if value="{{pk.hasGot}}"><div style="padding: 9px 11px; border-radius: 9px; background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.3); font-size: 11px; font-weight: 600; color: #2ECC71; line-height: 1.4">Dernier tirage : {{pk.gotLine}}</div></sc-if>
-<button onClick="{{pk.open}}" disabled="{{pk.locked}}" style="width: 100%; min-height: 46px; border-radius: 23px; border: none; background: {{pk.btnBg}}; color: {{pk.btnFg}}; font-family: inherit; font-weight: 800; font-size: 14px; cursor: pointer; box-shadow: {{pk.btnSh}}">OUVRIR LE PACK · {{pk.price}}</button>
+<button onClick="{{pk.open}}" disabled="{{pk.locked}}" style="width: 100%; min-height: 46px; border-radius: 23px; border: none; background: {{pk.btnBg}}; color: {{pk.btnFg}}; font-family: inherit; font-weight: 800; font-size: 13px; cursor: pointer; box-shadow: {{pk.btnSh}}">Ouvrir · {{pk.price}}</button>
 <div style="display: flex; align-items: center; gap: 9px">
 <span style="flex-grow: 1; min-width: 0; font-size: 10px; color: #79828F; line-height: 1.35">{{pk.useLabel}}</span>
 <button onClick="{{pk.goUse}}" style="flex-shrink: 0; min-height: 28px; padding: 0 11px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.14); background: transparent; color: #F2F4F7; font-family: inherit; font-size: 10.5px; font-weight: 600; cursor: pointer">Y aller</button>
@@ -363,9 +426,9 @@ button:disabled{cursor:default}
 <div style="display: flex; align-items: center; gap: 11px; padding: 12px 14px; border-radius: 10px; background: rgba(195,155,255,0.08); border: 1px dashed rgba(195,155,255,0.35)">
 <span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
 <span style="font-size: 12px; font-weight: 700">{{kiosqueSkill}}</span>
-<span style="font-size: 10.5px; color: #79828F; line-height: 1.4">Tous les packs sont regroupés dans le kiosque, onglet Packs. Ici on équipe, là-bas on ouvre.</span>
+<span style="font-size: 10.5px; color: #79828F; line-height: 1.4">Les packs s’ouvrent dans l’onglet Packs. Ici on équipe, là-bas on ouvre.</span>
 </span>
-<button onClick="{{goKiosque}}" style="flex-shrink: 0; min-height: 32px; padding: 0 13px; border-radius: 16px; border: 1px solid rgba(195,155,255,0.45); background: transparent; color: #C39BFF; font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer">Le kiosque</button>
+<button onClick="{{goKiosque}}" style="flex-shrink: 0; min-height: 32px; padding: 0 13px; border-radius: 16px; border: 1px solid rgba(195,155,255,0.45); background: transparent; color: #C39BFF; font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer">Les packs</button>
 </div>
 <sc-if value="{{hasSkills}}" hint-placeholder-val="{{true}}">
 <sc-for list="{{skillInv}}" as="sk" hint-placeholder-count="3">
@@ -384,6 +447,7 @@ button:disabled{cursor:default}
 <span style="flex-grow: 1; min-width: 0; font-size: 11.5px; font-weight: 600; color: {{sk.statusFg}}">{{sk.status}}</span>
 <button onClick="{{sk.act}}" disabled="{{sk.locked}}" style="flex-shrink: 0; min-height: 36px; padding: 0 14px; border-radius: 18px; border: none; background: {{sk.btnBg}}; color: {{sk.btnFg}}; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer">{{sk.cta}}</button>
 </div>
+<sc-if value="{{sk.hasChoice}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-wrap: wrap; gap: 6px"><span style="width: 100%; font-size: 10px; color: #79828F">Ou sur un autre joueur compatible :</span><sc-for list="{{sk.choices}}" as="ch" hint-placeholder-count="3"><button onClick="{{ch.pick}}" style="min-height: 30px; padding: 0 11px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.14); background: transparent; color: #F2F4F7; font-family: inherit; font-size: 10.5px; font-weight: 600; cursor: pointer">{{ch.label}}</button></sc-for></div></sc-if>
 </div>
 </sc-for>
 </sc-if>
@@ -392,34 +456,7 @@ button:disabled{cursor:default}
 <span style="font-size: 12px; color: #79828F; line-height: 1.5">{{skillEmpty}}</span>
 </div>
 </sc-if>
-<div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
-<span style="font-size: 15px; font-weight: 700">Quêtes</span>
-<span style="font-size: 11.5px; color: #79828F; line-height: 1.45">{{capLine}}</span>
-</div>
-<sc-for list="{{quests}}" as="qt" hint-placeholder-count="4">
-<div style="display: flex; flex-direction: column; gap: 7px; padding: 13px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
-<div style="display: flex; align-items: baseline; gap: 10px">
-<span style="flex-grow: 1; min-width: 0; font-size: 13px; font-weight: 700">{{qt.label}}</span>
-<span style="flex-shrink: 0; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: #AEB6C2">{{qt.prog}}</span>
-</div>
-<span style="position: relative; display: block; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.07)"><span style="position: absolute; top: 0; left: 0; height: 5px; width: {{qt.pct}}; border-radius: 3px; background: #2ECC71"></span></span>
-<div style="display: flex; align-items: center; gap: 10px">
-<span style="flex-grow: 1; font-size: 11px; color: #79828F">{{qt.reward}}</span>
-<button onClick="{{qt.claim}}" style="flex-shrink: 0; min-height: 34px; padding: 0 14px; border-radius: 17px; border: none; background: {{qt.btnBg}}; color: {{qt.btnFg}}; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer">{{qt.cta}}</button>
-</div>
-</div>
-</sc-for>
-<sc-if value="{{hasLedger}}" hint-placeholder-val="{{true}}">
-<div style="display: flex; flex-direction: column; gap: 7px; padding: 13px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
-<span style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #79828F">JOURNAL DES TRANSACTIONS</span>
-<sc-for list="{{ledger}}" as="lg" hint-placeholder-count="5">
-<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px">
-<span style="flex-grow: 1; min-width: 0; font-size: 11.5px; color: #AEB6C2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{lg.label}}</span>
-<span style="flex-shrink: 0; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: {{lg.fg}}">{{lg.amount}}</span>
-</div>
-</sc-for>
-</div>
-</sc-if>
+<div style="padding: 11px 13px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.12); font-size: 11px; color: #79828F; line-height: 1.45">Les quêtes ont leur écran, et le journal des transactions est dans Finances : les deux sont sur l’accueil de Mon Club.</div>
 </div>
 </sc-if>
 <sc-if value="{{isOnlineView}}" hint-placeholder-val="{{false}}">
@@ -654,8 +691,8 @@ button:disabled{cursor:default}
 </div>
 <div style="display: flex; flex-direction: column; gap: 10px; padding: 13px 14px; border-radius: 10px; background: linear-gradient(105deg, rgba(92,200,255,0.1) 0%, rgba(242,198,107,0.06) 60%, #1E232B 100%); border: 1px dashed rgba(92,200,255,0.35)">
 <span style="font-size: 12px; font-weight: 700">{{kiosqueTrain}}</span>
-<span style="font-size: 10.5px; color: #79828F; line-height: 1.45">Le Pack Entraînement et le Pack Entraîneur sont dans le kiosque, avec les deux autres. Tu les ouvres là-bas, tu t’en sers ici.</span>
-<button onClick="{{goKiosque}}" style="align-self: flex-start; min-height: 32px; padding: 0 13px; border-radius: 16px; border: 1px solid rgba(92,200,255,0.45); background: transparent; color: #5CC8FF; font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer">Le kiosque</button>
+<span style="font-size: 10.5px; color: #79828F; line-height: 1.45">Séances, cartes d’amélioration, causeries et plans sortent du pack principal ou des packs ciblés, dans l’onglet Packs. Tu les ouvres là-bas, tu t’en sers ici.</span>
+<button onClick="{{goKiosque}}" style="align-self: flex-start; min-height: 32px; padding: 0 13px; border-radius: 16px; border: 1px solid rgba(92,200,255,0.45); background: transparent; color: #5CC8FF; font-family: inherit; font-size: 11px; font-weight: 700; cursor: pointer">Les packs</button>
 </div>
 <sc-if value="{{tp.hasCards}}" hint-placeholder-val="{{true}}">
 <div style="display: flex; flex-direction: column; gap: 7px; padding: 13px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
@@ -673,12 +710,92 @@ button:disabled{cursor:default}
 </sc-if>
 <sc-if value="{{isMarket}}" hint-placeholder-val="{{false}}">
 <div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 2px 16px 18px; display: flex; flex-direction: column; gap: 12px">
-<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 15px; font-weight: 700">Marché des transferts</span><span style="font-size: 12px; color: #79828F; line-height: 1.45">Le prix dépend de la note, de l'âge, du potentiel et de la forme. Nouvelles offres à chaque journée. Vends depuis la fiche d'un joueur (60 % de sa valeur). {{skillCount}} compétences possibles dans le jeu.</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 15px; font-weight: 700">Marché des transferts</span><span style="font-size: 12px; color: #79828F; line-height: 1.45">Le prix dépend de la note, de l'âge, du potentiel et de la forme. Nouvelles offres à chaque journée. Vends depuis la fiche d'un joueur (60 % de sa valeur).</span></div>
+<sc-if value="{{hasMarketLog}}"><div style="padding: 10px 12px; border-radius: 9px; background: rgba(245,200,76,0.1); border: 1px solid rgba(245,200,76,0.35); font-size: 11.5px; font-weight: 600; color: #F5C84C">{{marketLog}}</div></sc-if>
 <sc-for list="{{market}}" as="m" hint-placeholder-count="6"><div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none"><span style="width: 40px; height: 40px; flex-shrink: 0; box-sizing: border-box; border-radius: 20px; border: 2px solid {{m.tier}}; background: #13171C; display: flex; align-items: center; justify-content: center; font-family: 'Sora', sans-serif; font-weight: 800; font-size: 18px">{{m.ovr}}</span><span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; font-weight: 700">{{m.name}} <span style="color: #79828F; font-weight: 600">· {{m.pos}}</span></span><span style="font-size: 10.5px; color: #79828F; line-height: 1.35">{{m.sub}}</span></span><button onClick="{{m.buy}}" style="flex-shrink: 0; min-height: 36px; padding: 0 12px; border-radius: 18px; border: none; background: {{m.btnBg}}; color: {{m.btnFg}}; font-family: inherit; font-size: 11px; font-weight: 800; cursor: pointer">{{m.price}}</button></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{isQuests}}" hint-placeholder-val="{{false}}">
+<div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 2px 16px 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+<span style="font-size: 15px; font-weight: 700">Quêtes</span>
+<span style="font-size: 11.5px; color: #79828F; line-height: 1.45">{{capLine}}</span>
+</div>
+<sc-for list="{{quests}}" as="qt" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 7px; padding: 13px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
+<div style="display: flex; align-items: baseline; gap: 10px">
+<span style="flex-grow: 1; min-width: 0; font-size: 13px; font-weight: 700">{{qt.label}}</span>
+<span style="flex-shrink: 0; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: #AEB6C2">{{qt.prog}}</span>
+</div>
+<span style="position: relative; display: block; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.07)"><span style="position: absolute; top: 0; left: 0; height: 5px; width: {{qt.pct}}; border-radius: 3px; background: #2ECC71"></span></span>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex-grow: 1; font-size: 11px; color: #79828F">{{qt.reward}}</span>
+<button onClick="{{qt.claim}}" style="flex-shrink: 0; min-height: 34px; padding: 0 14px; border-radius: 17px; border: none; background: {{qt.btnBg}}; color: {{qt.btnFg}}; font-family: inherit; font-size: 12px; font-weight: 800; cursor: pointer">{{qt.cta}}</button>
+</div>
+</div>
+</sc-for>
+<span style="font-size: 10.5px; color: #6B736C; line-height: 1.45">Les quêtes sont la principale source de jetons. Chaque récompense passe par le même plafond quotidien que les autres gains.</span>
+</div>
+</sc-if>
+<sc-if value="{{isFinances}}" hint-placeholder-val="{{false}}">
+<div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 2px 16px 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 15px; font-weight: 700">Finances</span><span style="font-size: 12px; color: #79828F; line-height: 1.45">L’argent du club : ce qui entre, ce qui sort, et le plafond du jour qui empêche une source de tourner sans fin.</span></div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06)">
+<span style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px">
+<span style="font-size: 12.5px; font-weight: 700">Solde du club</span>
+<span style="font-size: 10.5px; color: #79828F; line-height: 1.4">{{capLine}}</span>
+</span>
+<span style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 26px; color: #2ECC71">{{balance}}</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 13px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
+<span style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #79828F">CE QUE TU AS GAGNÉ AUJOURD’HUI</span>
+<sc-for list="{{finSources}}" as="fs" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: baseline; gap: 10px">
+<span style="flex-grow: 1; min-width: 0; font-size: 12px; font-weight: 600">{{fs.label}}</span>
+<span style="flex-shrink: 0; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: {{fs.fg}}">{{fs.value}}</span>
+</div>
+<span style="position: relative; display: block; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.07)"><span style="position: absolute; top: 0; left: 0; height: 5px; width: {{fs.w}}; border-radius: 3px; background: {{fs.bar}}"></span></span>
+</div>
+</sc-for>
+<span style="font-size: 10.5px; color: #79828F; line-height: 1.45">{{finSourcesNote}}</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none">
+<span style="font-size: 14px; font-weight: 700">À chaque match</span>
+<span style="font-size: 12px; color: #AEB6C2; line-height: 1.45">{{finLine}}</span>
+<span style="font-size: 11px; color: #79828F; line-height: 1.45">{{finPreview}}</span>
+</div>
+<sc-if value="{{hasLedger}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 7px; padding: 13px 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
+<span style="font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #79828F">JOURNAL DES TRANSACTIONS</span>
+<sc-for list="{{ledger}}" as="lg" hint-placeholder-count="5">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px">
+<span style="flex-grow: 1; min-width: 0; font-size: 11.5px; color: #AEB6C2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{lg.label}}</span>
+<span style="flex-shrink: 0; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: {{lg.fg}}">{{lg.amount}}</span>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{noLedger}}" hint-placeholder-val="{{false}}"><div style="padding: 20px 16px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.12); text-align: center; font-size: 12px; color: #79828F">Aucune transaction pour l’instant.</div></sc-if>
+<span style="font-size: 10px; color: #6B736C; text-align: center; line-height: 1.45">Les jetons se gagnent en jouant. Aucun paiement en argent réel.</span>
 </div>
 </sc-if>
 <sc-if value="{{isStaff}}" hint-placeholder-val="{{false}}">
 <div style="flex-grow: 1; min-height: 0; overflow-y: auto; padding: 2px 16px 18px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.07)">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-size: 14px; font-weight: 700">Progression du club</span><span style="font-size: 11px; color: #79828F">tout ce qui monte</span></div>
+<sc-for list="{{tracks}}" as="tk" hint-placeholder-count="5">
+<div style="display: flex; flex-direction: column; gap: 5px">
+<div style="display: flex; align-items: baseline; gap: 8px">
+<span style="flex-grow: 1; font-size: 12.5px; font-weight: 700">{{tk.label}}</span>
+<span style="font-size: 11px; font-weight: 700; color: {{tk.fg}}">{{tk.value}}</span>
+</div>
+<span style="position: relative; display: block; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.07)"><span style="position: absolute; top: 0; left: 0; height: 5px; width: {{tk.w}}; border-radius: 3px; background: {{tk.bar}}"></span></span>
+<span style="font-size: 10.5px; color: {{tk.noteFg}}; line-height: 1.35">{{tk.note}}</span>
+</div>
+</sc-for>
+<span style="font-size: 11px; color: #79828F; line-height: 1.45">Le niveau de club commande tout : packs, staff, stade, centre de formation et niveaux de carte s’ouvrent aux paliers indiqués.</span>
+</div>
 <div style="display: flex; flex-direction: column; gap: 8px">
 <span style="font-size: 15px; font-weight: 700">Coaching en match</span>
 <div style="display: flex; gap: 4px; padding: 4px; border-radius: 10px; background: #13171C; border: 1px solid rgba(255,255,255,0.05)"><sc-for list="{{coachModes}}" as="c" hint-placeholder-count="3"><button onClick="{{c.pick}}" aria-pressed="{{c.on}}" style="flex: 1 1 0; min-height: 34px; border-radius: 10px; border: 1px solid {{c.bd}}; background: {{c.bg}}; color: {{c.fg}}; font-family: inherit; font-weight: 600; font-size: 12px; cursor: pointer">{{c.label}}</button></sc-for></div>
@@ -728,11 +845,6 @@ button:disabled{cursor:default}
 <span style="font-size: 14px; font-weight: 700">Synergies du onze</span>
 <span style="font-size: 12px; color: #AEB6C2; line-height: 1.45">{{synLine}}</span>
 <span style="font-size: 11px; color: #79828F; line-height: 1.45">{{synDetail}}</span>
-</div>
-<div style="display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none">
-<span style="font-size: 14px; font-weight: 700">Finances</span>
-<span style="font-size: 12px; color: #AEB6C2; line-height: 1.45">{{finLine}}</span>
-<span style="font-size: 11px; color: #79828F; line-height: 1.45">{{finPreview}}</span>
 </div>
 <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 10px; background: #1E232B; border: 1px solid rgba(255,255,255,0.06); box-shadow: none">
 <span style="font-size: 14px; font-weight: 700">Équilibrage (mode développeur)</span>
@@ -1055,6 +1167,7 @@ button:disabled{cursor:default}
 <span class="lf-shine" style="position: absolute; top: -40px; left: 0; width: 60px; height: 420px; background: rgba(255,255,255,0.45)"></span>
 <sc-if value="{{walkPos}}" hint-placeholder-val="{{true}}"><span class="lf-slam" style="font-size: 22px; font-weight: 800; letter-spacing: 4px">{{bestPos}}</span></sc-if>
 <sc-if value="{{walkOvr}}" hint-placeholder-val="{{false}}"><span class="lf-slam" style="font-family: 'Sora', sans-serif; font-weight: 800; font-size: 92px; line-height: 0.9">{{bestOvr}}</span></sc-if>
+<sc-if value="{{walkIcon}}" hint-placeholder-val="{{false}}"><span class="lf-slam" style="display: flex; align-items: center; justify-content: center; height: 84px"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#0E1116" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"></rect><path d="M9 4V3h6v1M8.5 10h7M8.5 13.5h7M8.5 17h4"></path></svg></span></sc-if>
 <sc-if value="{{walkName}}" hint-placeholder-val="{{false}}"><span class="lf-up" style="font-size: 18px; font-weight: 800; text-align: center; padding: 0 10px">{{bestName}}</span></sc-if>
 </div>
 </div>
@@ -1072,6 +1185,9 @@ button:disabled{cursor:default}
 </sc-if>
 <sc-if value="{{r.isSkill}}" hint-placeholder-val="{{false}}">
 <span style="width: 80px; height: 88px; margin: 2px 0 0 16px; display: flex; align-items: center; justify-content: center"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#0E1116" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9z"></path></svg></span>
+</sc-if>
+<sc-if value="{{r.isObjet}}" hint-placeholder-val="{{false}}">
+<span style="width: 80px; height: 88px; margin: 2px 0 0 16px; display: flex; align-items: center; justify-content: center"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#0E1116" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"></rect><path d="M9 4V3h6v1M8.5 10h7M8.5 13.5h7M8.5 17h4"></path></svg></span>
 </sc-if>
 <span style="max-width: 100%; font-size: 11px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.name}}</span>
 <span style="max-width: 100%; font-size: 8px; font-weight: 700; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.sub}}</span>
@@ -1111,7 +1227,9 @@ class Component extends DCLogic {
       ],
       nextId: 100, pack: null, match: null, record: { w: 1, d: 1, l: 0 },
       skillInv: [], nextSkillUid: 1, collected: [], seenPlayers: [],
-      shards: 0, caps: {}, ledger: [], quests: null, clubName: 'FC TonPseudo', country: 'fr', created: true,
+      shards: 0, caps: {}, quests: null, clubName: 'FC TonPseudo', country: 'fr', created: true,
+      // le solde de départ a sa ligne : le journal explique le solde dès la première seconde
+      ledger: [{ at: Date.now(), a: 1000, l: 'Dotation de départ' }],
       kit: { c1: '#2ECC71', c2: '#0C1210', pat: 'uni', collar: 'rond', sponsor: true }, showKit: false, cam: '2d',
       xp: 340, level: 7, dayStreak: 3, dayClaimed: false, winStreak: 0, showHub: false, levelUp: null, now: Date.now(), freePackAt: Date.now() + 90000, freeQueue: [],
       division: 4, seasonP: 2, lastGain: null,
@@ -1174,14 +1292,17 @@ class Component extends DCLogic {
     this.buzz(taps < need ? 25 + taps * 12 : [60, 30, 60, 30, 50, 30, 220]);
     if (taps < need) { this.setState({ pack: Object.assign({}, pk, { taps }) }); return; }
     this.setState({ pack: Object.assign({}, pk, { taps, burst: true }) });
-    const best = pk.got[0].kind === 'skill' ? pk.got[0].ovr : pk.got[0].ovr;   // puissance pour une compétence, note pour un joueur
+    // Le walkout se déclenche sur la RARETÉ du meilleur lot (Élite ou mieux, environ un
+    // pack sur onze), la même règle pour un joueur, une compétence ou un objet.
+    const rang = Math.max(0, this.RARITY().findIndex((x) => x.id === pk.got[0].rar));
+    const walk = rang >= 3;
     this.later(() => {
       const p = this.state.pack; if (!p) return;
-      if (best >= 75) { this.buzz([60, 40, 60]); this.setState({ pack: Object.assign({}, p, { phase: 'walkout', walk: 1 }) }); }
+      if (walk) { this.buzz([60, 40, 60]); this.setState({ pack: Object.assign({}, p, { phase: 'walkout', walk: 1 }) }); }
       else this.setState({ pack: Object.assign({}, p, { phase: 'cards' }) });
     }, 450);
     this.later(() => { const p = this.state.pack; if (p) this.setState({ pack: Object.assign({}, p, { burst: false }) }); }, 1300);
-    if (best >= 75) {
+    if (walk) {
       this.later(() => { const p = this.state.pack; if (p) { this.buzz(80); this.setState({ pack: Object.assign({}, p, { walk: 2 }) }); } }, 1500);
       this.later(() => { const p = this.state.pack; if (p) { this.buzz([30, 30, 30]); this.setState({ pack: Object.assign({}, p, { walk: 3 }) }); } }, 2500);
       this.later(() => { const p = this.state.pack; if (p) this.setState({ pack: Object.assign({}, p, { phase: 'cards' }) }); }, 4200);
@@ -1190,10 +1311,14 @@ class Component extends DCLogic {
   closePack() {
     const s = this.state, pk = s.pack;
     if (!pk) return;
-    // §19 : joueurs dans l'effectif, compétences dans l'inventaire, doublons en fragments
+    // §19 : joueurs dans l'effectif, compétences dans l'inventaire, objets à
+    // l'entraînement, doublons en fragments
     this.commitPack(pk.res);
+    // Comme avant : une compétence reçue mène à Compétences, sinon l'effectif. Seul
+    // ajout : un tirage fait uniquement d'objets mène à l'Entraînement, où ils servent.
+    const got = pk.res.got;
     this.setState({ pack: null, squad: this.state.squad.map((p) => Object.assign({}, p, { fresh: false })),
-      view: pk.res.got.some((g) => g.kind === 'skill') ? 'skills' : 'squad' });
+      view: got.some((g) => g.kind === 'skill') ? 'skills' : got.every((g) => g.kind === 'objet') ? 'train' : 'squad' });
   }
   styles() {
     if (this._styles) return this._styles;
@@ -1521,9 +1646,13 @@ class Component extends DCLogic {
     const F = this.finances(st, res); const inv = Object.assign({}, st.inv || {}); if (win) { const drop = ['energie', 'motivation', 'pressing', 'bloc', 'contre', 'finition', 'up_VIT', 'up_TIR', 'up_PAS', 'up_DÉF'][this.rand(0, 9)]; inv[drop] = (inv[drop] || 0) + 1; }
     const L = this.addXp(st, xpGain);
     // §7, §29 : tout ce qui entre passe par le journal. Le match n'est pas plafonné
-    // (il coûte du temps réel), mais il est tracé comme le reste.
+    // (il coûte du temps réel), mais il est tracé comme le reste : la prime du
+    // résultat et le bonus de niveau entraient au solde sans laisser de ligne, si bien
+    // que l'écran Finances ne pouvait pas expliquer le solde.
+    if (mt.reward) this.logMoney(mt.reward, 'Match : prime de ' + (win ? 'victoire' : res === 'd' ? 'nul' : 'défaite'));
     this.logMoney(F.net, 'Match : recette ' + F.gate + ', salaires −' + F.wages);
     if (bonus) this.logMoney(bonus, 'Série de ' + winStreak + ' victoires');
+    if (L.bonusBal) this.logMoney(L.bonusBal, 'Niveau ' + L.level + ' atteint');
     const patch = { nextAdv: 0, winStreak, missions, squad, inv, lastFin: 'Recette ' + F.gate + ' · salaires −' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net + ' jetons', coachAdvice: null, xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: st.balance + bonus + L.bonusBal + F.net,
       lastGain: '+' + xpGain + ' XP' + (bonus ? ' · série de ' + winStreak + ' victoires x' + mult + ' (+' + bonus + ' jetons)' : '') + (prog ? ' · ' + prog : '') };
     let over = L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : null;
@@ -1535,7 +1664,7 @@ class Component extends DCLogic {
       const yg = this.youthPlayer(st);
       let ygTxt = '';
       if (yg) { patch.squad = (patch.squad || st.squad).concat([yg]); patch.youth = (st.youth || []).concat([yg.id]); ygTxt = ' Le centre sort ' + yg.name + ' (' + yg.pos + ' ' + yg.ovr + ', potentiel ' + yg.pot + ').'; }
-      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; patch.freeQueue = patch.freeQueue.concat(['linkfoot']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un LinkFoot Pack. Les adversaires seront plus forts.' + ygTxt }; }
+      if (rank <= 2 && st.division > 1) { patch.division = st.division - 1; patch.balance += 500; this.logMoney(500, 'Promotion en division ' + patch.division); patch.freeQueue = patch.freeQueue.concat(['linkfoot']); over = { title: 'PROMU EN DIVISION ' + patch.division + ' !', sub: 'Fin de saison : ' + rank + 'e. +500 jetons et un LinkFoot Pack. Les adversaires seront plus forts.' + ygTxt }; }
       else if (rank === last && st.division < 5) { patch.division = st.division + 1; over = { title: 'RELÉGUÉ EN DIVISION ' + patch.division, sub: 'Fin de saison : ' + rank + 'e sur ' + last + '. Les adversaires seront plus faibles, mais la recette du match baisse.' + ygTxt }; }
       else over = over || { title: 'FIN DE SAISON', sub: rank + 'e de la division ' + st.division + '. Termine dans les 2 premiers pour monter, évite la dernière place.' + ygTxt };
       patch.seasonP = 0; patch.record = { w: 0, d: 0, l: 0 };
@@ -1546,6 +1675,10 @@ class Component extends DCLogic {
     // §9 : les pronostics se règlent sur le match qui vient d'être joué, jamais sur un match réel.
     const pr = this.settlePronos(mt);
     if (pr.lines.length) patch.lastProno = pr.lines;
+    // earn() vient de verser les gains au solde, mais `patch.balance` a été calculé
+    // avant : sans cette ligne, l'appelant écrasait le solde et les pronostics gagnés
+    // n'étaient jamais payés, alors que le journal les affichait.
+    if (pr.won) patch.balance += pr.won;
     if (patch.division && patch.division < st.division) this.bumpQuest('division', 1);
     return patch;
   }
@@ -1692,13 +1825,13 @@ class Component extends DCLogic {
     // [id, nom, catégorie, effets, description, prérequis]
     // `req` : statistiques minimum à la rareté Élite, mises à l'échelle selon la rareté.
     const E = [
-      ['tueur', 'Tueur', 'Attaque', { sht: 6 }, 'finition sur les grosses occasions', { TIR: 72, ATQ: 66 }],
+      ['tueur', 'Tueur', 'Tir', { sht: 6 }, 'finition sur les grosses occasions', { TIR: 72, ATQ: 66 }],
       ['visionnaire', 'Visionnaire', 'Passe', { pas: 5, dec: 4 }, 'passes qui créent le danger', { PAS: 72 }],
       ['laser', 'Passe laser', 'Passe', { pas: 7 }, 'précision des passes longues', { PAS: 75 }],
       ['chef', 'Chef d’orchestre', 'Tactique', { dec: 6, pas: 3 }, 'contrôle du rythme', { PAS: 68 }],
-      ['renard', 'Renard des surfaces', 'Attaque', { sht: 4, dec: 4 }, 'déplacements dans la surface', { ATQ: 70 }],
-      ['sprinter', 'Sprinter', 'Physique', { pace: 7 }, 'exploitation des espaces en contre', { VIT: 75 }],
-      ['pressing', 'Pressing fou', 'Défense', { def: 4, pace: 3, drain: 1.25 }, 'pressing plus intense, plus fatigant', { PHY: 68, VIT: 64 }],
+      ['renard', 'Renard des surfaces', 'Finition', { sht: 4, dec: 4 }, 'déplacements dans la surface', { ATQ: 70 }],
+      ['sprinter', 'Sprinter', 'Vitesse', { pace: 7 }, 'exploitation des espaces en contre', { VIT: 75 }],
+      ['pressing', 'Pressing fou', 'Pressing', { def: 4, pace: 3, drain: 1.25 }, 'pressing plus intense, plus fatigant', { PHY: 68, VIT: 64 }],
       ['gladiateur', 'Gladiateur', 'Physique', { phy: 7 }, 'duels physiques', { PHY: 75 }],
       ['calme', 'Calme absolu', 'Mental', { dec: 6, pas: 2 }, 'moins d’erreurs sous pression', {}],
       ['mur', 'Mur', 'Défense', { def: 8 }, 'interventions dans sa surface', { 'DÉF': 75 }],
@@ -1709,9 +1842,14 @@ class Component extends DCLogic {
       ['leader', 'Leader', 'Leadership', { team: { dec: 2 } }, 'concentration des coéquipiers', {}],
       ['meneur', 'Meneur', 'Collectif', { team: { pas: 2 } }, 'jeu collectif autour de lui', { PAS: 66 }],
       ['grinta', 'Grinta', 'Mental', { phy: 5, def: 3, pace: 3, team: { phy: 1 } }, 'agressivité et pressing quand l’équipe est menée', { PHY: 66 }],
-      ['clutch', 'Clutch', 'Spécial', { sht: 5, dec: 5 }, 'dernières minutes d’un match serré', { TIR: 66 }],
+      ['clutch', 'Clutch', 'Situationnel', { sht: 5, dec: 5 }, 'dernières minutes d’un match serré', { TIR: 66 }],
       ['gk_reflex', 'Réflexes félins', 'Gardien', { ref: 7 }, 'parades réflexes', { 'RÉF': 72 }],
-      ['gk_mains', 'Mains sûres', 'Gardien', { han: 7 }, 'ballons captés, pas de rebond', { MAI: 72 }]
+      ['gk_mains', 'Mains sûres', 'Gardien', { han: 7 }, 'ballons captés, pas de rebond', { MAI: 72 }],
+      // §10 les deux catégories qui manquaient. Elles ont un vrai effet en match
+      // (§13) : le Perforateur multiplie ses appels dans le dos de la défense et les
+      // masque mieux, le Contre éclair joue vers l'avant dès la récupération.
+      ['perforateur', 'Perforateur', 'Attaque', { pace: 3, dec: 3 }, 'appels dans le dos de la défense', { ATQ: 72, VIT: 70 }],
+      ['eclair', 'Contre éclair', 'Transition', { pace: 4, pas: 3 }, 'joue vers l’avant dès la récupération', { VIT: 68, PAS: 66 }]
     ];
     // [id, libellé, multiplicateur, raccourci]
     // Plus la condition est étroite, plus l'effet est fort quand elle se produit.
@@ -1724,10 +1862,17 @@ class Component extends DCLogic {
     const POSOK = {
       GB: ['gk_reflex', 'gk_mains', 'calme', 'leader', 'acier', 'moteur'],
       DEF: ['mur', 'gladiateur', 'aerien', 'leader', 'calme', 'moteur', 'grinta', 'pressing', 'laser', 'sprinter', 'acier'],
-      MIL: ['visionnaire', 'laser', 'chef', 'meneur', 'moteur', 'pressing', 'dribbleur', 'calme', 'grinta', 'clutch', 'gladiateur', 'sprinter'],
-      ATT: ['tueur', 'renard', 'sprinter', 'dribbleur', 'clutch', 'aerien', 'grinta', 'acier', 'gladiateur', 'visionnaire']
+      MIL: ['visionnaire', 'laser', 'chef', 'meneur', 'moteur', 'pressing', 'dribbleur', 'calme', 'grinta', 'clutch', 'gladiateur', 'sprinter', 'eclair'],
+      ATT: ['tueur', 'renard', 'sprinter', 'dribbleur', 'clutch', 'aerien', 'grinta', 'acier', 'gladiateur', 'visionnaire', 'perforateur', 'eclair']
     };
-    return (this._skill = { E, C, POSOK, LVL: ['I', 'II', 'III', 'IV', 'V'] });
+    // Les compétences avec lesquelles un joueur peut NAÎTRE. Figées sur les vingt
+    // d'origine : une compétence ajoutée au jeu s'obtient (pack, récompense) et
+    // s'équipe, mais ne change pas rétroactivement les joueurs déjà générés. Sans ce
+    // gel, ajouter une compétence redistribuait les compétences innées de tout
+    // l'effectif de départ, et donc changeait tous les matchs déjà joués.
+    const INNEES = new Set(['tueur', 'visionnaire', 'laser', 'chef', 'renard', 'sprinter', 'pressing', 'gladiateur',
+      'calme', 'mur', 'acier', 'dribbleur', 'aerien', 'moteur', 'leader', 'meneur', 'grinta', 'clutch', 'gk_reflex', 'gk_mains']);
+    return (this._skill = { E, C, POSOK, INNEES, LVL: ['I', 'II', 'III', 'IV', 'V'] });
   }
   skillCount() {
     const D = this.SKILL_DEF();
@@ -1844,7 +1989,8 @@ class Component extends DCLogic {
     const cost = d.cost[lv];
     if (s.balance < cost) { const why = 'Il te manque ' + (cost - s.balance) + ' jetons'; this.setState({ staffLog: d.label + ' : ' + why }); return { ok: false, why }; }
     this.buzz([25, 25, 50]);
-    this.setState({ balance: s.balance - cost, staff: Object.assign({}, s.staff, { [id]: lv + 1 }), staffLog: d.label + ' niveau ' + (lv + 1) + ' recruté · ' + d.eff[lv + 1] });
+    this.spend(cost, 'Staff : ' + d.label + ' niveau ' + (lv + 1));   // §7 la dépense entre au journal
+    this.setState({ staff: Object.assign({}, s.staff, { [id]: lv + 1 }), staffLog: d.label + ' niveau ' + (lv + 1) + ' recruté · ' + d.eff[lv + 1] });
     return { ok: true, lvl: lv + 1 };
   }
   STADES() {
@@ -1865,7 +2011,8 @@ class Component extends DCLogic {
     const cost = L[lv + 1].cost;
     if (s.balance < cost) { const why = 'Il te manque ' + (cost - s.balance) + ' jetons'; this.setState({ staffLog: 'Stade : ' + why }); return { ok: false, why }; }
     this.buzz([25, 25, 60]);
-    this.setState({ balance: s.balance - cost, stade: lv + 1, staffLog: L[lv + 1].name + ' construit · ' + L[lv + 1].cap + ' places' });
+    this.spend(cost, 'Stade : ' + L[lv + 1].name);
+    this.setState({ stade: lv + 1, staffLog: L[lv + 1].name + ' construit · ' + L[lv + 1].cap + ' places' });
     return { ok: true, lvl: lv + 1 };
   }
   ACADEMIES() {
@@ -1885,7 +2032,8 @@ class Component extends DCLogic {
     const cost = A[lv + 1].cost;
     if (s.balance < cost) { const why = 'Il te manque ' + (cost - s.balance) + ' jetons'; this.setState({ staffLog: 'Centre : ' + why }); return { ok: false, why }; }
     this.buzz([25, 25, 60]);
-    this.setState({ balance: s.balance - cost, academy: lv + 1, staffLog: A[lv + 1].name + ' ouvert' });
+    this.spend(cost, 'Centre de formation : ' + A[lv + 1].name);
+    this.setState({ academy: lv + 1, staffLog: A[lv + 1].name + ' ouvert' });
     return { ok: true, lvl: lv + 1 };
   }
   // un jeune du centre : note basse, potentiel élevé, âge 16 à 19
@@ -2586,7 +2734,8 @@ class Component extends DCLogic {
       laser: 'pass', visionnaire: 'pass', chef: 'pass', meneur: 'pass',
       tueur: 'shot', renard: 'shot', clutch: 'shot', acier: 'shot',
       mur: 'tackle', gladiateur: 'tackle', pressing: 'press', grinta: 'press',
-      aerien: 'aerial', gk_reflex: 'gk', gk_mains: 'hands', calme: 'calm', leader: 'lead'
+      aerien: 'aerial', gk_reflex: 'gk', gk_mains: 'hands', calme: 'calm', leader: 'lead',
+      perforateur: 'run', eclair: 'trans'
     };
     // Lecture d'un trait, sûre même avant la première minute.
     const TR = (p, k) => ((p && p.tr && p.tr[k]) || 0);
@@ -2698,6 +2847,14 @@ class Component extends DCLogic {
         if (how !== 'set' && how !== 'gk' && T.tac.won === 0 && bA < 70 && ahead <= 6) {
           T.counterUntil = W.t + 7.5;
           if (ahead <= 5 && bA < 62) { com('Contre-attaque ! ' + p.short + ' lance le mouvement'); key(12, p.s, 'counter'); }
+        } else if (how !== 'set' && how !== 'gk' && TR(p, 'trans') && bA < 70 && ahead <= 6) {
+          // §10 le Contre éclair lance la transition LUI-MÊME, même quand la consigne de
+          // l'équipe ne dit pas de contre-attaquer. Sans ça, il voulait jouer vers
+          // l'avant mais ses attaquants ne partaient pas, puisqu'ils ne courent qu'en
+          // phase de contre : il n'avait personne à servir. La fenêtre est plus courte
+          // que celle d'une équipe réglée pour contrer, et grandit avec sa compétence.
+          T.counterUntil = W.t + 3.5 + TR(p, 'trans') * 3;
+          if (ahead <= 5 && bA < 62) { com('Contre éclair de ' + p.short + ' !'); key(12, p.s, 'counter'); }
         }
         O.cpressUntil = O.tac.lost === 0 && how !== 'set' && how !== 'gk' ? W.t + 5 : 0;
         O.regroupUntil = O.tac.lost === 1 ? W.t + 4 : 0;
@@ -2776,6 +2933,10 @@ class Component extends DCLogic {
       const s = p.s, o = OT[s], T = TM[s], a = aOf(s, p.y), gk = TM[o].ps[0];
       const est = fk ? { xg: fk.xg, blocker: null, pBlock: 0 } : shotEst(p, head);
       const xg = est.xg; W.st[s].sh++; W.st[s].xg += xg;
+      // Les frappes de TRANSITION : moins de huit secondes après que l'équipe a récupéré
+      // le ballon. C'est le terrain de la compétence Contre éclair ; le total des tirs
+      // la noyait. Simple compteur, sans effet sur le match.
+      if (W.poss === s && W.t - W.possT < 8) { W.cnt = W.cnt || {}; W.cnt['tir_transition_' + s] = (W.cnt['tir_transition_' + s] || 0) + 1; }
       const lp = W.lastPass, rec2 = lp && lp.to === p && W.t - lp.t < 5;
       const orig = head ? 'head' : fk ? 'fk' : a < 84 ? 'long' : rec2 && lp.kind === 'through' ? 'through' : rec2 && lp.kind === 'cross' ? 'cross' : W.t < T.counterUntil ? 'counter' : rec2 ? 'pass' : 'solo';
       if (cfg.shotDbg) cfg.shotDbg(p, { a, x: p.x, xg, orig, nd: nearestOpp(p).d, head, held: W.t - p.rcvT, lp: lp && lp.from ? lp.from.kind + '>' + lp.kind : '-' , defBehind: LV[o].filter((q) => aOf(s, q.y) > a).length });
@@ -3172,6 +3333,22 @@ class Component extends DCLogic {
         const tA = aOf(s, ty); let ev = e.pS * V(s, tx, ty, e.space) - (1 - e.pS) * lossCost(s, tx, ty) * (T.tac.patience ? 1.25 : 1) * (isGK ? 1.5 : 1);
         const prog = tA - a0;
         if (counter) ev *= prog > 5 ? 1.25 : prog < -3 ? 0.55 : 1;
+        // §10 le Contre éclair joue vers l'avant dès la récupération. Au premier jet, son
+        // facteur multipliait l'espérance directement ; une espérance négative devenait
+        // alors PLUS négative, et la compétence faisait jouer moins vers l'avant
+        // (56 passes en profondeur pour mille devenaient 55, et le danger créé
+        // tombait de 13,9 à 9,9). On grandit le gain et on réduit la perte.
+        //
+        // Et la phase de contre de l'équipe ne s'ouvre qu'avec un réglage précis (« après
+        // la récupération : contre-attaquer ») : avec la tactique par défaut, elle ne
+        // s'ouvrait jamais et la compétence ne se déclenchait pas. Le porteur qui l'a
+        // joue donc vers l'avant dans les quatre secondes qui suivent CHAQUE
+        // récupération de son équipe : c'est sa compétence, pas la consigne du coach.
+        const eclair = TR(p, 'trans');
+        if (eclair && (counter || (W.poss === s && W.t - W.possT < 4))) {
+          const kt = prog > 5 ? 1 + eclair * 0.6 : prog < -3 ? 1 / (1 + eclair * 0.6) : 1;
+          ev = ev > 0 ? ev * kt : ev / kt;
+        }
         if (T.tac.pass === 0 && e.d > 26) ev *= 0.85; if (T.tac.pass === 2 && prog > 12) ev *= 1.15;
         // §42 Jeu court ou jeu long. Les deux lignes au-dessus ne jugeaient que la
         // distance et la progression, jamais le BALLON joué : une équipe réglée en jeu
@@ -3187,6 +3364,10 @@ class Component extends DCLogic {
         // une option raisonnable, et le receveur rapide est davantage servi dans la profondeur.
         const tp = TR(p, 'pass');
         if (kind === 'through') ev *= (T.tac.behind ? 1.3 : 1.1) * (1 + tp * 0.45) * (1 + TR(q, 'sprint') * 0.3);
+        // Le passeur sait que le Perforateur fait l'appel : la passe en profondeur vers
+        // lui pèse plus. Sans ce lien, ses courses ne servaient à rien. Même précaution
+        // de signe qu'ailleurs : on grandit le gain, on réduit la perte.
+        if ((kind === 'through' || kind === 'space') && TR(q, 'run')) { const kr = 1 + TR(q, 'run') * 0.5; ev = ev > 0 ? ev * kr : ev / kr; }
         if (kind === 'space') ev *= (1 + tp * 0.3) * (1 + TR(q, 'sprint') * 0.35);
         if (kind === 'long') ev *= 1 + tp * 0.4;
         if (kind === 'switch') ev *= (1.05 + Math.max(0, p.pas - 70) / 260) * (1 + tp * 0.5);
@@ -3510,7 +3691,11 @@ class Component extends DCLogic {
           // plat : le meilleur avant-centre du jeu faisait autant d'appels que le pire.
           // t0 sert au temps de réaction du défenseur, plus bas : c'est le décalage
           // entre le départ de l'appel et le moment où il est vu.
-          const flair = 0.05 + Math.max(0, p.att + p.dec - 130) * 0.0006;
+          // §10 le Perforateur fait jusqu'à deux fois plus d'appels. Au premier jet c'était
+          // deux fois et demie, et ça le sortait de la surface sans qu'on le serve
+          // davantage : 124 tirs devenaient 106. Ce qui compte, c'est que l'appel soit
+          // VU par le passeur, plus bas, dans addPass.
+          const flair = (0.05 + Math.max(0, p.att + p.dec - 130) * 0.0006) * (1 + TR(p, 'run') * 1.0);
           if (!p.prep && R() < flair * (1 + T.tac.behind + Math.max(0, T.ment - 3) * 0.3)) p.prep = { t0: W.t, until: W.t + 2.2 + R(), dx: (R() < 0.5 ? -1 : 1) * (3 + R() * 4), err: gauss() * 0.9 * (1.3 - p.dec / 100) + 0.3 };
         }
         if (p.prep) { if (W.t > p.prep.until || !carSettled) p.prep = null; else { a = off - 0.7 + p.prep.err; x += p.prep.dx; urg = 0.95; } }
@@ -3601,7 +3786,7 @@ class Component extends DCLogic {
         // Un attaquant qui sait masquer son appel gagne du terrain sans courir plus
         // vite ; un défenseur qui lit le jeu ne se laisse pas prendre.
         const reaction = best.prep
-          ? cl(0.85 + (best.att + best.dec - 130) * 0.0045 - (p.def + p.dec - 130) * 0.0045, 0.20, 1.6)
+          ? cl(0.85 + (best.att + best.dec - 130) * 0.0045 - (p.def + p.dec - 130) * 0.0045 + TR(best, 'run') * 0.3, 0.20, 1.6)
           : 0;
         const vu = !best.prep || W.t - best.prep.t0 >= reaction;
         if (vu && p.line === 'DEF' && ra < D - 1 && Math.abs(xl(s, best.x) - p.tl.x) < 7) na = Math.max(ra - 1.2, 3);   // suit l'appel dans son dos
@@ -4066,7 +4251,7 @@ class Component extends DCLogic {
     return [
       { key: 'linkfoot', name: 'LinkFoot Pack', n: 3, cost: 250, req: 0, w: {},
         color: 'linear-gradient(135deg, #2ECC71, #1E9E92)', fx: 'gold',
-        content: 'joueur, compétence ou fragments' }
+        content: 'joueur, compétence, objet ou fragments' }
     ];
   }
   packOdds(def) {
@@ -4213,7 +4398,13 @@ class Component extends DCLogic {
   }
 
   THE_PACK() { return this.PACK_DEFS()[0]; }
-  PACK_SLOTS() { return [{ kind: 'player', w: 0.45 }, { kind: 'skill', w: 0.55 }]; }
+  PACK_SLOTS() {
+    return [
+      { kind: 'player', w: 0.40, label: 'Joueur' },
+      { kind: 'skill', w: 0.45, label: 'Compétence' },
+      { kind: 'objet', w: 0.15, label: 'Objet' }
+    ];
+  }
 
   drawSlot(rnd) {
     const S = this.PACK_SLOTS(), q = (rnd || Math.random)();
@@ -4224,9 +4415,25 @@ class Component extends DCLogic {
     const R = this.RARITY(), r = rnd || Math.random;
     let q = r(), pick = R[0];
     for (let i = 0; i < R.length; i++) { q -= R[i].rate; if (q <= 0) { pick = R[i]; break; } }
-    if (this.drawSlot(r) === 'skill') {
+    const slot = this.drawSlot(r);
+    if (slot === 'skill') {
       const sk = this.rollSkill(pick.id, r);
       return { kind: 'skill', rar: pick.id, skill: sk, name: sk.name, ovr: sk.power, label: pick.label, color: pick.color, shards: pick.shards };
+    }
+    if (slot === 'objet') {
+      // Un objet de la rareté tirée, pris dans les deux mêmes tables que le Pack
+      // Entraînement et le Pack Entraîneur : une seule source pour ce qu'un objet fait.
+      const tous = this.TRAIN_LOTS().map((x) => Object.assign({ famille: 'entrainement' }, x))
+        .concat(this.COACH_ITEMS().map((x) => Object.assign({ famille: 'tactique' }, x)));
+      const ici = tous.filter((x) => x.rar === pick.id);
+      const liste = ici.length ? ici : tous.filter((x) => x.rar === 'normal');
+      const obj = liste[Math.floor(r() * liste.length)];
+      const U = this.UPGRADE_CARDS();
+      return { kind: 'objet', rar: pick.id, name: obj.label, label: pick.label, color: pick.color, shards: pick.shards,
+        objet: Object.assign({}, obj, {
+          stat: obj.up ? U[Math.floor(r() * U.length)][0] : null,
+          stats: obj.up > 1 ? Array.from({ length: obj.up }, () => U[Math.floor(r() * U.length)][0]) : null
+        }) };
     }
     const pool = this.CARD_POOL().filter((c) => c.rar === pick.id);
     const c = pool[Math.floor(r() * pool.length)];
@@ -4261,6 +4468,7 @@ class Component extends DCLogic {
       if (g.kind === 'player') { squad.push(this.cardToPlayer(g)); collected.push(g.id); }
       else if (g.kind === 'skill') { inv.push(Object.assign({}, g.skill, { uid: uid++, on: null })); }
     });
+    const objets = res.got.filter((g) => g.kind === 'objet').map((g) => g.objet);
     const cost = res.free ? 0 : def.cost;
     this.setState({ squad, skillInv: inv, collected, nextSkillUid: uid,
       shards: (s.shards || 0) + res.shards,
@@ -4270,6 +4478,10 @@ class Component extends DCLogic {
       missions: this.bumpMission(s.missions, 'pack', 1),
       freeQueue: res.free ? s.freeQueue.slice(1) : s.freeQueue });
     if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
+    // §3 une seule source de vérité : un objet sorti du pack principal passe par les
+    // MÊMES fonctions que s'il sortait du Pack Entraînement ou du Pack Entraîneur.
+    this.appliquerObjetsEntrainement(objets.filter((o) => o.famille !== 'tactique'));
+    this.rangerObjetsCoach(objets.filter((o) => o.famille === 'tactique'));
     this.bumpQuest('pack', 1);
     return { ok: true };
   }
@@ -4365,8 +4577,9 @@ class Component extends DCLogic {
       for (let k = 0; k < R.length; k++) { q -= R[k].rate; if (q <= 0) { ri = k; break; } }
       ri = Math.min(ri, capIdx);
       // une compétence innée reste compatible avec le poste du joueur
-      const band = (idx[R[ri].id] || []).filter((x) => pool.indexOf(x[0]) >= 0);
-      const list = band.length ? band : (idx[R[0].id] || []).filter((x) => pool.indexOf(x[0]) >= 0);
+      const nee = this.SKILL_DEF().INNEES;
+      const band = (idx[R[ri].id] || []).filter((x) => pool.indexOf(x[0]) >= 0 && nee.has(x[0]));
+      const list = band.length ? band : (idx[R[0].id] || []).filter((x) => pool.indexOf(x[0]) >= 0 && nee.has(x[0]));
       if (!list.length) continue;
       const pick = list[Math.floor(r() * list.length)];
       out.push(this.makeSkill(pick[0], pick[1], pick[2], pick[3]));
@@ -4531,7 +4744,7 @@ class Component extends DCLogic {
     return this.grantPlayerXp(id, info.xp, 'séance intensive');
   }
   CAPS() {
-    return { quest: 900, pack: null, match: null, prono: 400, mission: 600, vente: null, total: 2600 };
+    return { quest: 900, pack: null, match: null, prono: 400, mission: 600, vente: null, connexion: null, total: 2600 };
   }
   logMoney(amount, label) {
     const s = this.state, led = (s.ledger || []).slice(0, 59);
@@ -4633,6 +4846,7 @@ class Component extends DCLogic {
     this.setState({ quests: next, xp: L.xp, level: L.level, freeQueue: L.freeQueue,
       balance: this.state.balance + L.bonusBal,
       levelUp: L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : this.state.levelUp });
+    if (L.bonusBal) this.logMoney(L.bonusBal, 'Niveau ' + L.level + ' atteint');   // §7 tout ce qui entre est tracé
     this.buzz([30, 30, 60]);
     return { ok: true, got: got.given, capped: got.capped, xp: q.xp };
   }
@@ -4732,6 +4946,8 @@ class Component extends DCLogic {
       nextId: 200, nextSkillUid: 1, skillInv: [], collected: [], seenPlayers: [],
       balance: 600, shards: 0, xp: 0, level: 1,
       record: { w: 0, d: 0, l: 0 }, seasonP: 0, winStreak: 0,
+      // la série de connexion repart de zéro : l'état de démonstration en était au jour 4
+      dayStreak: 0, dayClaimed: false, market: null,
       quests: this.rollQuests(1), caps: { day: this.dayKey() }, ledger: [],
       freeQueue: ['linkfoot'],                      // un seul pack offert pour démarrer
       created: true,
@@ -4940,29 +5156,20 @@ class Component extends DCLogic {
     got.sort((a, b) => order.indexOf(b.rar) - order.indexOf(a.rar));
     return { ok: true, def, got, free: !!o.free };
   }
+
   commitTrainPack(res) {
     if (!res || !res.ok) return { ok: false };
-    const s = this.state, def = res.def, R = this.SESSION_RULES();
-    const inv = Object.assign({}, s.inv || {});
-    let add = 0, xp = 0, cards = [];
-    res.got.forEach((g) => {
-      add += g.sessions || 0;
-      xp += g.squadXp || 0;
-      const list = g.stats || (g.stat ? [g.stat] : []);
-      list.forEach((k) => { inv['up_' + k] = (inv['up_' + k] || 0) + 1; cards.push(k); });
-    });
-    const cost = res.free ? 0 : def.cost;
+    const def = res.def, cost = res.free ? 0 : def.cost;
+    const recu = this.appliquerObjetsEntrainement(res.got);
+    const add = recu.sessions, xp = recu.xp, cards = recu.cards;
     this.setState({
-      sessions: Math.min(R.max, (s.sessions || 0) + add),
-      inv, balance: s.balance - cost,
+      balance: this.state.balance - cost,
       lastTrainPack: res.got.map((g) => g.label).join(' · ')
         + (add ? ' → +' + add + ' séance' + (add > 1 ? 's' : '') : '')
         + (cards.length ? ', cartes ' + cards.join(', ') : '')
         + (xp ? ', +' + xp + ' XP à tout l’effectif' : '')
     });
     if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
-    // un stage profite à tout l'effectif : c'est ce qui rend les lots rares désirables
-    if (xp) this.state.squad.forEach((p) => this.grantPlayerXp(p.id, xp, 'stage'));
     this.bumpQuest('pack', 1);
     return { ok: true, sessions: add, xp, cards };
   }
@@ -5002,7 +5209,7 @@ class Component extends DCLogic {
   }
   PACK_REGISTRY() {
     return [
-      Object.assign({}, this.THE_PACK(), { family: 'cartes', question: 'Il me faut des joueurs', view: 'packs' }),
+      Object.assign({}, this.THE_PACK(), { family: 'tout', question: 'Le pack principal : il peut tout donner', view: 'packs', principal: true }),
       Object.assign({}, this.SKILL_PACK(), { family: 'compétences', question: 'Il me faut des compétences', view: 'skills' }),
       Object.assign({}, this.TRAIN_PACK(), { family: 'entraînement', question: 'Il me faut du temps d’entraînement', view: 'train' }),
       Object.assign({}, this.COACH_PACK(), { family: 'tactique', question: 'Il me faut des idées de jeu', view: 'train' })
@@ -5108,14 +5315,10 @@ class Component extends DCLogic {
 
   commitCoachPack(res) {
     if (!res || !res.ok) return { ok: false };
-    const s = this.state, def = res.def;
-    const coach = Object.assign({}, s.coachInv || {});
-    res.got.forEach((g) => {
-      coach[g.id] = (coach[g.id] || 0) + 1;
-      if (g.plans) coach.plan = (coach.plan || 0) + g.plans - 1;   // le plan de campagne contient trois plans
-    });
-    const cost = res.free ? 0 : def.cost;
-    this.setState({ coachInv: coach, balance: s.balance - cost,
+    const def = res.def;
+    this.rangerObjetsCoach(res.got);
+    const s = this.state, cost = res.free ? 0 : def.cost;
+    this.setState({ balance: s.balance - cost,
       lastCoachPack: res.got.map((g) => g.label).join(' · ') });
     if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
     this.bumpQuest('pack', 1);
@@ -5320,25 +5523,26 @@ class Component extends DCLogic {
   }
   KIOSQUE() {
     return [
-      { key: 'linkfoot', def: this.THE_PACK(), family: 'Joueurs',
-        question: 'Il me faut des joueurs',
+      { key: 'linkfoot', def: this.THE_PACK(), family: 'Pack principal', principal: true,
+        question: 'Joueur, compétence ou objet : un seul pack pour tout',
         odds: () => this.packOdds(this.THE_PACK()), kind: 'rarete',
+        familles: () => this.packFamilies(),
         state: () => this.packState(this.THE_PACK()),
-        useView: 'squad', useLabel: 'Les cartes arrivent dans l’effectif',
+        useView: 'squad', useLabel: 'Joueurs dans l’effectif, compétences en réserve, objets à l’entraînement',
         last: 'lastCardPack' },
-      { key: 'skill', def: this.SKILL_PACK(), family: 'Compétences',
+      { key: 'skill', def: this.SKILL_PACK(), family: 'Ciblé · compétences',
         question: 'Il me faut des compétences',
         odds: () => this.skillPackOdds(), kind: 'rarete',
         state: () => this.skillPackState(),
         useView: 'skills', useLabel: 'Les compétences vont en réserve, à équiper dans Compétences',
         last: 'lastSkillPack' },
-      { key: 'train', def: this.TRAIN_PACK(), family: 'Entraînement',
+      { key: 'train', def: this.TRAIN_PACK(), family: 'Ciblé · entraînement',
         question: 'Il me faut du temps d’entraînement',
         odds: () => this.trainPackOdds(), kind: 'lots',
         state: () => this.trainPackState(),
         useView: 'train', useLabel: 'Séances et cartes utilisables dans Entraînement',
         last: 'lastTrainPack' },
-      { key: 'coach', def: this.COACH_PACK(), family: 'Tactique',
+      { key: 'coach', def: this.COACH_PACK(), family: 'Ciblé · tactique',
         question: 'Il me faut des idées de jeu',
         odds: () => this.coachPackOdds(), kind: 'lots',
         state: () => this.coachPackState(),
@@ -5352,12 +5556,14 @@ class Component extends DCLogic {
       const st = e.state(), d = e.def;
       return {
         key: e.key, name: d.name, family: e.family, question: e.question,
+        principal: !!e.principal,
         n: d.n, cost: d.cost, color: d.color, content: d.content,
         desc: d.n + ' tirages · ' + d.content,
         can: !!st.can, why: st.why || '', locked: !st.can,
         useView: e.useView, useLabel: e.useLabel,
         got: s[e.last] || '',
-        kind: e.kind, odds: e.odds()
+        kind: e.kind, odds: e.odds(),
+        familles: e.familles ? e.familles() : null
       };
     });
   }
@@ -5490,6 +5696,176 @@ class Component extends DCLogic {
     const n = this.impactReport(mt).length;
     return n ? n + ' de tes décisions ont pesé sur ce match' : 'Aucun réglage changé : l’équipe a joué par défaut';
   }
+  packFamilies() {
+    const S = this.PACK_SLOTS(), t = S.reduce((a, x) => a + x.w, 0) || 1;
+    return S.map((x) => ({ kind: x.kind, label: x.label, pct: x.w / t * 100 }));
+  }
+  objetCourt(o) {
+    if (!o) return '';
+    const p = [];
+    if (o.kind === 'meeting') p.push('à tenir');
+    if (o.sessions) p.push('+' + o.sessions + ' séance' + (o.sessions > 1 ? 's' : ''));
+    const cartes = o.stats || (o.stat ? [o.stat] : []);
+    if (cartes.length) p.push('carte' + (cartes.length > 1 ? 's' : '') + ' +2 ' + cartes.join(', '));
+    if (o.squadXp) p.push('+' + o.squadXp + ' XP à l’effectif');
+    if (o.kind === 'plan') p.push((o.plans || 1) + ' plan' + ((o.plans || 1) > 1 ? 's' : '') + ' tactique' + ((o.plans || 1) > 1 ? 's' : ''));
+    if (o.morale) p.push('moral +' + o.morale);
+    if (o.coh) p.push('cohésion +' + Math.round(o.coh * 100) + ' %');
+    if (o.adv && o.kind !== 'plan') p.push('+' + o.adv + ' d’avantage');
+    return p.join(' · ');
+  }
+  appliquerObjetsEntrainement(lots) {
+    if (!lots || !lots.length) return { sessions: 0, xp: 0, cards: [] };
+    const s = this.state, R = this.SESSION_RULES(), inv = Object.assign({}, s.inv || {});
+    let add = 0, xp = 0;
+    const cards = [];
+    lots.forEach((g) => {
+      add += g.sessions || 0;
+      xp += g.squadXp || 0;
+      (g.stats || (g.stat ? [g.stat] : [])).forEach((k) => { inv['up_' + k] = (inv['up_' + k] || 0) + 1; cards.push(k); });
+    });
+    this.setState({ inv, sessions: Math.min(R.max, (s.sessions || 0) + add) });
+    // un stage profite à tout l'effectif : c'est ce qui rend les lots rares désirables
+    if (xp) this.state.squad.forEach((p) => this.grantPlayerXp(p.id, xp, 'stage'));
+    return { sessions: add, xp, cards };
+  }
+  packPrincipal() { return this.kiosque().find((x) => x.principal); }
+  rangerObjetsCoach(lots) {
+    if (!lots || !lots.length) return { plans: 0, morale: 0, coh: 0 };
+    const s = this.state, coach = Object.assign({}, s.coachInv || {});
+    let plans = 0, morale = 0, coh = 0;
+    lots.forEach((g) => {
+      if (g.kind === 'plan') {
+        plans += g.plans || 1;
+        morale += g.morale || 0;
+        coh += g.coh || 0;
+      } else coach[g.id] = (coach[g.id] || 0) + 1;
+    });
+    if (plans) coach.plan = (coach.plan || 0) + plans;
+    const patch = { coachInv: coach };
+    if (morale) patch.squad = s.squad.map((p) => Object.assign({}, p, { morale: Math.min(99, this.profile(p).morale + morale) }));
+    if (coh) patch.cohBonus = Math.min(0.16, (s.cohBonus || 0) + coh);
+    this.setState(patch);
+    return { plans, morale, coh };
+  }
+  MARKET_RULES() { return { maxSquad: 20 }; }
+
+  buyInfo(m) {
+    const s = this.state, R = this.MARKET_RULES();
+    if (!m) return { can: false, why: 'Ce joueur n’est plus sur le marché' };
+    const why = s.match && !s.match.done ? 'Impossible pendant un match'
+      : s.squad.some((p) => p.id === m.id) ? 'Déjà dans ton effectif'
+      : s.squad.length >= R.maxSquad ? 'Effectif complet (' + R.maxSquad + ' joueurs) : vends d’abord'
+      : s.balance < m.price ? 'Il te manque ' + (m.price - s.balance) + ' jetons' : '';
+    return { can: !why, why };
+  }
+
+  buyPlayer(id) {
+    const s = this.state, list = this.marketList(), m = list.find((x) => x.id === id);
+    const info = this.buyInfo(m);
+    if (!info.can) return { ok: false, why: info.why };
+    const pay = this.spend(m.price, 'Achat de ' + m.name);
+    if (!pay.ok) return pay;
+    this.buzz([30, 30, 60]);
+    this.setState({ squad: this.state.squad.concat([Object.assign({}, m, { fresh: true })]),
+      market: { week: s.seasonP + s.division * 10, list: list.filter((x) => x.id !== id) },
+      trainLog: m.name + ' rejoint le club pour ' + m.price + ' jetons' });
+    return { ok: true, price: m.price };
+  }
+  FORMATIONS() { return ['4-3-3', '4-4-2', '4-2-3-1', '3-5-2', '5-3-2']; }
+  TAC_GROUPS() {
+    return [
+      { title: 'Avec le ballon', color: '#2ECC71', items: [
+        ['width', 'Largeur', ['Étroite', 'Normale', 'Large']],
+        ['tempo', 'Tempo', ['Lent', 'Normal', 'Rapide']],
+        ['pass', 'Style de passes', ['Courtes', 'Mixtes', 'Directes']],
+        ['cross', 'Centres', ['Rasants', 'Mixtes', 'Aériens']],
+        ['behind', 'Jeu dans le dos de la défense', ['Non', 'Oui']],
+        ['dribble', 'Dribbles', ['Normal', 'Plus de dribbles']],
+        ['longshot', 'Frappes de loin', ['Rarement', 'Souvent']],
+        ['patience', 'Patience dans la construction', ['Normale', 'Travailler le ballon']]
+      ] },
+      { title: 'Sans le ballon', color: '#5ED6C0', items: [
+        ['line', 'Ligne défensive', ['Basse', 'Normale', 'Haute']],
+        ['engage', 'Ligne d’engagement', ['Basse', 'Moyenne', 'Haute']],
+        ['press', 'Intensité du pressing', ['Faible', 'Normale', 'Intense']],
+        ['trap', 'Piège du hors-jeu', ['Non', 'Oui']],
+        ['tackle', 'Tacles', ['Prudents', 'Normaux', 'Rugueux']]
+      ] },
+      { title: 'Organisation', color: '#C39BFF', items: [
+        ['mark', 'Marquage', ['En zone', 'Mixte', 'Individuel']],
+        ['fullbacks', 'Latéraux', ['Restent', 'Montent', 'Inversés']],
+        ['overload', 'Surcharger un côté', ['Non', 'Gauche', 'Axe', 'Droite']],
+        ['ptrap', 'Pièges de pressing', ['Aucun', 'Sur les côtés', 'Dans l’axe']],
+        ['timewaste', 'Gagner du temps quand on mène', ['Non', 'Oui']]
+      ] },
+      { title: 'Transitions', color: '#4FA8E8', items: [
+        ['lost', 'À la perte du ballon', ['Contre-pressing', 'Se replacer']],
+        ['won', 'À la récupération', ['Contre-attaque', 'Construire']],
+        ['gk', 'Relance du gardien', ['Courte', 'Longue']]
+      ] },
+      { title: 'Coups de pied arrêtés', color: '#F5C84C', items: [
+        ['corners', 'Corners', ['1er poteau', '2e poteau', 'Point de penalty', 'À la remise']],
+        ['freekicks', 'Coups francs', ['Frappe directe', 'Centre', 'Combinaison']]
+      ] }
+    ];
+  }
+
+  setFormation(f) {
+    if (this.FORMATIONS().indexOf(f) < 0) return { ok: false, why: 'Formation inconnue' };
+    this.setState({ formation: f, roles: {}, duties: {}, sel: null });
+    return { ok: true };
+  }
+  applyStyle(k, opts) {
+    const x = this.styles()[k];
+    if (!x) return { ok: false, why: 'Style inconnu' };
+    const patch = { preset: k, mentality: x.m, tac: Object.assign({}, this.state.tac, x.tac) };
+    if (!opts || opts.formation !== false) Object.assign(patch, { formation: x.form, roles: {}, duties: {}, sel: null });
+    this.setState(patch);
+    return { ok: true };
+  }
+  setMentality(i) {
+    const m = Math.round(i);
+    if (!(m >= 0 && m <= 6)) return { ok: false, why: 'Mentalité hors limites' };
+    this.setState({ mentality: m, preset: 'perso' });
+    return { ok: true };
+  }
+
+  setConsigne(k, v) {
+    let it = null;
+    this.TAC_GROUPS().forEach((g) => g.items.forEach((x) => { if (x[0] === k) it = x; }));
+    if (!it) return { ok: false, why: 'Réglage inconnu' };
+    if (!(v >= 0 && v < it[2].length && v === Math.round(v))) return { ok: false, why: 'Valeur hors limites' };
+    this.setState({ tac: Object.assign({}, this.state.tac, { [k]: v }), preset: 'perso' });
+    return { ok: true };
+  }
+  DAILY_REWARDS() { return [100, 150, 200, 'linkfoot', 300, 400, 'linkfoot']; }
+
+  claimDaily() {
+    const s = this.state, D = this.DAILY_REWARDS(), i = s.dayStreak || 0;
+    if (s.dayClaimed) return { ok: false, why: 'Déjà récupérée aujourd’hui' };
+    if (i >= D.length) return { ok: false, why: 'Série de connexion complète' };
+    const rw = D[i];
+    this.setState({ dayClaimed: true, dayStreak: i + 1,
+      freeQueue: typeof rw === 'string' ? (s.freeQueue || []).concat([rw]) : s.freeQueue });
+    const got = typeof rw === 'number' ? this.earn(rw, 'connexion', 'Connexion, jour ' + (i + 1)) : null;
+    this.buzz([30, 30, 60]);
+    return { ok: true, reward: rw, got: got ? got.given : 0 };
+  }
+  claimMission(id) {
+    const s = this.state, m = (s.missions || []).find((x) => x.id === id);
+    if (!m) return { ok: false, why: 'Mission inconnue' };
+    if (m.claimed) return { ok: false, why: 'Déjà récupérée' };
+    if (m.prog < m.goal) return { ok: false, why: 'Objectif non atteint (' + m.prog + ' sur ' + m.goal + ')' };
+    const L = this.addXp(s, m.xp);
+    this.setState({ missions: s.missions.map((x) => (x.id === id ? Object.assign({}, x, { claimed: true }) : x)),
+      xp: L.xp, level: L.level, freeQueue: L.freeQueue, balance: s.balance + L.bonusBal,
+      levelUp: L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : s.levelUp });
+    if (L.bonusBal) this.logMoney(L.bonusBal, 'Niveau ' + L.level + ' atteint');
+    const got = this.earn(m.reward, 'mission', 'Mission : ' + m.label);
+    this.buzz([30, 30, 60]);
+    return { ok: true, got: got.given, capped: got.capped };
+  }
   renderVals() {
     const s = this.state, t = s.tac;
     const color = (o) => (o >= 80 ? 'linear-gradient(135deg, #FFE59A, #E9A93A)' : o >= 70 ? 'linear-gradient(135deg, #F2F6F4, #AEB9C2)' : 'linear-gradient(135deg, #E8B585, #B7773F)');
@@ -5509,9 +5885,10 @@ class Component extends DCLogic {
     const roleOf = (p) => s.roles[p.slot] || this.ROLE_OPTS(p.line, p.slot, s.formation)[0];
     const STY = this.styles(), SL = this._styleList;
     const PRESETS = {}; SL.forEach((x) => { PRESETS[x.k] = { label: x.name, m: x.m, tac: x.tac }; });
-    const setTac = (k, v) => this.setState({ tac: Object.assign({}, t, { [k]: v }), preset: 'perso' });
-    const seg = (k, labels) => ({ opts: labels.map((l, i) => ({ label: l, on: t[k] === i, pick: () => setTac(k, i), bg: SEG(t[k] === i).bg, fg: SEG(t[k] === i).fg, bd: SEG(t[k] === i).bd })) });
-    const MENT = ['Très défensive', 'Défensive', 'Prudente', 'Équilibrée', 'Positive', 'Offensive', 'Très offensive'];
+    // §17 les réglages passent par le module (setConsigne, applyStyle…) : mêmes règles et
+    // mêmes libellés que l'app téléphone.
+    const seg = (k, labels) => ({ opts: labels.map((l, i) => ({ label: l, on: t[k] === i, pick: () => this.setConsigne(k, i), bg: SEG(t[k] === i).bg, fg: SEG(t[k] === i).fg, bd: SEG(t[k] === i).bd })) });
+    const MENT = this.MENTALITES();
     const mtc = s.match, pk = s.pack;
     const opps = [
       { user: '@Lina_psg', club: 'Auteuil United', ovr: 72, color: '#2F8FE0', style: 'tiki' },
@@ -5527,8 +5904,12 @@ class Component extends DCLogic {
     // une seule lecture de la progression par rendu : staff, stade, centre, collection.
     const BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';   // §81 pas de requête inutile quand il n'y a pas d'image
     const TR = {}; this.progressBoard().forEach((t) => { TR[t.key] = t; });
+    // Le lot vedette est le premier : le tirage est trié par rareté. Son éclat se lit
+    // dans sa RARETÉ, la seule échelle commune aux joueurs, compétences et objets
+    // (une note de joueur et une puissance de compétence ne se comparent pas).
     const best = pk ? pk.got[0] : null;
-    const tier = best ? (best.ovr >= 80 ? 'gold' : best.ovr >= 70 ? 'silver' : 'bronze') : 'bronze';
+    const bestRang = best ? Math.max(0, this.RARITY().findIndex((x) => x.id === best.rar)) : 0;
+    const tier = bestRang >= 3 ? 'gold' : bestRang >= 2 ? 'silver' : 'bronze';
     const FX = {
       gold: { glow: 'rgba(255,200,80,0.55)', ray: 'rgba(255,215,120,0.28)', text: '#FFE08A' },
       silver: { glow: 'rgba(190,240,220,0.45)', ray: 'rgba(200,245,225,0.2)', text: '#DFF7EA' },
@@ -5548,7 +5929,7 @@ class Component extends DCLogic {
     const motm = (mtc && mtc.done && mtc.rat) ? (() => { let bi = 0; mtc.rat.H.forEach((v, k2) => { if (v > mtc.rat.H[bi]) bi = k2; }); const p = mtc.xi[bi]; const goals = mtc.events.filter((e) => e.text.indexOf('BUT ! ' + p.name) >= 0).length; return { p, v: mtc.rat.H[bi], goals }; })() : null;
     const SWATCH = ["#2ECC71", "#2ECC71", "#0C1210", "#FFFFFF", "#FF4757", "#1D3F9E", "#55B8E6", "#F2C66B", "#7A1F3D", "#0A8F6B", "#FF8A1F", "#6B2FB3"];
     const kitSmall = this.kitSvg(s.kit, 20);
-    const DAYR = [100, 150, 200, 'LinkFoot Pack', 300, 400, 'LinkFoot Pack'];
+    const DAYR = this.DAILY_REWARDS();   // §7 la règle et les montants sont dans le module (claimDaily)
     const freeReady = s.now >= s.freePackAt;
     const fmt = (ms) => { const t = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), sec = t % 60; return h ? h + 'h' + String(m).padStart(2, '0') : m + ':' + String(sec).padStart(2, '0'); };
     const md = new Date(s.now); md.setHours(24, 0, 0, 0); const midnight = md.getTime();
@@ -5573,10 +5954,10 @@ class Component extends DCLogic {
       days: DAYR.map((rw, i) => {
         const n = i + 1, done = i < s.dayStreak, today = i === s.dayStreak && !s.dayClaimed;
         const isPack = typeof rw === 'string';
-        return { n, label: isPack ? rw : '+' + rw, cls: today ? 'lf-glowp' : '', op: done ? 0.45 : 1,
+        return { n, label: isPack ? this.packName(rw) : '+' + rw, cls: today ? 'lf-glowp' : '', op: done ? 0.45 : 1,
           bg: today ? ORANGE : done ? '#13171C' : '#171B18', fg: today ? ON_ORANGE : '#F2F4F7', border: today ? 'transparent' : 'rgba(255,255,255,0.07)',
           icon: isPack ? 'linear-gradient(135deg, #2ECC71, #1E9E92)' : 'linear-gradient(135deg, #FFE08A, #E9A93A)', iconR: isPack ? '5px' : '11px',
-          pick: () => { if (!today) return; this.buzz([30, 30, 60]); const q = isPack ? s.freeQueue.concat(['linkfoot']) : s.freeQueue; this.setState({ dayClaimed: true, dayStreak: s.dayStreak + 1, balance: s.balance + (isPack ? 0 : rw), freeQueue: q }); } };
+          pick: () => { if (today) this.claimDaily(); } };
       }),
       freeLocked: !freeReady, freeLabel: freeReady ? 'Récupérer' : fmt(s.freePackAt - s.now), freeBg: freeReady ? ORANGE : 'rgba(11,15,12,0.55)', freeFg: freeReady ? ON_ORANGE : '#AEB6C2',
       claimFree: () => { if (!freeReady) return; this.buzz([30, 30, 60]); this.setState({ freeQueue: s.freeQueue.concat(['linkfoot']), freePackAt: Date.now() + 4 * 3600 * 1000, now: Date.now() }); },
@@ -5587,7 +5968,7 @@ class Component extends DCLogic {
         label: m.label, w: Math.round(m.prog / m.goal * 100) + '%', progLabel: m.prog + '/' + m.goal, rewardLabel: '+' + m.reward + ' jetons · +' + m.xp + ' XP',
         btn: m.claimed ? 'Récupéré' : ready ? 'Récupérer' : 'En cours', locked: !ready, cls: ready ? 'lf-glowp' : '',
         bg: ready ? ORANGE : '#242A33', fg: ready ? ON_ORANGE : '#79828F', border: ready ? 'rgba(46,204,113,0.55)' : 'rgba(255,255,255,0.07)',
-        claim: () => { if (!ready) return; this.buzz([30, 30, 60]); const L = this.addXp(s, m.xp); this.setState({ missions: s.missions.map((x) => (x.id === m.id ? Object.assign({}, x, { claimed: true }) : x)), balance: s.balance + m.reward + L.bonusBal, xp: L.xp, level: L.level, freeQueue: L.freeQueue, levelUp: L.ups.length ? { title: 'NIVEAU ' + L.level + ' !', sub: L.ups.map((u) => 'Niveau ' + u.level + ' : ' + u.text).join(' · ') } : null }); } }; }),
+        claim: () => { if (ready) this.claimMission(m.id); } }; }),
       streakTiers: [[2, 'x1.2'], [3, 'x1.5'], [5, 'x2']].map(([n, mu]) => { const on = s.winStreak >= n; return { mult: mu, need: n + ' victoires', bg: on ? 'linear-gradient(180deg, rgba(46,204,113,0.22) 0%, rgba(46,204,113,0.06) 100%)' : '#1A1F1B', fg: on ? '#2ECC71' : '#F2F4F7', bd: on ? 'rgba(46,204,113,0.45)' : 'rgba(255,255,255,0.06)' }; }),
       freeName: this.THE_PACK().name,
       // la même source que les écrans Staff et Packs : progressBoard()
@@ -5698,8 +6079,29 @@ class Component extends DCLogic {
       finPreview: (() => { const F = this.finances(s, 'w'); return 'Prochaine recette estimée ' + F.gate + ' · salaires ' + F.wages + ' · net ' + (F.net >= 0 ? '+' : '') + F.net; })(),
       simRes: s.simRes || 'Lance une simulation pour vérifier l’équilibrage.',
       sim50: () => this.simulate(20), sim200: () => this.simulate(100),
-      isTrain: s.view === 'train', isMarket: s.view === 'market', goTrain: () => this.setState({ view: 'train' }), goMarket: () => this.setState({ view: 'market' }),
+      isTrain: s.view === 'train', isMarket: s.view === 'market', goTrain: () => this.setState({ view: 'train' }), goMarket: () => this.setState({ view: 'market', marketLog: null }),
       goSkills: () => this.setState({ view: 'skills' }),
+      // §17 DIRECTEUR SPORTIF : les neuf entrées de l'accueil. Chaque ligne lit l'état
+      // réel du club ; aucune ne promet ce que l'écran d'arrivée ne montre pas.
+      isQuests: s.view === 'quests', goQuests: () => this.setState({ view: 'quests' }),
+      isFinances: s.view === 'finances', goFinances: () => this.setState({ view: 'finances' }),
+      skillOnlyLine: (() => { const inv = this.skillInventory();
+        return inv.length ? inv.filter((k) => k.onName).length + ' équipée(s) · ' + inv.filter((k) => !k.onName).length + ' en réserve' : 'Aucune compétence en réserve'; })(),
+      packHubLine: (() => { const m = this.packPrincipal();
+        return m.name + ' · ' + m.cost + ' jetons · ' + (m.can ? 'ouvrable' : m.why.toLowerCase()); })(),
+      questHubLine: (() => { const q = this.activeQuests(), pr = q.filter((x) => x.prog >= x.goal && !x.claimed).length;
+        return q.length + ' en cours' + (pr ? ' · ' + pr + ' à récupérer' : ''); })(),
+      finHubLine: (() => { const C = this.CAPS(), c2 = s.caps || {}, t = c2.day === this.dayKey() ? (c2.total || 0) : 0;
+        return s.balance.toLocaleString('fr-FR') + ' jetons · gagné aujourd’hui ' + t + ' / ' + C.total; })(),
+      clubHubLine: 'Niveau ' + s.level + ' · staff, stade, centre de formation',
+      // Les sources plafonnées, avec ce qui a déjà été gagné aujourd'hui. Lu dans
+      // CAPS() et dans l'état : le plafond affiché est celui qu'applique earn().
+      finSources: (() => { const C = this.CAPS(), c2 = s.caps || {}, today = c2.day === this.dayKey();
+        const NOMS = { quest: 'Quêtes', mission: 'Missions', prono: 'Pronostics', total: 'Toutes sources' };
+        return Object.keys(NOMS).filter((k) => C[k] != null).map((k) => { const u = today ? (c2[k] || 0) : 0, pct = Math.min(100, u / C[k] * 100);
+          return { label: NOMS[k], value: u + ' / ' + C[k], w: Math.max(2, pct) + '%', bar: pct >= 100 ? '#F5C84C' : '#2ECC71', fg: pct >= 100 ? '#F5C84C' : '#F2F4F7' }; }); })(),
+      finSourcesNote: 'Les matchs ne sont pas plafonnés : un match prend du temps réel. Les ventes de joueurs n’ont pas de plafond propre mais comptent dans le total du jour.',
+      noLedger: !(s.ledger || []).length,
       goOnlineView: () => this.setState({ view: 'online' }),
       onlineHubLine: (() => { const o = this.onlineSummary();
         return o.connected ? 'Journal, ligues, tournois, classements' : 'Journal, ligues, tournois, classements · ' + o.state.toLowerCase(); })(),
@@ -5744,8 +6146,10 @@ class Component extends DCLogic {
       cohHint: (xi.filter((p) => p.pen).length ? xi.filter((p) => p.pen).length + ' hors poste · ' : '') + (s.preset === 'perso' ? 'tactique perso · ' : '') + (xi.filter((p) => p.fresh).length ? xi.filter((p) => p.fresh).length + ' nouveau · ' : '') + 'collectif +' + Math.round((s.cohBonus || 0) * 100) + ' %',
       injuredCount: s.squad.filter((p) => p.inj).length, fitAvg: Math.round(s.squad.reduce((a, p) => a + (p.fit != null ? p.fit : 100), 0) / s.squad.length) + ' %',
       skillCount: this.skillCount().toLocaleString('fr-FR'),
-      market: this.marketList().map((m) => { const pr = this.profile(m), ok = s.balance >= m.price && s.squad.length < 20; return { name: m.name, pos: m.pos, ovr: m.ovr, tier: tierC(m.ovr), sub: pr.age + ' ans · ' + pr.nat + ' · potentiel ' + pr.pot + ' · ' + pr.skills.map((k) => k.name).join(', '), price: m.price.toLocaleString('fr-FR') + ' jetons', ok, btnBg: ok ? ORANGE : '#242A33', btnFg: ok ? ON_ORANGE : '#5E6672',
-        buy: () => { if (!ok) return; this.buzz([30, 30, 60]); this.setState({ balance: s.balance - m.price, squad: s.squad.concat([Object.assign({}, m, { fresh: true })]), market: { week: s.seasonP + s.division * 10, list: this.marketList().filter((x) => x.id !== m.id) } }); } }; }),
+      // §17 Transferts : la règle d'achat est dans le module (buyInfo, buyPlayer), pas ici.
+      market: this.marketList().map((m) => { const pr = this.profile(m), bi = this.buyInfo(m), ok = bi.can; return { name: m.name, pos: m.pos, ovr: m.ovr, tier: tierC(m.ovr), sub: pr.age + ' ans · ' + pr.nat + ' · potentiel ' + pr.pot + ' · ' + pr.skills.map((k) => k.name).join(', '), price: m.price.toLocaleString('fr-FR') + ' jetons', ok, why: bi.why, btnBg: ok ? ORANGE : '#242A33', btnFg: ok ? ON_ORANGE : '#5E6672',
+        buy: () => { const r = this.buyPlayer(m.id); this.setState({ marketLog: r.ok ? m.name + ' rejoint ton effectif pour ' + r.price.toLocaleString('fr-FR') + ' jetons' : r.why }); } }; }),
+      marketCount: this.marketList().length, hasMarketLog: !!s.marketLog, marketLog: s.marketLog || '',
       hasPlayer: !!s.showPlayer, closePlayer: () => this.setState({ showPlayer: null }),
       pl: (() => { const p = s.squad.find((q) => q.id === s.showPlayer); if (!p) return { skills: [], stats: [], hid: [], face: BLANK }; const pr = this.profile(p), tit = inXI.has(p.id), canSell = s.squad.length > 12 && !tit;
         return { name: p.name, pos: p.pos, ovr: p.ovr, tier: tierC(p.ovr), face: this.faceSvg(p, s.kit), id: pr.age + ' ans · ' + pr.nat + ' · ' + pr.foot.toLowerCase() + ' · ' + pr.height + ' cm', pot: 'Potentiel ' + pr.pot, perso: pr.perso, contract: 'Contrat ' + pr.contract + ' an' + (pr.contract > 1 ? 's' : '') + ' · ' + pr.salary + ' jetons/sem.', value: pr.value.toLocaleString('fr-FR') + ' jetons',
@@ -5878,11 +6282,11 @@ class Component extends DCLogic {
         status: inXI.has(p.id) ? 'titulaire (échange)' : 'remplaçant', pick: () => this.assignSlot(selP.slot, p.id) })) : [],
       benchCount: benchList.length,
       bench: benchList.map((p) => ({ ovr: p.ovr, bg: color(p.ovr), tier: tierC(p.ovr), short: p.name.split(' ').slice(1).join(' '), pos: p.pos })),
-      formations: ['4-3-3', '4-4-2', '4-2-3-1', '3-5-2', '5-3-2'].map((f) => ({ label: f, on: s.formation === f, pick: () => this.setState({ formation: f, roles: {}, duties: {}, sel: null }), bg: SEG(s.formation === f).bg, fg: SEG(s.formation === f).fg, border: SEG(s.formation === f).bd })),
+      formations: this.FORMATIONS().map((f) => ({ label: f, on: s.formation === f, pick: () => this.setFormation(f), bg: SEG(s.formation === f).bg, fg: SEG(s.formation === f).fg, border: SEG(s.formation === f).bd })),
       squadCount: s.squad.length,
       squad: s.squad.slice().sort((a, b) => b.ovr - a.ovr).map((p) => ({ pos: p.pos, name: p.name, ovr: p.ovr, bg: color(p.ovr), tag: p.fresh ? 'NOUVEAU' : (inXI.has(p.id) ? 'Titulaire' : benchList.some((b) => b.id === p.id) ? 'Banc' : 'Tribune'), tagColor: p.fresh ? '#2ECC71' : '#8F9C95', weight: inXI.has(p.id) ? 600 : 400 })),
       meters: [['Danger offensif', 55 + M.atk * 7, '#2ECC71'], ['Solidité', 55 + M.def * 7, '#2ECC71'], ['Contrôle', 50 + M.ctrl * 7, '#4FA8E8'], ['Pressing', 40 + M.press * 9, '#F5C84C'], ['Fatigue', 15 + M.fat * 12, '#FF4757']].map(([label, v, c]) => ({ label, h: clamp(v), c })),
-      presets: Object.keys(PRESETS).map((k) => ({ label: PRESETS[k].label, on: s.preset === k, pick: () => this.setState({ preset: k, mentality: PRESETS[k].m, tac: Object.assign({}, t, PRESETS[k].tac) }), bg: s.preset === k ? '#1E232B' : '#16201B', fg: s.preset === k ? '#0C1210' : '#F2F4F7', border: s.preset === k ? 'transparent' : '#26342D' })),
+      presets: Object.keys(PRESETS).map((k) => ({ label: PRESETS[k].label, on: s.preset === k, pick: () => this.applyStyle(k, { formation: false }), bg: s.preset === k ? '#1E232B' : '#16201B', fg: s.preset === k ? '#0C1210' : '#F2F4F7', border: s.preset === k ? 'transparent' : '#26342D' })),
       mentalityLabel: MENT[s.mentality],
       curStyle: s.preset === 'perso' ? 'Tactique perso' : STY[s.preset].name,
       curStyleDesc: s.preset === 'perso' ? 'Tu as modifié des consignes : aucun bonus ou malus de style ne s’applique. Choisis un style pour profiter des avantages contre certains adversaires.' : STY[s.preset].desc,
@@ -5891,43 +6295,10 @@ class Component extends DCLogic {
         name: x.name, fam: x.fam, desc: x.desc, ref: x.ref, form: x.form, on,
         beats: x.beats.length ? x.beats.map((b) => STY[b].name).join(', ') : 'aucun style en particulier', weak: x.weak.length ? x.weak.map((b) => STY[b].name).join(', ') : 'aucun style en particulier',
         border: on ? 'rgba(165,216,96,0.7)' : 'rgba(255,255,255,0.07)', btn: on ? 'Style actif' : 'Appliquer', btnBg: on ? 'rgba(165,216,96,0.12)' : GREEN, btnFg: on ? '#2ECC71' : ON_GREEN, btnBd: on ? 'rgba(165,216,96,0.55)' : 'transparent',
-        pick: () => { this.buzz(15); this.setState({ preset: x.k, mentality: x.m, tac: Object.assign({}, t, x.tac), formation: x.form, roles: {}, duties: {}, sel: null }); } }; }),
-      mentality: MENT.map((l, i) => ({ aria: 'Mentalité ' + l, on: s.mentality === i, pick: () => this.setState({ mentality: i, preset: 'perso' }), bg: i <= s.mentality ? (i < 3 ? '#4FA8E8' : i === 3 ? '#2ECC71' : '#2ECC71') : '#2A313B' })),
-      groups: [
-        { title: 'Avec le ballon', color: '#2ECC71', items: [
-          Object.assign({ label: 'Largeur' }, seg('width', ['Étroite', 'Normale', 'Large'])),
-          Object.assign({ label: 'Tempo' }, seg('tempo', ['Lent', 'Normal', 'Rapide'])),
-          Object.assign({ label: 'Style de passes' }, seg('pass', ['Courtes', 'Mixtes', 'Directes'])),
-          Object.assign({ label: 'Centres' }, seg('cross', ['Rasants', 'Mixtes', 'Aériens'])),
-          Object.assign({ label: 'Jeu dans le dos de la défense' }, seg('behind', ['Non', 'Oui'])),
-          Object.assign({ label: 'Dribbles' }, seg('dribble', ['Normal', 'Plus de dribbles'])),
-          Object.assign({ label: 'Frappes de loin' }, seg('longshot', ['Rarement', 'Souvent'])),
-          Object.assign({ label: 'Patience dans la construction' }, seg('patience', ['Normale', 'Travailler le ballon']))
-        ] },
-        { title: 'Sans le ballon', color: '#5ED6C0', items: [
-          Object.assign({ label: 'Ligne défensive' }, seg('line', ['Basse', 'Normale', 'Haute'])),
-          Object.assign({ label: 'Ligne d’engagement' }, seg('engage', ['Basse', 'Moyenne', 'Haute'])),
-          Object.assign({ label: 'Intensité du pressing' }, seg('press', ['Faible', 'Normale', 'Intense'])),
-          Object.assign({ label: 'Piège du hors-jeu' }, seg('trap', ['Non', 'Oui'])),
-          Object.assign({ label: 'Tacles' }, seg('tackle', ['Prudents', 'Normaux', 'Rugueux']))
-        ] },
-        { title: 'Organisation', color: '#C39BFF', items: [
-          Object.assign({ label: 'Marquage' }, seg('mark', ['En zone', 'Mixte', 'Individuel'])),
-          Object.assign({ label: 'Latéraux' }, seg('fullbacks', ['Restent', 'Montent', 'Inversés'])),
-          Object.assign({ label: 'Surcharger un côté' }, seg('overload', ['Non', 'Gauche', 'Axe', 'Droite'])),
-          Object.assign({ label: 'Pièges de pressing' }, seg('ptrap', ['Aucun', 'Sur les côtés', 'Dans l’axe'])),
-          Object.assign({ label: 'Gagner du temps quand on mène' }, seg('timewaste', ['Non', 'Oui']))
-        ] },
-        { title: 'Transitions', color: '#4FA8E8', items: [
-          Object.assign({ label: 'À la perte du ballon' }, seg('lost', ['Contre-pressing', 'Se replacer'])),
-          Object.assign({ label: 'À la récupération' }, seg('won', ['Contre-attaque', 'Construire'])),
-          Object.assign({ label: 'Relance du gardien' }, seg('gk', ['Courte', 'Longue']))
-        ] },
-        { title: 'Coups de pied arrêtés', color: '#F5C84C', items: [
-          Object.assign({ label: 'Corners' }, seg('corners', ['1er poteau', '2e poteau', 'Point de penalty', 'À la rémise'])),
-          Object.assign({ label: 'Coups francs' }, seg('freekicks', ['Frappe directe', 'Centre', 'Combinaison']))
-        ] }
-      ],
+        pick: () => { this.buzz(15); this.applyStyle(x.k); } }; }),
+      mentality: MENT.map((l, i) => ({ aria: 'Mentalité ' + l, on: s.mentality === i, pick: () => this.setMentality(i), bg: i <= s.mentality ? (i < 3 ? '#4FA8E8' : i === 3 ? '#2ECC71' : '#2ECC71') : '#2A313B' })),
+      groups: this.TAC_GROUPS().map((g) => ({ title: g.title, color: g.color,
+        items: g.items.map(([k, label, opts]) => Object.assign({ label }, seg(k, opts))) })),
       roles: xi.map((p) => {
         const opts = this.ROLE_OPTS(p.line, p.slot, s.formation);
         const cur = roleOf(p), di = ['Défense', 'Soutien', 'Attaque'], cd = s.duties[p.slot] || 'Soutien';
@@ -5938,64 +6309,78 @@ class Component extends DCLogic {
       }),
       collLine: (() => { const c = this.collection(); return c.have + ' / ' + c.total; })(),
       shardLine: (s.shards || 0) + ' fragments · un doublon en rapporte selon sa rareté',
-      // §10 et §28 : LE KIOSQUE. Les quatre packs au même endroit, dans la même forme.
-      // Avant, chacun vivait dans l'écran où on utilise son contenu, donc il fallait
-      // ouvrir trois écrans pour comparer trois prix. L'achat est ici, l'usage reste
-      // là-bas, et chaque carte dit où son contenu finit.
+      // §8 et §9 : LE PACK. Un seul pack principal, mis en avant, avec les deux tables
+      // qui décident de son tirage (familles, puis raretés). Les trois packs ciblés
+      // restent dessous (§19 : ils marchaient), dans la même forme qu'avant.
       //
       // Les probabilités viennent toutes de kiosque(), jamais d'une valeur écrite à la
       // main dans l'écran : ce qui est affiché est exactement ce que le tirage applique.
-      packs: this.kiosque().map((k) => {
-        const TEINTE = { linkfoot: '46,204,113', skill: '195,155,255', train: '92,200,255', coach: '242,198,107' }[k.key];
-        // Le pack de cartes a son animation d'ouverture, les trois autres encaissent
-        // direct. La ligne « dernier tirage » est écrite par le commit lui-même, pas
-        // par l'écran : l'app téléphone l'affiche donc aussi, sans la recoder.
-        const ENCAISSE = (ouvre, commit) => () => {
-          const r = ouvre.call(this, {});
-          if (!r.ok) { this.setState({ packLog: r.why }); return; }
-          commit.call(this, r); this.buzz([30, 30, 60]);
-          this.setState({ packLog: null });   // le refus précédent n'a plus lieu d'être
-        };
-        const OUVRE = {
-          linkfoot: () => this.startPack(this.THE_PACK()),
-          skill: ENCAISSE(this.openSkillPack, this.commitSkillPack),
-          train: ENCAISSE(this.openTrainPack, this.commitTrainPack),
-          coach: ENCAISSE(this.openCoachPack, this.commitCoachPack)
-        }[k.key];
-        return {
-          name: k.name, family: k.family, question: k.question, desc: k.desc,
-          count: k.n, color: k.color, price: k.cost + ' jetons', locked: !k.can,
-          note: k.why, hasNote: !!k.why, noteFg: '#F5C84C',
-          useLabel: k.useLabel,
-          hasGot: !!k.got, gotLine: k.got,
-          goUse: () => this.setState({ view: k.useView }),
-          border: 'rgba(' + TEINTE + ',0.4)',
-          cardBg: 'linear-gradient(105deg, rgba(' + TEINTE + ',0.16) 0%, rgba(' + TEINTE + ',0.04) 45%, #1E232B 80%)',
-          famFg: 'rgb(' + TEINTE + ')', famBg: 'rgba(' + TEINTE + ',0.14)',
-          btnBg: k.can ? ORANGE : '#242A33', btnFg: k.can ? ON_ORANGE : '#5E6672',
-          btnSh: k.can ? '0 6px 18px rgba(46,204,113,0.22), inset 0 1px 0 rgba(255,255,255,0.35)' : 'none',
-          // deux formes de probabilités : par rareté (joueurs, compétences) ou par lot
-          // (séances, causeries). Une seule liste, avec une deuxième ligne optionnelle.
-          odds: k.odds.map((o) => {
-            const pct = o.pct >= 10 ? o.pct.toFixed(0) : o.pct.toFixed(1).replace('.', ',');
-            return { label: o.label, color: o.color, pct: pct + ' %',
+      ...(() => {
+        const pct = (v) => (v >= 10 ? v.toFixed(0) : v.toFixed(1).replace('.', ',')) + ' %';
+        const barre = (v) => Math.max(2, Math.round(Math.pow(v, 0.45) * 11)) + '%';
+        const SOUS = { player: 'une carte du catalogue ; un joueur déjà au club devient des fragments',
+          skill: 'une compétence à équiper sur un joueur compatible',
+          objet: 'séance, carte d’amélioration, causerie, plan tactique' };
+        const cartes = this.kiosque().map((k) => {
+          const TEINTE = { linkfoot: '46,204,113', skill: '195,155,255', train: '92,200,255', coach: '242,198,107' }[k.key];
+          // Le pack principal a son animation d'ouverture, les packs ciblés encaissent
+          // direct. La ligne « dernier tirage » est écrite par le commit lui-même, pas
+          // par l'écran : l'app téléphone l'affiche donc aussi, sans la recoder.
+          const ENCAISSE = (ouvre, commit) => () => {
+            const r = ouvre.call(this, {});
+            if (!r.ok) { this.setState({ packLog: r.why }); return; }
+            commit.call(this, r); this.buzz([30, 30, 60]);
+            this.setState({ packLog: null });   // le refus précédent n'a plus lieu d'être
+          };
+          const OUVRE = {
+            linkfoot: () => this.startPack(this.THE_PACK()),
+            skill: ENCAISSE(this.openSkillPack, this.commitSkillPack),
+            train: ENCAISSE(this.openTrainPack, this.commitTrainPack),
+            coach: ENCAISSE(this.openCoachPack, this.commitCoachPack)
+          }[k.key];
+          return {
+            principal: k.principal,
+            name: k.name, family: k.family, question: k.question, desc: k.desc,
+            count: k.n, color: k.color, price: k.cost + ' jetons', locked: !k.can,
+            note: k.why, hasNote: !!k.why, noteFg: '#F5C84C',
+            useLabel: k.useLabel,
+            hasGot: !!k.got, gotLine: k.got,
+            goUse: () => this.setState({ view: k.useView }),
+            border: 'rgba(' + TEINTE + ',' + (k.principal ? '0.6' : '0.4') + ')',
+            cardBg: 'linear-gradient(105deg, rgba(' + TEINTE + ',' + (k.principal ? '0.22' : '0.16') + ') 0%, rgba(' + TEINTE + ',0.04) 45%, #1E232B 80%)',
+            famFg: 'rgb(' + TEINTE + ')', famBg: 'rgba(' + TEINTE + ',0.14)',
+            btnBg: k.can ? ORANGE : '#242A33', btnFg: k.can ? ON_ORANGE : '#5E6672',
+            btnSh: k.can ? '0 6px 18px rgba(46,204,113,0.22), inset 0 1px 0 rgba(255,255,255,0.35)' : 'none',
+            // la part de chaque famille : seulement pour le pack principal, le seul qui en mélange
+            familles: (k.familles || []).map((f) => ({ label: f.label, pct: pct(f.pct), w: barre(f.pct), sub: SOUS[f.kind] || '' })),
+            // deux formes de probabilités : par rareté (joueurs, compétences) ou par lot
+            // (séances, causeries). Une seule liste, avec une deuxième ligne optionnelle.
+            odds: k.odds.map((o) => ({ label: o.label, color: o.color, pct: pct(o.pct),
               sub: k.kind === 'lots' ? o.rarLabel + ' · ' + o.desc : '',
-              hasSub: k.kind === 'lots',
-              w: Math.max(2, Math.round(Math.pow(o.pct, 0.45) * 11)) + '%' };
-          }),
-          open: () => { if (!k.can) { this.setState({ packLog: k.why }); return; } OUVRE(); }
+              hasSub: k.kind === 'lots', w: barre(o.pct) })),
+            open: () => { if (!k.can) { this.setState({ packLog: k.why }); return; } OUVRE(); }
+          };
+        });
+        const main = cartes.filter((x) => x.principal), m = this.packPrincipal();
+        return {
+          packMain: main, packsCibles: cartes.filter((x) => !x.principal),
+          kiosqueLine: m.can ? 'Ouvrable maintenant · solde ' + s.balance + ' jetons' : m.why,
+          kiosqueFg: m.can ? '#2ECC71' : '#F5C84C',
+          ciblesLine: 'Pour viser une seule famille quand tu sais ce qui te manque. Ils ne contiennent rien que le pack principal ne puisse donner ; leurs taux sont affichés sur chaque carte.'
         };
-      }),
-      kiosqueLine: (() => { const q = this.kiosqueSummary();
-        return q.n + ' packs · ' + (q.open ? q.open + ' ouvrable' + (q.open > 1 ? 's' : '') + ' maintenant' : 'aucun ouvrable, il te manque des jetons'); })(),
+      })(),
       hasPackLog: !!s.packLog, packLog: s.packLog || '',
       // Les deux renvois : depuis Compétences et depuis Entraînement vers le kiosque.
       // Ils annoncent le prix, pour ne pas avoir à changer d'écran pour le connaître.
       goKiosque: () => this.setState({ view: 'packs', packLog: null }),
-      kiosqueSkill: (() => { const k = this.kiosque().find((x) => x.key === 'skill');
-        return k.name + ' · ' + k.cost + ' jetons' + (k.can ? '' : ' · ' + k.why); })(),
-      kiosqueTrain: (() => { const t = this.kiosque().find((x) => x.key === 'train'), c = this.kiosque().find((x) => x.key === 'coach');
-        return t.name + ' ' + t.cost + ' · ' + c.name + ' ' + c.cost + ' jetons'; })(),
+      // Ils annoncent d'abord le pack principal et la part de la famille qui sert ici,
+      // puis le pack ciblé : les deux chiffres viennent des tables du tirage.
+      kiosqueSkill: (() => { const m = this.packPrincipal(), k = this.kiosque().find((x) => x.key === 'skill');
+        const f = m.familles.find((x) => x.kind === 'skill');
+        return m.name + ' ' + m.cost + ' jetons, ' + Math.round(f.pct) + ' % de compétences · ' + k.name + ' ' + k.cost + ' jetons, 100 %'; })(),
+      kiosqueTrain: (() => { const m = this.packPrincipal(), t = this.kiosque().find((x) => x.key === 'train'), c = this.kiosque().find((x) => x.key === 'coach');
+        const f = m.familles.find((x) => x.kind === 'objet');
+        return m.name + ' ' + m.cost + ', ' + Math.round(f.pct) + ' % d’objets · ' + t.name + ' ' + t.cost + ' · ' + c.name + ' ' + c.cost + ' jetons'; })(),
       // §24 : l'écran Compétences du directeur sportif. Chaque compétence dit
       // ce qu'elle exige et qui peut la porter (§15).
       isSkills: s.view === 'skills',
@@ -6009,7 +6394,11 @@ class Component extends DCLogic {
         can: !!(k.onName || k.fitCount),
         btnBg: k.onName ? 'rgba(255,255,255,0.06)' : k.fitCount ? ORANGE : '#242A33',
         btnFg: k.onName ? '#F2F4F7' : k.fitCount ? ON_ORANGE : '#5E6672',
-        act: () => { if (k.onName) this.unequipSkill(k.uid); else if (k.fitCount) this.equipSkill(k.uid, k.fits[0].id); }
+        act: () => { if (k.onName) this.unequipSkill(k.uid); else if (k.fitCount) this.equipSkill(k.uid, k.fits[0].id); },
+        // §22 c'est le directeur sportif qui choisit le porteur, parmi les compatibles
+        hasChoice: !k.onName && k.fitCount > 1,
+        choices: k.onName ? [] : k.fits.slice(1, 7).map((f) => ({ label: 'Sur ' + f.name.split(' ').slice(1).join(' ') + ' · ' + f.pos + ' ' + f.ovr,
+          pick: () => this.equipSkill(k.uid, f.id) }))
       })),
       hasSkills: this.skillInventory().length > 0, noSkills: this.skillInventory().length === 0,
       skillEmpty: 'Aucune compétence en réserve. Ouvre un ' + this.THE_PACK().name + ' pour en obtenir.',
@@ -6035,26 +6424,38 @@ class Component extends DCLogic {
       showBurst: !!pk && pk.burst, particles,
       fxGlow: FX.glow, fxRay: FX.ray, fxText: FX.text,
       raysOpacity: pk ? (pk.phase === 'charge' ? 0.35 + pk.taps * 0.2 : 1) : 0,
-      fxPack: pk ? pk.def.color : '', packName: pk ? pk.def.name.replace('Pack ', '') : '', packCountLabel: pk ? pk.def.n + ' JOUEURS' : '',
+      fxPack: pk ? pk.def.color : '', packName: pk ? pk.def.name.replace('Pack ', '') : '', packCountLabel: pk ? pk.def.n + ' TIRAGES' : '',
       packCls: pk ? (pk.taps >= 2 ? 'lf-shake-hard' : 'lf-shake') : '',
       chargeHint: pk ? ['TOUCHE POUR OUVRIR', 'ENCORE !', 'ENCORE UNE FOIS !'][Math.min(2, pk.taps)] : '',
       tapPack: () => this.tapPack(),
-      walkBanner: best ? (best.ovr >= 85 ? 'LÉGENDE !' : best.ovr >= 80 ? 'WALKOUT !' : 'GROSSE PIOCHE !') : '',
-      bestBg: best ? color(best.ovr) : '', bestPos: best ? best.pos : '', bestOvr: best ? best.ovr : '', bestName: best ? best.name : '',
-      walkPos: !!pk && pk.walk >= 1, walkOvr: !!pk && pk.walk >= 2, walkName: !!pk && pk.walk >= 3,
+      walkBanner: best ? (bestRang >= 5 ? 'LÉGENDAIRE !' : bestRang >= 4 ? 'GOLD !' : 'GROSSE PIOCHE !') : '',
+      // Chaque famille se montre avec ce qui la décrit : poste et note pour un joueur,
+      // catégorie et puissance pour une compétence, famille et icône pour un objet.
+      bestBg: best ? (best.kind === 'player' || best.kind === 'shards' ? color(best.ovr) : best.color) : '',
+      bestPos: best ? (best.kind === 'skill' ? best.skill.cat : best.kind === 'objet' ? (best.objet.famille === 'tactique' ? 'TACTIQUE' : 'ENTRAÎNEMENT') : best.pos) : '',
+      bestOvr: best && best.kind !== 'objet' ? best.ovr : '', bestName: best ? best.name : '',
+      walkPos: !!pk && pk.walk >= 1, walkOvr: !!pk && pk.walk >= 2 && !!best && best.kind !== 'objet',
+      walkIcon: !!pk && pk.walk >= 2 && !!best && best.kind === 'objet', walkName: !!pk && pk.walk >= 3,
       revealTitle: pk ? pk.def.name + ' ouvert !' : '',
-      // §28 : la révélation. Un lot peut être un joueur, une compétence ou des fragments :
-      // chacun se montre avec ce qui le décrit, pas avec les champs d'un autre.
+      // §28 : la révélation. Un lot peut être un joueur, une compétence, un objet ou des
+      // fragments : chacun se montre avec ce qui le décrit, pas avec les champs d'un autre.
+      // Un objet n'affiche aucun chiffre en grand : il n'a pas de note, et en inventer
+      // une serait une statistique décorative. Il dit ce qu'il fait, lu dans ses champs.
       reveal: pk ? pk.got.map((g, i) => {
-        const isSkill = g.kind === 'skill';
-        const face = isSkill ? BLANK : this.faceSvg({ id: g.id || 1 }, s.kit);
-        return { ovr: g.ovr, pos: isSkill ? g.skill.cat : g.pos, name: g.name,
-          short: isSkill ? g.skill.rarLabel : g.name.split(' ').slice(1).join(' '),
-          face, isSkill, isPlayer: !isSkill,
+        const isSkill = g.kind === 'skill', isObjet = g.kind === 'objet', isPlayer = !isSkill && !isObjet;
+        const rang = Math.max(0, this.RARITY().findIndex((x) => x.id === g.rar));
+        const face = isPlayer ? this.faceSvg({ id: g.id || 1 }, s.kit) : BLANK;
+        return { ovr: isObjet ? '' : g.ovr,
+          pos: isSkill ? g.skill.cat : isObjet ? (g.objet.famille === 'tactique' ? 'TACTIQUE' : 'ENTRAÎN.') : g.pos,
+          name: g.name,
+          short: isSkill ? g.skill.rarLabel : isObjet ? g.label : g.name.split(' ').slice(1).join(' '),
+          face, isSkill, isObjet, isPlayer,
           sub: isSkill ? 'puissance ' + g.skill.power + ' · ' + g.skill.rarLabel
+            : isObjet ? g.label + ' · ' + this.objetCourt(g.objet)
             : g.dup ? 'doublon · +' + g.shards + ' fragments' : g.label + ' · ' + g.pos,
-          stats: isSkill ? [] : this.cardStats({ id: g.id, pos: g.pos, ovr: g.ovr }),
-          bg: isSkill ? g.color : color(g.ovr), glow: glowOf(isSkill ? Math.min(99, 60 + g.skill.power / 3) : g.ovr),
+          stats: isPlayer ? this.cardStats({ id: g.id, pos: g.pos, ovr: g.ovr }) : [],
+          bg: isPlayer ? color(g.ovr) : g.color,
+          glow: glowOf(isSkill ? Math.min(99, 60 + g.skill.power / 3) : isObjet ? 60 + rang * 6 : g.ovr),
           delay: (0.15 + i * 0.22) + 's' };
       }) : [],
       closePack: () => this.closePack(),
