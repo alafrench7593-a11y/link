@@ -194,6 +194,13 @@ function makeEngine(cfg) {
     const rt = (p, d) => { if (p) p.rat = cl(p.rat + d, 3, 10); };
     const clockLabel = (c, h) => { const m = Math.floor(c / 60), hh = h || W.half; if (hh === 1 && m >= 45) return "45+" + (m - 44) + "'"; if (hh === 2 && m >= 90) return "90+" + (m - 89) + "'"; return Math.max(1, m + 1) + "'"; };
     const mark = (e) => curEv.push(e);
+    // §59 la passerelle vers un rendu externe (Unreal Engine 5, docs/passerelle-ue5.md) : ce
+    // que chaque joueur FAIT, horodaté, pour que le rendu choisisse le bon geste. Enregistré
+    // seulement si cfg.pont est demandé, sans rien tirer au hasard ni rien changer au monde :
+    // avec ou sans, le match est le même au chiffre près (test/passerelle.js).
+    const PONT = !!(cfg && cfg.pont);
+    let curAc = [];
+    const act = PONT ? (p, a, d) => { curAc.push(Object.assign({ t: W.t, c: p ? p.code : -1, a }, d || null)); } : () => {};
     const com = (text) => { W.com = text; W.comT = W.t; mark({ k: 'com', text }); };
     const banner = (text, sub, color, dur) => mark({ k: 'banner', text, sub: sub || '', color: color || '#F2F4F7', dur: dur || 1.6 });
     const possPct = () => { const tot = W.pt.H + W.pt.A; return tot ? Math.round(W.pt.H / tot * 100) : 50; };
@@ -365,7 +372,7 @@ function makeEngine(cfg) {
       const f = kick(p, tx, ty, 'shot', null, { v, apex: head ? 0.6 : res === 'miss' && !post ? 1.6 : V2 ? V2.apex : 0.7 });
       Object.assign(f, { res, shooter: p, blocker: est.blocker, post, head, xg, fk: !!fk, orig, sv, dist: 105 - a, gkOut: gkOutNow, held: W.t - p.rcvT, nd: nearestOpp(p).d });
       if (res === 'goal' && sv) W.sv[sv].g++;
-      if (res !== 'block' && !gk.red) { W.dive = { c: gk.code, dir: Math.sign((tx - gk.x) * (s === 'H' ? 1 : -1)) || 1, t0: W.t, dur: f.dur + 0.2 }; }
+      if (res !== 'block' && !gk.red) { W.dive = { c: gk.code, dir: Math.sign((tx - gk.x) * (s === 'H' ? 1 : -1)) || 1, t0: W.t, dur: f.dur + 0.2 }; act(gk, 'plongeon', { dir: W.dive.dir, dur: W.dive.dur, x: tx, y: ty, issue: res }); }
       com((head ? 'Tête de ' : fk ? 'Coup franc direct de ' : (V2 ? V2.l.charAt(0).toUpperCase() + V2.l.slice(1) : 'Frappe') + ' de ') + p.short + ' !');
       key(res === 'goal' ? 100 : 30 + xg * 170 + (res === 'save' ? 10 : 0), s, 'shot');
       rt(p, res === 'save' ? 0.05 : res === 'miss' ? (xg > 0.3 ? -0.2 : -0.02) : 0);
@@ -377,7 +384,8 @@ function makeEngine(cfg) {
       if (aerial) { dur = 0.45 + d / (kind === 'cross' || kind === 'corner' || kind === 'fkc' ? 19 : 21); if (!(opt && opt.apex)) apex = cl(d / 4.2, 2.2, 13); }
       else { const v = opt && opt.v ? opt.v : cl(10.5 + d * 0.3, 11, 22); dur = Math.max(0.15, d / v); }
       W.dirty = true;
-      W.fl = { x0: b.x, y0: b.y, x1: tx, y1: ty, t0: W.t, dur, kind, from: p, to, aerial, apex, v: d / Math.max(0.1, dur), u: 0, offside: null };
+      W.fl = { x0: b.x, y0: b.y, z0: b.z, x1: tx, y1: ty, t0: W.t, dur, kind, from: p, to, aerial, apex, v: d / Math.max(0.1, dur), u: 0, offside: null, cpa: W.cpaEnCours || null };
+      act(p, 'ballon', { fl: W.fl });
       W.owner = null; W.last = p.s; if (p) { p.carry = null; }
       return W.fl;
     };
@@ -399,7 +407,8 @@ function makeEngine(cfg) {
       const bad = cl(0.018 + (70 - tq) * 0.0072 + pr * (inBox(aOf(q.s, q.y), q.x) ? 0.08 : 0.03), 0.01, 0.4);
       if (f && f.from && f.from.s === q.s) { W.st[q.s].pc++; rt(f.from, 0.004); W.lastPass = { from: f.from, to: q, t: W.t, kind: f.kind, back: aOf(q.s, q.y) < aOf(q.s, f.y0) - 4 }; }
       if (R() < bad) {
-        W.fl = null; W.owner = null; const b = W.ball, ang = R() * 6.283; b.vx = Math.cos(ang) * 3.5 + (f ? (f.x1 - f.x0) / f.dur * 0.15 : 0); b.vy = Math.sin(ang) * 3.5 + (f ? (f.y1 - f.y0) / f.dur * 0.15 : 0); b.z = 0; W.last = q.s; q.beat = 0.35; return;
+        W.fl = null; W.owner = null; const b = W.ball, ang = R() * 6.283; b.vx = Math.cos(ang) * 3.5 + (f ? (f.x1 - f.x0) / f.dur * 0.15 : 0); b.vy = Math.sin(ang) * 3.5 + (f ? (f.y1 - f.y0) / f.dur * 0.15 : 0); b.z = 0; W.last = q.s; q.beat = 0.35;
+        act(q, 'controle', { niveau: 'rate', haut: !!(f && f.aerial), presse: no.d < 2 }); return;
       }
       gain(q, 'pass');
       // §23 le contrôle orienté et le contrôle d'élite s'ouvrent au joueur technique,
@@ -427,14 +436,16 @@ function makeEngine(cfg) {
       const tech1 = q.pas * 0.6 + q.dri * 0.2 + q.dec * 0.2;
       const pOne = cl((tech1 - 62) * 0.009, 0, 0.2) * (no.d < 3 ? 1.8 : 1) * (lvl === 'long' ? 0 : 1) * (q.line === 'GB' ? 0 : 1);
       if (R() < pOne) { q.oneTouch = true; q.ctrlT = W.t; q.nextDec = W.t; }
+      act(q, 'controle', { niveau: lvl, une_touche: !!q.oneTouch, haut: !!(f && f.aerial), presse: no.d < 2 });
       if (inBox(aOf(q.s, q.y), q.x)) { key(14, q.s, 'box'); W.cnt.boxRcv = (W.cnt.boxRcv || 0) + 1; W.cnt['boxRcv_' + q.s] = (W.cnt['boxRcv_' + q.s] || 0) + 1; }
     };
     const intercept = (q) => {
       const f = W.fl; W.fl = null; if (f && f.from) rt(f.from, -0.03); rt(q, 0.05); W.st[q.s].tk++;
+      act(q, 'interception', { de: f && f.from ? f.from.code : -1 });
       gain(q, 'int'); com('Interception de ' + q.short);
     };
     const offsideCall = (q) => {
-      W.st[q.s].off++; banner('HORS-JEU', q.short, '#F2F4F7', 1.4); com('Hors-jeu de ' + q.short + ', le drapeau se lève'); logE('Hors-jeu de ' + q.name + ' signalé', '#9AA3B0', 'O', q.s);
+      W.st[q.s].off++; act(q, 'hors_jeu'); banner('HORS-JEU', q.short, '#F2F4F7', 1.4); com('Hors-jeu de ' + q.short + ', le drapeau se lève'); logE('Hors-jeu de ' + q.name + ' signalé', '#9AA3B0', 'O', q.s);
       setPiece('fk', OT[q.s], q.x, q.y, 'off');
     };
     const flightStep = () => {
@@ -467,7 +478,7 @@ function makeEngine(cfg) {
       if (!gk.red && (isCross || f.kind === 'long' || f.kind === 'gkl' || f.kind === 'through')) {
         const la = aOf(dS, L.y);
         if (la < 7.5 && Math.abs(L.x - 34) < 11 && hy(gk.x - L.x, gk.y - L.y) < 5.5) {
-          if (R() < cl(0.5 + (gk.han - 65) / 90, 0.3, 0.8)) { rt(gk, 0.08); com(gk.short + ' sort et capte le ballon'); gkHold(gk); return true; }
+          if (R() < cl(0.5 + (gk.han - 65) / 90, 0.3, 0.8)) { rt(gk, 0.08); act(gk, 'prise_aerienne'); com(gk.short + ' sort et capte le ballon'); gkHold(gk); return true; }
         }
       }
       const cands = all().filter((q) => q.fall <= 0 && q.line !== 'GB' && hy(q.x - L.x, q.y - L.y) < 2.6);
@@ -476,6 +487,7 @@ function makeEngine(cfg) {
       let r = R() * w.reduce((a, v) => a + v, 0), win = cands[0];
       for (let k = 0; k < cands.length; k++) { r -= w[k]; if (r <= 0) { win = cands[k]; break; } }
       const b = W.ball; b.x = L.x; b.y = L.y; b.z = 1.8;
+      act(win, 'duel_aerien', { autres: cands.filter((q) => q !== win).map((q) => q.code) });
       if (R() < 0.035) { const opp = cands.find((q) => q.s !== win.s); if (opp) { W.fl = null; const boxD = inBox(aOf(kS, L.y), L.x); if (boxD && R() < 0.65) { const at = cands.find((q) => q.s === kS), df = cands.find((q) => q.s === dS); if (at && df) { foul(at, df, 'air'); return true; } } foul(opp, win, 'air'); return true; } }
       if (isCross) {
         if (win.s === kS) { const a = aOf(win.s, win.y), contested = cands.some((q) => q.s === dS && hy(q.x - win.x, q.y - win.y) < 1.5); if (contested && R() < 0.5) { b.vx = (R() - 0.5) * 8; b.vy = (R() - 0.5) * 8; b.z = 1.2; b.vz = 1; W.owner = null; W.last = win.s; com('Duel aérien, le ballon retombe dans la surface'); return true; } if (a > 86 && Math.abs(win.x - 34) < 15) { W.owner = null; const tech2 = win.dri * 0.5 + win.sht * 0.5; const foot = b.z < 2.1 && R() < cl((tech2 - 60) * 0.013, 0, 0.45);   // §23 reprise de volée au lieu de la tête
@@ -511,17 +523,19 @@ function makeEngine(cfg) {
         if (f.xg > 0.22 && !f.pen) logE('Grosse parade de ' + gk.name + ' devant ' + p.name, s === 'H' ? '#BDEBC9' : '#F2B6B6', 'save', s);
         // §23 Mains sûres capte au lieu de repousser, Réflexes félins sort les frappes les plus dures
         const r = R(), cp = cl(0.44 + (gk.han - 65) / 70 - f.xg * 0.25 + TR(gk, 'hands') * 0.12, 0.2, 0.82);
-        if (r < cp) { gkHold(gk); return; }
-        if (r < cp + (1 - cp) * 0.55) { com('Le gardien détourne en corner'); outBehind(o, b.x); return; }
+        const geste = dbl ? 'double' : f.xg > 0.35 || (TR(gk, 'gk') > 0.5 && f.xg > 0.18) ? 'reflexe' : f.sv === 'lob' ? 'detente' : f.sv === 'rasSol' || f.sv === 'ferme' ? 'pied' : f.head ? 'claquette' : 'parade';
+        if (r < cp) { act(gk, 'arret', { geste, issue: 'capte', tireur: p.code }); gkHold(gk); return; }
+        if (r < cp + (1 - cp) * 0.55) { act(gk, 'arret', { geste, issue: 'corner', tireur: p.code }); com('Le gardien détourne en corner'); outBehind(o, b.x); return; }
+        act(gk, 'arret', { geste, issue: 'repousse', tireur: p.code });
         b.vx = (R() - 0.5) * 9; b.vy = (s === 'H' ? 1 : -1) * (4 + R() * 5); b.z = 0.3; W.owner = null; W.last = o; return;
       }
       if (f.res === 'miss') {
-        if (f.post) { banner('POTEAU !', p.short, '#FFE14D', 1.4); com('Sur le poteau !'); b.vx = (R() - 0.5) * 8; b.vy = (s === 'H' ? 1 : -1) * (5 + R() * 6); W.owner = null; W.last = s; return; }
+        if (f.post) { act(p, 'poteau'); banner('POTEAU !', p.short, '#FFE14D', 1.4); com('Sur le poteau !'); b.vx = (R() - 0.5) * 8; b.vy = (s === 'H' ? 1 : -1) * (5 + R() * 6); W.owner = null; W.last = s; return; }
         banner('À CÔTÉ', p.short, '#F2F4F7', 1.1); com(p.short + ' manque le cadre'); setPiece('gk', o, b.x, b.y); return;
       }
       const bl = f.blocker;
       if (aOf(s, bl.y) > 92 && Math.abs(bl.x - 34) < 9 && R() < 0.012) { ownGoal(bl, p); return; }
-      rt(bl, 0.06); W.st[o].tk++; banner('CONTRÉ !', bl.short, '#F2F4F7', 1.1); com('Frappe contrée par ' + bl.short);
+      rt(bl, 0.06); W.st[o].tk++; act(bl, 'contre', { tireur: p.code }); banner('CONTRÉ !', bl.short, '#F2F4F7', 1.1); com('Frappe contrée par ' + bl.short);
       if (aOf(s, bl.y) > 95 && R() < 0.35) { outBehind(o, bl.x); return; }
       b.x = bl.x; b.y = bl.y; b.vx = (R() - 0.5) * 11; b.vy = (s === 'H' ? 1 : -1) * (2 + R() * 7) * (R() < 0.35 ? -1 : 1); b.z = 0; W.owner = null; W.last = o;
     };
@@ -531,6 +545,7 @@ function makeEngine(cfg) {
       com('Malheureux ' + bl.short + ' : la frappe de ' + shooter.short + ' est déviée dans son propre but !');
       logE('BUT ! ' + bl.name + ' contre son camp, frappe déviée de ' + shooter.name + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#48E08B' : '#FF4757', 'G', s, { by: null, as: null, csc: bl.name });
       key(100, s, 'goal'); W.celK = 'calme'; W.cel = W.t + 3.2; W.celS = s; W.scorer = shooter; W.owner = null; W.fl = null;
+      act(bl, 'but', { csc: true, tireur: shooter.code }); act(shooter, 'celebration', { genre: W.celK, fin: W.cel });
     };
     const goalScored = (p, f) => {
       const s = p.s, o = OT[s]; W.score[s]++;
@@ -572,6 +587,7 @@ function makeEngine(cfg) {
       logE('BUT ! ' + p.name + ' ' + how + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#48E08B' : '#FF4757', 'G', s, { by: p.name, as: as ? as.name : null });
       key(100, s, 'goal');
       W.celK = pickCeleb(p, s); W.cel = W.t + (W.celK === 'ballon' ? 1.9 : W.celK === 'calme' ? 3.2 : 4.4); W.celS = s; W.scorer = p; W.owner = null;
+      act(p, 'but', { csc: false }); act(p, 'celebration', { genre: W.celK, fin: W.cel });
       com(CELEB_TXT[W.celK].replace('{p}', p.short));
     };
     // ---------- coups de pied arrêtés ----------
@@ -624,6 +640,7 @@ function makeEngine(cfg) {
       W.set = null; W.owner = p; p.ctrlT = W.t; p.rcvT = W.t; W.last = s;
       if (W.poss !== s) { W.poss = s; W.possT = W.t; TM[s].counterUntil = 0; TM[o].cpressUntil = 0; if (TM[o].tac.mark >= 1) assignMarks(TM[o]); }
       const k = S.kind;
+      W.cpaEnCours = k;
       if (k === 'pen') {
         const gk = TM[o].ps[0]; W.st[s].sh++; W.st[s].xg += 0.78;
         const pg = cl(0.78 + (p.sht - 70) * 0.004 - ((gk.red ? 30 : gk.ref) - 70) * 0.004, 0.62, 0.92), r = R();
@@ -632,7 +649,7 @@ function makeEngine(cfg) {
         const side = R() < 0.5 ? -1 : 1, gy = yOf(s, PL), sgn = s === 'H' ? -1 : 1;
         const tx = res === 'miss' ? 34 + side * (4 + R() * 1.5) : 34 + side * (1.6 + R() * 1.6), ty = res === 'save' ? gy - sgn * 0.6 : gy + sgn * (res === 'goal' ? 1.2 : 2.5);
         const f = kick(p, tx, ty, 'shot', null, { v: 23, apex: res === 'miss' ? 1.8 : 0.5 }); Object.assign(f, { res, shooter: p, head: false, xg: 0.78, pen: true });
-        if (!gk.red) W.dive = { c: gk.code, dir: (res === 'save' ? side : -side) * (s === 'H' ? 1 : -1), t0: W.t, dur: f.dur + 0.2 };
+        if (!gk.red) { W.dive = { c: gk.code, dir: (res === 'save' ? side : -side) * (s === 'H' ? 1 : -1), t0: W.t, dur: f.dur + 0.2 }; act(gk, 'plongeon', { dir: W.dive.dir, dur: W.dive.dur, x: tx, y: ty, issue: res, penalty: true }); }
         if (res === 'save') { rt(gk, 0.5); logE('Penalty arrêté par ' + gk.name + ' !', s === 'H' ? '#F2B6B6' : '#BDEBC9', 'save', s); }
         if (res === 'miss') logE(p.name + ' rate son penalty !', '#F2B6B6', 'miss', s);
         com(p.short + ' s’élance…'); return;
@@ -921,6 +938,7 @@ function makeEngine(cfg) {
       if (T.shout === 'calme') { py *= 0.75; prr *= 0.7; }
       let card = null; const r = R(); if (r < prr) card = 'R'; else if (r < prr + py) card = 'Y';
       if (card === 'Y') { fr.yc++; W.st[o].yc++; rt(fr, -0.35); if (fr.yc >= 2) card = 'R2'; }
+      act(fr, 'faute', { victime: vic.code, cause: cause || null, carton: card, penalty: !!pen, chute: 1.3 });
       vic.fall = 1.3; W.owner = null; W.fl = null; W.last = o;
       if (card) mark({ k: 'card', c: fr.code, col: card === 'Y' ? '#FFD23F' : '#FF4757' });
       banner(pen ? 'PENALTY !' : card === 'Y' ? 'CARTON JAUNE' : card ? 'CARTON ROUGE' : 'FAUTE', card ? fr.short : 'Coup franc pour ' + club(s), card === 'Y' ? '#FFD23F' : card ? '#FF4757' : pen ? '#FF4757' : '#F2F4F7', pen || card ? 2 : 1.2);
@@ -960,6 +978,8 @@ function makeEngine(cfg) {
       for (let i = 0; i < pool.length; i++) { r2 -= w[i]; if (r2 <= 0) return pool[i]; }
       return pool[0];
     };
+    const TACLE_TXT = { glisse: 'Tacle glissé de ', interception: 'Interception de ', tacle: 'Tacle de ' };
+    const genreTacle = (d) => (TR(d, 'tackle') > 0.4 && R() < 0.45 ? 'glisse' : TR(d, 'press') > 0.4 && R() < 0.4 ? 'interception' : 'tacle');
     const duels = () => {
       const c = W.owner; if (!c || W.set || c.line === 'GB') return;
       const s = c.s, o = OT[s];
@@ -974,15 +994,19 @@ function makeEngine(cfg) {
           const pd = cl(pDrib(c, bl) - g.cost * 0.5 + g.gain * 0.22, 0.1, 0.9);
           W.cnt = W.cnt || {}; W.cnt.drib = (W.cnt.drib || 0) + 1; W.cnt['g' + g.tier] = (W.cnt['g' + g.tier] || 0) + 1;
           if (R() < pd) { W.cnt.dribOk = (W.cnt.dribOk || 0) + 1; bl.beat = 1.1 + g.gain * 0.5; c.beatT = W.t; c.lastGest = g.n; rt(c, 0.07 + g.gain * 0.04); rt(bl, -0.03); mark({ k: 'skill', c: c.code, tier: g.tier });
+            act(c, 'dribble', { geste: g.n, palier: g.tier, contre: bl.code, reussi: true });
             com(c.short + (g.tier >= 4 ? ' : ' + g.lab + ' sur ' + bl.short + ' !' : g.tier >= 3 ? ' élimine ' + bl.short + ' d’une ' + g.lab : ' élimine ' + bl.short + ' !'));
             // §23 un geste de haut palier mérite sa ligne dans le rapport : il reste rare,
             // donc il ne noie pas le fil des événements.
             if (g.tier >= 4) logE(c.name + ' : ' + g.lab + ' sur ' + bl.name, s === 'H' ? '#BDEBC9' : '#F2B6B6', 'skill', s);
             if (aOf(s, c.y) > 66) key(12 + g.tier * 2, s, 'drib'); c.vx *= 1.1 + g.gain * 0.08; c.vy *= 1.1 + g.gain * 0.08; }
           else { const pf = (inBox(aOf(s, c.y), c.x) ? 0.15 : 1) * 0.17 * [0.65, 1, 1.45][TM[o].tac.tackle] * (TM[o].shout === 'calme' ? 0.75 : 1) * (bl.yc >= 1 ? 0.14 : 1);
+            act(c, 'dribble', { geste: g.n, palier: g.tier, contre: bl.code, reussi: false });
             if (R() < pf) { foul(bl, c, 'drib'); return; }
             rt(bl, 0.07); rt(c, -0.04); W.st[o].tk++;
-            com((TR(bl, 'tackle') > 0.4 && R() < 0.45 ? 'Tacle glissé de ' : TR(bl, 'press') > 0.4 && R() < 0.4 ? 'Interception de ' : 'Tacle de ') + bl.short + ', ballon récupéré');
+            const genre = genreTacle(bl);
+            act(bl, 'tacle', { genre, cible: c.code, reussi: true });
+            com(TACLE_TXT[genre] + bl.short + ', ballon récupéré');
             if (R() < 0.7) gain(bl, 'tackle'); else { W.owner = null; const b = W.ball; b.vx = (R() - 0.5) * 8; b.vy = (R() - 0.5) * 8; W.last = o; }
             c.beat = 0.5; }
           return;
@@ -992,7 +1016,7 @@ function makeEngine(cfg) {
       if (!gk.red && gk.fall <= 0 && W.t >= gk.tkT && hy(gk.x - c.x, gk.y - c.y) < 2.2 && inBox(aOf(s, c.y), c.x)) {
         gk.tkT = W.t + 0.4;
         const r = R(), pw = cl(0.5 + (gk.div - c.dri) / 90, 0.25, 0.8);
-        if (r < pw) { rt(gk, 0.15); com(gk.short + ' plonge dans les pieds de ' + c.short + ' !'); banner('ARRÊT !', gk.short, '#F2F4F7', 1.2); gkHold(gk); return; }
+        if (r < pw) { rt(gk, 0.15); act(gk, 'sortie_pieds', { cible: c.code, reussi: true }); com(gk.short + ' plonge dans les pieds de ' + c.short + ' !'); banner('ARRÊT !', gk.short, '#F2F4F7', 1.2); gkHold(gk); return; }
         if (r < pw + 0.008) { foul(gk, c, 'gk'); return; }
       }
       for (const d of LV[o]) {
@@ -1006,8 +1030,9 @@ function makeEngine(cfg) {
         const pWin = cl(0.35 + (d.def + TM[o].bonus - Math.max(c.dri, c.phy * 0.92) - TM[s].bonus) / 80 + (backToGoal ? 0.08 : 0) + (fresh ? 0.05 : 0) + TR(d, 'tackle') * 0.07 - TR(c, 'drib') * 0.05, 0.12, 0.72);
         const pF = (ownBox ? 0.08 : 1) * 0.135 * [0.6, 1, 1.45][TM[o].tac.tackle] * (TM[o].shout === 'calme' ? 0.75 : 1) * (pWin < 0.3 ? 1.3 : 1) * (d.yc >= 1 ? 0.14 : 1);
         const r = R();
-        if (r < pWin) { rt(d, 0.07); rt(c, -0.04); W.st[o].tk++; com((TR(d, 'tackle') > 0.4 && R() < 0.45 ? 'Tacle glissé de ' : TR(d, 'press') > 0.4 && R() < 0.4 ? 'Interception de ' : 'Tacle de ') + d.short + ' !'); if (R() < 0.72) gain(d, 'tackle'); else { W.owner = null; const b = W.ball; b.vx = (R() - 0.5) * 9; b.vy = (R() - 0.5) * 9; W.last = o; } return; }
+        if (r < pWin) { rt(d, 0.07); rt(c, -0.04); W.st[o].tk++; const genre = genreTacle(d); act(d, 'tacle', { genre, cible: c.code, reussi: true }); com(TACLE_TXT[genre] + d.short + ' !'); if (R() < 0.72) gain(d, 'tackle'); else { W.owner = null; const b = W.ball; b.vx = (R() - 0.5) * 9; b.vy = (R() - 0.5) * 9; W.last = o; } return; }
         if (r < pWin + pF) { foul(d, c, 'tackle'); return; }
+        act(d, 'tacle', { genre: 'tacle', cible: c.code, reussi: false });
         d.beat = 0.7; return;
       }
     };
@@ -1465,11 +1490,38 @@ function makeEngine(cfg) {
     };
     // ---------- enregistrement ----------
     let pend = null, lastEnd = -99, shown = 0;
+    // L'image de la passerelle, en plus de l'image ordinaire : pour chaque joueur (code 0 à 21)
+    // l'orientation du corps (milliradians, repère du moteur), l'énergie, les états (au sol,
+    // déséquilibré, porteur, exclu, sprint voulu, presse, appel), l'intention de l'IA et sa
+    // cible ; les actions du pas ; une coupe quand le moteur replace tout le monde.
+    const INTENTIONS = ['HOLD', 'SUPPORT', 'BUILD_UP', 'ATTACK_SPACE', 'DROP', 'OVERLAP', 'RECOVER', 'MARK', 'COVER'];
+    const serAct = (a) => {
+      if (!a.fl) return a;
+      const f = a.fl, o = { t: a.t, c: a.c, a: f.kind === 'shot' ? 'tir' : f.kind === 'clear' ? 'degagement' : f.cpa === 'throw' ? 'touche' : 'passe',
+        genre: f.kind, cpa: f.cpa, x0: f.x0, y0: f.y0, z0: f.z0, x1: f.x1, y1: f.y1, dur: f.dur, apex: f.apex, aerien: !!f.aerial, vers: f.to ? f.to.code : -1 };
+      if (f.kind === 'shot') Object.assign(o, { variante: f.sv || null, issue: f.res, tete: !!f.head, cf: !!f.fk, penalty: !!f.pen, poteau: !!f.post, xg: f.xg });
+      return o;
+    };
+    const imagePont = (f) => {
+      const F = new Int16Array(22), E = new Uint8Array(22), S = new Uint8Array(22), I = new Uint8Array(22), T = new Float32Array(44);
+      for (let k = 0; k < 22; k++) {
+        const p = k < 11 ? TM.H.ps[k] : TM.A.ps[k - 11]; if (!p) continue;
+        F[k] = Math.round(Math.atan2(p.fy, p.fx) * 1000);
+        E[k] = Math.max(0, Math.min(100, Math.round(p.energy)));
+        S[k] = (p.fall > 0 ? 1 : 0) | (p.beat > 0 ? 2 : 0) | (W.owner === p ? 4 : 0) | (p.red ? 8 : 0) | (p.urg > 0.9 ? 16 : 0) | (p.press ? 32 : 0) | (p.run ? 64 : 0) | (p.carry && p.carry.drib ? 128 : 0);
+        I[k] = INTENTIONS.indexOf(p.intent) + 1;
+        T[k * 2] = p.tx != null ? p.tx : p.x; T[k * 2 + 1] = p.ty != null ? p.ty : p.y;
+      }
+      Object.assign(f, { F, E, S, I, T });
+      if (curAc.length) { f.ac = curAc.map(serAct); curAc = []; }
+      if (Math.abs(W.lastTele - (W.t + DT)) < 1e-6) f.coupe = true;
+    };
     const rec = () => {
       // en calcul rapide (runFor, runTicks, finish), rien n'est enregistré... sauf si l'écran
       // a demandé à regarder le match (capture) : l'image est alors gardée à part. L'image se
       // fabrique sans rien tirer au hasard ni rien changer au monde : le match reste le même.
-      if (W.skip && !W.capt) { curEv = []; return; }
+      W.cpaEnCours = null;
+      if (W.skip && !W.capt) { curEv = []; curAc = []; return; }
       const P = new Float32Array(44);
       for (let i = 0; i < 11; i++) { const h = TM.H.ps[i], a = TM.A.ps[i]; P[i * 2] = !h || h.red ? -9 : h.x; P[i * 2 + 1] = !h || h.red ? -9 : h.y; P[22 + i * 2] = !a || a.red ? -9 : a.x; P[23 + i * 2] = !a || a.red ? -9 : a.y; }
       const fa = []; all().forEach((p) => { if (p.fall > 0) fa.push(p.code); });
@@ -1477,6 +1529,7 @@ function makeEngine(cfg) {
         fl: W.fl ? [W.fl.x0, W.fl.y0, W.fl.x1, W.fl.y1, W.fl.kind] : null, ev: curEv.length ? curEv : null, fa: fa.length ? fa : null, set: W.set ? W.set.kind : null, tk: W.set && W.set.taker ? W.set.taker.code : -1,
         dv: W.dive && W.t - W.dive.t0 < W.dive.dur + 1 ? [W.dive.c, W.dive.dir, Math.min(1, (W.t - W.dive.t0) / Math.max(0.2, W.dive.dur))] : null, sc: [W.score.H, W.score.A] };
       curEv = [];
+      if (PONT) imagePont(f);
       if (W.skip) { W.capt.push(f); if (W.capt.length > W.captMax) W.capt.shift(); return; }
       ring.push(f); if (ring.length > 300) ring.shift();
       if (pend) pend.frames.push(f);
@@ -1570,6 +1623,7 @@ function makeEngine(cfg) {
         if (W.owner === old) W.owner = np; if (W.set && W.set.taker === old) W.set.taker = np;
         if (W.fl) { if (W.fl.to === old) W.fl.to = np; if (W.fl.from === old) W.fl.from = np; }
         TM[OT[side]].ps.forEach((q) => { if (q.markT === old) q.markT = np; });
+        act(np, 'remplacement', { sortant: old.name, entrant: np.name });
         T.subs++; W.clk += 20; snap();
       },
       shout(k) { TM.H.shout = k; setTP(TM.H); },
@@ -5617,6 +5671,300 @@ const Stade3D = {
   }
 };
 
+// LinkFoot → Unreal Engine 5 : la passerelle, côté LinkFoot (docs/passerelle-ue5.md).
+//
+// Le moteur LinkFoot reste la seule autorité. Il décide tout : qui court où, qui passe, qui
+// tire, ce que devient le ballon, le score. Un rendu externe (Unreal Engine 5 ici, mais aussi
+// bien la vue three.js de l'app) lit ce que le moteur a décidé et le transforme en
+// mouvements humains. Il ne décide rien : s'il décidait, deux cerveaux joueraient deux
+// matchs différents, et l'écran ne montrerait plus le match qui compte.
+//
+// Ce fichier fabrique ce que le rendu lit :
+//   - la feuille de match : qui est qui, de la carte au personnage (§36), ses statistiques,
+//     les attributs que le moteur en tire, ses compétences, son état, son corps, son visage ;
+//   - le document du match : dix images par seconde, les actions horodatées (passe, tir,
+//     contrôle, dribble, tacle, plongeon, arrêt...), les événements, le résultat ;
+//   - une empreinte, pour vérifier que deux rendus lisent bien le même match.
+// Et il contrôle ce document (§55) : vitesses, téléportations, ballon, gardien, ligne.
+//
+// Le format est versionné (format « linkfoot-match », version 1). Les positions restent dans
+// le repère du moteur (mètres, terrain de 68 sur 105) ; versUnreal() donne la conversion.
+const Passerelle = {
+  PASSERELLE() {
+    return {
+      format: 'linkfoot-match', version: 1, hz: 10, pas: 0.1,
+      // l'ordre des intentions de l'IA (code 1 à 9 ; 0 : aucune)
+      intentions: ['HOLD', 'SUPPORT', 'BUILD_UP', 'ATTACK_SPACE', 'DROP', 'OVERLAP', 'RECOVER', 'MARK', 'COVER'],
+      // les bits d'état d'un joueur, dans chaque image
+      etats: { au_sol: 1, desequilibre: 2, porteur: 4, exclu: 8, sprint: 16, presse: 32, appel: 64, dribble: 128 },
+      cpa: ['', 'ko', 'corner', 'fkc', 'fkd', 'fk', 'throw', 'gk', 'pen'],
+      // ce que contient une ligne d'image : l'en-tête, puis 6 valeurs par joueur (code 0 à 21)
+      tete: ['t', 'horloge', 'mi_temps', 'coupe', 'bx', 'by', 'bz', 'porteur', 'score_d', 'score_e', 'cpa', 'tireur'],
+      joueur: ['x', 'y', 'angle', 'energie', 'etats', 'intention'],
+      cible: ['cx', 'cy']
+    };
+  },
+
+  // Le repère du moteur vers celui d'Unreal : centimètres, X vers le but que le domicile
+  // attaque au coup d'envoi, Y vers la droite vue de dessus, Z vers le haut. Sans miroir :
+  // la vue de dessus du moteur et celle d'Unreal se superposent.
+  versUnreal(x, y, z) { return { X: (52.5 - y) * 100, Y: (x - 34) * 100, Z: (z || 0) * 100 }; },
+  // l'orientation du corps (milliradians, repère du moteur) en lacet Unreal (degrés)
+  lacetUnreal(angle) { const a = angle / 1000; return Math.atan2(Math.cos(a), -Math.sin(a)) * 180 / Math.PI; },
+
+  // cyrb53 : une empreinte rapide, en JavaScript pur (navigateur, téléphone, serveur)
+  empreintePont(str, graine) {
+    let h1 = 0xdeadbeef ^ (graine || 0), h2 = 0x41c6ce57 ^ (graine || 0);
+    for (let i = 0; i < str.length; i++) { const ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+  },
+
+  // §36 une carte, un joueur, un personnage : le même numéro de bout en bout. Une carte
+  // améliorée reste le même personnage ; c'est ce qu'il sait faire qui change.
+  personnagePont(id) { return 'LF-' + String(id).padStart(5, '0'); },
+  // Un adversaire n'a pas de carte : ses joueurs prennent une identité propre à son club, la
+  // même à chaque rencontre, et différente d'un club à l'autre (pas de onze clones).
+  personnageAdverse(club, i) { return 'ADV-' + String(this.empreintePont(club || 'adv') % 100000).padStart(5, '0') + '-' + String(i).padStart(2, '0'); },
+
+  // §4 et §8 le corps. La taille et le poids sont ceux du profil (déjà affichés sur la fiche) ;
+  // les proportions découlent des statistiques, pour que le corps raconte la carte : un
+  // physique fort a les épaules et les muscles, un rapide les jambes, un gardien les bras.
+  // Le corps ne change pas le jeu : les attributs restent le facteur principal (§8).
+  morphologie(p, stats, perso) {
+    const pr = this.profile(p), r = this.seedR(this.empreintePont(perso + ':corps') % 2147483647 || 1);
+    const cl = (v) => Math.round(Math.max(0, Math.min(1, v)) * 100) / 100, bruit = () => (r() - 0.5) * 0.12;
+    const PHY = stats.PHY != null ? stats.PHY : 60, VIT = stats.VIT != null ? stats.VIT : 60, gb = p.pos === 'GB';
+    const imc = pr.weight / Math.pow(pr.height / 100, 2);
+    const muscles = cl((PHY - 40) / 60 + bruit()), masse = cl((imc - 19) / 7);
+    const carrure = muscles > 0.7 && masse > 0.55 ? 'massive' : muscles > 0.5 ? 'athletique' : muscles < 0.3 && masse < 0.4 ? 'fine' : 'equilibree';
+    return {
+      taille_cm: pr.height, poids_kg: pr.weight, carrure,
+      epaules: cl(0.35 + (PHY - 50) / 100 + (gb || p.pos === 'DEF' ? 0.1 : 0) + bruit()),
+      muscles, masse,
+      jambes: cl(0.45 + (VIT - 60) / 120 + bruit()),
+      bras: cl(gb ? 0.78 + ((stats.PLO || 60) - 60) / 160 : 0.45 + bruit()),
+      bassin: cl(0.45 + (PHY - 60) / 200 + bruit()),
+      posture: cl(0.5 + bruit())
+    };
+  },
+
+  // §5 à §7 le visage et les cheveux : originaux, tirés d'une graine propre au personnage.
+  // Jamais copiés sur un vrai joueur, et rien n'est déduit de la nationalité.
+  apparencePont(perso) {
+    const r = this.seedR(this.empreintePont(perso + ':visage') % 2147483647 || 1), pick = (l) => l[Math.floor(r() * l.length)];
+    return {
+      graine: this.empreintePont(perso) % 2147483647,
+      visage: Array.from({ length: 8 }, () => Math.round(r() * 1000) / 1000),
+      teint: Math.floor(r() * 10),
+      coiffure: pick(['ras', 'court', 'court', 'degrade', 'degrade', 'boucle', 'afro', 'tresses', 'attache', 'long']),
+      cheveux: pick(['noir', 'noir', 'brun_fonce', 'brun', 'chatain', 'blond', 'roux']),
+      barbe: pick(['aucune', 'aucune', 'naissante', 'courte', 'pleine', 'bouc', 'moustache']),
+      sourcils: Math.floor(r() * 6), yeux: Math.floor(r() * 6)
+    };
+  },
+
+  // La feuille de match : tout ce qui ne bouge pas pendant le match. `ctx` vient de
+  // ouvrirMatch : les attributs sont lus dans le moteur lui-même (E.player), pas recalculés,
+  // pour qu'il n'existe qu'une formule (§3).
+  feuillePont(ctx) {
+    const { E, xi, oxi, opp, cfg } = ctx, s = this.state;
+    const R2 = (v) => Math.round(v * 1000) / 1000;
+    const moteur = (q) => (q ? {
+      vitesse_max: R2(q.vmax), acceleration: R2(q.acc0), agilite: R2(q.agi0), equilibre: R2(q.bal0),
+      vitesse: q.pace, tir: q.sht, passe: q.pas, dribble: q.dri, defense: q.def, physique: q.phy, decision: q.dec,
+      gardien: q.line === 'GB' ? { reflexes: q.ref, prise: q.han, plongeon: q.div, degagement: q.kick, placement: q.gpos } : null
+    } : null);
+    const competences = (l) => (l || []).map((k) => ({ id: k.id, effet: k.eid, nom: k.name, categorie: k.cat, condition: k.cid, puissance: k.power, rarete: k.rar }));
+    const statsDe = (p) => { const o = {}; this.cardStats(p).forEach((q) => { o[q.l] = q.v; }); return o; };
+    const notre = (p, code) => {
+      const st = statsDe(p), perso = this.personnagePont(p.id), pr = this.profile(p);
+      const d = code != null ? cfg.sides.H.players[code] : null;
+      return { code, camp: 'H', id: p.id, carte: p.id, personnage: perso, nom: p.name, poste: p.pos, ligne: p.line || p.pos, poste_tactique: p.slot || null,
+        role: d ? d.role || null : null, devoir: d ? d.duty || null : null,
+        numero: code != null ? code + 1 : null, note: p.ovr, rarete: p.rar || this.rarityFor(p).id, niveau: p.plv || 1,
+        stats: st, moteur: code != null ? moteur(E.player(code)) : null, competences: competences(this.skillsOf(p)),
+        etat: { forme: p.form != null ? p.form : 70, moral: p.morale != null ? p.morale : 72, energie: p.energy != null ? p.energy : (p.fit != null ? p.fit : 100), blessure: p.inj || 0 },
+        pied: pr.foot, pied_faible: pr.wf, morphologie: this.morphologie(p, st, perso), apparence: this.apparencePont(perso) };
+    };
+    const adverse = (d, i, code) => {
+      const perso = this.personnageAdverse(opp.club, i), st = d.st || {};
+      const p = { id: 90000 + (this.empreintePont(perso) % 9000), pos: d.pos || d.line || 'MIL', ovr: d.ovr };
+      return { code, camp: 'A', id: null, carte: null, personnage: perso, nom: d.name, poste: p.pos, ligne: d.line || p.pos, poste_tactique: null,
+        role: d.role || null, devoir: d.duty || null,
+        numero: code != null ? code - 10 : null, note: d.ovr, rarete: null, niveau: null,
+        stats: st, moteur: code != null ? moteur(E.player(code)) : null, competences: [],
+        etat: { forme: 70, moral: 72, energie: 100, blessure: 0 }, pied: 'Droit', pied_faible: 3,
+        morphologie: this.morphologie(p, st, perso), apparence: this.apparencePont(perso) };
+    };
+    const A = cfg.sides.A;
+    const joueurs = xi.map((p, i) => notre(p, i))
+      .concat(oxi.map((p, i) => adverse(Object.assign({}, p, { st: A.players[i].st }), i, 11 + i)))
+      .concat(this.benchOf(xi).map((p) => notre(p, null)))
+      .concat((A.bench || []).map((d, i) => adverse(d, 11 + i, null)));
+    const equipe = (side, nom, kit) => ({
+      club: nom, maillot: kit, formation: side === 'H' ? s.formation : (this.styles()[opp.style] || {}).form || '4-4-2',
+      mentalite: cfg.sides[side].ment, tactique: Object.assign({}, cfg.sides[side].tac),
+      entraineur: side === 'H' && cfg.sides.H.coach ? cfg.sides.H.coach.id : null, style: side === 'A' ? opp.style || null : s.preset || null
+    });
+    return {
+      equipes: { H: equipe('H', s.clubName || 'FC TonPseudo', { c1: (s.kit || {}).c1, c2: (s.kit || {}).c2, motif: (s.kit || {}).pat || 'uni' }),
+        A: equipe('A', opp.club, { c1: opp.color || '#2F8FE0', c2: '#F2F4F7', motif: 'uni' }) },
+      joueurs
+    };
+  },
+
+  // Le document du match, à partir des images que le moteur a gardées (capture).
+  documentPont(ctx, opts) {
+    const o = opts || {}, E = ctx.E, P = this.PASSERELLE(), cm = (v) => Math.round(v * 100), r2 = (v) => Math.round(v * 100) / 100;
+    const imgs = E.images();
+    if (!imgs.length || !imgs[0].F) throw new Error('Pas d’images de passerelle : ouvrir le match avec { pont: true } et E.capture()');
+    const cpa = P.cpa;
+    const donnees = imgs.map((f) => {
+      const row = [Math.round((f.t + 0.1) * 10), Math.round(f.m), f.h, f.coupe ? 1 : 0, cm(f.b[0]), cm(f.b[1]), cm(f.b[2]), f.o,
+        f.sc[0], f.sc[1], Math.max(0, cpa.indexOf(f.set || '')), f.tk];
+      for (let k = 0; k < 22; k++) row.push(cm(f.P[k * 2]), cm(f.P[k * 2 + 1]), f.F[k], f.E[k], f.S[k], f.I[k]);
+      if (o.debug) for (let k = 0; k < 22; k++) row.push(cm(f.T[k * 2]), cm(f.T[k * 2 + 1]));
+      return row;
+    });
+    // les actions : à l'instant du geste (le ballon part de x0, y0 à cet instant)
+    const actions = [];
+    imgs.forEach((f) => (f.ac || []).forEach((a) => {
+      const b = {};
+      Object.keys(a).forEach((k) => { const v = a[k]; b[k] = typeof v === 'number' && !Number.isInteger(v) ? (k === 'xg' ? Math.round(v * 1000) / 1000 : r2(v)) : v; });
+      b.t = Math.round(a.t * 10) / 10;
+      actions.push(b);
+    }));
+    const evenements = [];
+    imgs.forEach((f) => (f.ev || []).forEach((e) => evenements.push(Object.assign({ t: Math.round((f.t + 0.1) * 10) / 10 }, e))));
+    const champs = P.tete.concat(...Array.from({ length: 22 }, (_, k) => P.joueur.map((c) => c + k)), o.debug ? [].concat(...Array.from({ length: 22 }, (_, k) => P.cible.map((c) => c + k))) : []);
+    const feuille = this.feuillePont(ctx);
+    const doc = {
+      format: P.format, version: P.version,
+      moteur: { hz: P.hz, pas: P.pas, graine: ctx.seed != null ? ctx.seed : null },
+      repere: { unite: 'm', terrain: [68, 105], images_en: 'cm', angles_en: 'mrad',
+        unreal: 'X = (52,5 − y) × 100 ; Y = (x − 34) × 100 ; Z = z × 100 (cm) ; lacet = atan2(cos a, −sin a)' },
+      codes: { intentions: P.intentions, etats: P.etats, cpa: P.cpa },
+      match: { competition: ctx.amical ? 'amical' : 'championnat', meteo: E.weather ? E.weather().id : 'soleil', domicile: !(ctx.opp && ctx.opp.exterieur),
+        debut: donnees[0][0] / 10, fin: donnees[donnees.length - 1][0] / 10 },
+      equipes: feuille.equipes, joueurs: feuille.joueurs,
+      images: { champs, donnees }, actions, evenements
+    };
+    doc.empreinte = String(this.empreintePont(JSON.stringify([donnees, actions])));
+    return doc;
+  },
+
+  // Jouer un match en gardant tout ce que la passerelle transmet. C'est le vrai match :
+  // résultat, XP, finances et division s'appliquent comme avec playMatch, au chiffre près.
+  matchPont(opp, opts) {
+    const o = Object.assign({}, opts, { pont: true });
+    const ctx = this.ouvrirMatch(opp, o);
+    ctx.E.capture(1e9);
+    ctx.E.finish();
+    const doc = this.documentPont(ctx, o);
+    const resultat = this.cloreMatch(ctx);
+    const st = ctx.E.state();
+    doc.resultat = { score: resultat.score, tirs_au_but: resultat.pso, possession: resultat.poss, stats: resultat.stats,
+      notes: { H: st.rat ? st.rat.H : null, A: st.rat ? st.rat.A : null }, journal: resultat.log };
+    return { resultat, document: doc };
+  },
+
+  // Lire une ligne d'image : ce qu'un rendu fait en premier.
+  lireImagePont(doc, i) {
+    const row = doc.images.donnees[i], P = this.PASSERELLE(), n = P.tete.length, J = P.joueur.length;
+    const joueurs = [];
+    for (let k = 0; k < 22; k++) {
+      const b = n + k * J, x = row[b] / 100, y = row[b + 1] / 100;
+      joueurs.push({ code: k, present: x > -5, x, y, angle: row[b + 2], energie: row[b + 3], etats: row[b + 4], intention: row[b + 5] ? P.intentions[row[b + 5] - 1] : null });
+    }
+    return { t: row[0] / 10, horloge: row[1], mi_temps: row[2], coupe: !!row[3], ballon: [row[4] / 100, row[5] / 100, row[6] / 100], porteur: row[7],
+      score: [row[8], row[9]], cpa: P.cpa[row[10]] || null, tireur: row[11], joueurs };
+  },
+
+  // §55 Ce que le rendu ne doit jamais avoir à cacher, vérifié sur le document lui-même :
+  // vitesses et accélérations impossibles, téléportations hors des coupes, joueurs hors du
+  // terrain ou l'un dans l'autre, ballon loin de son porteur, gardien hors de l'angle de
+  // tir, ligne défensive cassée, joueurs immobiles sans raison. Chaque mesure est comptée ;
+  // test/passerelle.js fixe ce qui est tolérable.
+  verifierPont(doc) {
+    const P = this.PASSERELLE(), D = doc.images.donnees, n = P.tete.length, J = P.joueur.length, dt = 0.1;
+    const vmax = {}; doc.joueurs.forEach((j) => { if (j.code != null && j.moteur) vmax[j.code] = j.moteur.vitesse_max; });
+    // les cibles de l'IA ne sont dans le document qu'en mode débogage (debug) : sans elles, on
+    // ne sait pas si un joueur arrêté attend à sa place ou n'y va pas
+    const cib = doc.images.champs.indexOf('cx0');
+    const defenseurs = { H: doc.joueurs.filter((j) => j.code != null && j.code < 11 && j.ligne === 'DEF').map((j) => j.code),
+      A: doc.joueurs.filter((j) => j.code != null && j.code >= 11 && j.ligne === 'DEF').map((j) => j.code) };
+    const pos = (row, k) => [row[n + k * J] / 100, row[n + k * J + 1] / 100];
+    const present = (row, k) => row[n + k * J] > -500;
+    // les instants où un code change de personne ou de statut : remplacement, expulsion
+    const sauts = new Set();
+    (doc.actions || []).forEach((a) => { if (a.a === 'remplacement' || (a.a === 'faute' && (a.carton === 'R' || a.carton === 'R2'))) sauts.add(a.c + ':' + Math.round(a.t * 10)); });
+    const c = { images: D.length, vitesse: 0, vitesse_max_vue: 0, acceleration: 0, teleportation: 0, hors_terrain: 0, chevauchement: 0, ballon_loin: 0,
+      gardien_hors_angle: 0, gardien_mesures: 0, ligne_cassee: 0, ligne_mesures: 0, immobile: 0, coupes: 0 };
+    const exemples = [];
+    const note = (k, quoi) => { c[k]++; if (exemples.length < 12 && !exemples.some((e) => e.k === k)) exemples.push(Object.assign({ k }, quoi)); };
+    const immobile = new Array(22).fill(0), chev = new Map();
+    for (let i = 1; i < D.length; i++) {
+      const a = D[i - 1], b = D[i];
+      if (b[3] || b[0] - a[0] !== 1) { c.coupes++; continue; }   // coupe du moteur, ou pas manquant (célébration)
+      const enJeu = !b[10] && !(a[10]);
+      for (let k = 0; k < 22; k++) {
+        if (!present(a, k) || !present(b, k)) continue;
+        const [x0, y0] = pos(a, k), [x1, y1] = pos(b, k), v = Math.hypot(x1 - x0, y1 - y0) / dt;
+        if (x1 < -1.6 || x1 > 69.6 || y1 < -2.1 || y1 > 107.1) note('hors_terrain', { t: b[0] / 10, code: k, x: x1, y: y1 });
+        if (sauts.has(k + ':' + a[0]) || sauts.has(k + ':' + b[0])) continue;
+        const lim = (vmax[k] || 9) * 1.25;
+        if (v > c.vitesse_max_vue && v < 40) c.vitesse_max_vue = Math.round(v * 100) / 100;
+        if (v > 40) note('teleportation', { t: b[0] / 10, code: k, m: Math.round(v * dt * 100) / 100 });
+        else if (v > lim) note('vitesse', { t: b[0] / 10, code: k, v: Math.round(v * 10) / 10, vmax: vmax[k] });
+        if (i > 1 && !D[i - 1][3] && a[0] - D[i - 2][0] === 1 && present(D[i - 2], k)) {
+          const [xm, ym] = pos(D[i - 2], k), ax = (x1 - 2 * x0 + xm) / (dt * dt), ay = (y1 - 2 * y0 + ym) / (dt * dt);
+          if (Math.hypot(ax, ay) > 14 && v < 40) note('acceleration', { t: b[0] / 10, code: k, a: Math.round(Math.hypot(ax, ay)) });
+        }
+        // immobile sans raison : arrêté plus de 8 s, ballon en jeu, alors que sa cible est à plus de 3 m
+        const loin = cib >= 0 && Math.hypot(b[cib + k * 2] / 100 - x1, b[cib + k * 2 + 1] / 100 - y1) > 3;
+        if (v < 0.2 && enJeu && loin && !(b[n + k * J + 4] & 9)) immobile[k]++; else immobile[k] = 0;
+        if (immobile[k] === 80) note('immobile', { t: b[0] / 10, code: k });
+      }
+      // l'un dans l'autre : deux joueurs à moins de 40 cm pendant plus d'une demi-seconde
+      for (let p = 0; p < 22; p++) for (let q = p + 1; q < 22; q++) {
+        if (!present(b, p) || !present(b, q)) continue;
+        const [xp, yp] = pos(b, p), [xq, yq] = pos(b, q), key = p * 22 + q;
+        if (Math.abs(xp - xq) < 0.4 && Math.abs(yp - yq) < 0.4 && Math.hypot(xp - xq, yp - yq) < 0.4) { const v2 = (chev.get(key) || 0) + 1; chev.set(key, v2); if (v2 === 6) note('chevauchement', { t: b[0] / 10, codes: [p, q] }); }
+        else chev.delete(key);
+      }
+      // le ballon colle à son porteur : 1,4 m au plus (la touche de balle en conduite, 0,5 à 1 m
+      // devant lui, plus le rebond du dribble)
+      const pr = b[7];
+      if (pr >= 0 && present(b, pr) && enJeu) { const [xp, yp] = pos(b, pr); const d = Math.hypot(b[4] / 100 - xp, b[5] / 100 - yp); if (d > 1.4) note('ballon_loin', { t: b[0] / 10, code: pr, d: Math.round(d * 100) / 100 }); }
+      // le gardien dans l'angle : quand un adversaire a le ballon à moins de 30 m du but, le
+      // gardien doit être entre le ballon et sa cage (dans le triangle ballon / poteaux élargi)
+      ['H', 'A'].forEach((side) => {
+        const g = side === 'H' ? 0 : 11; if (!present(b, g) || pr < 0 || (side === 'H' ? pr < 11 : pr >= 11) || !enJeu) return;
+        const gy = side === 'H' ? 105 : 0, bx = b[4] / 100, by = b[5] / 100, [xg, yg] = pos(b, g);
+        if (Math.hypot(bx - 34, by - gy) > 30) return;
+        c.gardien_mesures++;
+        const vb = [bx - 34, by - gy], vg = [xg - 34, yg - gy], nb = Math.hypot(vb[0], vb[1]) || 1, ng = Math.hypot(vg[0], vg[1]);
+        const ang = ng < 0.5 ? 0 : Math.acos(Math.max(-1, Math.min(1, (vb[0] * vg[0] + vb[1] * vg[1]) / (nb * ng)))) * 180 / Math.PI;
+        if (ang > 35 || ng > nb) note('gardien_hors_angle', { t: b[0] / 10, code: g, angle: Math.round(ang) });
+      });
+      // la ligne défensive : quand l'équipe défend, ses défenseurs (ligne DEF de la feuille) ne
+      // s'étalent pas sur plus de 12 m de profondeur (hors celui qui presse ou qui est au sol)
+      ['H', 'A'].forEach((side) => {
+        if (pr < 0 || (side === 'H' ? pr < 11 : pr >= 11) || !enJeu) return;
+        const prof = defenseurs[side].filter((k) => present(b, k) && !(b[n + k * J + 4] & 33)).map((k) => pos(b, k)[1]);
+        if (prof.length < 3) return;
+        c.ligne_mesures++;
+        const e = Math.max(...prof) - Math.min(...prof);
+        if (e > 12) note('ligne_cassee', { t: b[0] / 10, camp: side, ecart: Math.round(e) });
+      });
+    }
+    const pct = (a, b) => (b ? Math.round(a / b * 1000) / 10 : 0);
+    return { compte: c, taux: { gardien_hors_angle: pct(c.gardien_hors_angle, c.gardien_mesures), ligne_cassee: pct(c.ligne_cassee, c.ligne_mesures) }, exemples };
+  }
+};
+
 // LinkFoot : le journal (§26).
 //
 // Un classement est une liste de nombres. Un journal raconte ce que ces nombres
@@ -5826,6 +6174,7 @@ const News = {
 
 
 
+
 class Club {
   constructor(state) {
     this.state = Object.assign({}, INITIAL_STATE(), state || {});
@@ -5894,8 +6243,10 @@ class Club {
     const depart = o.depart ? { seed, tirages: oxi.length, cfg: JSON.parse(JSON.stringify(cfg)) } : null;
     // §6 la tactique au coup d'envoi : le point de départ du coaching en direct
     const tactique = { formation: s.formation, tac: Object.assign({}, cfg.sides.H.tac), ment: cfg.sides.H.ment };
-    const E = makeEngine(Object.assign(cfg, { rnd }));
-    return { E, xi, oxi, opp, plan, amical, depart, tactique };
+    // pont : le moteur enregistre en plus ce que lit un rendu externe (passerelle.js), sans
+    // rien changer au match
+    const E = makeEngine(Object.assign(cfg, { rnd, pont: !!o.pont }));
+    return { E, xi, oxi, opp, plan, amical, depart, tactique, cfg, seed };
   }
 
   // Tout ce qui suit le coup de sifflet final.
@@ -5955,7 +6306,7 @@ class Club {
 }
 
 // §80 : chaque domaine vit dans son fichier et vient se mélanger ici.
-Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs, News, Impact, LeagueRules, Division, Direct, Stade3D);
+Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs, News, Impact, LeagueRules, Division, Direct, Stade3D, Passerelle);
 
 // LinkFoot : sauvegarde. Sérialise l'état du club, le relit, et le range
 // où tu veux : mémoire, navigateur, ou ton serveur.

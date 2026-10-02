@@ -591,6 +591,27 @@ et les panneaux du stade sont donc peints en JavaScript pur (`peintre` : formes 
 un alphabet en traits), la même image dans un navigateur et sur téléphone. Aucun modèle,
 sprite, son ni code n'est repris d'un autre jeu : tout est construit en géométrie.
 
+### La passerelle vers Unreal Engine 5
+
+Le moteur LinkFoot reste la seule autorité : un rendu externe (Unreal Engine 5) lit ce qu'il a
+décidé et le transforme en mouvements humains, sans rien décider. `docs/passerelle-ue5.md` en fait
+l'analyse et décrit le contrat (format `linkfoot-match`, version 1) ; `src/passerelle.js` le
+produit.
+
+```js
+const { resultat, document } = club.matchPont(adversaire, { seed });   // le vrai match, enregistré
+document.joueurs;              // carte → joueur → personnage : stats, attributs du moteur, compétences, corps, visage
+document.images;               // dix images par seconde : positions, orientation, énergie, états, intention
+document.actions;              // passe, tir, contrôle, dribble, tacle, duel, plongeon, arrêt... à l'instant du geste
+club.verifierPont(document);   // §55 : vitesses, téléportations, ballon, gardien, ligne défensive
+club.versUnreal(x, y, z);      // le repère d'Unreal, en centimètres
+```
+
+Enregistrer pour la passerelle ne change pas le match, au chiffre près. `tools/visionneuse-pont.html`
+rejoue un document avec le rendu 3D de LinkFoot (ce qu'Unreal recevra, rien de plus), et
+`test/passerelle.js` vérifie le format, l'empreinte et la chaîne carte → moteur → mouvement →
+action.
+
 ### La création du club
 
 L'effectif de départ fait 14 joueurs **normaux**, note moyenne 51, potentiel moyen 69, plus

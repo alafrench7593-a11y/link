@@ -25,6 +25,7 @@ const RAPIDES = [
   ['impact', ['test/impact.js'], 'le rapport de match ne dit que des choses vraies'],
   ['directeur', ['test/directeur.js'], 'le parcours du directeur sportif, de la création au match'],
   ['match', ['test/match.js'], 'le manager regarde et décide : coaching en direct, AUTO COACH, comportements'],
+  ['passerelle', ['test/passerelle.js'], 'Unreal (ou tout rendu) lit le match que le moteur a joué, rien d’autre'],
   ['kiosque', ['test/kiosque.js'], 'un pack principal qui donne tout, ses probabilités affichées'],
   ['fluidité', ['test/fluidite.js'], 'découper un match ne le change pas'],
   ['traits', ['test/traits.js', '12'], 'une compétence change le jeu, pas un chiffre'],

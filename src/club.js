@@ -22,6 +22,7 @@ import { LeagueRules } from './league.js';
 import { Division } from './division.js';
 import { Direct } from './direct.js';
 import { Stade3D } from './stade3d.js';
+import { Passerelle } from './passerelle.js';
 import { News } from './news.js';
 
 export class Club {
@@ -92,8 +93,10 @@ export class Club {
     const depart = o.depart ? { seed, tirages: oxi.length, cfg: JSON.parse(JSON.stringify(cfg)) } : null;
     // §6 la tactique au coup d'envoi : le point de départ du coaching en direct
     const tactique = { formation: s.formation, tac: Object.assign({}, cfg.sides.H.tac), ment: cfg.sides.H.ment };
-    const E = makeEngine(Object.assign(cfg, { rnd }));
-    return { E, xi, oxi, opp, plan, amical, depart, tactique };
+    // pont : le moteur enregistre en plus ce que lit un rendu externe (passerelle.js), sans
+    // rien changer au match
+    const E = makeEngine(Object.assign(cfg, { rnd, pont: !!o.pont }));
+    return { E, xi, oxi, opp, plan, amical, depart, tactique, cfg, seed };
   }
 
   // Tout ce qui suit le coup de sifflet final.
@@ -153,4 +156,4 @@ export class Club {
 }
 
 // §80 : chaque domaine vit dans son fichier et vient se mélanger ici.
-Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs, News, Impact, LeagueRules, Division, Direct, Stade3D);
+Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer, Progression, Tactics, Tracks, PlayerXP, Quests, Creation, OnlineUI, TrainPack, Packs, News, Impact, LeagueRules, Division, Direct, Stade3D, Passerelle);

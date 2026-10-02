@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visionneuse de la passerelle</title>
+<style>
+  :root { --bg: #0B0F0C; --carte: #1E232B; --ligne: rgba(255,255,255,0.08); --texte: #F2F4F7; --pale: #AEB6C2; --vert: #2ECC71; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--texte); font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  header { padding: 14px 16px 8px; }
+  h1 { margin: 0; font-size: 18px; }
+  header p { margin: 4px 0 0; color: var(--pale); font-size: 12.5px; }
+  .barre { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 16px; align-items: center; }
+  button, label.bouton { background: var(--carte); color: var(--texte); border: 1px solid var(--ligne); border-radius: 18px; padding: 7px 13px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.vert { background: var(--vert); color: #0B1210; border-color: transparent; }
+  button:disabled { opacity: 0.45; cursor: default; }
+  input[type=file] { display: none; }
+  #scene { position: relative; margin: 0 16px; height: min(62vh, 560px); border-radius: 12px; overflow: hidden; background: #0B1210; border: 1px solid var(--ligne); }
+  #info { position: absolute; left: 10px; top: 10px; background: rgba(11,15,12,0.78); border-radius: 10px; padding: 6px 10px; font-weight: 700; }
+  #action { position: absolute; left: 10px; bottom: 10px; right: 10px; background: rgba(11,15,12,0.78); border-radius: 10px; padding: 6px 10px; color: var(--pale); min-height: 30px; }
+  #etat { padding: 8px 16px; color: var(--pale); font-size: 12.5px; }
+  input[type=range] { flex: 1; min-width: 160px; accent-color: var(--vert); }
+  .ok { color: var(--vert); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Visionneuse de la passerelle</h1>
+  <p>Rejoue un document « linkfoot-match » (docs/passerelle-ue5.md) avec le rendu 3D de LinkFoot : ce qu'Unreal recevra, rien de plus.</p>
+</header>
+<div class="barre">
+  <button class="vert" id="demo">Jouer un match de démonstration</button>
+  <label class="bouton">Ouvrir un document<input type="file" id="fichier" accept=".json,.gz,application/json,application/gzip"></label>
+  <button id="telecharger" disabled>Télécharger le document</button>
+</div>
+<div id="scene"><div id="info">Aucun match</div><div id="action"></div></div>
+<div class="barre">
+  <button id="lecture" disabled>Pause</button>
+  <button id="vitesse" disabled>×1</button>
+  <button id="suivant" disabled>Prochaine frappe</button>
+  <input type="range" id="temps" min="0" max="0" value="0" disabled>
+</div>
+<div id="etat">Charge un document, ou joue un match de démonstration (quelques secondes de calcul).</div>
+<script src="../dist/linkfoot.js"></script>
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const club = new window.LinkFoot.Club();
+const P = club.PASSERELLE(), N = P.tete.length, J = P.joueur.length;
+let doc = null, images = [], actions = [], vue = null, T = null, renderer = null, tVue = 0, vitesse = 1, enPause = false, dernier = performance.now(), iPrec = -1;
+
+// ---- décoder le document en images que le rendu 3D sait lire ----
+function decoder(d) {
+  const evParT = new Map(); (d.evenements || []).forEach((e) => { const k = Math.round(e.t * 10); (evParT.get(k) || evParT.set(k, []).get(k)).push(e); });
+  const vols = d.actions.filter((a) => a.a === 'passe' || a.a === 'tir' || a.a === 'degagement' || a.a === 'touche');
+  const plongeons = d.actions.filter((a) => a.a === 'plongeon');
+  let iv = 0, ip = 0;
+  return d.images.donnees.map((row) => {
+    const tau = row[0] / 10, Pp = new Float32Array(44), fa = [];
+    for (let k = 0; k < 22; k++) {
+      const x = row[N + k * J] / 100, y = row[N + k * J + 1] / 100, absent = x < -5;
+      Pp[k * 2] = absent ? -9 : x; Pp[k * 2 + 1] = absent ? -9 : y;
+      if (row[N + k * J + 4] & 1) fa.push(k);
+    }
+    // le vol en cours : la dernière frappe partie avant cette image, tant que personne n'a le ballon
+    while (iv + 1 < vols.length && vols[iv + 1].t < tau - 0.05) iv++;
+    const v = vols[iv], fl = v && v.t < tau - 0.05 && tau - v.t <= v.dur + 0.15 && row[7] < 0 ? [v.x0, v.y0, v.x1, v.y1, v.genre] : null;
+    while (ip + 1 < plongeons.length && plongeons[ip + 1].t < tau - 0.05) ip++;
+    const pg = plongeons[ip], ecoule = pg ? tau - 0.1 - pg.t : -1;
+    const dv = pg && ecoule >= 0 && ecoule < pg.dur + 1 ? [pg.c, pg.dir, Math.min(1, ecoule / Math.max(0.2, pg.dur))] : null;
+    return { t: tau, m: row[1], h: row[2], coupe: !!row[3], P: Pp, b: [row[4] / 100, row[5] / 100, row[6] / 100], o: row[7],
+      sc: [row[8], row[9]], set: P.cpa[row[10]] || null, fl, fa: fa.length ? fa : null, dv, ev: evParT.get(row[0]) || null };
+  });
+}
+
+async function charger(d) {
+  doc = d; images = decoder(d); actions = d.actions; tVue = images[0].t; iPrec = -1;
+  const verif = String(club.empreintePont(JSON.stringify([d.images.donnees, d.actions])));
+  $('etat').innerHTML = images.length + ' images, ' + actions.length + ' actions, ' + d.joueurs.length + ' personnes · ' + d.equipes.H.club + ' contre ' + d.equipes.A.club
+    + ' · empreinte ' + (verif === d.empreinte ? '<span class="ok">vérifiée</span>' : 'DIFFÉRENTE (document modifié)');
+  $('temps').max = images.length - 1; ['lecture', 'vitesse', 'suivant', 'temps', 'telecharger'].forEach((k) => { $(k).disabled = false; });
+  await monter();
+}
+
+async function monter() {
+  if (!T) T = await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js');
+  const hote = $('scene'), W = hote.clientWidth, H = hote.clientHeight;
+  if (!renderer) {
+    renderer = new T.WebGLRenderer({ antialias: true }); renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1)); renderer.setSize(W, H);
+    if (T.SRGBColorSpace) renderer.outputColorSpace = T.SRGBColorSpace;
+    renderer.domElement.style.cssText = 'display:block;width:100%;height:100%'; hote.prepend(renderer.domElement);
+    addEventListener('resize', () => { const w = hote.clientWidth, h = hote.clientHeight; renderer.setSize(w, h); if (vue) vue.taille(w, h); });
+  }
+  if (vue) vue.detruire();
+  vue = club.stade3d(T, { renderer, largeur: W, hauteur: H, maillot: doc.equipes.H.maillot, adverse: doc.equipes.A.maillot.c1, meteo: doc.match.meteo, ombres: true });
+}
+
+// ---- la lecture ----
+const indexA = (t) => { let lo = 0, hi = images.length - 1; if (t <= images[0].t) return 0; if (t >= images[hi].t) return hi; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (images[m].t <= t) lo = m; else hi = m; } return lo; };
+function boucle() {
+  requestAnimationFrame(boucle);
+  const now = performance.now(), dt = Math.min(0.1, (now - dernier) / 1000); dernier = now;
+  if (!vue || !images.length) return;
+  if (!enPause) tVue = Math.min(images[images.length - 1].t, tVue + dt * vitesse);
+  const i = indexA(tVue), A = images[i], B = images[Math.min(images.length - 1, i + 1)];
+  const coupe = B.coupe || B.t - A.t > 0.15;
+  const fr = coupe ? 0 : Math.max(0, Math.min(1, (tVue - A.t) / Math.max(0.01, B.t - A.t)));
+  const evs = []; if (iPrec >= 0 && i > iPrec + 1 && i - iPrec < 50) for (let k = iPrec + 1; k < i; k++) if (images[k].ev) evs.push(...images[k].ev);
+  vue.image(A, coupe ? A : B, fr, evs); iPrec = i;
+  $('temps').value = i;
+  const m = Math.floor(A.m / 60);
+  $('info').textContent = doc.equipes.H.club + ' ' + A.sc[0] + ' - ' + A.sc[1] + ' ' + doc.equipes.A.club + ' · ' + m + '\'';
+  const a = actions.filter((x) => x.t <= tVue && x.t > tVue - 1.2).pop();
+  const nom = (j) => (!j ? '' : j.camp === 'A' ? 'n°' + j.numero + ' ' + doc.equipes.A.club.split(' ').slice(-1)[0] : j.nom);
+  $('action').textContent = !a ? '' : nom(doc.joueurs.find((q) => q.code === a.c && q.code != null)) + ' : ' + a.a
+    + (a.variante ? ' (' + a.variante + ')' : a.geste ? ' (' + a.geste + ')' : a.genre ? ' (' + a.genre + ')' : '') + (a.issue ? ', ' + a.issue : '');
+}
+requestAnimationFrame(boucle);
+
+$('lecture').onclick = () => { enPause = !enPause; $('lecture').textContent = enPause ? 'Lecture' : 'Pause'; };
+$('vitesse').onclick = () => { vitesse = vitesse === 1 ? 2 : vitesse === 2 ? 4 : 1; $('vitesse').textContent = '×' + vitesse; };
+$('temps').oninput = (e) => { tVue = images[Number(e.target.value)].t; iPrec = -1; };
+$('suivant').onclick = () => { const a = actions.find((x) => x.a === 'tir' && x.t > tVue + 0.5); if (a) { tVue = Math.max(images[0].t, a.t - 4); iPrec = -1; } };
+$('fichier').onchange = async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  let buf = new Uint8Array(await f.arrayBuffer());
+  if (buf[0] === 0x1f && buf[1] === 0x8b) buf = new Uint8Array(await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
+  try { await charger(JSON.parse(new TextDecoder().decode(buf))); } catch (err) { $('etat').textContent = 'Document illisible : ' + err.message; }
+};
+$('demo').onclick = () => {
+  $('etat').textContent = 'Le moteur joue le match…'; $('demo').disabled = true;
+  setTimeout(async () => {
+    const c = new window.LinkFoot.Club(); c.createClub({ name: 'FC Démo', seed: 4242 });
+    const r = c.matchPont(c.prochainMatch().opp, { seed: 77 });
+    await charger(r.document); $('demo').disabled = false;
+  }, 30);
+};
+$('telecharger').onclick = () => {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(doc)], { type: 'application/json' }));
+  const a = document.createElement('a'); a.href = url; a.download = 'match-' + doc.empreinte + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+};
+window.__charger = charger;
+</script>
+</body>
+</html>

@@ -130,6 +130,15 @@ export declare class Club {
   /** Une texture peinte en JavaScript pur (pas de <canvas> sur téléphone), en RGBA, ligne du bas d'abord. */
   facePack(o: { couleur?: string; nom?: string; tirages?: number }): ImagePeinte;
   panneauPub(): ImagePeinte;
+  /** La passerelle vers un rendu externe (docs/passerelle-ue5.md) : le vrai match, enregistré. */
+  matchPont(opp: Opponent, opts?: { seed?: number; friendly?: boolean; debug?: boolean }): { resultat: MatchResult; document: DocumentPont };
+  verifierPont(doc: DocumentPont): { compte: Record<string, number>; taux: Record<string, number>; exemples: Array<Record<string, unknown>> };
+  lireImagePont(doc: DocumentPont, i: number): { t: number; horloge: number; mi_temps: number; coupe: boolean; ballon: [number, number, number]; porteur: number; score: [number, number]; cpa: string | null; tireur: number;
+    joueurs: Array<{ code: number; present: boolean; x: number; y: number; angle: number; energie: number; etats: number; intention: string | null }> };
+  versUnreal(x: number, y: number, z?: number): { X: number; Y: number; Z: number };
+  lacetUnreal(angleMrad: number): number;
+  personnagePont(id: number): string;
+  empreintePont(texte: string, graine?: number): number;
   CRIS(): Array<{ id: 'encourager' | 'exiger' | 'resserrer' | 'calme'; label: string; effet: string }>;
   /** §2 Composition : un joueur à un poste (échange s'il était titulaire). Un blessé est refusé. */
   assignSlot(slot: string, playerId: number): ActionResult;
@@ -351,6 +360,24 @@ export interface KiosqueEntry {
 export interface ActionResult { ok: boolean; why?: string; lvl?: number; }
 
 export interface ImagePeinte { data: Uint8Array; largeur: number; hauteur: number; }
+/** Le document de la passerelle (format « linkfoot-match », version 1). */
+export interface DocumentPont {
+  format: 'linkfoot-match'; version: 1;
+  moteur: { hz: number; pas: number; graine: number | null };
+  repere: Record<string, unknown>; codes: { intentions: string[]; etats: Record<string, number>; cpa: string[] };
+  match: { competition: 'championnat' | 'amical'; meteo: string; domicile: boolean; debut: number; fin: number };
+  equipes: Record<'H' | 'A', { club: string; maillot: { c1: string; c2: string; motif: string }; formation: string; mentalite: number; tactique: Record<string, number>; entraineur: string | null; style: string | null }>;
+  joueurs: Array<{ code: number | null; camp: 'H' | 'A'; id: number | null; carte: number | null; personnage: string; nom: string; poste: string; ligne: string;
+    numero: number | null; note: number; stats: Record<string, number>; moteur: Record<string, unknown> | null; competences: Array<Record<string, unknown>>;
+    etat: { forme: number; moral: number; energie: number; blessure: number }; pied: string; pied_faible: number;
+    morphologie: { taille_cm: number; poids_kg: number; carrure: string; epaules: number; muscles: number; masse: number; jambes: number; bras: number; bassin: number; posture: number };
+    apparence: { graine: number; visage: number[]; teint: number; coiffure: string; cheveux: string; barbe: string; sourcils: number; yeux: number } }>;
+  images: { champs: string[]; donnees: number[][] };
+  actions: Array<{ t: number; c: number; a: string; [k: string]: unknown }>;
+  evenements: Array<{ t: number; k: string; [k: string]: unknown }>;
+  resultat?: Record<string, unknown>;
+  empreinte: string;
+}
 export interface Vue3D {
   scene: unknown; camera: unknown;
   /** dessine l'instant entre deux images du moteur (fr de 0 à 1) ; evs : événements des images sautées */

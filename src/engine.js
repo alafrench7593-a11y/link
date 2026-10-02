@@ -191,6 +191,13 @@ export function makeEngine(cfg) {
     const rt = (p, d) => { if (p) p.rat = cl(p.rat + d, 3, 10); };
     const clockLabel = (c, h) => { const m = Math.floor(c / 60), hh = h || W.half; if (hh === 1 && m >= 45) return "45+" + (m - 44) + "'"; if (hh === 2 && m >= 90) return "90+" + (m - 89) + "'"; return Math.max(1, m + 1) + "'"; };
     const mark = (e) => curEv.push(e);
+    // §59 la passerelle vers un rendu externe (Unreal Engine 5, docs/passerelle-ue5.md) : ce
+    // que chaque joueur FAIT, horodaté, pour que le rendu choisisse le bon geste. Enregistré
+    // seulement si cfg.pont est demandé, sans rien tirer au hasard ni rien changer au monde :
+    // avec ou sans, le match est le même au chiffre près (test/passerelle.js).
+    const PONT = !!(cfg && cfg.pont);
+    let curAc = [];
+    const act = PONT ? (p, a, d) => { curAc.push(Object.assign({ t: W.t, c: p ? p.code : -1, a }, d || null)); } : () => {};
     const com = (text) => { W.com = text; W.comT = W.t; mark({ k: 'com', text }); };
     const banner = (text, sub, color, dur) => mark({ k: 'banner', text, sub: sub || '', color: color || '#F2F4F7', dur: dur || 1.6 });
     const possPct = () => { const tot = W.pt.H + W.pt.A; return tot ? Math.round(W.pt.H / tot * 100) : 50; };
@@ -362,7 +369,7 @@ export function makeEngine(cfg) {
       const f = kick(p, tx, ty, 'shot', null, { v, apex: head ? 0.6 : res === 'miss' && !post ? 1.6 : V2 ? V2.apex : 0.7 });
       Object.assign(f, { res, shooter: p, blocker: est.blocker, post, head, xg, fk: !!fk, orig, sv, dist: 105 - a, gkOut: gkOutNow, held: W.t - p.rcvT, nd: nearestOpp(p).d });
       if (res === 'goal' && sv) W.sv[sv].g++;
-      if (res !== 'block' && !gk.red) { W.dive = { c: gk.code, dir: Math.sign((tx - gk.x) * (s === 'H' ? 1 : -1)) || 1, t0: W.t, dur: f.dur + 0.2 }; }
+      if (res !== 'block' && !gk.red) { W.dive = { c: gk.code, dir: Math.sign((tx - gk.x) * (s === 'H' ? 1 : -1)) || 1, t0: W.t, dur: f.dur + 0.2 }; act(gk, 'plongeon', { dir: W.dive.dir, dur: W.dive.dur, x: tx, y: ty, issue: res }); }
       com((head ? 'Tête de ' : fk ? 'Coup franc direct de ' : (V2 ? V2.l.charAt(0).toUpperCase() + V2.l.slice(1) : 'Frappe') + ' de ') + p.short + ' !');
       key(res === 'goal' ? 100 : 30 + xg * 170 + (res === 'save' ? 10 : 0), s, 'shot');
       rt(p, res === 'save' ? 0.05 : res === 'miss' ? (xg > 0.3 ? -0.2 : -0.02) : 0);
@@ -374,7 +381,8 @@ export function makeEngine(cfg) {
       if (aerial) { dur = 0.45 + d / (kind === 'cross' || kind === 'corner' || kind === 'fkc' ? 19 : 21); if (!(opt && opt.apex)) apex = cl(d / 4.2, 2.2, 13); }
       else { const v = opt && opt.v ? opt.v : cl(10.5 + d * 0.3, 11, 22); dur = Math.max(0.15, d / v); }
       W.dirty = true;
-      W.fl = { x0: b.x, y0: b.y, x1: tx, y1: ty, t0: W.t, dur, kind, from: p, to, aerial, apex, v: d / Math.max(0.1, dur), u: 0, offside: null };
+      W.fl = { x0: b.x, y0: b.y, z0: b.z, x1: tx, y1: ty, t0: W.t, dur, kind, from: p, to, aerial, apex, v: d / Math.max(0.1, dur), u: 0, offside: null, cpa: W.cpaEnCours || null };
+      act(p, 'ballon', { fl: W.fl });
       W.owner = null; W.last = p.s; if (p) { p.carry = null; }
       return W.fl;
     };
@@ -396,7 +404,8 @@ export function makeEngine(cfg) {
       const bad = cl(0.018 + (70 - tq) * 0.0072 + pr * (inBox(aOf(q.s, q.y), q.x) ? 0.08 : 0.03), 0.01, 0.4);
       if (f && f.from && f.from.s === q.s) { W.st[q.s].pc++; rt(f.from, 0.004); W.lastPass = { from: f.from, to: q, t: W.t, kind: f.kind, back: aOf(q.s, q.y) < aOf(q.s, f.y0) - 4 }; }
       if (R() < bad) {
-        W.fl = null; W.owner = null; const b = W.ball, ang = R() * 6.283; b.vx = Math.cos(ang) * 3.5 + (f ? (f.x1 - f.x0) / f.dur * 0.15 : 0); b.vy = Math.sin(ang) * 3.5 + (f ? (f.y1 - f.y0) / f.dur * 0.15 : 0); b.z = 0; W.last = q.s; q.beat = 0.35; return;
+        W.fl = null; W.owner = null; const b = W.ball, ang = R() * 6.283; b.vx = Math.cos(ang) * 3.5 + (f ? (f.x1 - f.x0) / f.dur * 0.15 : 0); b.vy = Math.sin(ang) * 3.5 + (f ? (f.y1 - f.y0) / f.dur * 0.15 : 0); b.z = 0; W.last = q.s; q.beat = 0.35;
+        act(q, 'controle', { niveau: 'rate', haut: !!(f && f.aerial), presse: no.d < 2 }); return;
       }
       gain(q, 'pass');
       // §23 le contrôle orienté et le contrôle d'élite s'ouvrent au joueur technique,
@@ -424,14 +433,16 @@ export function makeEngine(cfg) {
       const tech1 = q.pas * 0.6 + q.dri * 0.2 + q.dec * 0.2;
       const pOne = cl((tech1 - 62) * 0.009, 0, 0.2) * (no.d < 3 ? 1.8 : 1) * (lvl === 'long' ? 0 : 1) * (q.line === 'GB' ? 0 : 1);
       if (R() < pOne) { q.oneTouch = true; q.ctrlT = W.t; q.nextDec = W.t; }
+      act(q, 'controle', { niveau: lvl, une_touche: !!q.oneTouch, haut: !!(f && f.aerial), presse: no.d < 2 });
       if (inBox(aOf(q.s, q.y), q.x)) { key(14, q.s, 'box'); W.cnt.boxRcv = (W.cnt.boxRcv || 0) + 1; W.cnt['boxRcv_' + q.s] = (W.cnt['boxRcv_' + q.s] || 0) + 1; }
     };
     const intercept = (q) => {
       const f = W.fl; W.fl = null; if (f && f.from) rt(f.from, -0.03); rt(q, 0.05); W.st[q.s].tk++;
+      act(q, 'interception', { de: f && f.from ? f.from.code : -1 });
       gain(q, 'int'); com('Interception de ' + q.short);
     };
     const offsideCall = (q) => {
-      W.st[q.s].off++; banner('HORS-JEU', q.short, '#F2F4F7', 1.4); com('Hors-jeu de ' + q.short + ', le drapeau se lève'); logE('Hors-jeu de ' + q.name + ' signalé', '#9AA3B0', 'O', q.s);
+      W.st[q.s].off++; act(q, 'hors_jeu'); banner('HORS-JEU', q.short, '#F2F4F7', 1.4); com('Hors-jeu de ' + q.short + ', le drapeau se lève'); logE('Hors-jeu de ' + q.name + ' signalé', '#9AA3B0', 'O', q.s);
       setPiece('fk', OT[q.s], q.x, q.y, 'off');
     };
     const flightStep = () => {
@@ -464,7 +475,7 @@ export function makeEngine(cfg) {
       if (!gk.red && (isCross || f.kind === 'long' || f.kind === 'gkl' || f.kind === 'through')) {
         const la = aOf(dS, L.y);
         if (la < 7.5 && Math.abs(L.x - 34) < 11 && hy(gk.x - L.x, gk.y - L.y) < 5.5) {
-          if (R() < cl(0.5 + (gk.han - 65) / 90, 0.3, 0.8)) { rt(gk, 0.08); com(gk.short + ' sort et capte le ballon'); gkHold(gk); return true; }
+          if (R() < cl(0.5 + (gk.han - 65) / 90, 0.3, 0.8)) { rt(gk, 0.08); act(gk, 'prise_aerienne'); com(gk.short + ' sort et capte le ballon'); gkHold(gk); return true; }
         }
       }
       const cands = all().filter((q) => q.fall <= 0 && q.line !== 'GB' && hy(q.x - L.x, q.y - L.y) < 2.6);
@@ -473,6 +484,7 @@ export function makeEngine(cfg) {
       let r = R() * w.reduce((a, v) => a + v, 0), win = cands[0];
       for (let k = 0; k < cands.length; k++) { r -= w[k]; if (r <= 0) { win = cands[k]; break; } }
       const b = W.ball; b.x = L.x; b.y = L.y; b.z = 1.8;
+      act(win, 'duel_aerien', { autres: cands.filter((q) => q !== win).map((q) => q.code) });
       if (R() < 0.035) { const opp = cands.find((q) => q.s !== win.s); if (opp) { W.fl = null; const boxD = inBox(aOf(kS, L.y), L.x); if (boxD && R() < 0.65) { const at = cands.find((q) => q.s === kS), df = cands.find((q) => q.s === dS); if (at && df) { foul(at, df, 'air'); return true; } } foul(opp, win, 'air'); return true; } }
       if (isCross) {
         if (win.s === kS) { const a = aOf(win.s, win.y), contested = cands.some((q) => q.s === dS && hy(q.x - win.x, q.y - win.y) < 1.5); if (contested && R() < 0.5) { b.vx = (R() - 0.5) * 8; b.vy = (R() - 0.5) * 8; b.z = 1.2; b.vz = 1; W.owner = null; W.last = win.s; com('Duel aérien, le ballon retombe dans la surface'); return true; } if (a > 86 && Math.abs(win.x - 34) < 15) { W.owner = null; const tech2 = win.dri * 0.5 + win.sht * 0.5; const foot = b.z < 2.1 && R() < cl((tech2 - 60) * 0.013, 0, 0.45);   // §23 reprise de volée au lieu de la tête
@@ -508,17 +520,19 @@ export function makeEngine(cfg) {
         if (f.xg > 0.22 && !f.pen) logE('Grosse parade de ' + gk.name + ' devant ' + p.name, s === 'H' ? '#BDEBC9' : '#F2B6B6', 'save', s);
         // §23 Mains sûres capte au lieu de repousser, Réflexes félins sort les frappes les plus dures
         const r = R(), cp = cl(0.44 + (gk.han - 65) / 70 - f.xg * 0.25 + TR(gk, 'hands') * 0.12, 0.2, 0.82);
-        if (r < cp) { gkHold(gk); return; }
-        if (r < cp + (1 - cp) * 0.55) { com('Le gardien détourne en corner'); outBehind(o, b.x); return; }
+        const geste = dbl ? 'double' : f.xg > 0.35 || (TR(gk, 'gk') > 0.5 && f.xg > 0.18) ? 'reflexe' : f.sv === 'lob' ? 'detente' : f.sv === 'rasSol' || f.sv === 'ferme' ? 'pied' : f.head ? 'claquette' : 'parade';
+        if (r < cp) { act(gk, 'arret', { geste, issue: 'capte', tireur: p.code }); gkHold(gk); return; }
+        if (r < cp + (1 - cp) * 0.55) { act(gk, 'arret', { geste, issue: 'corner', tireur: p.code }); com('Le gardien détourne en corner'); outBehind(o, b.x); return; }
+        act(gk, 'arret', { geste, issue: 'repousse', tireur: p.code });
         b.vx = (R() - 0.5) * 9; b.vy = (s === 'H' ? 1 : -1) * (4 + R() * 5); b.z = 0.3; W.owner = null; W.last = o; return;
       }
       if (f.res === 'miss') {
-        if (f.post) { banner('POTEAU !', p.short, '#FFE14D', 1.4); com('Sur le poteau !'); b.vx = (R() - 0.5) * 8; b.vy = (s === 'H' ? 1 : -1) * (5 + R() * 6); W.owner = null; W.last = s; return; }
+        if (f.post) { act(p, 'poteau'); banner('POTEAU !', p.short, '#FFE14D', 1.4); com('Sur le poteau !'); b.vx = (R() - 0.5) * 8; b.vy = (s === 'H' ? 1 : -1) * (5 + R() * 6); W.owner = null; W.last = s; return; }
         banner('À CÔTÉ', p.short, '#F2F4F7', 1.1); com(p.short + ' manque le cadre'); setPiece('gk', o, b.x, b.y); return;
       }
       const bl = f.blocker;
       if (aOf(s, bl.y) > 92 && Math.abs(bl.x - 34) < 9 && R() < 0.012) { ownGoal(bl, p); return; }
-      rt(bl, 0.06); W.st[o].tk++; banner('CONTRÉ !', bl.short, '#F2F4F7', 1.1); com('Frappe contrée par ' + bl.short);
+      rt(bl, 0.06); W.st[o].tk++; act(bl, 'contre', { tireur: p.code }); banner('CONTRÉ !', bl.short, '#F2F4F7', 1.1); com('Frappe contrée par ' + bl.short);
       if (aOf(s, bl.y) > 95 && R() < 0.35) { outBehind(o, bl.x); return; }
       b.x = bl.x; b.y = bl.y; b.vx = (R() - 0.5) * 11; b.vy = (s === 'H' ? 1 : -1) * (2 + R() * 7) * (R() < 0.35 ? -1 : 1); b.z = 0; W.owner = null; W.last = o;
     };
@@ -528,6 +542,7 @@ export function makeEngine(cfg) {
       com('Malheureux ' + bl.short + ' : la frappe de ' + shooter.short + ' est déviée dans son propre but !');
       logE('BUT ! ' + bl.name + ' contre son camp, frappe déviée de ' + shooter.name + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#48E08B' : '#FF4757', 'G', s, { by: null, as: null, csc: bl.name });
       key(100, s, 'goal'); W.celK = 'calme'; W.cel = W.t + 3.2; W.celS = s; W.scorer = shooter; W.owner = null; W.fl = null;
+      act(bl, 'but', { csc: true, tireur: shooter.code }); act(shooter, 'celebration', { genre: W.celK, fin: W.cel });
     };
     const goalScored = (p, f) => {
       const s = p.s, o = OT[s]; W.score[s]++;
@@ -569,6 +584,7 @@ export function makeEngine(cfg) {
       logE('BUT ! ' + p.name + ' ' + how + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#48E08B' : '#FF4757', 'G', s, { by: p.name, as: as ? as.name : null });
       key(100, s, 'goal');
       W.celK = pickCeleb(p, s); W.cel = W.t + (W.celK === 'ballon' ? 1.9 : W.celK === 'calme' ? 3.2 : 4.4); W.celS = s; W.scorer = p; W.owner = null;
+      act(p, 'but', { csc: false }); act(p, 'celebration', { genre: W.celK, fin: W.cel });
       com(CELEB_TXT[W.celK].replace('{p}', p.short));
     };
     // ---------- coups de pied arrêtés ----------
@@ -621,6 +637,7 @@ export function makeEngine(cfg) {
       W.set = null; W.owner = p; p.ctrlT = W.t; p.rcvT = W.t; W.last = s;
       if (W.poss !== s) { W.poss = s; W.possT = W.t; TM[s].counterUntil = 0; TM[o].cpressUntil = 0; if (TM[o].tac.mark >= 1) assignMarks(TM[o]); }
       const k = S.kind;
+      W.cpaEnCours = k;
       if (k === 'pen') {
         const gk = TM[o].ps[0]; W.st[s].sh++; W.st[s].xg += 0.78;
         const pg = cl(0.78 + (p.sht - 70) * 0.004 - ((gk.red ? 30 : gk.ref) - 70) * 0.004, 0.62, 0.92), r = R();
@@ -629,7 +646,7 @@ export function makeEngine(cfg) {
         const side = R() < 0.5 ? -1 : 1, gy = yOf(s, PL), sgn = s === 'H' ? -1 : 1;
         const tx = res === 'miss' ? 34 + side * (4 + R() * 1.5) : 34 + side * (1.6 + R() * 1.6), ty = res === 'save' ? gy - sgn * 0.6 : gy + sgn * (res === 'goal' ? 1.2 : 2.5);
         const f = kick(p, tx, ty, 'shot', null, { v: 23, apex: res === 'miss' ? 1.8 : 0.5 }); Object.assign(f, { res, shooter: p, head: false, xg: 0.78, pen: true });
-        if (!gk.red) W.dive = { c: gk.code, dir: (res === 'save' ? side : -side) * (s === 'H' ? 1 : -1), t0: W.t, dur: f.dur + 0.2 };
+        if (!gk.red) { W.dive = { c: gk.code, dir: (res === 'save' ? side : -side) * (s === 'H' ? 1 : -1), t0: W.t, dur: f.dur + 0.2 }; act(gk, 'plongeon', { dir: W.dive.dir, dur: W.dive.dur, x: tx, y: ty, issue: res, penalty: true }); }
         if (res === 'save') { rt(gk, 0.5); logE('Penalty arrêté par ' + gk.name + ' !', s === 'H' ? '#F2B6B6' : '#BDEBC9', 'save', s); }
         if (res === 'miss') logE(p.name + ' rate son penalty !', '#F2B6B6', 'miss', s);
         com(p.short + ' s’élance…'); return;
@@ -918,6 +935,7 @@ export function makeEngine(cfg) {
       if (T.shout === 'calme') { py *= 0.75; prr *= 0.7; }
       let card = null; const r = R(); if (r < prr) card = 'R'; else if (r < prr + py) card = 'Y';
       if (card === 'Y') { fr.yc++; W.st[o].yc++; rt(fr, -0.35); if (fr.yc >= 2) card = 'R2'; }
+      act(fr, 'faute', { victime: vic.code, cause: cause || null, carton: card, penalty: !!pen, chute: 1.3 });
       vic.fall = 1.3; W.owner = null; W.fl = null; W.last = o;
       if (card) mark({ k: 'card', c: fr.code, col: card === 'Y' ? '#FFD23F' : '#FF4757' });
       banner(pen ? 'PENALTY !' : card === 'Y' ? 'CARTON JAUNE' : card ? 'CARTON ROUGE' : 'FAUTE', card ? fr.short : 'Coup franc pour ' + club(s), card === 'Y' ? '#FFD23F' : card ? '#FF4757' : pen ? '#FF4757' : '#F2F4F7', pen || card ? 2 : 1.2);
@@ -957,6 +975,8 @@ export function makeEngine(cfg) {
       for (let i = 0; i < pool.length; i++) { r2 -= w[i]; if (r2 <= 0) return pool[i]; }
       return pool[0];
     };
+    const TACLE_TXT = { glisse: 'Tacle glissé de ', interception: 'Interception de ', tacle: 'Tacle de ' };
+    const genreTacle = (d) => (TR(d, 'tackle') > 0.4 && R() < 0.45 ? 'glisse' : TR(d, 'press') > 0.4 && R() < 0.4 ? 'interception' : 'tacle');
     const duels = () => {
       const c = W.owner; if (!c || W.set || c.line === 'GB') return;
       const s = c.s, o = OT[s];
@@ -971,15 +991,19 @@ export function makeEngine(cfg) {
           const pd = cl(pDrib(c, bl) - g.cost * 0.5 + g.gain * 0.22, 0.1, 0.9);
           W.cnt = W.cnt || {}; W.cnt.drib = (W.cnt.drib || 0) + 1; W.cnt['g' + g.tier] = (W.cnt['g' + g.tier] || 0) + 1;
           if (R() < pd) { W.cnt.dribOk = (W.cnt.dribOk || 0) + 1; bl.beat = 1.1 + g.gain * 0.5; c.beatT = W.t; c.lastGest = g.n; rt(c, 0.07 + g.gain * 0.04); rt(bl, -0.03); mark({ k: 'skill', c: c.code, tier: g.tier });
+            act(c, 'dribble', { geste: g.n, palier: g.tier, contre: bl.code, reussi: true });
             com(c.short + (g.tier >= 4 ? ' : ' + g.lab + ' sur ' + bl.short + ' !' : g.tier >= 3 ? ' élimine ' + bl.short + ' d’une ' + g.lab : ' élimine ' + bl.short + ' !'));
             // §23 un geste de haut palier mérite sa ligne dans le rapport : il reste rare,
             // donc il ne noie pas le fil des événements.
             if (g.tier >= 4) logE(c.name + ' : ' + g.lab + ' sur ' + bl.name, s === 'H' ? '#BDEBC9' : '#F2B6B6', 'skill', s);
             if (aOf(s, c.y) > 66) key(12 + g.tier * 2, s, 'drib'); c.vx *= 1.1 + g.gain * 0.08; c.vy *= 1.1 + g.gain * 0.08; }
           else { const pf = (inBox(aOf(s, c.y), c.x) ? 0.15 : 1) * 0.17 * [0.65, 1, 1.45][TM[o].tac.tackle] * (TM[o].shout === 'calme' ? 0.75 : 1) * (bl.yc >= 1 ? 0.14 : 1);
+            act(c, 'dribble', { geste: g.n, palier: g.tier, contre: bl.code, reussi: false });
             if (R() < pf) { foul(bl, c, 'drib'); return; }
             rt(bl, 0.07); rt(c, -0.04); W.st[o].tk++;
-            com((TR(bl, 'tackle') > 0.4 && R() < 0.45 ? 'Tacle glissé de ' : TR(bl, 'press') > 0.4 && R() < 0.4 ? 'Interception de ' : 'Tacle de ') + bl.short + ', ballon récupéré');
+            const genre = genreTacle(bl);
+            act(bl, 'tacle', { genre, cible: c.code, reussi: true });
+            com(TACLE_TXT[genre] + bl.short + ', ballon récupéré');
             if (R() < 0.7) gain(bl, 'tackle'); else { W.owner = null; const b = W.ball; b.vx = (R() - 0.5) * 8; b.vy = (R() - 0.5) * 8; W.last = o; }
             c.beat = 0.5; }
           return;
@@ -989,7 +1013,7 @@ export function makeEngine(cfg) {
       if (!gk.red && gk.fall <= 0 && W.t >= gk.tkT && hy(gk.x - c.x, gk.y - c.y) < 2.2 && inBox(aOf(s, c.y), c.x)) {
         gk.tkT = W.t + 0.4;
         const r = R(), pw = cl(0.5 + (gk.div - c.dri) / 90, 0.25, 0.8);
-        if (r < pw) { rt(gk, 0.15); com(gk.short + ' plonge dans les pieds de ' + c.short + ' !'); banner('ARRÊT !', gk.short, '#F2F4F7', 1.2); gkHold(gk); return; }
+        if (r < pw) { rt(gk, 0.15); act(gk, 'sortie_pieds', { cible: c.code, reussi: true }); com(gk.short + ' plonge dans les pieds de ' + c.short + ' !'); banner('ARRÊT !', gk.short, '#F2F4F7', 1.2); gkHold(gk); return; }
         if (r < pw + 0.008) { foul(gk, c, 'gk'); return; }
       }
       for (const d of LV[o]) {
@@ -1003,8 +1027,9 @@ export function makeEngine(cfg) {
         const pWin = cl(0.35 + (d.def + TM[o].bonus - Math.max(c.dri, c.phy * 0.92) - TM[s].bonus) / 80 + (backToGoal ? 0.08 : 0) + (fresh ? 0.05 : 0) + TR(d, 'tackle') * 0.07 - TR(c, 'drib') * 0.05, 0.12, 0.72);
         const pF = (ownBox ? 0.08 : 1) * 0.135 * [0.6, 1, 1.45][TM[o].tac.tackle] * (TM[o].shout === 'calme' ? 0.75 : 1) * (pWin < 0.3 ? 1.3 : 1) * (d.yc >= 1 ? 0.14 : 1);
         const r = R();
-        if (r < pWin) { rt(d, 0.07); rt(c, -0.04); W.st[o].tk++; com((TR(d, 'tackle') > 0.4 && R() < 0.45 ? 'Tacle glissé de ' : TR(d, 'press') > 0.4 && R() < 0.4 ? 'Interception de ' : 'Tacle de ') + d.short + ' !'); if (R() < 0.72) gain(d, 'tackle'); else { W.owner = null; const b = W.ball; b.vx = (R() - 0.5) * 9; b.vy = (R() - 0.5) * 9; W.last = o; } return; }
+        if (r < pWin) { rt(d, 0.07); rt(c, -0.04); W.st[o].tk++; const genre = genreTacle(d); act(d, 'tacle', { genre, cible: c.code, reussi: true }); com(TACLE_TXT[genre] + d.short + ' !'); if (R() < 0.72) gain(d, 'tackle'); else { W.owner = null; const b = W.ball; b.vx = (R() - 0.5) * 9; b.vy = (R() - 0.5) * 9; W.last = o; } return; }
         if (r < pWin + pF) { foul(d, c, 'tackle'); return; }
+        act(d, 'tacle', { genre: 'tacle', cible: c.code, reussi: false });
         d.beat = 0.7; return;
       }
     };
@@ -1462,11 +1487,38 @@ export function makeEngine(cfg) {
     };
     // ---------- enregistrement ----------
     let pend = null, lastEnd = -99, shown = 0;
+    // L'image de la passerelle, en plus de l'image ordinaire : pour chaque joueur (code 0 à 21)
+    // l'orientation du corps (milliradians, repère du moteur), l'énergie, les états (au sol,
+    // déséquilibré, porteur, exclu, sprint voulu, presse, appel), l'intention de l'IA et sa
+    // cible ; les actions du pas ; une coupe quand le moteur replace tout le monde.
+    const INTENTIONS = ['HOLD', 'SUPPORT', 'BUILD_UP', 'ATTACK_SPACE', 'DROP', 'OVERLAP', 'RECOVER', 'MARK', 'COVER'];
+    const serAct = (a) => {
+      if (!a.fl) return a;
+      const f = a.fl, o = { t: a.t, c: a.c, a: f.kind === 'shot' ? 'tir' : f.kind === 'clear' ? 'degagement' : f.cpa === 'throw' ? 'touche' : 'passe',
+        genre: f.kind, cpa: f.cpa, x0: f.x0, y0: f.y0, z0: f.z0, x1: f.x1, y1: f.y1, dur: f.dur, apex: f.apex, aerien: !!f.aerial, vers: f.to ? f.to.code : -1 };
+      if (f.kind === 'shot') Object.assign(o, { variante: f.sv || null, issue: f.res, tete: !!f.head, cf: !!f.fk, penalty: !!f.pen, poteau: !!f.post, xg: f.xg });
+      return o;
+    };
+    const imagePont = (f) => {
+      const F = new Int16Array(22), E = new Uint8Array(22), S = new Uint8Array(22), I = new Uint8Array(22), T = new Float32Array(44);
+      for (let k = 0; k < 22; k++) {
+        const p = k < 11 ? TM.H.ps[k] : TM.A.ps[k - 11]; if (!p) continue;
+        F[k] = Math.round(Math.atan2(p.fy, p.fx) * 1000);
+        E[k] = Math.max(0, Math.min(100, Math.round(p.energy)));
+        S[k] = (p.fall > 0 ? 1 : 0) | (p.beat > 0 ? 2 : 0) | (W.owner === p ? 4 : 0) | (p.red ? 8 : 0) | (p.urg > 0.9 ? 16 : 0) | (p.press ? 32 : 0) | (p.run ? 64 : 0) | (p.carry && p.carry.drib ? 128 : 0);
+        I[k] = INTENTIONS.indexOf(p.intent) + 1;
+        T[k * 2] = p.tx != null ? p.tx : p.x; T[k * 2 + 1] = p.ty != null ? p.ty : p.y;
+      }
+      Object.assign(f, { F, E, S, I, T });
+      if (curAc.length) { f.ac = curAc.map(serAct); curAc = []; }
+      if (Math.abs(W.lastTele - (W.t + DT)) < 1e-6) f.coupe = true;
+    };
     const rec = () => {
       // en calcul rapide (runFor, runTicks, finish), rien n'est enregistré... sauf si l'écran
       // a demandé à regarder le match (capture) : l'image est alors gardée à part. L'image se
       // fabrique sans rien tirer au hasard ni rien changer au monde : le match reste le même.
-      if (W.skip && !W.capt) { curEv = []; return; }
+      W.cpaEnCours = null;
+      if (W.skip && !W.capt) { curEv = []; curAc = []; return; }
       const P = new Float32Array(44);
       for (let i = 0; i < 11; i++) { const h = TM.H.ps[i], a = TM.A.ps[i]; P[i * 2] = !h || h.red ? -9 : h.x; P[i * 2 + 1] = !h || h.red ? -9 : h.y; P[22 + i * 2] = !a || a.red ? -9 : a.x; P[23 + i * 2] = !a || a.red ? -9 : a.y; }
       const fa = []; all().forEach((p) => { if (p.fall > 0) fa.push(p.code); });
@@ -1474,6 +1526,7 @@ export function makeEngine(cfg) {
         fl: W.fl ? [W.fl.x0, W.fl.y0, W.fl.x1, W.fl.y1, W.fl.kind] : null, ev: curEv.length ? curEv : null, fa: fa.length ? fa : null, set: W.set ? W.set.kind : null, tk: W.set && W.set.taker ? W.set.taker.code : -1,
         dv: W.dive && W.t - W.dive.t0 < W.dive.dur + 1 ? [W.dive.c, W.dive.dir, Math.min(1, (W.t - W.dive.t0) / Math.max(0.2, W.dive.dur))] : null, sc: [W.score.H, W.score.A] };
       curEv = [];
+      if (PONT) imagePont(f);
       if (W.skip) { W.capt.push(f); if (W.capt.length > W.captMax) W.capt.shift(); return; }
       ring.push(f); if (ring.length > 300) ring.shift();
       if (pend) pend.frames.push(f);
@@ -1567,6 +1620,7 @@ export function makeEngine(cfg) {
         if (W.owner === old) W.owner = np; if (W.set && W.set.taker === old) W.set.taker = np;
         if (W.fl) { if (W.fl.to === old) W.fl.to = np; if (W.fl.from === old) W.fl.from = np; }
         TM[OT[side]].ps.forEach((q) => { if (q.markT === old) q.markT = np; });
+        act(np, 'remplacement', { sortant: old.name, entrant: np.name });
         T.subs++; W.clk += 20; snap();
       },
       shout(k) { TM.H.shout = k; setTP(TM.H); },
