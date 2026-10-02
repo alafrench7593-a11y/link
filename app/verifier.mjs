@@ -188,7 +188,24 @@ const p3 = await ouvre();
 await touche(p3, 'Accueil');
 await p3.waitForTimeout(500);
 t('au lancement suivant, la division a avancé : le prochain match est la journée 2', /Journée 2\/5 contre/.test(await lit(p3)));
-await p3.close();
+
+// fermer l'app pendant le direct ne fait pas fuir le match : il se rejoue au retour
+console.log('\n§2 Fermer l’app pendant le match ne l’efface pas');
+await touche(p3, 'Match');
+await p3.waitForTimeout(600);
+await touche(p3, 'Jouer');
+await p3.waitForTimeout(2500);
+t('le match de la journée 2 est en direct', /CHAMPIONNAT · EN DIRECT/.test(await lit(p3)));
+await p3.waitForTimeout(1000);          // la sauvegarde écrit après 600 ms
+await p3.close();                       // l'app est fermée en plein match
+const p4 = await ouvre();
+await touche(p4, 'Accueil');
+await p4.waitForTimeout(600);
+vu = await lit(p4);
+t('au retour, le match interrompu a été joué jusqu’au bout', /Match interrompu contre .+ joué jusqu’au bout/.test(vu), (vu.match(/Match interrompu[^·]+/) || [])[0]);
+t('   et la division est passée à la journée 3', /Journée 3\/5 contre/.test(vu));
+t('aucune erreur dans la console au retour', !erreurs.length, erreurs[0] || '');
+await p4.close();
 
 await b.close();
 srv.close();

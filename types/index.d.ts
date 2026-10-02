@@ -33,13 +33,42 @@ export interface DivisionRow {
 
 export interface SideStats { sh: number; on: number; xg: number; pa: number; pc: number; tk: number; off: number; cor: number; fou: number; yc: number; rc: number; }
 
+export interface Decision { minute: number; texte: string; }
+/** §2 Le match en direct (src/direct.js). */
+export interface MatchDirect {
+  opp: Opponent; amical: boolean;
+  etat(): {
+    done: boolean; fini: boolean; minute?: number; clock?: string; score?: [number, number]; poss?: number; tirs?: [number, number];
+    xi?: Array<Player & { slot: string; line: string; energy: number; yc: number; red: boolean; note: number }>;
+    banc?: Player[]; faits?: number; max?: number; cri?: string | null;
+    cartes?: Array<{ id: string; label: string; desc: string; n: number }>;
+    decisions: Decision[]; fil?: Array<{ text: string; k: string; s: string }>; vitesse?: number; pause?: boolean;
+    resultat?: MatchResult;
+  };
+  avancer(ms?: number): { done: boolean; minute: number; clock: string; pas: number };
+  remplacer(slot: string, playerId: number): ActionResult;
+  crier(id: string): ActionResult;
+  carte(id: string): ActionResult;
+  /** Minutes de match par seconde réelle ; Infinity pour le résultat direct. */
+  vitesse(v: number): void;
+  pause(oui: boolean): void;
+  ecouter(fn: (etat: ReturnType<MatchDirect['etat']>) => void): () => void;
+  lancer(): Promise<MatchResult>;
+  terminer(): MatchResult;
+}
 export interface MatchResult {
   score: [number, number];
   res: 'w' | 'd' | 'l';
   reward: number;
   stats: { H: SideStats; A: SideStats };
-  log: Array<{ m: number; text: string; k?: string; s?: 'H' | 'A' }>;
+  log: Array<{ m: number; text: string; k?: string; s?: 'H' | 'A'; by?: string | null; as?: string | null }>;
   patch: Record<string, unknown>;
+  /** §22 un amical : hors calendrier, moitié de la prime, tirs au but en cas de nul (§51). */
+  amical?: boolean;
+  pso?: { H: number; A: number } | null;
+  poss?: number;
+  /** les décisions prises depuis le banc pendant le direct */
+  decisions?: Decision[];
 }
 
 export interface ClubState {
@@ -55,7 +84,21 @@ export declare class Club {
   constructor(state?: Partial<ClubState>);
   setState(patch: Partial<ClubState> | ((s: ClubState) => Partial<ClubState>)): ClubState;
   onChange(fn: (s: ClubState) => void): () => void;
-  playMatch(opp: Opponent, opts?: { seed?: number }): MatchResult;
+  playMatch(opp: Opponent, opts?: { seed?: number; friendly?: boolean }): MatchResult;
+  /** Le même match, par paquets : `avance` reçoit aussi le match en direct, pour décider entre deux paquets. */
+  playMatchAsync(opp: Opponent, opts?: { seed?: number; friendly?: boolean; tranche?: number }, avance?: (minute: number, horloge: string, direct: MatchDirect) => void): Promise<MatchResult>;
+  /** §2 Un match qu'on suit et sur lequel on décide depuis le banc. Engagé dans la sauvegarde dès le coup d'envoi. */
+  matchEnDirect(opp: Opponent, opts?: { seed?: number; friendly?: boolean }): MatchDirect;
+  /** Le match en direct en cours, s'il y en a un (un seul à la fois). */
+  enDirect: MatchDirect | null;
+  /** Rejoue à l'identique, jusqu'au bout, un match engagé puis interrompu (l'app fermée pendant le direct). */
+  reprendreMatch(): (MatchResult & { repris: true; decisions: Decision[] }) | null;
+  REGLES_DIRECT(): { remplacements: number };
+  CRIS(): Array<{ id: 'encourager' | 'exiger' | 'resserrer' | 'calme'; label: string; effet: string }>;
+  /** §2 Composition : un joueur à un poste (échange s'il était titulaire). Un blessé est refusé. */
+  assignSlot(slot: string, playerId: number): ActionResult;
+  compositionAuto(): ActionResult;
+  candidatsPoste(slot: string): Array<{ p: Player; pen: number; eff: number; titulaire: boolean; can: boolean; why: string }>;
   pickXI(formation: string): Player[];
   benchOf(xi: Player[]): Player[];
   metrics(xi: Player[]): { ovr: number; [k: string]: number };

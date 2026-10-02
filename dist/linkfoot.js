@@ -1534,6 +1534,18 @@ function makeEngine(cfg) {
         W.minVue = Math.max(W.minVue || 0, brut);
         return { done: !!W.ended, minute: W.minVue, clock: clockLabel(W.clk, W.half), pas: g };
       },
+      // Exactement n pas, faits comme runFor les fait. Un match interrompu se rejoue ainsi à
+      // l'identique jusqu'à l'instant de chaque décision prise depuis le banc (direct.js) :
+      // les décisions sont datées en pas de moteur, pas en minutes, qui ne sont pas assez fines.
+      runTicks(n) {
+        W.skip = true; pend = null;
+        let g = 0;
+        while (!W.ended && g < n) { tick(); keys.length = 0; g++; }
+        if (W.ended) snap();
+        const brut = Math.min(90, Math.floor(W.clk / 60));
+        W.minVue = Math.max(W.minVue || 0, brut);
+        return { done: !!W.ended, minute: W.minVue, clock: clockLabel(W.clk, W.half), pas: g };
+      },
       snapAt(t) { let lo = null; for (let i = hist.length - 1; i >= 0; i--) if (hist[i].t <= t + 1e-6) { lo = hist[i]; break; } return lo || hist[0] || null; },
       state() { snap(); return Object.assign({}, hist[hist.length - 1], { cnt: W.cnt || {} }); },
       sub(side, i, d) {
@@ -4417,6 +4429,27 @@ const Direct = {
       rat: f && f.rat ? { H: f.rat.H.concat(out.map((p) => (p.note != null ? p.note : 6))), A: f.rat.A } : null };
   },
 
+  // Une décision appliquée au match, en direct comme quand un match interrompu se rejoue.
+  // `d` porte tout ce qu'il faut, l'entrant et son descripteur moteur compris : l'effectif
+  // a pu changer depuis. Le remplacé est lu dans le moteur à cet instant (énergie, note).
+  appliquerDecision(ctx, d) {
+    if (d.k === 'sub') {
+      const f = ctx.E.state(), i = ctx.xi.findIndex((p) => p.slot === d.slot);
+      const sortant = Object.assign({}, ctx.xi[i], f.en ? { energy: f.en[i], yc: f.cards[i][0], red: f.cards[i][1], note: f.rat.H[i] } : {});
+      ctx.sortis.push(Object.assign(sortant, { min: Math.max(1, d.minute) }));
+      ctx.E.sub('H', i, d.desc);
+      ctx.xi[i] = d.entrant; ctx.entres[d.entrant.id] = d.minute;
+      ctx.banc = ctx.banc.filter((p) => p.id !== d.entrant.id); ctx.faits++;
+      ctx.decisions.push({ minute: d.minute, texte: d.entrant.name + ' remplace ' + sortant.name + (d.entrant.pen ? ' (hors poste, −' + d.entrant.pen + ')' : '') });
+    } else if (d.k === 'cri') {
+      ctx.E.shout(d.id); ctx.cri = d.id;
+      ctx.decisions.push({ minute: d.minute, texte: 'Consigne : ' + ((this.CRIS().find((c) => c.id === d.id) || {}).label || d.id) });
+    } else if (d.k === 'carte') {
+      ctx.E.card(d.id);
+      ctx.decisions.push({ minute: d.minute, texte: 'Carte jouée : ' + ((this.MATCH_CARDS().find((c) => c.id === d.id) || {}).label || d.id) });
+    }
+  },
+
   // Un match qu'on suit et sur lequel on décide. Le moteur avance par tranches ; entre
   // deux tranches, l'écran peut remplacer, crier une consigne ou jouer une carte.
   //   avancer(ms)        une tranche de calcul (le match est le même qu'en un bloc
@@ -4428,15 +4461,31 @@ const Direct = {
   //   terminer()         joue ce qui reste d'un coup et clôt le match
   // Il n'y a qu'un match en direct à la fois : il est rangé dans this.enDirect, pour
   // qu'un écran qui revient le retrouve au lieu d'en lancer un second.
+  //
+  // Et il est ENGAGÉ dès le coup d'envoi : la sauvegarde garde de quoi le rejouer
+  // (state.matchEngage), avec chaque décision datée en pas de moteur. Fermer l'app pendant
+  // le direct ne l'efface donc plus : au retour, reprendreMatch le rejoue à l'identique
+  // jusqu'au bout. Sinon, un joueur mené pouvait fuir une défaite en fermant l'app.
   matchEnDirect(opp, opts) {
-    const self = this, R = this.REGLES_DIRECT(), ctx = this.ouvrirMatch(opp, opts);   // ouvrirMatch refuse un second match
+    const self = this, R = this.REGLES_DIRECT();
+    const ctx = this.ouvrirMatch(opp, Object.assign({}, opts, { depart: true }));   // ouvrirMatch refuse un second match
     ctx.banc = this.benchOf(ctx.xi).map((p) => Object.assign({}, p, { energy: p.fit != null ? p.fit : 100, yc: 0, red: false }));
-    Object.assign(ctx, { faits: 0, cri: null, decisions: [], sortis: [], entres: {} });
+    Object.assign(ctx, { faits: 0, cri: null, decisions: [], sortis: [], entres: {}, ticks: 0 });
+    this.setState({ matchEngage: { opp: ctx.opp, amical: ctx.amical, plan: ctx.plan, xi: ctx.xi, oxi: ctx.oxi, banc: ctx.banc,
+      depart: ctx.depart, decisions: [] } });
     let dernier = { done: false, minute: 0, clock: "1'" }, rythme = 3, enPause = false, resultat = null, promesse = null;
     const ecouteurs = [];
     const vivant = (f) => ctx.xi.map((p, i) => Object.assign({}, p, f.en ? { energy: f.en[i], yc: f.cards[i][0], red: f.cards[i][1], note: f.rat.H[i] } : {}));
-    const noter = (texte) => { ctx.decisions.push({ minute: dernier.minute, texte }); diffuser(); };
     const diffuser = () => { const e = api.etat(); ecouteurs.slice().forEach((fn) => fn(e)); };
+    // décider : appliquer au moteur, puis l'écrire dans le match engagé (avec `plus`, dans le même setState)
+    const decider = (d, plus) => {
+      d.t = ctx.ticks; d.minute = dernier.minute;
+      self.appliquerDecision(ctx, d);
+      const m = self.state.matchEngage;
+      self.setState(Object.assign({}, plus || {}, m ? { matchEngage: Object.assign({}, m, { decisions: m.decisions.concat([d]) }) } : {}));
+      diffuser();
+      return { ok: true };
+    };
     const api = {
       opp: ctx.opp, amical: ctx.amical,
       etat() {
@@ -4449,40 +4498,32 @@ const Direct = {
           decisions: ctx.decisions.slice(), fil: ctx.E.log.slice(-6).map((l) => ({ text: l.text, k: l.k, s: l.s })),
           vitesse: rythme, pause: enPause };
       },
-      avancer(ms) { if (!dernier.done) dernier = ctx.E.runFor(ms || 40); return dernier; },
+      avancer(ms) {
+        if (!dernier.done) { dernier = ctx.E.runFor(ms || 40); ctx.ticks += dernier.pas; }
+        return dernier;
+      },
       remplacer(slot, id) {
-        const f = ctx.E.state(), xi = vivant(f);
+        const xi = vivant(ctx.E.state());
         const info = self.remplacementInfo({ xi, banc: ctx.banc, faits: ctx.faits, done: dernier.done || !!resultat }, slot, id);
         if (!info.can) return { ok: false, why: info.why };
-        const i = xi.findIndex((p) => p.slot === slot), sortant = xi[i];
-        const entrant = self.entrant(sortant, ctx.banc.find((p) => p.id === id));
-        ctx.sortis.push(Object.assign({}, sortant, { min: Math.max(1, dernier.minute) }));
-        ctx.E.sub('H', i, self.joueurMoteur(entrant));
-        ctx.xi[i] = entrant; ctx.entres[entrant.id] = dernier.minute;
-        ctx.banc = ctx.banc.filter((p) => p.id !== id); ctx.faits++;
+        const entrant = self.entrant(xi.find((p) => p.slot === slot), ctx.banc.find((p) => p.id === id));
         self.buzz(25);
-        noter(entrant.name + ' remplace ' + sortant.name + (entrant.pen ? ' (hors poste, −' + entrant.pen + ')' : ''));
-        return { ok: true };
+        return decider({ k: 'sub', slot, entrant, desc: self.joueurMoteur(entrant) });
       },
       crier(id) {
-        const c = self.CRIS().find((x) => x.id === id);
-        if (!c) return { ok: false, why: 'Consigne inconnue' };
+        if (!self.CRIS().some((x) => x.id === id)) return { ok: false, why: 'Consigne inconnue' };
         if (dernier.done || resultat) return { ok: false, why: 'Le match est fini' };
         if (ctx.cri === id) return { ok: false, why: 'C’est déjà la consigne en cours' };
-        ctx.E.shout(id); ctx.cri = id;
-        noter('Consigne : ' + c.label);
-        return { ok: true };
+        return decider({ k: 'cri', id });
       },
       carte(id) {
         const c = self.MATCH_CARDS().find((x) => x.id === id), inv = Object.assign({}, self.state.inv || {});
         if (!c) return { ok: false, why: 'Carte inconnue' };
         if (dernier.done || resultat) return { ok: false, why: 'Le match est fini' };
         if (!(inv[id] > 0)) return { ok: false, why: 'Aucune carte ' + c.label + ' en réserve' };
-        if (!ctx.E.card(id)) return { ok: false, why: 'Le moteur a refusé la carte' };
-        inv[id]--; self.setState({ inv });
+        inv[id]--;
         self.buzz([30, 30, 60]);
-        noter('Carte jouée : ' + c.label);
-        return { ok: true };
+        return decider({ k: 'carte', id }, { inv });   // la carte sort de la réserve dans la même écriture
       },
       vitesse(v) { rythme = v > 0 ? v : 3; diffuser(); },
       pause(oui) { enPause = !!oui; diffuser(); },
@@ -4519,6 +4560,30 @@ const Direct = {
     };
     this.enDirect = api;
     return api;
+  },
+
+  // Le match engagé puis interrompu (l'app fermée pendant le direct) : rejoué à
+  // l'identique, même moteur au coup d'envoi, même graine, chaque décision au même pas,
+  // puis joué jusqu'au bout et clos comme n'importe quel match.
+  reprendreMatch() {
+    const m = this.state.matchEngage;
+    if (!m || this.enDirect || !m.depart) return null;
+    const rnd = this.seedR(m.depart.seed);
+    for (let i = 0; i < m.depart.tirages; i++) rnd();
+    const E = this.makeEngine(Object.assign(JSON.parse(JSON.stringify(m.depart.cfg)), { rnd }));
+    const ctx = { E, xi: m.xi.slice(), oxi: m.oxi, opp: m.opp, plan: m.plan, amical: m.amical, banc: m.banc.slice(),
+      faits: 0, cri: null, decisions: [], sortis: [], entres: {}, ticks: 0 };
+    (m.decisions || []).forEach((d) => {
+      const r = E.runTicks(d.t - ctx.ticks); ctx.ticks += r.pas;
+      this.appliquerDecision(ctx, d);
+    });
+    E.finish();
+    const res = this.cloreMatch(ctx);
+    res.decisions = ctx.decisions.slice();
+    res.repris = true;
+    this.setState({ lastGain: 'Match interrompu contre ' + m.opp.club + ', joué jusqu’au bout : ' + res.score.join('-')
+      + (this.state.lastGain ? ' · ' + this.state.lastGain : '') });
+    return res;
   }
 };
 
@@ -4781,18 +4846,23 @@ class Club {
   ouvrirMatch(opp, opts) {
     // un seul match à la fois : un second ouvert pendant le direct compterait la journée deux fois
     if (this.enDirect) throw new Error('Un match est déjà en cours');
-    const s = this.state, o = opts || {};
+    const s = this.state, o = opts || {}, seed = o.seed != null ? o.seed : Date.now() % 100000;
     const xi = this.pickXI(s.formation).map((p) => Object.assign({}, p, { energy: p.fit != null ? p.fit : 100, yc: 0, red: false }));
     const styles = this.styles(), oppForm = (styles[opp.style] || {}).form || '4-4-2';
-    const shapeA = this.baseShape(oppForm, 'A'), rnd = this.seedR(o.seed != null ? o.seed : Date.now() % 100000);
+    const shapeA = this.baseShape(oppForm, 'A'), rnd = this.seedR(seed);
     const oxi = shapeA.map((b, i) => ({ id: 9000 + i, name: 'J' + i, pos: b.line, line: b.line, ovr: Math.round(opp.ovr + (rnd() - 0.5) * 8), energy: 100, yc: 0, red: false }));
     const obench = ['MIL', 'ATT', 'DEF'].map((pos, i) => ({ id: 9500 + i, name: 'B' + i, pos, ovr: Math.round(opp.ovr - 2) }));
     const plan = this.matchPlan();   // figé AVANT le coup d'envoi : le plan tactique se consomme
     // §22 seul le match prévu au calendrier compte pour la division ; tout autre match
     // est un amical, décidé ici, avant le coup d'envoi, et pas à l'arrivée
     const amical = !!o.friendly || !this.estAuCalendrier(opp);
-    const E = makeEngine(Object.assign(this.engineCfg(opp, xi, oxi, obench), { rnd }));
-    return { E, xi, oxi, opp, plan, amical };
+    const cfg = this.engineCfg(opp, xi, oxi, obench);
+    // pour le direct : de quoi rejouer ce match à l'identique s'il est interrompu (direct.js),
+    // la graine, les tirages déjà faits (la note de chaque adversaire) et le moteur tel qu'il
+    // est au coup d'envoi, puisque l'effectif ou la tactique peuvent changer d'ici là
+    const depart = o.depart ? { seed, tirages: oxi.length, cfg: JSON.parse(JSON.stringify(cfg)) } : null;
+    const E = makeEngine(Object.assign(cfg, { rnd }));
+    return { E, xi, oxi, opp, plan, amical, depart };
   }
 
   // Tout ce qui suit le coup de sifflet final.
@@ -4811,7 +4881,8 @@ class Club {
     const record = amical ? s.record : Object.assign({}, s.record, { [res]: s.record[res] + 1 });
     const base = Object.assign({}, this.state, { balance: s.balance + reward, record });
     const patch = this.afterMatch(mt, base);
-    this.setState(Object.assign({ record }, patch));
+    // le match est joué : il n'est plus « engagé » (direct.js)
+    this.setState(Object.assign({ record, matchEngage: null }, patch));
     // poss : la vraie possession, en temps de ballon, pas en nombre de passes.
     // playVersus la renvoyait déjà ; elle manquait ici, donc rien hors de l'écran ne
     // pouvait vérifier qu'un style de possession garde effectivement le ballon.
@@ -4858,8 +4929,9 @@ Object.assign(Club.prototype, Players, Skills, Cards, Staff, Training, Transfer,
 
 const SAVE_VERSION = 6;
 
-// Ce qui est conservé d'une session à l'autre. Tout le reste (vue courante, match en cours,
-// animation de pack, horodatages d'affichage) est volatil et recalculé au chargement.
+// Ce qui est conservé d'une session à l'autre. Tout le reste (vue courante, animation de
+// pack, horodatages d'affichage) est volatil et recalculé au chargement. Le match en cours,
+// lui, est gardé sous la forme d'un match engagé (matchEngage), qui se rejoue au retour.
 const PERSIST = [
   'formation', 'balance', 'preset', 'mentality', 'tac', 'roles', 'duties', 'lineup',
   'squad', 'nextId', 'record', 'kit', 'xp', 'level', 'dayStreak', 'dayClaimed',
@@ -4872,7 +4944,9 @@ const PERSIST = [
   // rechargement, et l'écran Finances garde le bilan du dernier match
   'market', 'lastFin',
   // §22 la division : calendrier, résultats et classement de la saison, et la saison d'avant
-  'league', 'saison', 'lastSeason'
+  'league', 'saison', 'lastSeason',
+  // §2 un match engagé : fermer l'app pendant le direct ne l'efface pas, il se rejoue au retour
+  'matchEngage'
 ];
 
 function serialize(club) {

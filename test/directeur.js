@@ -462,6 +462,28 @@ tete('§2 pendant le match, je décide depuis le banc');
   t('un but marqué avant de sortir reste au buteur', k7.buteursDuMatch([{ k: 'G', s: 'H', text: "30' BUT ! " + sort7.name + ' du gauche' }], J.xi).scorers.includes(sort7.id));
   t('   chacun a ses minutes : 55 pour le remplacé, 35 pour l’entrant', J.xi.find((p) => p.id === sort7.id).min === 55 && J.xi.find((p) => p.id === ent7.id).min === 35);
 
+  // fermer l'app pendant le direct ne fait pas fuir le match : il se rejoue à l'identique
+  {
+    // les tranches de calcul se coupent selon l'horloge de la machine : deux directs lancés
+    // côte à côte ne prennent pas leurs décisions au même pas. On compare donc le match
+    // repris avec la suite du MÊME direct, poursuivi sans interruption.
+    const ka = neuf(), da = ka.matchEnDirect(ka.prochainMatch().opp, { seed: 504 });
+    jusqua(da, 25);
+    const e = da.etat(), sort = e.xi.find((p) => !p.red && p.line === 'MIL');
+    da.remplacer(sort.slot, e.banc[0].id); da.crier('calme');
+    jusqua(da, 50);
+    t('le match en direct est engagé dans la sauvegarde, décisions comprises', !!ka.state.matchEngage && ka.state.matchEngage.decisions.length === 2,
+      Math.round(JSON.stringify(serialize(ka)).length / 1024) + ' Ko de sauvegarde');
+    const sauve = JSON.parse(JSON.stringify(serialize(ka)));      // l'app se ferme ici, à la 50e
+    jusqua(da, 99); const fini = da.terminer();                   // le même direct, allé au bout sans interruption
+    const kr = new Club(deserialize(sauve));
+    const repris = kr.reprendreMatch();
+    t('au retour, le match interrompu se rejoue à l’identique, décisions comprises', !!repris && repris.score.join('-') === fini.score.join('-')
+      && JSON.stringify(repris.stats) === JSON.stringify(fini.stats), repris && repris.score.join('-') + ' contre ' + fini.score.join('-'));
+    t('   la journée compte, une seule fois, et le match n’est plus engagé', kr.divisionCourante().day === 1 && !kr.state.matchEngage && kr.reprendreMatch() === null);
+    t('   et l’écran d’accueil le dit', /Match interrompu/.test(kr.state.lastGain || ''), kr.state.lastGain);
+  }
+
   let nul = null;
   for (let g = 600; g < 700 && !nul; g++) { const r = neuf().playMatch(ADV, { seed: g, friendly: true }); if (r.score[0] === r.score[1]) nul = r; }
   t('§51 un amical nul se départage aux tirs au but, dans l’app comme dans l’écran Mon Club',

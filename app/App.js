@@ -44,6 +44,12 @@ export default function App() {
     if (ready && fresh) act((c) => c.createClub({ name: 'FC TonPseudo' }));
   }, [ready, fresh]);
 
+  // Un match engagé puis interrompu (l'app fermée pendant le direct) se rejoue au retour,
+  // à l'identique et jusqu'au bout (src/direct.js) : fermer l'app ne fait pas fuir une défaite.
+  useEffect(() => {
+    if (ready && !fresh && club.state.matchEngage && !club.enDirect) act((c) => c.reprendreMatch());
+  }, [ready, fresh]);
+
   if (!ready) {
     return (
       <SafeAreaProvider>

@@ -1531,6 +1531,18 @@ export function makeEngine(cfg) {
         W.minVue = Math.max(W.minVue || 0, brut);
         return { done: !!W.ended, minute: W.minVue, clock: clockLabel(W.clk, W.half), pas: g };
       },
+      // Exactement n pas, faits comme runFor les fait. Un match interrompu se rejoue ainsi à
+      // l'identique jusqu'à l'instant de chaque décision prise depuis le banc (direct.js) :
+      // les décisions sont datées en pas de moteur, pas en minutes, qui ne sont pas assez fines.
+      runTicks(n) {
+        W.skip = true; pend = null;
+        let g = 0;
+        while (!W.ended && g < n) { tick(); keys.length = 0; g++; }
+        if (W.ended) snap();
+        const brut = Math.min(90, Math.floor(W.clk / 60));
+        W.minVue = Math.max(W.minVue || 0, brut);
+        return { done: !!W.ended, minute: W.minVue, clock: clockLabel(W.clk, W.half), pas: g };
+      },
       snapAt(t) { let lo = null; for (let i = hist.length - 1; i >= 0; i--) if (hist[i].t <= t + 1e-6) { lo = hist[i]; break; } return lo || hist[0] || null; },
       state() { snap(); return Object.assign({}, hist[hist.length - 1], { cnt: W.cnt || {} }); },
       sub(side, i, d) {

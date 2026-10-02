@@ -3,8 +3,9 @@
 
 export const SAVE_VERSION = 6;
 
-// Ce qui est conservé d'une session à l'autre. Tout le reste (vue courante, match en cours,
-// animation de pack, horodatages d'affichage) est volatil et recalculé au chargement.
+// Ce qui est conservé d'une session à l'autre. Tout le reste (vue courante, animation de
+// pack, horodatages d'affichage) est volatil et recalculé au chargement. Le match en cours,
+// lui, est gardé sous la forme d'un match engagé (matchEngage), qui se rejoue au retour.
 const PERSIST = [
   'formation', 'balance', 'preset', 'mentality', 'tac', 'roles', 'duties', 'lineup',
   'squad', 'nextId', 'record', 'kit', 'xp', 'level', 'dayStreak', 'dayClaimed',
@@ -17,7 +18,9 @@ const PERSIST = [
   // rechargement, et l'écran Finances garde le bilan du dernier match
   'market', 'lastFin',
   // §22 la division : calendrier, résultats et classement de la saison, et la saison d'avant
-  'league', 'saison', 'lastSeason'
+  'league', 'saison', 'lastSeason',
+  // §2 un match engagé : fermer l'app pendant le direct ne l'efface pas, il se rejoue au retour
+  'matchEngage'
 ];
 
 export function serialize(club) {

@@ -74,18 +74,23 @@ export class Club {
   ouvrirMatch(opp, opts) {
     // un seul match à la fois : un second ouvert pendant le direct compterait la journée deux fois
     if (this.enDirect) throw new Error('Un match est déjà en cours');
-    const s = this.state, o = opts || {};
+    const s = this.state, o = opts || {}, seed = o.seed != null ? o.seed : Date.now() % 100000;
     const xi = this.pickXI(s.formation).map((p) => Object.assign({}, p, { energy: p.fit != null ? p.fit : 100, yc: 0, red: false }));
     const styles = this.styles(), oppForm = (styles[opp.style] || {}).form || '4-4-2';
-    const shapeA = this.baseShape(oppForm, 'A'), rnd = this.seedR(o.seed != null ? o.seed : Date.now() % 100000);
+    const shapeA = this.baseShape(oppForm, 'A'), rnd = this.seedR(seed);
     const oxi = shapeA.map((b, i) => ({ id: 9000 + i, name: 'J' + i, pos: b.line, line: b.line, ovr: Math.round(opp.ovr + (rnd() - 0.5) * 8), energy: 100, yc: 0, red: false }));
     const obench = ['MIL', 'ATT', 'DEF'].map((pos, i) => ({ id: 9500 + i, name: 'B' + i, pos, ovr: Math.round(opp.ovr - 2) }));
     const plan = this.matchPlan();   // figé AVANT le coup d'envoi : le plan tactique se consomme
     // §22 seul le match prévu au calendrier compte pour la division ; tout autre match
     // est un amical, décidé ici, avant le coup d'envoi, et pas à l'arrivée
     const amical = !!o.friendly || !this.estAuCalendrier(opp);
-    const E = makeEngine(Object.assign(this.engineCfg(opp, xi, oxi, obench), { rnd }));
-    return { E, xi, oxi, opp, plan, amical };
+    const cfg = this.engineCfg(opp, xi, oxi, obench);
+    // pour le direct : de quoi rejouer ce match à l'identique s'il est interrompu (direct.js),
+    // la graine, les tirages déjà faits (la note de chaque adversaire) et le moteur tel qu'il
+    // est au coup d'envoi, puisque l'effectif ou la tactique peuvent changer d'ici là
+    const depart = o.depart ? { seed, tirages: oxi.length, cfg: JSON.parse(JSON.stringify(cfg)) } : null;
+    const E = makeEngine(Object.assign(cfg, { rnd }));
+    return { E, xi, oxi, opp, plan, amical, depart };
   }
 
   // Tout ce qui suit le coup de sifflet final.
@@ -104,7 +109,8 @@ export class Club {
     const record = amical ? s.record : Object.assign({}, s.record, { [res]: s.record[res] + 1 });
     const base = Object.assign({}, this.state, { balance: s.balance + reward, record });
     const patch = this.afterMatch(mt, base);
-    this.setState(Object.assign({ record }, patch));
+    // le match est joué : il n'est plus « engagé » (direct.js)
+    this.setState(Object.assign({ record, matchEngage: null }, patch));
     // poss : la vraie possession, en temps de ballon, pas en nombre de passes.
     // playVersus la renvoyait déjà ; elle manquait ici, donc rien hors de l'écran ne
     // pouvait vérifier qu'un style de possession garde effectivement le ballon.

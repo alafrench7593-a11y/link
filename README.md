@@ -544,6 +544,11 @@ remplacé garde ses minutes, son XP et ses buts. Sans décision, le match en dir
 de `playMatch`, au chiffre près. Un seul match à la fois : un second, ouvert pendant le
 direct, est refusé, pour qu'une journée ne compte jamais deux fois.
 
+Le match est **engagé** dès le coup d'envoi : la sauvegarde garde le moteur tel qu'il était,
+la graine, et chaque décision datée en pas de moteur (`state.matchEngage`, une quinzaine de
+Ko). Si l'app se ferme pendant le direct, `reprendreMatch()` le rejoue au retour, à
+l'identique, jusqu'au bout. Fermer l'app ne permet donc pas de fuir une défaite.
+
 Un but porte son buteur et son passeur en champs (`by`, `as`) dans le fil du moteur : les
 lire dans la phrase en manquait un sur quatre (« centre de », « lancé par »…). Et deux
 joueurs d'un même club n'ont jamais le même nom (`nomUnique`) : un club neuf sur cinq en
@@ -696,8 +701,8 @@ en intégration continue avant de toucher au moteur.
 ## Limites connues
 
 - `playMatch` joue un match entier d'un coup. Pour suivre un match et décider pendant,
-  `matchEnDirect` (voir plus haut). Un match en cours n'est pas sauvegardé : si l'app se
-  ferme pendant le direct, le match n'a pas eu lieu et la journée reste à jouer.
+  `matchEnDirect` (voir plus haut). L'écran Mon Club a son propre direct, animé, avec les
+  mêmes règles ; il ne garde rien d'une session à l'autre, donc rien n'y est engagé.
 - Les ligues entre amis, les défis, le classement et les tournois entre vraies personnes
   demandent le serveur (`server/online-routes.js`). Sans lui, le jeu reste jouable en solo,
   mais ces écrans n'ont personne en face.
