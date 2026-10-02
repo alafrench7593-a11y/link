@@ -49,6 +49,17 @@ t('l’empreinte change si une seule image change', (() => {
   return String(c.empreintePont(JSON.stringify([copie.images.donnees, copie.actions]))) !== D1.empreinte;
 })());
 t('le résultat du document est celui du match', JSON.stringify(D1.resultat.score) === JSON.stringify(R1.score), R1.score.join('-'));
+t('l’empreinte des images (sur les entiers, celle que recalcule le lecteur C++ d’Unreal) est dans le document',
+  typeof D1.empreinte_images === 'string' && D1.empreinte_images === new Club().empreinteImagesPont(D1.images.donnees) && D1.empreinte_images === D2.empreinte_images, D1.empreinte_images);
+t('et elle change si un seul centimètre change', (() => {
+  const copie = D1.images.donnees.map((r) => r.slice()); copie[1234][N + 7] += 1;
+  return new Club().empreinteImagesPont(copie) !== D1.empreinte_images;
+})());
+{
+  const rem = D1.actions.filter((a) => a.a === 'remplacement');
+  t('un remplaçant entre avec ses attributs du moteur (il n’en avait pas au coup d’envoi)', rem.every((a) => a.vitesse_max > 4 && a.acceleration > 0 && a.agilite > 0),
+    rem.length + ' remplacement(s)' + (rem[0] ? ', ' + rem[0].entrant + ' ' + rem[0].vitesse_max.toFixed(2) + ' m/s' : ''));
+}
 
 tete('Le format décrit dans docs/passerelle-ue5.md');
 {
@@ -160,6 +171,19 @@ tete('§55 ce que le rendu ne doit jamais avoir à cacher');
   const touches = D1.actions.filter((a) => a.a === 'touche');
   t('une touche se lance toujours : le lanceur ne repart jamais balle au pied', accordees > 0 && touches.length === accordees && touches.every((a) => a.aerien),
     accordees + ' touches accordées, ' + touches.length + ' lancées, dont ' + touches.filter((a) => a.vers < 0).length + ' le long de la ligne');
+  // le tireur d'un coup de pied arrêté frappe de sa place : il n'y bondit plus au dernier moment
+  const ligne = new Map(D1.images.donnees.map((r) => [r[0], r]));
+  const cpa = D1.actions.filter((a) => (a.a === 'passe' || a.a === 'tir' || a.a === 'degagement' || a.a === 'touche') && a.cpa && a.cpa !== 'ko');
+  const bonds = cpa.map((a) => { const r0 = ligne.get(Math.round(a.t * 10)), r1 = ligne.get(Math.round(a.t * 10) + 1); if (!r0 || !r1) return 0;
+    return Math.hypot(r1[col(a.c, 'x')] - r0[col(a.c, 'x')], r1[col(a.c, 'y')] - r0[col(a.c, 'y')]) / 100; });
+  t('le tireur d’un coup de pied arrêté frappe de sa place : pas de bond au ballon', cpa.length > 20 && bonds.every((d) => d <= 0.8),
+    cpa.length + ' coups de pied arrêtés, plus grand pas ' + Math.max(...bonds).toFixed(2) + ' m en 0,1 s');
+  // une tête ou une volée part de la hauteur du ballon, au lieu de retomber d'un coup au sol
+  // (un tir contré dure 0,15 s : le ballon rabattu au sol par le contreur, c'est voulu)
+  const enLAir = D1.actions.filter((a) => (a.a === 'passe' || a.a === 'tir' || a.a === 'degagement') && a.z0 > 0.5 && a.dur >= 0.3);
+  const chutes = enLAir.map((a) => { const r1 = ligne.get(Math.round(a.t * 10) + 1), r2 = ligne.get(Math.round(a.t * 10) + 2); return r1 && r2 ? (r1[6] - r2[6]) / 100 : 0; });
+  t('une tête ou une volée part de la hauteur du ballon (il ne perd plus 1,8 m en un pas)', enLAir.length > 10 && chutes.every((d) => d < 0.6),
+    enLAir.length + ' frappes au-dessus de 50 cm, plus forte chute ' + Math.max(...chutes).toFixed(2) + ' m en 0,1 s');
   constat('ligne défensive étirée sur plus de 12 m', v.taux.ligne_cassee + ' % des images où l’équipe défend');
 }
 

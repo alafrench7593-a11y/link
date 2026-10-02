@@ -452,7 +452,9 @@ function makeEngine(cfg) {
       const f = W.fl, b = W.ball;
       f.u = Math.min(1, (W.t + DT - f.t0) / f.dur);
       const e = f.aerial || f.kind === 'shot' ? f.u : 1 - Math.pow(1 - f.u, 1.35);
-      b.x = f.x0 + (f.x1 - f.x0) * e; b.y = f.y0 + (f.y1 - f.y0) * e; b.z = f.apex ? 4 * f.apex * f.u * (1 - f.u) : 0;
+      // la hauteur part de celle de la frappe (z0) : une tête ou une volée ne retombait plus d'un
+      // coup au sol avant de monter (la passerelle voyait le ballon perdre 1,8 m en un pas)
+      b.x = f.x0 + (f.x1 - f.x0) * e; b.y = f.y0 + (f.y1 - f.y0) * e; b.z = (f.z0 || 0) * (1 - f.u) + (f.apex ? 4 * f.apex * f.u * (1 - f.u) : 0);
       if (f.kind === 'shot') { if (f.u >= 1) shotArrive(); return; }
       if (b.x < -0.3 || b.x > PW + 0.3 || b.y < -0.3 || b.y > PL + 0.3) { if (!f.aerial || b.z < 2.4) { W.fl = null; outOfPlay(); return; } }
       if (!f.aerial) {
@@ -632,14 +634,27 @@ function makeEngine(cfg) {
       if (b.y < 0 || b.y > PL) { const defS = b.y < 0 ? 'A' : 'H'; if (lt === defS) setPiece('corner', OT[defS], b.x, b.y); else setPiece('gk', defS, b.x, b.y); }
       else setPiece('throw', OT[lt], b.x, b.y);
     };
+    // La place du tireur d'un coup de pied arrêté : là où la mise en place l'envoie (setTargets)
+    // et là d'où il frappe (execSet). Une seule définition, pour qu'il n'ait plus à bondir au
+    // ballon au moment de frapper (la passerelle le voyait sauter de 2 m en un pas).
+    const placeTireur = (S) => {
+      const s = S.s, k = S.kind, dy = s === 'H' ? 0.6 : -0.6;
+      if (k === 'throw') return [S.x, S.y];
+      if (k === 'ko') return [S.x + (s === 'H' ? 0.4 : -0.4), S.y + dy];
+      if (k === 'pen') return [34, yOf(s, PL - 12.2)];
+      if (k === 'gk') return [S.x, S.y + dy];
+      const ecart = k === 'corner' || k === 'fkc' ? 0.6 : 0.5;
+      return [S.x + (S.x < 34 ? -ecart : ecart), S.y + dy];
+    };
     const execSet = () => {
       const S = W.set, s = S.s, T = TM[s], p = S.taker, o = OT[s];
       if (!p || p.red) { W.set = null; return; }
-      // Le tireur vient au ballon. Il y était téléporté 2,5 s après la mise en place, d'où qu'il
-      // vienne (jusqu'à 38 m d'un coup, mesuré par la passerelle) : il court, le temps passe, et
-      // seul un cas sans issue (15 s plus tard) le replace encore.
-      if (hy(p.x - S.x, p.y - S.y) > 1.6 && W.t < S.ready + 15) return;
-      p.x = S.x - (S.kind === 'throw' ? 0 : 0.5 * Math.sign(34 - S.x)); p.y = S.kind === 'throw' ? S.y : S.y + (s === 'H' ? 0.6 : -0.6);
+      // Le tireur vient à sa place et frappe de là. Il était téléporté au ballon (jusqu'à 38 m
+      // d'un coup, puis encore 2 m une fois arrivé à 1,6 m) : il court, le temps passe, et seul
+      // un cas sans issue (15 s plus tard) le replace encore.
+      const [px, py] = placeTireur(S);
+      if (hy(p.x - px, p.y - py) > 0.35 && W.t < S.ready + 15) return;
+      p.x = px; p.y = py;
       W.set = null; W.owner = p; p.ctrlT = W.t; p.rcvT = W.t; W.last = s;
       if (W.poss !== s) { W.poss = s; W.possT = W.t; TM[s].counterUntil = 0; TM[o].cpressUntil = 0; if (TM[o].tac.mark >= 1) assignMarks(TM[o]); }
       const k = S.kind;
@@ -1290,7 +1305,7 @@ function makeEngine(cfg) {
       const shape = (T, att) => { if (att) attackTargets(T); else defendTargets(T); };
       if (k === 'ko') {
         ['H', 'A'].forEach((side) => { LV[side].forEach((p) => { if (p.line === 'GB') { setTL(p, 3, 34, 0.6); return; } setTL(p, cl(10 + (p.ba - 12) * 0.78, 5, 50.5), 34 + (p.bx - 34) * 0.95, 0.6); }); });
-        if (S.taker) setTW(S.taker, S.x + (s === 'H' ? 0.4 : -0.4), S.y + (s === 'H' ? 0.6 : -0.6), 0.8);
+        if (S.taker) { const [tx, ty] = placeTireur(S); setTW(S.taker, tx, ty, 0.8); }
       } else if (k === 'corner' || k === 'fkc') {
         const nl = xl(s, S.x) < 34 ? -1 : 1, T = TM[s], O = TM[o];
         const spots = k === 'corner' ? [{ a: 98.5, x: 34 + nl * 3.2 }, { a: 100, x: 34 + nl * 0.4 }, { a: 98, x: 34 - nl * 4 }, { a: 93.6, x: 34 - nl * 1 }, { a: 95, x: 34 - nl * 7.5 }, { a: 86.5, x: 34 + nl * 2 }]
@@ -1301,7 +1316,7 @@ function makeEngine(cfg) {
         box.forEach((p, j) => setTL(p, spots[j].a, spots[j].x, 0.8));
         rest.forEach((p, j) => setTL(p, 52 + j * 8, 26 + j * 16, 0.6));
         pool.filter((p) => !rest.includes(p) && !box.includes(p)).forEach((p, j) => setTL(p, 70, 20 + j * 14, 0.6));
-        if (S.taker) setTW(S.taker, S.x + (S.x < 34 ? -0.6 : 0.6), S.y + (s === 'H' ? 0.6 : -0.6), 0.9);
+        if (S.taker) { const [tx, ty] = placeTireur(S); setTW(S.taker, tx, ty, 0.9); }
         // défense : zone + marquage
         const def = LV[o].filter((p) => p.line !== 'GB').sort((a2, b2) => b2.phy - a2.phy);
         const zones = k === 'corner' ? [{ a: 5.2, x: 30.5 }, { a: 5.2, x: 33.5 }, { a: 5.2, x: 36.5 }, { a: 1.2, x: 34 + nl * 3.6 }] : [{ a: 17.5, x: 28 }, { a: 17.5, x: 32 }, { a: 17.5, x: 36 }, { a: 17.5, x: 40 }];
@@ -1313,17 +1328,17 @@ function makeEngine(cfg) {
         markers.filter((p) => !outlets.includes(p)).slice(box.length).forEach((p, j) => setTL(p, 20, 26 + j * 16, 0.6));
       } else if (k === 'pen') {
         let j = 0; all().forEach((p) => { if (p === S.taker) return; if (p.line === 'GB' && p.s === o) { setTL(p, 0.3, 34, 0.8); return; } if (p.line === 'GB') { setTL(p, 30, 34, 0.5); return; } const a = aOf(s, yOf(s, 86.5 - (j % 3) * 2.5)), x = 18 + (j % 11) * 3.2; setTW(p, x, yOf(s, 86.5 - (j % 3) * 2.2), 0.7); j++; });
-        setTW(S.taker, 34, yOf(s, PL - 12.2), 0.8);
+        { const [tx, ty] = placeTireur(S); setTW(S.taker, tx, ty, 0.8); }
       } else {
         shape(TM[s], true); shape(TM[o], false);
         if (k === 'gk') { LV[s].forEach((p) => { if (p.kind === 'CB') setTL(p, 12, 34 + (p.bx - 34) * 2.6, 0.7); if (p.kind === 'FB') setTL(p, 26, p.lr < 0 ? 5 : 63, 0.7); if (p.kind === 'DM') setTL(p, 22, 34, 0.7); });
           if (TM[o].tac.engage === 2) LV[o].forEach((p) => { if (p.line === 'ATT') setTL(p, 84, 34 + (p.bx - 34) * 0.8, 0.8); }); }
         if (k === 'fkd') { S.wall.forEach((w) => { if (!w.p.red) setTW(w.p, w.x, w.y, 1); }); LV[s].filter((p) => p !== S.taker && p.line !== 'GB').slice(-4).forEach((p, j) => setTL(p, 90 + (j % 2) * 3, 26 + j * 5, 0.8)); }
-        if (S.taker && k !== 'gk') setTW(S.taker, S.x + (k === 'throw' ? 0 : (S.x < 34 ? -0.5 : 0.5)), S.y + (k === 'throw' ? 0 : (s === 'H' ? 0.6 : -0.6)), 0.9);
+        if (S.taker && k !== 'gk') { const [tx, ty] = placeTireur(S); setTW(S.taker, tx, ty, 0.9); }
         if (k === 'throw') { const mates = LV[s].filter((p) => p !== S.taker && p.line !== 'GB').sort((a2, b2) => hy(a2.x - S.x, a2.y - S.y) - hy(b2.x - S.x, b2.y - S.y)).slice(0, 2); mates.forEach((p, j) => setTW(p, cl(S.x + (S.x < 34 ? 6 + j * 5 : -6 - j * 5), 2, 66), S.y + (j ? -6 : 5), 0.8)); }
       }
       ['H', 'A'].forEach((side) => { const g = TM[side].ps[0]; if (!g.red && !(k === 'pen' && side === o) && !(k === 'gk' && side === s)) gkTarget(TM[side], side === s); });
-      if (k === 'gk') { const g = TM[s].ps[0]; setTW(g, S.x, S.y + (s === 'H' ? 0.6 : -0.6), 0.9); }
+      if (k === 'gk') { const g = TM[s].ps[0], [tx, ty] = placeTireur(S); setTW(g, tx, ty, 0.9); }
     };
     // ---------- célébrations ----------
     // chaque célébration a une destination réelle sur le terrain et une durée :
@@ -1638,7 +1653,8 @@ function makeEngine(cfg) {
         if (W.owner === old) W.owner = np; if (W.set && W.set.taker === old) W.set.taker = np;
         if (W.fl) { if (W.fl.to === old) W.fl.to = np; if (W.fl.from === old) W.fl.from = np; }
         TM[OT[side]].ps.forEach((q) => { if (q.markT === old) q.markT = np; });
-        act(np, 'remplacement', { sortant: old.name, entrant: np.name });
+        // le remplaçant n'avait pas d'attributs du moteur au coup d'envoi : ils voyagent avec l'action
+        act(np, 'remplacement', { sortant: old.name, entrant: np.name, vitesse_max: np.vmax, acceleration: np.acc0, agilite: np.agi0, equilibre: np.bal0 });
         T.subs++; W.clk += 20; snap();
       },
       shout(k) { TM.H.shout = k; setTP(TM.H); },
@@ -5736,6 +5752,18 @@ const Passerelle = {
     return 4294967296 * (2097151 & h2) + (h1 >>> 0);
   },
 
+  // L'empreinte des images, sur les entiers eux-mêmes (cyrb53, ligne par ligne). Un lecteur la
+  // recalcule en lisant (le cœur C++ d'Unreal, unreal/LinkFoot/Source/LinkFootCore) : s'il
+  // trouve la même, il a lu exactement les nombres que le moteur a écrits, quelle que soit la
+  // façon dont le JSON les a formatés.
+  empreinteImagesPont(donnees) {
+    let h1 = 0xdeadbeef ^ donnees.length, h2 = 0x41c6ce57 ^ donnees.length;
+    for (const row of donnees) for (const v of row) { h1 = Math.imul(h1 ^ v, 2654435761); h2 = Math.imul(h2 ^ v, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return String(4294967296 * (2097151 & h2) + (h1 >>> 0));
+  },
+
   // §36 une carte, un joueur, un personnage : le même numéro de bout en bout. Une carte
   // améliorée reste le même personnage ; c'est ce qu'il sait faire qui change.
   personnagePont(id) { return 'LF-' + String(id).padStart(5, '0'); },
@@ -5867,6 +5895,7 @@ const Passerelle = {
       images: { champs, donnees }, actions, evenements
     };
     doc.empreinte = String(this.empreintePont(JSON.stringify([donnees, actions])));
+    doc.empreinte_images = this.empreinteImagesPont(donnees);
     return doc;
   },
 

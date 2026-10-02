@@ -48,6 +48,18 @@ export const Passerelle = {
     return 4294967296 * (2097151 & h2) + (h1 >>> 0);
   },
 
+  // L'empreinte des images, sur les entiers eux-mêmes (cyrb53, ligne par ligne). Un lecteur la
+  // recalcule en lisant (le cœur C++ d'Unreal, unreal/LinkFoot/Source/LinkFootCore) : s'il
+  // trouve la même, il a lu exactement les nombres que le moteur a écrits, quelle que soit la
+  // façon dont le JSON les a formatés.
+  empreinteImagesPont(donnees) {
+    let h1 = 0xdeadbeef ^ donnees.length, h2 = 0x41c6ce57 ^ donnees.length;
+    for (const row of donnees) for (const v of row) { h1 = Math.imul(h1 ^ v, 2654435761); h2 = Math.imul(h2 ^ v, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return String(4294967296 * (2097151 & h2) + (h1 >>> 0));
+  },
+
   // §36 une carte, un joueur, un personnage : le même numéro de bout en bout. Une carte
   // améliorée reste le même personnage ; c'est ce qu'il sait faire qui change.
   personnagePont(id) { return 'LF-' + String(id).padStart(5, '0'); },
@@ -179,6 +191,7 @@ export const Passerelle = {
       images: { champs, donnees }, actions, evenements
     };
     doc.empreinte = String(this.empreintePont(JSON.stringify([donnees, actions])));
+    doc.empreinte_images = this.empreinteImagesPont(donnees);
     return doc;
   },
 
