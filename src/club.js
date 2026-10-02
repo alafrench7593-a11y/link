@@ -94,8 +94,9 @@ export class Club {
     // §6 la tactique au coup d'envoi : le point de départ du coaching en direct
     const tactique = { formation: s.formation, tac: Object.assign({}, cfg.sides.H.tac), ment: cfg.sides.H.ment };
     // pont : le moteur enregistre en plus ce que lit un rendu externe (passerelle.js), sans
-    // rien changer au match
-    const E = makeEngine(Object.assign(cfg, { rnd, pont: !!o.pont }));
+    // rien changer au match ; dbg : un observateur de chaque décision (le joueur, son choix,
+    // les options pesées), pour les tests qui mesurent ce que change une compétence
+    const E = makeEngine(Object.assign(cfg, { rnd, pont: !!o.pont }, typeof o.dbg === 'function' ? { dbg: o.dbg } : null));
     return { E, xi, oxi, opp, plan, amical, depart, tactique, cfg, seed };
   }
 

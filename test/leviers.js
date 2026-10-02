@@ -195,8 +195,12 @@ const LEVIERS = [
   ['§25 Le niveau de l’adjoint compte', 'sansAdjoint', 'avecAdjoint', [
     ['un meilleur adjoint, des passes plus justes', brut('precision'), '>', 0.2]]],
 
+  // Les frappes pour mille décisions de deux séries ne départageaient pas le Tueur en
+  // permanence (quatre ou cinq décisions basculées en douze matchs) : le levier basculait
+  // au moindre changement du moteur. Le moteur compte maintenant les décisions que la
+  // compétence a fait basculer, au même instant, chez le même joueur.
   ['§14 Une compétence équipée change le jeu', 'base', 'finisseurs', [
-    ['des finisseurs tentent leur chance plus souvent', pm('act_shot'), '>']]]
+    ['des finisseurs frappent là où ils auraient joué autre chose', brut('bascule_tir_H'), '>']]]
 ];
 
 // ---------------------------------------------------------------- l'exécution

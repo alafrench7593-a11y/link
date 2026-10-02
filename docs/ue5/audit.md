@@ -93,7 +93,8 @@ le moteur, puisque c'est lui qui fait autorité.
 | 7 | Le placement du gardien ignore son attribut PLA | hors de l'angle 13 à 22 % du temps (passerelle, §9) | §28 un mauvais gardien doit être mal placé | `gkTarget()` |
 | 8 | Le moteur ne transmet pas ses délibérations | panneau « décision » du §71 vide | on ne peut pas montrer pourquoi il a passé | `decide()` |
 | 9 | Pas de blessure pendant le match ; la taille ne pèse pas dans les duels aériens | | §64, §44 | moteur, phase 6 |
-| 10 | Des tests d'équilibre trop courts | le 4e niveau de pressing ne fait que +4 % sur l'intense ; Tueur et Perforateur basculent avec n'importe quel changement du moteur, même à 48 matchs | un test vert ne prouve plus rien | `test/match.js`, `test/traits.js` |
+| 10 | Le pressing change le comportement, presque pas le résultat | 0,58 joueur au pressing (bas) contre 2,67 (très intense), 0,10 contre 0,74 dans la moitié adverse ; ballons récupérés dans la moitié adverse : 279 contre 297 sur 24 matchs | un réglage que le manager ne voit pas payer | le pressing de `targets()`, les duels |
+| 11 | Le Tueur en permanence agit à peine | 4 ou 5 décisions basculées vers la frappe en 12 matchs. Renforcé seul (poids × 1,33), il en fait basculer 32 à 44 mais l'xG de l'équipe a baissé sur 36 matchs (36,6 → 32,3) : il faut aussi qu'il finisse mieux | une carte presque cosmétique (§13) | `decide()`, la frappe |
 
 Corrigé pendant ce travail, et protégé par un test : le coup d'envoi à vingt-deux dans le rond, les
 tireurs téléportés ou qui bondissent au ballon, la touche jouée balle au pied, la tête qui repartait
@@ -101,8 +102,13 @@ du sol, l'instant des réceptions (daté un pas trop tôt : le ballon était enc
 d'un titulaire remplacé (elle portait les attributs de son remplaçant), la hauteur du point de
 frappe dans le lecteur C++.
 
-Les corrections qui changent le jeu (points 1 à 7) doivent passer par les tests d'équilibre ; le
-point 10 d'abord, sans quoi on ne saura pas si elles cassent quelque chose.
+Les corrections qui changent le jeu (points 1 à 7, 10, 11) doivent passer par les tests
+d'équilibre. Ceux qui jugeaient sur des résultats trop bruités pour six ou douze matchs (le
+pressing, le Tueur, le Perforateur) vérifient maintenant ce que font les joueurs : combien
+pressent et où, et les décisions qu'une compétence a fait basculer (le moteur compare, au même
+instant, le choix fait à celui du même joueur sans elle). Les résultats restent affichés en
+constats. Ces compteurs ne changent pas le match (vérifié sur 27 matchs, avec et sans
+compétences).
 
 ## 4. WHAT MOVES TO UNREAL : ce qui passe dans Unreal
 

@@ -768,9 +768,18 @@ function makeEngine(cfg) {
         const ev = e.xg * (a0 < 88 ? (e.blocker ? 1.5 : 2.4) * (1 + (p.pow - 65) / 70) : 1.0) * (1 + (p.sht - 65) / 110) * (T.tac.longshot && a0 < 88 ? 1.6 : 1) * (T.shout === 'exiger' ? 1.1 : 1) * (1 + (T.ment - 3) * 0.04) - (1 - e.xg) * 0.004;
         // §14 un Tueur tente la frappe dans des situations qu'un autre refuserait :
         // son seuil d'acceptation baisse ET la frappe pèse plus lourd dans son choix.
+        // Mesuré (compteur bascule_tir) : le Tueur « en permanence » (trait 0,11) ne fait
+        // basculer que quatre ou cinq décisions en douze matchs. Le renforcer seul (poids
+        // 1 + trait × 3) en fait basculer 32 à 44 et fait frapper 10 à 21 % de plus, mais
+        // l'xG de l'équipe a baissé sur 36 matchs (36,6 → 32,3, à confirmer) : il frappe
+        // de moins bonnes positions sans mieux finir. À reprendre avec la qualité de
+        // frappe, mesuré sur 48 matchs au moins (docs/ue5/audit.md).
         const ts2 = TR(p, 'shot');
         const evS = ev * (1 + ts2 * 0.5);
-        if (e.xg > 0.015 - ts2 * 0.007) opts.push({ k: 'shot', ev: oneV1 ? evS * 1.5 : evS });
+        // sans : ce que vaudrait l'option sans la compétence (null : elle n'existerait pas).
+        // Rien ne s'en sert dans le match ; test/traits.js y lit les décisions que la
+        // compétence a fait basculer.
+        if (e.xg > 0.015 - ts2 * 0.007) opts.push(ts2 > 0 ? { k: 'shot', ev: oneV1 ? evS * 1.5 : evS, sans: e.xg > 0.015 ? (oneV1 ? ev * 1.5 : ev) : null } : { k: 'shot', ev: oneV1 ? evS * 1.5 : evS });
       }
       const addPass = (q, tx, ty, kind, aerial) => {
         tx = cl(tx, 1, PW - 1); ty = cl(ty, 1, PL - 1);
@@ -812,7 +821,8 @@ function makeEngine(cfg) {
         // Le passeur sait que le Perforateur fait l'appel : la passe en profondeur vers
         // lui pèse plus. Sans ce lien, ses courses ne servaient à rien. Même précaution
         // de signe qu'ailleurs : on grandit le gain, on réduit la perte.
-        if ((kind === 'through' || kind === 'space') && TR(q, 'run')) { const kr = 1 + TR(q, 'run') * 0.5; ev = ev > 0 ? ev * kr : ev / kr; }
+        let krRun = 1;
+        if ((kind === 'through' || kind === 'space') && TR(q, 'run')) { const kr = 1 + TR(q, 'run') * 0.5; krRun = kr; ev = ev > 0 ? ev * kr : ev / kr; }
         if (kind === 'space') ev *= (1 + tp * 0.3) * (1 + TR(q, 'sprint') * 0.35);
         if (kind === 'long') ev *= 1 + tp * 0.4;
         if (kind === 'switch') ev *= (1.05 + Math.max(0, p.pas - 70) / 260) * (1 + tp * 0.5);
@@ -827,7 +837,10 @@ function makeEngine(cfg) {
         }
         if (isGK && T.tac.gk === 0 && !aerial) ev *= 1.2; if (isGK && T.tac.gk === 1 && aerial) ev *= 1.25;
         if (e.off) { if (R() < 0.62) return; }
-        opts.push({ k: 'pass', q, x: tx, y: ty, kind, aerial: !!aerial, ev, off: e.off });
+        // la suite ne fait que des produits par des nombres positifs : diviser par krRun rend
+        // exactement l'espérance sans la compétence du receveur (sans : voir la frappe)
+        if (krRun !== 1) opts.push({ k: 'pass', q, x: tx, y: ty, kind, aerial: !!aerial, ev, off: e.off, sans: ev > 0 ? ev / krRun : ev * krRun });
+        else opts.push({ k: 'pass', q, x: tx, y: ty, kind, aerial: !!aerial, ev, off: e.off });
       };
       for (const q of LV[s]) {
         if (q === p || q.fall > 0) continue;
@@ -900,6 +913,20 @@ function makeEngine(cfg) {
       if (!opts.length) { opts.push({ k: 'clear', ev: -1 }); }
       opts.sort((a, b) => b.ev - a.ev);
       const best = opts[0];
+      // §13 ce que la compétence a changé à CETTE décision : l'option que le joueur aurait
+      // préférée sans elle (sans, posé par la frappe du Tueur et la passe vers un
+      // Perforateur). Un compteur seulement : le choix reste celui d'au-dessus. Il mesure
+      // sans bruit qu'une carte agit (test/traits.js, test/leviers.js), là où compter les
+      // frappes de deux séries de matchs ne voit qu'un effet noyé dans le hasard.
+      if (opts.some((x) => x.sans !== undefined)) {
+        let sansB = null, sansEv = -Infinity;
+        for (const x of opts) { const v = x.sans === null ? -Infinity : x.sans !== undefined ? x.sans : x.ev; if (v > sansEv) { sansEv = v; sansB = x; } }
+        if (sansB !== best) {
+          W.cnt = W.cnt || {};
+          const genre = best.k === 'shot' ? 'tir' : best.k === 'pass' && best.sans !== undefined ? 'passe' : 'autre';
+          W.cnt['bascule_' + genre + '_' + s] = (W.cnt['bascule_' + genre + '_' + s] || 0) + 1;
+        }
+      }
       const qd = cl(0.35 + (p.dec + T.bonus - 45) / 55, 0.4, 0.96) * (pr < 1.8 ? (T.shout === 'calme' ? 0.96 : 0.88) : 1);
       let ch = best;
       if (R() > qd) { const alt = opts.slice(1, 4).filter((x) => x.ev > best.ev - 0.012); if (alt.length) ch = alt[Math.floor(R() * alt.length)]; }
@@ -1151,7 +1178,16 @@ function makeEngine(cfg) {
           // davantage : 124 tirs devenaient 106. Ce qui compte, c'est que l'appel soit
           // VU par le passeur, plus bas, dans addPass.
           const flair = (0.05 + Math.max(0, p.att + p.dec - 130) * 0.0006) * (1 + TR(p, 'run') * 1.0);
-          if (!p.prep && R() < flair * (1 + T.tac.behind + Math.max(0, T.ment - 3) * 0.3)) p.prep = { t0: W.t, until: W.t + 2.2 + R(), dx: (R() < 0.5 ? -1 : 1) * (3 + R() * 4), err: gauss() * 0.9 * (1.3 - p.dec / 100) + 0.3 };
+          if (!p.prep) {
+            const k = 1 + T.tac.behind + Math.max(0, T.ment - 3) * 0.3, u = R();
+            if (u < flair * k) {
+              p.prep = { t0: W.t, until: W.t + 2.2 + R(), dx: (R() < 0.5 ? -1 : 1) * (3 + R() * 4), err: gauss() * 0.9 * (1.3 - p.dec / 100) + 0.3 };
+              // compteurs des appels (mesure seulement, test/traits.js) : tous, et ceux que le
+              // même tirage n'aurait pas déclenchés sans le Perforateur
+              W.cnt = W.cnt || {}; W.cnt['appel_' + s] = (W.cnt['appel_' + s] || 0) + 1;
+              if (TR(p, 'run') && u >= flair / (1 + TR(p, 'run') * 1.0) * k) W.cnt['appel_competence_' + s] = (W.cnt['appel_competence_' + s] || 0) + 1;
+            }
+          }
         }
         if (p.prep) { if (W.t > p.prep.until || !carSettled) p.prep = null; else { a = off - 0.7 + p.prep.err; x += p.prep.dx; urg = 0.95; } }
         if (!p.prep) a = Math.min(a, off - 0.7);
@@ -1496,6 +1532,20 @@ function makeEngine(cfg) {
         if (W.owner) duels();
       }
       W.tn = (W.tn || 0) + 1; if (W.tn % 2 === 0 || W.dirty || W.set) { W.dirty = false; targets(); }
+      // Compteurs du pressing, comme ceux des récupérations : ils ne changent rien au match.
+      // À chaque pas où une équipe défend (ballon adverse, jeu en cours), combien de ses
+      // joueurs pressent, et combien le font dans la moitié adverse. Ils mesurent ce que le
+      // réglage de pressing fait faire, que le nombre de ballons récupérés, trop bruité sur
+      // quelques matchs, ne disait pas (test/match.js).
+      if (W.owner && !W.set && W.cel <= 0) {
+        const sd = OT[W.owner.s];
+        let n = 0, nh = 0;
+        for (const q of LV[sd]) if (q.press) { n++; if (aOf(sd, q.y) > 52) nh++; }
+        W.cnt = W.cnt || {};
+        W.cnt['def_' + sd] = (W.cnt['def_' + sd] || 0) + 1;
+        W.cnt['presseurs_' + sd] = (W.cnt['presseurs_' + sd] || 0) + n;
+        W.cnt['presseurs_haut_' + sd] = (W.cnt['presseurs_haut_' + sd] || 0) + nh;
+      }
       move();
       if (!W.set && W.cel <= 0) { phaseBallon = true; ballStep(); phaseBallon = false; }
       else if (W.cel > 0) { const b = W.ball; b.vx = b.vy = 0; }
@@ -6303,8 +6353,9 @@ class Club {
     // §6 la tactique au coup d'envoi : le point de départ du coaching en direct
     const tactique = { formation: s.formation, tac: Object.assign({}, cfg.sides.H.tac), ment: cfg.sides.H.ment };
     // pont : le moteur enregistre en plus ce que lit un rendu externe (passerelle.js), sans
-    // rien changer au match
-    const E = makeEngine(Object.assign(cfg, { rnd, pont: !!o.pont }));
+    // rien changer au match ; dbg : un observateur de chaque décision (le joueur, son choix,
+    // les options pesées), pour les tests qui mesurent ce que change une compétence
+    const E = makeEngine(Object.assign(cfg, { rnd, pont: !!o.pont }, typeof o.dbg === 'function' ? { dbg: o.dbg } : null));
     return { E, xi, oxi, opp, plan, amical, depart, tactique, cfg, seed };
   }
 

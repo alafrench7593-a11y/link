@@ -17,6 +17,14 @@ const t = (nom, cond, detail) => {
   cond ? ok++ : ko++;
 };
 const tete = (s) => console.log('\n' + s);
+// un constat : mesuré et affiché, sans verdict (un effet trop petit pour sortir du bruit de
+// six matchs ; le comportement, lui, est vérifié à côté)
+const constat = (nom, detail) => console.log('  constat ' + nom + (detail ? '  (' + detail + ')' : ''));
+// les compteurs du pressing (moteur, mesure seulement) : joueurs qui pressent par pas où
+// l'équipe défend, et ceux d'entre eux qui pressent dans la moitié adverse
+const presseurs = (cnt) => (cnt.presseurs_H || 0) / Math.max(1, cnt.def_H || 0);
+const presseursHaut = (cnt) => (cnt.presseurs_haut_H || 0) / Math.max(1, cnt.def_H || 0);
+const f2 = (v) => v.toFixed(2).replace('.', ',');
 const lire = (f) => readFileSync(new URL('../' + f, import.meta.url), 'utf8');
 const ADV = { club: 'Référence', ovr: 66, style: 'blocmed' };
 const FORT = { club: 'Costauds', ovr: 80, style: 'gegen' };
@@ -53,19 +61,30 @@ tete('§5 avant le match : formation, mentalité, pressing, bloc, rythme, largeu
   t('le bloc, le rythme et la largeur en trois niveaux', reglage('line').length === 3 && reglage('tempo').length === 3 && reglage('width').length === 3);
   const S = c.styleList().map((x) => x.name);
   t('les styles du cahier, jeu axial compris', ['Tiki-taka', 'Jeu direct', 'Contre-attaque', 'Gegenpressing', 'Jeu sur les ailes', 'Jeu axial'].every((x) => S.includes(x)), S.length + ' styles');
-  // le quatrième niveau de pressing se joue vraiment
+  // le quatrième niveau de pressing se joue vraiment. On le vérifie sur ce que font les
+  // joueurs (combien pressent, et où), que six matchs mesurent sans ambiguïté. Le nombre
+  // de ballons récupérés dans la moitié adverse, lui, était vérifié jusqu'ici : sur 24
+  // matchs il ne monte que de 279 (pressing bas) à 297 (très intense), un effet que six
+  // matchs ne départagent pas ; le test basculait au moindre changement du moteur. Il
+  // reste affiché, en constat.
   const EGAL = { club: 'Égaux', ovr: 60, style: 'blocmed' };
   const serie = (press) => {
     let haut = 0, fautes = 0;
+    const cnt = {};
     for (const seed of [21, 22, 23, 24, 25, 26]) {
       const e = club(); e.setState({ tac: Object.assign({}, e.state.tac, { press }), preset: 'perso' });
       const r = e.playMatch(EGAL, { seed, friendly: true });
       haut += r.cnt.rec_H_haut || 0; fautes += r.stats.H.fou;
+      Object.keys(r.cnt).forEach((k) => { cnt[k] = (cnt[k] || 0) + r.cnt[k]; });
     }
-    return { haut, fautes };
+    return { haut, fautes, presseurs: presseurs(cnt), presseursHaut: presseursHaut(cnt) };
   };
   const intense = serie(2), tres = serie(3);
-  t('pressing très intense : on récupère plus haut qu’en intense', tres.haut > intense.haut, intense.haut + ' contre ' + tres.haut + ' récupérations dans la moitié adverse');
+  t('pressing très intense : plus de joueurs pressent qu’en intense', tres.presseurs > intense.presseurs * 1.3,
+    f2(intense.presseurs) + ' contre ' + f2(tres.presseurs) + ' joueurs au pressing quand l’équipe défend');
+  t('   et ils pressent plus haut, dans la moitié adverse', tres.presseursHaut > intense.presseursHaut * 1.5,
+    f2(intense.presseursHaut) + ' contre ' + f2(tres.presseursHaut));
+  constat('ballons récupérés dans la moitié adverse, intense puis très intense', intense.haut + ' contre ' + tres.haut + ' sur six matchs');
 }
 
 // ---------------------------------------------------------------- §6
@@ -98,8 +117,9 @@ tete('§6 le coaching en direct : la tactique change pendant le match');
   // changé ») : même match, même graine, un changement à l'heure de jeu ou pas. On compte ce
   // que font les joueurs dans la dernière demi-heure, pas le score.
   const EGAL = { club: 'Égaux', ovr: 60, style: 'blocmed' };
-  const apres = (changements, k) => {
-    let n = 0;
+  // les compteurs de la dernière demi-heure, additionnés sur six matchs
+  const apres = (changements) => {
+    const n = {};
     for (const seed of [31, 32, 33, 34, 35, 36]) {
       const e = club(), dd = e.matchEnDirect(EGAL, { seed, friendly: true });
       jusqua(dd, 60);
@@ -107,16 +127,22 @@ tete('§6 le coaching en direct : la tactique change pendant le match');
       changements.forEach(([kk, v]) => dd.tactique(kk, kk === 'formation' ? e.FORMATIONS().indexOf(v) : v));
       dd.avancer(1e9);
       const c1 = dd.compteurs(); dd.terminer();
-      n += (c1[k] || 0) - (c0[k] || 0);
+      Object.keys(c1).forEach((k) => { n[k] = (n[k] || 0) + (c1[k] || 0) - (c0[k] || 0); });
     }
     return n;
   };
-  const surface0 = apres([], 'boxRcv_H'), surface1 = apres([['formation', '4-2-4']], 'boxRcv_H');
-  t('en 4-2-4, plus de ballons reçus dans la surface', surface1 > surface0, surface0 + ' sans changement contre ' + surface1);
-  const haut0 = apres([], 'rec_H_haut'), haut1 = apres([['pressing', 3]], 'rec_H_haut');
-  t('pressing très intense : plus de ballons récupérés dans la moitié adverse', haut1 > haut0, haut0 + ' contre ' + haut1);
-  const bas = apres([['bloc', 0], ['pressing', 0]], 'rec_H_haut'), hautBloc = apres([['bloc', 2], ['pressing', 2]], 'rec_H_haut');
-  t('bloc haut et pressing intense contre bloc bas et pressing faible : on récupère plus haut', hautBloc > bas, bas + ' en bloc bas contre ' + hautBloc + ' en bloc haut');
+  const sans = apres([]);
+  const surface1 = apres([['formation', '4-2-4']]);
+  t('en 4-2-4, plus de ballons reçus dans la surface', (surface1.boxRcv_H || 0) > (sans.boxRcv_H || 0), (sans.boxRcv_H || 0) + ' sans changement contre ' + (surface1.boxRcv_H || 0));
+  // comme au §5 : ce que font les joueurs se vérifie, les ballons récupérés s'affichent
+  const tres = apres([['pressing', 3]]);
+  t('pressing très intense : bien plus de joueurs pressent dans la dernière demi-heure', presseurs(tres) > presseurs(sans) * 1.5,
+    f2(presseurs(sans)) + ' sans changement contre ' + f2(presseurs(tres)) + ' joueurs au pressing quand l’équipe défend');
+  constat('ballons récupérés dans la moitié adverse, sans changement puis en pressing très intense', (sans.rec_H_haut || 0) + ' contre ' + (tres.rec_H_haut || 0));
+  const bas = apres([['bloc', 0], ['pressing', 0]]), hautBloc = apres([['bloc', 2], ['pressing', 2]]);
+  t('bloc haut et pressing intense contre bloc bas et pressing faible : on presse plus haut', presseursHaut(hautBloc) > presseursHaut(bas) * 1.5,
+    f2(presseursHaut(bas)) + ' en bloc bas contre ' + f2(presseursHaut(hautBloc)) + ' joueurs au pressing dans la moitié adverse');
+  constat('ballons récupérés dans la moitié adverse, bloc bas puis bloc haut', (bas.rec_H_haut || 0) + ' contre ' + (hautBloc.rec_H_haut || 0));
 }
 
 // ---------------------------------------------------------------- §7
