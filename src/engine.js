@@ -216,6 +216,14 @@ export function makeEngine(cfg) {
       const prev = W.poss; W.owner = p; W.fl = null; W.dirty = true; const b = W.ball; b.z = 0; b.vx = b.vy = b.vz = 0;
       p.ctrlT = W.t + (how === 'set' ? 0 : ctrlDelay(p)); p.nextDec = p.ctrlT; p.rcvT = W.t; p.carry = null; p.run = null; p.prep = null; p.oneTouch = false; W.last = p.s;
       if (prev !== p.s) {
+        // Compteurs de récupération : comment et où le ballon change de camp. Ils ne
+        // changent rien au match ; ils servent à mesurer ce que le pressing et les
+        // blocs font réellement, que le nombre de tacles ne disait pas.
+        W.cnt = W.cnt || {};
+        W.cnt['rec_' + p.s] = (W.cnt['rec_' + p.s] || 0) + 1;
+        W.cnt['rec_' + p.s + '_' + (how || 'x')] = (W.cnt['rec_' + p.s + '_' + (how || 'x')] || 0) + 1;
+        const zA = aOf(p.s, p.y);
+        if (zA > 52) W.cnt['rec_' + p.s + '_haut'] = (W.cnt['rec_' + p.s + '_haut'] || 0) + 1;
         W.poss = p.s; W.possT = W.t; const T = TM[p.s], O = TM[OT[p.s]];
         const bA = aOf(p.s, p.y), ahead = LV[OT[p.s]].filter((q) => q.line !== 'GB' && aOf(p.s, q.y) > bA).length;
         T.counterUntil = 0; O.counterUntil = 0; T.cpressUntil = 0;
@@ -1150,6 +1158,11 @@ export function makeEngine(cfg) {
       const tX = xl(s, tgt.x), tA = aOf(s, tgt.y);
       const trapZone = T.tac.ptrap === 1 ? (tX < 16 || tX > 52) : T.tac.ptrap === 2 ? (tX > 20 && tX < 48 && tA > 30 && tA < 75) : false;
       const nearGoal = (tA < 30 && Math.abs(tX - 34) < 26) || tA < 20 || (car && W.t - car.rcvT > 2.5 && tA < 45);
+      // J'ai essayé de faire monter le pressing quand une possession adverse dépasse dix
+      // secondes, pour qu'une équipe en bloc bas ne puisse plus faire tourner derrière
+      // à l'infini. Mesuré : le Bus passait de 59 à 55 % de possession contre le
+      // Tiki-taka, et gagnait toujours 20 points sur 24. Ce n'était pas la cause.
+      // Annulé ; le constat reste dans test/styles.js.
       const engaged = tA < T.engageA || cpress || trig || trapZone || nearGoal;
       const cand = LV[s].filter((p) => p.line !== 'GB' && p.fall <= 0 && p.beat <= 0 && !p.boxM && (p.line !== 'DEF' || tA < 34 || T.tac.mark === 2 || hy(p.x - tgt.x, p.y - tgt.y) < 6)).map((p) => ({ p, t: hy(p.x - tgt.x, p.y - tgt.y) / p.vmax })).sort((a2, b2) => a2.t - b2.t);
       if (!cand.length) return;

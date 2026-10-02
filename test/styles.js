@@ -64,10 +64,15 @@ const somme = (...ks) => (t) => ks.reduce((a, k) => a + (t[k] || 0), 0) / (t.dec
 const PROMESSES = [
   ['tiki', 'garde le ballon', brut('poss'), '>', 3],
   ['posit', 'garde le ballon', brut('poss'), '>', 2],
-  ['gegen', 'presse fort : plus de fautes', brut('fou'), '>'],
+  // Le tacle était un mauvais témoin : une équipe qui presse a plus le ballon, donc
+  // elle tacle MOINS. Ce qui dit qu'un pressing marche, c'est OÙ on récupère.
+  ['gegen', 'récupère le ballon haut : plus de récupérations dans la moitié adverse', brut('rec_H_haut'), '>'],
+  ['gegen', 'et presse fort : plus de fautes', brut('fou'), '>'],
   ['blochaut', 'piège du hors-jeu : l’adversaire est pris plus souvent', brut('adv_off'), '>', 0],
+  ['blochaut', 'l’adversaire étouffe dans son camp : on récupère haut', brut('rec_H_haut'), '>'],
   ['homme', 'duels partout : plus de fautes', brut('fou'), '>'],
   ['blocbas', 'aucun espace dans le dos : moins de danger concédé', brut('adv_xg'), '<'],
+  ['blocbas', 'on attend l’erreur : on récupère bas, pas haut', brut('rec_H_haut'), '<'],
   ['bus', 'onze derrière : on concède très peu', brut('adv_xg'), '<'],
   ['bus', 'et on ne frappe presque plus', pm('act_shot'), '<'],
   ['contre', 'on récupère bas, donc on a moins le ballon', brut('poss'), '<', 2],
@@ -165,13 +170,6 @@ console.log('\nCe qui ne tient pas, mesuré');
   console.log('            (rien ne punit une équipe d’être basse : l’adversaire ne la');
   console.log('             bouscule pas assez pour lui reprendre le ballon.)');
 
-  dit('le pressing ne se voit pas dans les tacles',
-    R.gegen.tk - neutre.tk, 'presser haut, c’est récupérer plus souvent', (v) => v < -60,
-    'Gegenpressing ' + R.gegen.tk + ' tacles contre ' + neutre.tk + ' pour l’Équilibré');
-  console.log('            (le tacle est un mauvais témoin : une équipe qui presse a plus');
-  console.log('             le ballon, donc elle tacle moins. Il manque un compteur de');
-  console.log('             récupérations par zone pour le mesurer honnêtement.)');
-
   dit('le marquage individuel se fait démonter',
     R.homme.adv_xg - neutre.adv_xg, 'un système risqué, pas un système perdant d’avance',
     (v) => v > 30,
@@ -236,5 +234,5 @@ console.log('\n§42 Aucun style ne domine tous les autres');
 
 console.log('\n' + (fails
   ? 'ÉCHECS : ' + fails + ' sur ' + checks + ' — une promesse a cédé'
-  : 'OK : ' + checks + ' vérifications, dont 6 constats de promesses non tenues'));
+  : 'OK : ' + checks + ' vérifications, dont 5 constats de promesses non tenues'));
 process.exit(fails ? 1 : 0);

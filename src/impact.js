@@ -65,10 +65,14 @@ export const Impact = {
         mesure: (m) => n1(m.pm('act_pass_long')) + ' longs ballons pour mille, contre '
           + n1(m.pm('act_pass_pass')) + ' passes au sol' },
 
+      // Pas le nombre de tacles : une équipe qui presse a plus le ballon, donc elle tacle
+      // MOINS, et le rapport aurait dit l'inverse de ce qui s'est passé. Ce qui montre
+      // qu'un pressing a marché, c'est OÙ le ballon a été récupéré.
       { id: 'pressing',
         quand: (p) => p.tac.press !== 1 || p.tac.engage !== 1,
         titre: (p) => (p.tac.press >= 2 ? 'Pressing haut' : p.tac.press === 0 ? 'Bloc en retrait' : 'Pressing réglé'),
-        mesure: (m) => m.tk + ' tacles, ' + m.fou + ' fautes, ' + m.yc + ' carton(s) jaune(s)' },
+        mesure: (m) => m.recHaut + ' ballons récupérés dans la moitié adverse sur ' + m.rec
+          + ', ' + m.fou + ' fautes' },
 
       { id: 'ligne',
         quand: (p) => p.tac.line !== 1,
@@ -129,6 +133,7 @@ export const Impact = {
       advSh: A.sh || 0, advOff: A.off || 0,
       poss: mt.poss != null ? mt.poss : (mt.possNow != null ? mt.possNow : 50),
       cross: cnt.cross || 0, drib: cnt.drib || 0, dribOk: cnt.dribOk || 0, gestes,
+      rec: cnt.rec_H || 0, recHaut: cnt.rec_H_haut || 0,
       precision: H.pa ? Math.round(H.pc / H.pa * 100) : 0,
       dec, pm: (k) => (dec ? (cnt[k] || 0) / dec * 1000 : 0)
     };

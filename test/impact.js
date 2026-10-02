@@ -85,9 +85,9 @@ tete('§47 Les chiffres affichés sont ceux du match, pas une estimation');
   t('les frappes annoncées sont celles des statistiques', nSh === r.stats.H.sh,
     nSh + ' annoncées, ' + r.stats.H.sh + ' au relevé');
 
-  const nTk = Number((par.pressing || '').match(/^(\d+) tacles/)?.[1]);
-  t('les tacles annoncés sont ceux des statistiques', nTk === r.stats.H.tk,
-    nTk + ' annoncés, ' + r.stats.H.tk + ' au relevé');
+  const nRec = Number((par.pressing || '').match(/^(\d+) ballons récupérés/)?.[1]);
+  t('les récupérations hautes annoncées sont celles comptées par le moteur', nRec === (r.cnt.rec_H_haut || 0),
+    nRec + ' annoncées, ' + (r.cnt.rec_H_haut || 0) + ' comptées');
 
   const nCr = Number((par.couloirs || '').match(/^(\d+) centres/)?.[1]);
   t('les centres annoncés sont ceux comptés par le moteur', nCr === (r.cnt.cross || 0),
