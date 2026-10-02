@@ -2,3 +2,11 @@ node_modules/
 saves/
 *.tgz
 .DS_Store
+build/
+# Unreal : ce que l'éditeur et la compilation fabriquent
+unreal/LinkFoot/Binaries/
+unreal/LinkFoot/Intermediate/
+unreal/LinkFoot/Saved/
+unreal/LinkFoot/DerivedDataCache/
+unreal/LinkFoot/.vs/
+unreal/LinkFoot/*.sln

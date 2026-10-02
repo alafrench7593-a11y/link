@@ -5,8 +5,9 @@ football 3D ultra-réaliste » : avant de toucher à quoi que ce soit côté Unr
 sait déjà faire, ce qui lui manque, et le contrat exact entre le moteur LinkFoot et Unreal.
 
 Le côté LinkFoot de la passerelle est écrit et testé (`src/passerelle.js`, `test/passerelle.js`).
-Le côté Unreal est défini ici, classe par classe ; il se construit dans Unreal Engine 5.8, sur
-un poste qui a l'éditeur (il ne peut pas être compilé dans l'environnement de LinkFoot).
+Le côté Unreal est écrit dans `unreal/` (section 4) : son cœur C++ est compilé et testé hors
+d'Unreal ; la couche Unreal n'a encore été compilée par aucun Unreal, et ses assets se créent dans
+l'éditeur (`unreal/README.md`). L'audit du cahier « AAA » est dans `docs/ue5/audit.md`.
 
 ## 1. Les cinq décisions
 
@@ -207,9 +208,20 @@ La vitesse se déduit de deux images (différence centrée) ; elle n'est pas tra
 
 Chacune porte `t` (instant du geste), `c` (code du joueur) et `a` (le type).
 
+`t` est l'instant où l'action se voit dans les images. Un pas du moteur se joue en deux temps :
+les décisions (passes, tirs, duels, tacles, dribbles, fautes de duel) partent des positions du
+début du pas, l'image de `t` ; le ballon (contrôles, interceptions, duels aériens, prises,
+arrêts, buts, hors-jeu) se règle après le déplacement des joueurs, sur les positions de la fin
+du pas, et ces actions sont datées de la fin du pas. Au moment d'un contrôle, le ballon est donc
+au pied du receveur dans l'image de `t` (0,67 m en médiane, mesuré par `test/passerelle.js`).
+Une frappe jouée pendant le pas du ballon (dégagement ou déviation de la tête juste après un
+duel aérien) porte en plus `t0`, l'origine de la formule de son vol, un dixième de seconde
+avant `t` : au contact (`t`) le ballon est au point de frappe, la formule le rejoint à l'image
+suivante (révision du 2 octobre 2026, même version 1 du format).
+
 | `a` | Champs | Ce que le rendu en fait |
 | --- | --- | --- |
-| `passe` | `genre` (pass, long, through, cross, corner, fkc, gkl), `cpa`, `x0 y0 z0 x1 y1`, `dur`, `apex`, `aerien`, `vers` | geste de passe, pied et surface selon l'angle et la hauteur (`z0` au-dessus de 1,2 m : une tête) ; contact à `t` |
+| `passe` | `genre` (pass, long, through, cross, corner, fkc, gkl), `cpa`, `x0 y0 z0 x1 y1`, `dur`, `apex`, `aerien`, `vers`, `t0` si la formule part avant `t` | geste de passe, pied et surface selon l'angle et la hauteur (`z0` au-dessus de 1,2 m : une tête) ; contact à `t` |
 | `tir` | les mêmes, plus `variante` (puissant, place, enroule, rasSol, seche, lob, talon, apresDrib, ferme, faible, volee, demi, reprise, retourne), `issue` (goal, save, miss, block), `tete`, `cf`, `penalty`, `poteau`, `xg` | la frappe exacte, le pied faible si `faible` |
 | `degagement`, `touche` | comme une passe | dégagement long ou de la tête ; touche aux deux mains |
 | `controle` | `niveau` (rate, long, correct, oriente, elite), `une_touche`, `haut`, `presse` | contrôle, contrôle orienté, poitrine ou cuisse si `haut` |
@@ -245,22 +257,20 @@ l'écran Match aujourd'hui.
 
 ## 4. Le côté Unreal (UE 5.8)
 
-Un plugin `LinkFootBridge`, et un projet de jeu qui l'utilise.
+Le projet `unreal/LinkFoot`, en cinq modules (`docs/ue5/projet-unreal.md`). Ce qui était prévu ici,
+et ce qui existe :
 
-| Classe | Rôle |
-| --- | --- |
-| `ULFBridgeSubsystem` | lit un document (fichier gzip) ou un flux ; tampon d'images ; donne l'état interpolé à n'importe quel instant, et la trajectoire future de chaque joueur |
-| `ULFMatchDirector` | crée les 22 joueurs et le ballon depuis la feuille ; gère coupes, remplacements, expulsions ; distribue actions et événements |
-| `ALFFootballer` | un personnage MetaHuman ; capsule pilotée par la trajectoire du moteur (pas de physique de déplacement propre) |
-| `ULFLocomotionComponent` | Motion Matching (Pose Search) avec la trajectoire future du moteur ; Orientation et Stride Warping ; verrouillage des pieds et IK de pose de pied |
-| `ULFActionComponent` | joue le geste de chaque action (montages ou base de Motion Matching dédiée) ; Motion Warping vers le point de contact (`x0`, `y0`, `z0` à l'instant `t`) |
-| `ALFBall` | position par la formule du vol (3.3) ou le ballon libre des images ; rotation et effet visuels seulement |
-| `ULFGoalkeeperComponent` | choisit le plongeon par direction, hauteur et temps (`plongeon`, `arret`) ; sorties, prises |
-| `ALFCameraDirector` | caméra TV qui suit le ballon, plan de but, plans serrés, ralentis rejoués depuis le tampon |
-| `ALFCrowd` | MetaHuman Collections ou foules instanciées ; réactions sur `roar`, `goal`, `card` |
-| `ULFAudio` | MetaSounds : ambiance, chants, frappe, poteau, filet, sifflet, sur actions et événements |
-| `ULFDebugOverlay` | §54 : par joueur, carte, statistiques, compétences, rôle, intention, cible, vitesse, accélération, énergie, action en cours, animation en cours ; gardien : position, position idéale, angle de tir |
-| `ULFSyncChecker` | §55 côté rendu : glissement de pied, écart au moteur, contact pied-ballon, collisions de capsules |
+| Prévu | Écrit | État |
+| --- | --- | --- |
+| `ULFBridgeSubsystem` : lire un document, l'état à tout instant, la trajectoire future | `ULFMatchSubsystem` (module LinkFootMatch) et le cœur `LinkFootCore` (`LFDocument`, `LFCinematique`, `LFTrajectoire`, `LFEtatMatch`) | fichier : écrit ; flux en direct : phase 5 |
+| `ULFMatchDirector` : les 22 joueurs et le ballon, coupes, remplacements, expulsions | `ALFDirecteurMatch` ; la fiche portée à l'instant t (`DocumentMatch::ficheA`) | écrit |
+| `ALFFootballer` : capsule pilotée par le moteur | `ALFFootballeur` | écrit ; mannequin d'abord, MetaHuman en phase 4 |
+| `ULFLocomotionComponent` : Motion Matching sur la trajectoire du moteur, warping, pieds | `ULFAnimInstanceFootballeur` (C++) et un Animation Blueprint (asset) | C++ écrit ; asset à créer (`docs/ue5/animation.md`) |
+| `ULFActionComponent` : le geste, Motion Warping vers le point de contact | le contact dans `ULFAnimInstanceFootballeur` (`LFContact` : instant, genre, surface, pied, point) ; IK du pied vers le point plutôt que Motion Warping, qui modifie le root motion qu'un personnage consomme pour se déplacer et ne déplacerait donc pas un acteur posé par le moteur (déduit de la documentation, à vérifier) | C++ écrit ; gestes : captures de football |
+| `ALFBall` | `ALFBallon` | écrit |
+| `ULFGoalkeeperComponent`, `ALFCameraDirector`, `ALFCrowd`, `ULFAudio` | | phases 3 et 4 |
+| `ULFDebugOverlay` (§54) | `ALFHUDDebug` | écrit ; les délibérations du moteur ne sont pas exportées (audit, section 3) |
+| `ULFSyncChecker` (§55 côté rendu) | `ULFComposantControle` et `LFDetecteurs` : écart au moteur, pieds, mouvements impossibles, famille d'animation, contact pied-ballon | écrit ; collisions de capsules : à écrire |
 
 Ce que chaque donnée pilote :
 
@@ -279,11 +289,12 @@ Ce que chaque donnée pilote :
 ## 5. Les personnages
 
 - **MetaHuman**, intégré à Unreal depuis la 5.6 : corps paramétrique (hauteur, poitrine, tour de
-  taille, longueur des jambes) et, depuis la 5.8, un script Python qui crée et modifie des personnages par lot. Un
-  outil LinkFoot lira les feuilles de match et fabriquera un MetaHuman par personnage (`LF-00127`
-  une fois pour toutes ; une carte améliorée garde son visage).
-- **Licence** : gratuite sous un million de dollars de chiffre d'affaires, 1 850 dollars par poste et
-  par an au-delà.
+  taille, longueur des jambes). Un outil LinkFoot lira les feuilles de match et fabriquera un
+  MetaHuman par personnage (`LF-00127` une fois pour toutes ; une carte améliorée garde son
+  visage) ; par script Python dans l'éditeur (la création par lot est à vérifier sur la 5.8).
+- **Licence** : MetaHuman fait partie de la licence d'Unreal. Pour un jeu : 5 % du chiffre
+  d'affaires brut au-delà d'un million de dollars par produit (les ventes sur l'Epic Games Store
+  en sont exemptées). Les 1 850 dollars par poste et par an concernent les usages hors jeu.
 - **Aucun visage réel** : les coefficients viennent d'une graine. Un visage de joueur réel demanderait
   une licence.
 - **Coût d'affichage** : vingt-deux MetaHumans proches de la caméra plus un public. Les cheveux sont
@@ -294,9 +305,10 @@ Ce que chaque donnée pilote :
 
 Le code n'est pas le plus long. Ce sont les gestes.
 
-- **Locomotion** : le Game Animation Sample d'Epic (plus de 500 animations, mis à jour pour la 5.7)
-  couvre marcher, courir, démarrer, freiner, tourner. Le Motion Matching (Pose Search) y est
-  intégré, mais il reste marqué expérimental par Epic.
+- **Locomotion** : le Game Animation Sample d'Epic (plus de 500 animations à sa sortie, mis à jour
+  pour la 5.8 le 12 août 2026) couvre marcher, courir, démarrer, freiner, tourner. Motion Matching
+  (Pose Search) est en production depuis la 5.4 ; seule la génération de trajectoire du nœud Pose
+  History reste expérimentale, et LinkFoot s'en passe : la trajectoire vient du moteur.
 - **Football** : rien de tout fait à ce niveau. À capturer (capture sans marqueurs à partir de
   vidéo, ou combinaison) ou à acheter, pour chaque action du tableau 3.7 : passes des deux pieds à
   trois allures, 14 frappes, contrôles à quatre niveaux et trois surfaces, 8 dribbles, 3 tacles et
@@ -341,6 +353,9 @@ Côté Unreal, à écrire avec le plugin (critères d'acceptation) :
 | 5 | direct par flux, ralentis, débogueur, contrôles côté rendu | un match en direct suivi de bout en bout |
 | 6 | le moteur : contacts lissés, touches de balle, gardien selon PLA, blessures en match, taille dans les duels aériens (le coup d'envoi, les tireurs téléportés et la touche sans partenaire sont déjà corrigés) | chaque changement mesuré par `test/leviers.js`, `test/styles.js`, `test/coherence.js` et `test/passerelle.js` |
 
+Au 2 octobre 2026 : le code des phases 1 et 2 est écrit (`unreal/`) ; le cœur est testé hors
+d'Unreal, la couche Unreal n'a pas encore été compilée par Unreal, et aucun asset n'existe.
+
 ## 9. Ce que la passerelle a déjà trouvé dans le moteur
 
 Mesuré sur deux matchs (graine 77, contre deux adversaires) par `verifierPont`. Les trois premiers
@@ -366,3 +381,21 @@ points sont corrigés, et `test/passerelle.js` vérifie qu'ils ne reviennent pas
 Ces deux derniers points ne sont pas des bugs au sens strict (un gardien qui revient d'une sortie,
 un latéral pris haut existent au football) ; leur fréquence est suivie en constat, et elle dira si
 le placement du gardien selon PLA et le repli des latéraux (phase 6) changent quelque chose.
+
+Ensuite, la lecture du document par le cœur C++ d'Unreal (`unreal/tests-coeur`, trois matchs).
+Corrigé, et vérifié par un test :
+
+- **L'instant des réceptions** : les actions de la phase du ballon (réception, interception,
+  duel aérien, arrêt, but) étaient datées du début du pas, alors que le ballon n'arrive qu'à sa
+  fin : un contrôle se voyait 0,1 s trop tôt, ballon encore à 1,5 m. Elles sont datées de la fin
+  du pas, et une frappe de cette phase porte `t0`, l'origine de sa formule (section 3.7). Le
+  match ne change pas.
+- **La fiche d'un titulaire remplacé** portait les attributs de son remplaçant (la feuille était
+  lue en fin de match) : 19 fiches justes sur 22. Elle est prise au coup d'envoi.
+
+Mesuré, à reprendre dans le moteur (`docs/ue5/audit.md`, section 3) : à 60 images par seconde,
+20 346 à-coups au-dessus de 14 m/s² sur 1 463 minutes-joueur (3 886 après le lissage du rendu) ;
+un ballon qui suit son porteur sans touches ; un contrôle raté repris au pas suivant 350 fois sur
+390 ; 44 % des frappes du pied faible, le côté du terrain décidant du pied ; des vols aériens
+jusqu'à 9,4 g ; des frappes en une touche jusqu'à 1,7 m du corps ; les délibérations du moteur
+absentes du document.

@@ -15,7 +15,7 @@ JavaScript ordinaire, donc sérialisable, donc persistable où tu veux.
 ```
 src/engine.js   moteur de match : 11 contre 11, physique du ballon, décisions des joueurs,
                 dribbles, tacles, hors-jeu, coups de pied arrêtés, cartons, remplacements.
-                ~1 250 lignes, zéro dépendance.
+                ~1 700 lignes, zéro dépendance.
 src/club.js     classe Club : le noyau, qui mélange les modules de domaine ci-dessous.
 src/players.js  fiches joueurs : statistiques, note globale, profil.
 src/skills.js   compétences procédurales (§32 à §36).
@@ -50,6 +50,8 @@ canvas/         l'écran Mon Club, regénéré depuis src/ par npm run sync.
 types/          déclarations TypeScript.
 dist/linkfoot.js  même chose en un seul fichier, expose window.LinkFoot.
 app/            l'application Expo pour téléphone (voir app/README.md)
+src/passerelle.js le match exporté pour un autre rendu (format linkfoot-match, docs/passerelle-ue5.md).
+unreal/         le rendu Unreal Engine 5.8 : projet, cœur C++ testé hors d'Unreal (voir unreal/README.md).
 demo/demo.html  page de démonstration : joue des matchs, recharge, le club est toujours là.
 test/sim.js     simulateur d'équilibrage et test d'aller-retour de sauvegarde.
 ```
@@ -611,6 +613,13 @@ Enregistrer pour la passerelle ne change pas le match, au chiffre près. `tools/
 rejoue un document avec le rendu 3D de LinkFoot (ce qu'Unreal recevra, rien de plus), et
 `test/passerelle.js` vérifie le format, l'empreinte et la chaîne carte → moteur → mouvement →
 action.
+
+Le côté Unreal est dans `unreal/` : le projet `unreal/LinkFoot` (Unreal Engine 5.8, cinq modules
+C++), son cœur portable compilé et testé hors d'Unreal (`unreal/tests-coeur`, sur de vrais matchs
+du moteur), et une vérification de syntaxe de la couche Unreal (`unreal/verif-syntaxe`). La couche
+Unreal n'a encore été compilée par aucun Unreal, et aucun asset n'existe : `unreal/README.md` dit
+ce qui est fait et ce qu'il reste à faire dans l'éditeur. L'audit, le projet et l'animation sont
+décrits dans `docs/ue5/`.
 
 ### La création du club
 

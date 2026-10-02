@@ -71,3 +71,30 @@ jobs:
       - name: L'app, comme un joueur la verrait
         working-directory: app
         run: npm run verifier
+
+  # Le cœur C++ de LinkFoot pour Unreal, compilé et testé hors d'Unreal sur trois vrais
+  # matchs et les seize scènes (gcc puis clang, avertissements en erreurs), et la couche
+  # Unreal vérifiée en syntaxe contre les déclarations relevées dans la référence
+  # d'Unreal 5.8. Ce job ne compile pas avec Unreal : aucun exécuteur GitHub ne l'a.
+  unreal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Outils
+        run: sudo apt-get update && sudo apt-get install -y ninja-build clang
+      - name: Le cœur, avec gcc
+        run: |
+          cmake -S unreal/tests-coeur -B build/coeur-gcc -G Ninja -DCMAKE_CXX_COMPILER=g++
+          cmake --build build/coeur-gcc
+          ctest --test-dir build/coeur-gcc --output-on-failure
+      - name: Le cœur, avec clang
+        run: |
+          cmake -S unreal/tests-coeur -B build/coeur-clang -G Ninja -DCMAKE_CXX_COMPILER=clang++
+          cmake --build build/coeur-clang
+          ctest --test-dir build/coeur-clang --output-on-failure
+      - name: La couche Unreal, en syntaxe
+        run: python3 unreal/verif-syntaxe/verifier.py
