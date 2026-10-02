@@ -190,6 +190,35 @@ tete('§15 les statistiques changent les décisions');
   t('Dribble 92 : il tente des gestes avancés (palier 3 et plus) que l’effectif normal ne tente pas',
     somme(haut, 'haut') > somme(bas, 'haut') * 2 + 2, somme(bas, 'haut') + ' contre ' + somme(haut, 'haut'));
 }
+{
+  // La vitesse, la passe et la finition, chacune seule, sur les seuls joueurs concernés.
+  // Les compteurs sont ceux de NOTRE équipe (suffixe _H) : ce que fait l'adversaire ne
+  // s'y mélange pas. Mesuré d'abord sur six graines (vitesse : 19 ballons en profondeur
+  // contre 165 ; passe : 46 contre 68 ; finition : 28 % de tirs cadrés contre 46 %).
+  // Les buts, eux, sont trop rares pour six matchs : sur vingt graines, la finition à 95
+  // en marque 21 contre 11 à 40, mais sur six le hasard peut inverser l'ordre. Le test
+  // regarde donc la décision (frapper) et l'exécution (cadrer), pas le score.
+  const jouerAvec = (champs, postes, seed) => {
+    const e = new Club(); e.createClub({ name: 'FC Stat', seed: 4242 });
+    e.setState({ squad: e.state.squad.map((p) => {
+      if (!postes.includes(p.pos)) return p;
+      const st = {}; e.cardStats(p).forEach((q) => { st[q.l] = q.v; });
+      return Object.assign({}, p, { st: Object.assign(st, champs) });
+    }) });
+    return e.playMatch(ADV, { seed });
+  };
+  const S6 = [41, 42, 43, 44, 45, 46];
+  const total = (champs, postes, f) => S6.reduce((a, sd) => a + f(jouerAvec(champs, postes, sd)), 0);
+  const prof = (r) => r.cnt.act_pass_through_H || 0;
+  const lents = total({ VIT: 40 }, ['ATT'], prof), rapides = total({ VIT: 95 }, ['ATT'], prof);
+  t('Vitesse 95 en attaque : on le cherche dans la profondeur bien plus qu’à 40', rapides > lents * 2, lents + ' passes en profondeur contre ' + rapides);
+  const fine = total({ PAS: 40 }, ['MIL'], prof), laser = total({ PAS: 95 }, ['MIL'], prof);
+  t('Passe 95 au milieu : il tente les passes qui cassent une ligne', laser > fine * 1.2, fine + ' contre ' + laser);
+  const cad = (champs) => { let sh = 0, on = 0; S6.forEach((sd) => { const r = jouerAvec(champs, ['ATT'], sd); sh += r.stats.H.sh; on += r.stats.H.on; }); return { sh, on, taux: on / Math.max(1, sh) }; };
+  const maladroit = cad({ TIR: 40, ATQ: 40 }), buteur = cad({ TIR: 95, ATQ: 95 });
+  t('Tir 95 en attaque : il frappe plus souvent, et cadre bien mieux', buteur.sh >= maladroit.sh && buteur.taux > maladroit.taux + 0.08,
+    Math.round(maladroit.taux * 100) + ' % cadrés sur ' + maladroit.sh + ' tirs contre ' + Math.round(buteur.taux * 100) + ' % sur ' + buteur.sh);
+}
 
 tete('§16 les animations ont des variantes, et les statistiques décident lesquelles');
 {

@@ -418,7 +418,7 @@ export function makeEngine(cfg) {
       const tech1 = q.pas * 0.6 + q.dri * 0.2 + q.dec * 0.2;
       const pOne = cl((tech1 - 62) * 0.009, 0, 0.2) * (no.d < 3 ? 1.8 : 1) * (lvl === 'long' ? 0 : 1) * (q.line === 'GB' ? 0 : 1);
       if (R() < pOne) { q.oneTouch = true; q.ctrlT = W.t; q.nextDec = W.t; }
-      if (inBox(aOf(q.s, q.y), q.x)) { key(14, q.s, 'box'); W.cnt.boxRcv = (W.cnt.boxRcv || 0) + 1; }
+      if (inBox(aOf(q.s, q.y), q.x)) { key(14, q.s, 'box'); W.cnt.boxRcv = (W.cnt.boxRcv || 0) + 1; W.cnt['boxRcv_' + q.s] = (W.cnt['boxRcv_' + q.s] || 0) + 1; }
     };
     const intercept = (q) => {
       const f = W.fl; W.fl = null; if (f && f.from) rt(f.from, -0.03); rt(q, 0.05); W.st[q.s].tk++;
@@ -855,6 +855,8 @@ export function makeEngine(cfg) {
       // l'option s'appelait au moment du choix.
       const sousType = ch.k !== 'pass' ? '' : '_' + (ch.kind === 'pass' && ch.aerial ? 'long' : ch.kind);
       W.cnt['act_' + ch.k + sousType] = (W.cnt['act_' + ch.k + sousType] || 0) + 1;
+      // et par équipe : sans ce suffixe, ce que fait un camp se noyait dans ce que fait l'autre (§15)
+      W.cnt['act_' + ch.k + sousType + '_' + s] = (W.cnt['act_' + ch.k + sousType + '_' + s] || 0) + 1;
       exec(p, ch, counter);
     };
     const exec = (p, ch, counter) => {
