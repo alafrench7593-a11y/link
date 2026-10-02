@@ -149,7 +149,7 @@ function PlayerScreen({ club, p, act, back }) {
       <Card>
         <Text style={st.lbl}>COMPÉTENCES</Text>
         {club.skillsOf(p).length === 0
-          ? <Empty>Aucune compétence. Ouvre le {club.packPrincipal().name} (ou le Pack Compétence) et équipe-la depuis Compétences.</Empty>
+          ? <Empty>Aucune compétence. Ouvre le {club.packPrincipal().name} et équipe-la depuis Compétences.</Empty>
           : club.skillsOf(p).map((k, i) => (
             <View key={i} style={{ gap: 3 }}>
               <Row>
@@ -273,7 +273,6 @@ export function TrainScreen({ club, state, act, go }) {
   const [pickStat, setPickStat] = useState(null);
   const ti = club.trainInfo();
   const opts = club.trainingOptions();
-  const tp = club.TRAIN_PACK(), cp = club.COACH_PACK();
   const meets = club.meetings();
 
   if (pickStat) {
@@ -344,9 +343,9 @@ export function TrainScreen({ club, state, act, go }) {
 
       {/* L'achat se fait dans l'onglet Packs : ici on se sert de ce qu'on a. */}
       <Card tint="rgba(92,200,255,0.35)">
-        <Text style={st.body}>{club.packPrincipal().name} {club.packPrincipal().cost} jetons, {Math.round(club.packFamilies().find((f) => f.kind === 'objet').pct)} % d’objets · {tp.name} {tp.cost} · {cp.name} {cp.cost}</Text>
-        <Text style={st.hint}>Séances, cartes, causeries et plans sortent du pack principal ou des packs ciblés, dans l’onglet Packs. Tu les ouvres là-bas, tu t’en sers ici.</Text>
-        <Btn label="Les packs" small onPress={() => go('packs')} />
+        <Text style={st.body}>{club.packPrincipal().name} · {club.packPrincipal().cost} jetons · {Math.round(club.packFamilies().find((f) => f.kind === 'objet').pct)} % d’objets à chaque tirage</Text>
+        <Text style={st.hint}>Séances, cartes, causeries et plans sortent du pack, dans l’onglet Packs. Tu l’ouvres là-bas, tu t’en sers ici.</Text>
+        <Btn label="Le pack" small onPress={() => go('packs')} />
       </Card>
 
       {state.trainLog ? <Card><Text style={st.body}>{state.trainLog}</Text></Card> : null}
@@ -354,17 +353,9 @@ export function TrainScreen({ club, state, act, go }) {
   );
 }
 
-// ---------- les packs ----------
-// §8 UN pack principal, mis en avant, et les packs ciblés dessous. L'écran ne connaît
-// aucun pack par son nom : il affiche ce que club.kiosque() lui donne, donc un pack
-// ajouté dans le moteur apparaît ici sans qu'on touche à ce fichier.
-const OUVRIR = {
-  linkfoot: (c) => c.commitPack(c.openPack({})),
-  skill: (c) => c.commitSkillPack(c.openSkillPack({})),
-  train: (c) => c.commitTrainPack(c.openTrainPack({})),
-  coach: (c) => c.commitCoachPack(c.openCoachPack({}))
-};
-const TEINTE = { linkfoot: '#2ECC71', skill: '#C39BFF', train: '#5CC8FF', coach: '#F2C66B' };
+// ---------- le pack ----------
+// §8 UN SEUL PACK. L'écran ne recopie aucune probabilité : il affiche ce que
+// club.packPrincipal() lui donne, les deux tables mêmes du tirage (§9, §29).
 const POURCENT = (v) => (v >= 10 ? v.toFixed(0) : v.toFixed(1).replace('.', ',')) + ' %';
 const SOUS_FAMILLE = {
   player: 'une carte du catalogue ; un joueur déjà au club devient des fragments',
@@ -374,11 +365,10 @@ const SOUS_FAMILLE = {
 
 export function PacksScreen({ club, state, act, go }) {
   const col = club.collection();
-  const k = club.kiosque();
-  const main = k.find((x) => x.principal), cibles = k.filter((x) => !x.principal);
+  const k = club.packPrincipal();
   return (
     <ScrollView contentContainerStyle={st.page}>
-      <Title sub="Un seul pack principal, qui peut tout donner. Les probabilités sont affichées avant l’ouverture et ne changent jamais.">Le pack</Title>
+      <Title sub="Un seul pack dans tout le jeu, et il peut tout donner. Les probabilités sont affichées avant l’ouverture et ne changent jamais.">Le pack</Title>
       <Card>
         <Row>
           <View style={{ flex: 1 }}>
@@ -388,58 +378,36 @@ export function PacksScreen({ club, state, act, go }) {
           <Text style={[st.ovr, { color: C.green }]}>{col.have} / {col.total}</Text>
         </Row>
       </Card>
-      {main ? <PackCard k={main} act={act} go={go} /> : null}
-      <Title sub="Pour viser une seule famille quand tu sais ce qui te manque. Ils ne contiennent rien que le pack principal ne puisse donner.">Packs ciblés</Title>
-      {cibles.map((x) => (
-        <PackCard key={x.key} k={x} act={act} go={go} />
-      ))}
-    </ScrollView>
-  );
-}
-
-function PackCard({ k, act, go }) {
-  return (
-    <Card tint={TEINTE[k.key] + (k.principal ? '99' : '59')}>
-      <Row>
-        <View style={{ flex: 1 }}>
-          <View style={{ alignSelf: 'flex-start' }}><Tag color={TEINTE[k.key]}>{k.principal ? 'PACK PRINCIPAL' : k.family}</Tag></View>
-          <Text style={st.name}>{k.name}</Text>
-          <Text style={st.hint}>{k.desc}</Text>
-          <Text style={st.hint}>{k.question}</Text>
-        </View>
-      </Row>
-      {k.familles ? (
-        <View>
-          <Text style={st.lbl}>CE QUE PEUT DONNER CHAQUE TIRAGE</Text>
-          {k.familles.map((f) => (
-            <View key={f.kind}>
-              <Row>
-                <Text style={[st.hint, { flex: 1 }]}>{f.label}</Text>
-                <Text style={st.body}>{POURCENT(f.pct)}</Text>
-              </Row>
-              <Text style={st.hint}>{SOUS_FAMILLE[f.kind]}</Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
-      <Text style={st.lbl}>{k.familles ? 'RARETÉ DE CHAQUE TIRAGE' : 'PROBABILITÉS PAR TIRAGE'}</Text>
-      {k.odds.map((o, i) => (
-        <View key={i}>
-          <Row>
+      <Card tint={C.green + '99'}>
+        <View style={{ alignSelf: 'flex-start' }}><Tag color={C.green}>PACK UNIQUE</Tag></View>
+        <Text style={st.name}>{k.name}</Text>
+        <Text style={st.hint}>{k.desc}</Text>
+        <Text style={st.lbl}>CE QUE PEUT DONNER CHAQUE TIRAGE</Text>
+        {k.familles.map((f) => (
+          <View key={f.kind}>
+            <Row>
+              <Text style={[st.hint, { flex: 1 }]}>{f.label}</Text>
+              <Text style={st.body}>{POURCENT(f.pct)}</Text>
+            </Row>
+            <Text style={st.hint}>{SOUS_FAMILLE[f.kind]}</Text>
+          </View>
+        ))}
+        <Text style={st.lbl}>RARETÉ DE CHAQUE TIRAGE</Text>
+        {k.odds.map((o, i) => (
+          <Row key={i}>
             <Text style={[st.hint, { flex: 1 }]}>{o.label}</Text>
-            {o.rarLabel ? <Tag color={o.color}>{o.rarLabel}</Tag> : null}
             <Text style={st.body}>{POURCENT(o.pct)}</Text>
           </Row>
-          {o.desc ? <Text style={st.hint}>{o.desc}</Text> : null}
-        </View>
-      ))}
-      {k.got ? <Text style={[st.hint, { color: C.green }]}>Dernier tirage : {k.got}</Text> : null}
-      <Btn label={(k.principal ? 'OUVRIR LE PACK · ' : 'Ouvrir · ') + k.cost + ' jetons'} why={k.why} onPress={() => act(OUVRIR[k.key])} />
-      <Row>
-        <Text style={[st.hint, { flex: 1 }]}>{k.useLabel}</Text>
-        <Btn label="Y aller" small onPress={() => go(k.useView === 'squad' ? 'squad' : k.useView)} />
-      </Row>
-    </Card>
+        ))}
+        <Text style={st.hint}>La rareté vaut pour les trois familles : un objet Gold est aussi rare qu’un joueur Gold.</Text>
+        {k.got ? <Text style={[st.hint, { color: C.green }]}>Dernier tirage : {k.got}</Text> : null}
+        <Btn label={'OUVRIR LE PACK · ' + k.cost + ' jetons'} why={k.why} onPress={() => act((c) => c.commitPack(c.openPack({})))} />
+        <Row>
+          <Text style={[st.hint, { flex: 1 }]}>{k.useLabel}</Text>
+          <Btn label="Y aller" small onPress={() => go(k.useView)} />
+        </Row>
+      </Card>
+    </ScrollView>
   );
 }
 
@@ -453,9 +421,9 @@ export function SkillsScreen({ club, state, act, go }) {
     <ScrollView contentContainerStyle={st.page}>
       <Title sub={club.skillCount().toLocaleString('fr-FR') + ' combinaisons possibles'}>Compétences</Title>
       <Card tint="rgba(195,155,255,0.35)">
-        <Text style={st.body}>{club.packPrincipal().name} {club.packPrincipal().cost} jetons, {Math.round(club.packFamilies().find((f) => f.kind === 'skill').pct)} % de compétences · {club.SKILL_PACK().name} {club.SKILL_PACK().cost}, 100 %</Text>
-        <Text style={st.hint}>Les compétences sortent du pack principal ou du Pack Compétence, dans l’onglet Packs. Ici on équipe, là-bas on ouvre.</Text>
-        <Btn label="Les packs" small onPress={() => go('packs')} />
+        <Text style={st.body}>{club.packPrincipal().name} · {club.packPrincipal().cost} jetons · {Math.round(club.packFamilies().find((f) => f.kind === 'skill').pct)} % de compétences à chaque tirage</Text>
+        <Text style={st.hint}>Les compétences sortent du pack, dans l’onglet Packs. Ici on équipe, là-bas on ouvre.</Text>
+        <Btn label="Le pack" small onPress={() => go('packs')} />
       </Card>
       {inv.length === 0 ? <Empty>Aucune compétence en réserve pour l’instant.</Empty> : null}
       {inv.map((k) => (

@@ -10,7 +10,7 @@
 //
 // Ce fichier construit l'app pour le navigateur, la sert, et la parcourt comme un
 // joueur : premier lancement, les six onglets, les neuf entrées du directeur sportif,
-// le pack principal ouvert, second lancement.
+// le pack ouvert, second lancement.
 //
 //   npm run verifier        depuis app/, après npm install
 import { spawn } from 'node:child_process';
@@ -107,13 +107,13 @@ for (const [entree, attendu] of ENTREES) {
   t(entree, trouve && attendu.test(vu) && !erreurs.length, erreurs[0] || (trouve ? '' : 'entrée introuvable'));
 }
 
-console.log('\n§8 et §19 Le pack principal s’ouvre, et ce qu’on fait se garde');
+console.log('\n§8 et §19 Le pack unique s’ouvre, et ce qu’on fait se garde');
 await touche(p1, 'Packs');
 await p1.waitForTimeout(700);
 t('§9 la part de chaque famille est affichée avant l’ouverture', /CE QUE PEUT DONNER CHAQUE TIRAGE/.test(await lit(p1)));
 await touche(p1, 'OUVRIR LE PACK · 250 jetons');
 await p1.waitForTimeout(1800);
-t('le pack principal s’ouvre et dit ce qu’il a donné', /Dernier tirage/.test(await lit(p1)));
+t('le pack s’ouvre et dit ce qu’il a donné', /Dernier tirage/.test(await lit(p1)));
 // le pack a pu donner un joueur : on relève l'effectif tel qu'il est APRÈS l'ouverture
 await touche(p1, 'Accueil');
 await p1.waitForTimeout(600);

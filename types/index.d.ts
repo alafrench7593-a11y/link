@@ -108,26 +108,9 @@ export declare class Club {
   takeSession(): boolean;
   addSessions(n: number): number;
   trainInfo(): { sessions: number; max: number; freePerDay: number; can: boolean; why: string; line: string };
-  TRAIN_PACK(): PackDef;
   TRAIN_LOTS(): TrainLot[];
-  trainPackOdds(): Array<{ id: string; label: string; rarLabel: string; color: string; pct: number; desc: string }>;
-  drawTrainLot(rnd?: () => number): TrainLot;
-  openTrainPack(opts?: { free?: boolean; rnd?: () => number }): { ok: boolean; why?: string; def?: PackDef; got?: TrainLot[]; free?: boolean };
-  commitTrainPack(res: unknown): { ok: boolean; sessions?: number; xp?: number; cards?: string[] };
-  trainPackState(): { can: boolean; why: string; cost: number };
   trainingOptions(): Array<{ id: string; label: string; desc: string; cost: string; kind: 'squad' | 'card'; stat?: string; n?: number; can: boolean; why: string }>;
-  PACK_REGISTRY(): Array<PackDef & { family: string; question: string; view: string }>;
-  SKILL_PACK(): PackDef;
-  skillPackOdds(): Array<{ id: string; label: string; color: string; pct: number }>;
-  skillPackState(): { can: boolean; why: string; cost: number };
-  openSkillPack(opts?: { free?: boolean; rnd?: () => number }): { ok: boolean; why?: string; def?: PackDef; got?: unknown[]; free?: boolean };
-  commitSkillPack(res: unknown): { ok: boolean; added?: number };
-  COACH_PACK(): PackDef;
   COACH_ITEMS(): CoachItem[];
-  coachPackOdds(): Array<{ id: string; label: string; rarLabel: string; color: string; pct: number; desc: string }>;
-  coachPackState(): { can: boolean; why: string; cost: number };
-  openCoachPack(opts?: { free?: boolean; rnd?: () => number }): { ok: boolean; why?: string; def?: PackDef; got?: CoachItem[]; free?: boolean };
-  commitCoachPack(res: unknown): { ok: boolean; added?: string[] };
   meetings(): Array<CoachItem & { n: number; can: boolean; why: string }>;
   holdMeeting(id: string): { ok: boolean; why?: string; text?: string };
   plansLeft(): number;
@@ -191,7 +174,7 @@ export declare class Club {
   packFamilies(): Array<{ kind: 'player' | 'skill' | 'objet'; label: string; pct: number }>;
   /** Ce qu'un objet fait, en quelques mots, lu dans ses propres champs. */
   objetCourt(o: PackObjet): string;
-  /** Le pack principal tel que le kiosque l'affiche. */
+  /** Le pack unique, tel que l'écran Packs l'affiche. */
   packPrincipal(): KiosqueEntry;
   kiosque(): KiosqueEntry[];
   appliquerObjetsEntrainement(lots: PackObjet[]): { sessions: number; xp: number; cards: string[] };
@@ -222,15 +205,15 @@ export interface HiddenAttrs {
   potReel: number; regularite: number; grandsMatchs: number; pression: number;
   progression: number; blessure: number; adaptation: number;
 }
-/** Un lot du Pack Entraînement : des séances, une carte d'amélioration, ou un stage. */
+/** Le matériel d'entraînement (un objet par rareté) : séances, carte d'amélioration, stage. */
 export interface TrainLot {
-  id: string; rar: string; rate: number; label: string; desc: string;
+  id: string; rar: string; label: string; desc: string;
   sessions?: number; up?: number; squadXp?: number; stat?: string | null; stats?: string[] | null;
 }
 
-/** Un objet du Pack Entraîneur : une causerie, un atelier, un plan tactique. */
+/** Le matériel de l'entraîneur (un objet par rareté) : causerie, atelier, plan tactique. */
 export interface CoachItem {
-  id: string; rar: string; rate: number; label: string; kind: 'meeting' | 'plan'; desc: string;
+  id: string; rar: string; label: string; kind: 'meeting' | 'plan'; desc: string;
   morale?: number; coh?: number; adv?: number; squadXp?: number; plans?: number;
 }
 
@@ -248,7 +231,7 @@ export interface PackObjet {
   morale?: number; coh?: number; adv?: number; plans?: number;
 }
 
-/** Une entrée du kiosque : le pack principal (principal: true) ou un pack ciblé. */
+/** Le pack unique tel que l'écran l'affiche (principal: true). */
 export interface KiosqueEntry {
   key: string; name: string; family: string; question: string; principal: boolean;
   n: number; cost: number; color: string; content?: string; desc: string;

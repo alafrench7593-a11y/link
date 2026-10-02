@@ -1,13 +1,9 @@
-// LinkFoot : le Pack Entraînement et les séances (§6, §10, §11, §29).
+// LinkFoot : les séances et le matériel d'entraînement (§5, §6, §29).
 //
-// L'entraînement n'est plus illimité. Chaque séance consomme UNE séance en stock.
-// On en reçoit deux par jour gratuitement, et on en gagne en ouvrant des Packs
-// Entraînement. C'est ce qui fait de l'entraînement une décision : avec trois séances
-// en poche, on choisit qui on fait progresser, on ne lance pas tout.
-//
-// §10 : le LinkFoot Pack reste le seul pack de CARTES. Celui-ci ne contient aucun
-// joueur et aucune compétence : il ne donne que du temps d'entraînement. Deux objets
-// différents, deux écrans différents, aucune confusion possible.
+// L'entraînement n'est pas illimité. Chaque séance consomme UNE séance en stock.
+// On en reçoit deux par jour gratuitement, et le pack unique en donne à sa part
+// « Objet ». C'est ce qui fait de l'entraînement une décision : avec trois séances en
+// poche, on choisit qui on fait progresser, on ne lance pas tout.
 export const TrainPack = {
   // Deux séances offertes par jour, vingt en réserve au maximum : impossible
   // d'empiler trois mois d'entraînement pour tout lancer d'un coup (§29).
@@ -45,50 +41,25 @@ export const TrainPack = {
       sessions: n, max: R.max, freePerDay: R.freePerDay,
       can: n > 0 && !busy,
       why: busy ? 'Impossible pendant un match'
-        : n > 0 ? '' : 'Plus de séance. Tu en reçois ' + R.freePerDay + ' par jour, ou tu en gagnes dans un Pack Entraînement.',
+        : n > 0 ? '' : 'Plus de séance. Tu en reçois ' + R.freePerDay + ' par jour, et le ' + this.THE_PACK().name + ' en donne parfois.',
       line: n + ' séance' + (n > 1 ? 's' : '') + ' en stock · ' + R.freePerDay + ' offertes par jour'
     };
   },
 
-  // §10 un seul pack d'entraînement, comme il n'y a qu'un seul pack de cartes.
-  TRAIN_PACK() {
-    return {
-      key: 'train', name: 'Pack Entraînement', n: 3, cost: 180,
-      content: 'séances, cartes d’amélioration, stages',
-      color: 'linear-gradient(135deg, #5CC8FF, #2F8FE0)', fx: 'silver'
-    };
-  },
-
-  // §11 le contenu et ses taux, affichés avant l'ouverture. Les raretés sont celles
-  // du reste du jeu : un lot Gold dans un Pack Entraînement est aussi rare qu'ailleurs.
+  // Le matériel d'entraînement : un objet par rareté. Il sort du pack unique, à la part
+  // « Objet » et à la rareté tirée, donc un Stage Gold est aussi rare qu'un joueur Gold.
   TRAIN_LOTS() {
     return [
-      { id: 'seance', rar: 'normal', rate: 0.52, label: 'Séance d’entraînement', desc: '+1 séance', sessions: 1 },
-      { id: 'carte', rar: 'rare', rate: 0.28, label: 'Carte d’amélioration', desc: '+2 sur une statistique, au joueur de ton choix', up: 1 },
-      { id: 'duo', rar: 'epic', rate: 0.13, label: 'Double séance', desc: '+2 séances', sessions: 2 },
-      { id: 'specialise', rar: 'elite', rate: 0.05, label: 'Séance spécialisée', desc: '+3 séances et une carte d’amélioration', sessions: 3, up: 1 },
-      { id: 'stage', rar: 'gold', rate: 0.018, label: 'Stage de pré-saison', desc: '+60 XP à tout l’effectif', squadXp: 60 },
-      { id: 'masterclass', rar: 'legendary', rate: 0.002, label: 'Masterclass', desc: '+150 XP à tout l’effectif et trois cartes d’amélioration', squadXp: 150, up: 3 }
+      { id: 'seance', rar: 'normal', label: 'Séance d’entraînement', desc: '+1 séance', sessions: 1 },
+      { id: 'carte', rar: 'rare', label: 'Carte d’amélioration', desc: '+2 sur une statistique, au joueur de ton choix', up: 1 },
+      { id: 'duo', rar: 'epic', label: 'Double séance', desc: '+2 séances', sessions: 2 },
+      { id: 'specialise', rar: 'elite', label: 'Séance spécialisée', desc: '+3 séances et une carte d’amélioration', sessions: 3, up: 1 },
+      { id: 'stage', rar: 'gold', label: 'Stage de pré-saison', desc: '+60 XP à tout l’effectif', squadXp: 60 },
+      { id: 'masterclass', rar: 'legendary', label: 'Masterclass', desc: '+150 XP à tout l’effectif et trois cartes d’amélioration', squadXp: 150, up: 3 }
     ];
   },
 
-  trainPackOdds() {
-    const L = this.TRAIN_LOTS(), R = this.RARITY();
-    const t = L.reduce((a, x) => a + x.rate, 0) || 1;
-    return L.map((x) => {
-      const r = R.find((y) => y.id === x.rar) || R[0];
-      return { id: x.id, label: x.label, rarLabel: r.label, color: r.tint, pct: x.rate / t * 100, desc: x.desc };
-    });
-  },
-
-  drawTrainLot(rnd) {
-    const L = this.TRAIN_LOTS(), r = rnd || Math.random;
-    let q = r() * L.reduce((a, x) => a + x.rate, 0);
-    for (const x of L) { q -= x.rate; if (q <= 0) return x; }
-    return L[0];
-  },
-
-  // Les cartes d'amélioration que ce pack peut donner : les mêmes que celles déjà
+  // Les cartes d'amélioration que le pack peut donner : les mêmes que celles déjà
   // utilisables sur la fiche d'un joueur. Rien de nouveau à comprendre.
   UPGRADE_CARDS() {
     return [['VIT', 'Vitesse'], ['ATQ', 'Attaque'], ['TIR', 'Tir'], ['PAS', 'Passe'], ['DRI', 'Dribble'], ['DÉF', 'Défense'], ['PHY', 'Physique']];
@@ -113,27 +84,9 @@ export const TrainPack = {
     return { ok: true, ovr };
   },
 
-  openTrainPack(opts) {
-    const o = opts || {}, s = this.state, def = this.TRAIN_PACK();
-    if (!o.free && s.balance < def.cost) return { ok: false, why: 'Il te manque ' + (def.cost - s.balance) + ' jetons' };
-    const r = o.rnd || Math.random, got = [];
-    for (let i = 0; i < def.n; i++) {
-      const lot = this.drawTrainLot(r);
-      const U = this.UPGRADE_CARDS();
-      got.push(Object.assign({}, lot, {
-        stat: lot.up ? U[Math.floor(r() * U.length)][0] : null,
-        stats: lot.up > 1 ? Array.from({ length: lot.up }, () => U[Math.floor(r() * U.length)][0]) : null
-      }));
-    }
-    const order = this.RARITY().map((x) => x.id);
-    got.sort((a, b) => order.indexOf(b.rar) - order.indexOf(a.rar));
-    return { ok: true, def, got, free: !!o.free };
-  },
-
   // §19 : tout ce que le pack donne arrive immédiatement là où ça sert.
   // Ce que des objets d'entraînement donnent au club : séances, cartes d'amélioration,
-  // XP de stage. Appelé par le Pack Entraînement ET par le pack principal (§3, une
-  // seule source de vérité) : un objet fait la même chose d'où qu'il vienne.
+  // XP de stage. Une seule fonction pour tout ce qui en donne (§3).
   appliquerObjetsEntrainement(lots) {
     if (!lots || !lots.length) return { sessions: 0, xp: 0, cards: [] };
     const s = this.state, R = this.SESSION_RULES(), inv = Object.assign({}, s.inv || {});
@@ -148,23 +101,6 @@ export const TrainPack = {
     // un stage profite à tout l'effectif : c'est ce qui rend les lots rares désirables
     if (xp) this.state.squad.forEach((p) => this.grantPlayerXp(p.id, xp, 'stage'));
     return { sessions: add, xp, cards };
-  },
-
-  commitTrainPack(res) {
-    if (!res || !res.ok) return { ok: false };
-    const def = res.def, cost = res.free ? 0 : def.cost;
-    const recu = this.appliquerObjetsEntrainement(res.got);
-    const add = recu.sessions, xp = recu.xp, cards = recu.cards;
-    this.setState({
-      balance: this.state.balance - cost,
-      lastTrainPack: res.got.map((g) => g.label).join(' · ')
-        + (add ? ' → +' + add + ' séance' + (add > 1 ? 's' : '') : '')
-        + (cards.length ? ', cartes ' + cards.join(', ') : '')
-        + (xp ? ', +' + xp + ' XP à tout l’effectif' : '')
-    });
-    if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
-    this.bumpQuest('pack', 1);
-    return { ok: true, sessions: add, xp, cards };
   },
 
   // §19 : l'écran d'entraînement ne propose que ce que le directeur sportif peut
@@ -187,11 +123,5 @@ export const TrainPack = {
         cost: x.n + ' carte' + (x.n > 1 ? 's' : ''), can: true, why: ''
       }));
     return base.concat(cards);
-  },
-
-  trainPackState() {
-    const def = this.TRAIN_PACK(), s = this.state;
-    const poor = s.balance < def.cost;
-    return { can: !poor, why: poor ? 'Il te manque ' + (def.cost - s.balance) + ' jetons' : '', cost: def.cost };
   }
 };

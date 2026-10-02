@@ -30,8 +30,8 @@ src/tracks.js   la colonne vertébrale de la progression du club : un seul axe, 
 src/playerxp.js niveau et XP d'un joueur, courbe exponentielle, attributs cachés (§5, §6).
 src/quests.js   quêtes et économie encadrée : plafonds par source, journal (§7, §8, §29).
 src/creation.js création du club, effectif normal de départ et joueur rare offert (§2, §3).
-src/trainpack.js le Pack Entraînement et les séances : l'entraînement est limité (§6, §10).
-src/packs.js    le registre des packs : le pack principal, puis les trois packs ciblés.
+src/trainpack.js les séances et le matériel d'entraînement : l'entraînement est limité (§6).
+src/packs.js    le pack unique, tel que l'écran l'affiche, et le matériel de l'entraîneur.
 src/news.js     le journal : transforme de vrais résultats en articles (§26).
 src/versus.js   match entre deux vrais clubs, rejouable à l'identique depuis une graine.
 src/online.js   le client en ligne : il parle au serveur et rejoue, il ne décide rien.
@@ -240,7 +240,7 @@ tirent dedans, donc les doublons sont réels : un doublon se convertit en fragme
 selon sa rareté (1 pour une Normale, 200 pour une Légendaire). La collection se compte
 sur 500.
 
-Un seul pack principal (`Club.THE_PACK()`), plus trois packs ciblés, et
+Un seul pack dans tout le jeu (`Club.THE_PACK()`), et
 `Club.packOdds(def)` calcule les probabilités réelles affichées sur l'écran Packs.
 Une carte Or n'est pas automatiquement meilleure : sa rareté fixe une fourchette de
 note, ce sont les statistiques et les compétences qui décident ensuite.
@@ -329,7 +329,7 @@ Chaque flèche existe dans le code, et `test/progression.js` échoue si l'une d'
 
 ### Le pack (§8, §9)
 
-**Un seul pack principal**, le **LinkFoot Pack** : 250 jetons, 3 tirages, un bouton
+**Un seul pack dans tout le jeu**, le **LinkFoot Pack** : 250 jetons, 3 tirages, un bouton
 « OUVRIR LE PACK ». Chaque tirage choisit d'abord une **famille**, puis une **rareté**.
 Les deux tables sont affichées avant l'ouverture, calculées côté système et jamais
 modifiables par le client (§29). Elles se règlent dans `PACK_SLOTS()` et `RARITY()` :
@@ -354,9 +354,13 @@ La rareté vaut pour les trois familles : un objet Gold est aussi rare qu'un jou
 Celle d'une compétence n'est jamais écrite à la main : elle **découle** de sa puissance
 calculée (§12). Une compétence très forte est donc rare dans le catalogue *et* au tirage.
 
-Un objet sorti du pack principal passe par les **mêmes fonctions** que s'il sortait de son
-pack ciblé (`appliquerObjetsEntrainement`, `rangerObjetsCoach`) : il fait la même chose
-d'où qu'il vienne, et `test/kiosque.js` le vérifie objet par objet.
+Il y a eu jusqu'à quatre packs. Les trois packs ciblés (Compétence, Entraînement,
+Entraîneur) ont été retirés : le §8 n'en veut qu'un, et deux d'entre eux vendaient des
+objets Gold à 1,8 % et 2,6 % par lot, au-dessus du « 1 % ou moins » du §12. Tout ce
+qu'ils donnaient sort du pack unique, à la rareté commune : un objet Gold sort désormais
+à 0,135 % par tirage. Chaque objet est rangé par les mêmes fonctions
+(`appliquerObjetsEntrainement`, `rangerObjetsCoach`), et `test/kiosque.js` vérifie objet
+par objet qu'il fait ce que sa carte annonce.
 
 ### Les compétences (§10 à §13)
 
@@ -419,51 +423,36 @@ Avant chaque match, trois pronostics au maximum, mise plafonnée, cotes calculé
 l'écart de niveau. Ils portent sur le match du jeu, jamais sur un match réel, et les gains
 passent par `earn('prono')`, donc par le plafond quotidien.
 
-### Le pack principal et les packs ciblés (§8, §19)
-
-Le pack principal peut tout donner. Les trois packs ciblés existaient et marchaient : ils
-restent, en second plan sur l'écran Packs, pour le directeur sportif qui sait déjà ce qui
-lui manque. Ils ne contiennent rien que le pack principal ne puisse donner.
-
-| Pack | Coût | Il répond à | Il donne |
-| --- | --- | --- | --- |
-| **LinkFoot Pack** (principal) | 250 | « je veux de tout » | joueurs, compétences, objets, fragments |
-| Pack Compétence | 320 | « il me faut des compétences » | des compétences, aucun joueur |
-| Pack Entraînement | 180 | « il me faut du temps » | des séances et des cartes d'amélioration |
-| Pack Entraîneur | 260 | « il me faut des idées » | causeries, ateliers, plans tactiques |
-
 ### L'entraînement est limité (§6)
 
 Chaque séance consomme **une séance en stock**. On en reçoit deux par jour, vingt au
-maximum en réserve, et on en gagne en ouvrant des **Packs Entraînement**. Entraîner
-devient une décision : avec trois séances en poche, on choisit qui on fait progresser.
+maximum en réserve, et le pack en donne à sa part « Objet ». Entraîner devient une
+décision : avec trois séances en poche, on choisit qui on fait progresser.
 
-Le Pack Entraînement ne contient **ni joueur ni compétence**, seulement du temps
-d'entraînement ; ses objets sortent aussi du pack principal, à la part « Objet ». Ses taux
-suivent les six raretés du jeu.
+Le matériel sort du pack unique : un objet par rareté, à la rareté tirée.
 
-| Lot | Rareté | Taux | Effet |
-| --- | --- | --- | --- |
-| Séance d'entraînement | Normal | 52 % | +1 séance |
-| Carte d'amélioration | Rare | 28 % | +2 sur une statistique, au joueur de ton choix |
-| Double séance | Épique | 13 % | +2 séances |
-| Séance spécialisée | Élite | 5 % | +3 séances et une carte |
-| Stage de pré-saison | Gold | 1,8 % | +60 XP à tout l'effectif |
-| Masterclass | Legendary | 0,2 % | +150 XP à tout l'effectif et trois cartes |
+| Objet | Rareté | Effet |
+| --- | --- | --- |
+| Séance d'entraînement | Normal | +1 séance |
+| Carte d'amélioration | Rare | +2 sur une statistique, au joueur de ton choix |
+| Double séance | Épique | +2 séances |
+| Séance spécialisée | Élite | +3 séances et une carte |
+| Stage de pré-saison | Gold | +60 XP à tout l'effectif |
+| Masterclass | Legendary | +150 XP à tout l'effectif et trois cartes |
 
 ### La réunion d'équipe (§24)
 
-Le Pack Entraîneur donne du matériel que le directeur sportif utilise entre deux matchs,
-et chaque objet a un effet réel, pas un chiffre affiché :
+Le pack donne aussi le matériel que le directeur sportif utilise entre deux matchs, et
+chaque objet a un effet réel, pas un chiffre affiché :
 
-| Objet | Rareté | Taux | Effet |
-| --- | --- | --- | --- |
-| Causerie d'avant-match | Normal | 44 % | moral +8 pour tout l'effectif |
-| Séance vidéo | Rare | 28 % | +1 d'avantage tactique au prochain match |
-| Atelier tactique | Épique | 17 % | cohésion +4 %, durable |
-| Plan tactique | Élite | 8 % | applique un style et donne +2 d'avantage au prochain match |
-| Réunion de groupe | Gold | 2,6 % | moral +15, cohésion +6 %, +40 XP à tout l'effectif |
-| Plan de campagne | Legendary | 0,4 % | trois plans, moral +20 et cohésion +8 % dès réception |
+| Objet | Rareté | Effet |
+| --- | --- | --- |
+| Causerie d'avant-match | Normal | moral +8 pour tout l'effectif, à la réunion |
+| Séance vidéo | Rare | +1 d'avantage tactique au prochain match, à la réunion |
+| Atelier tactique | Épique | cohésion +4 %, durable, à la réunion |
+| Plan tactique | Élite | applique un style et donne +2 d'avantage au prochain match |
+| Réunion de groupe | Gold | moral +15, cohésion +6 %, +40 XP à tout l'effectif, à la réunion |
+| Plan de campagne | Legendary | trois plans, moral +20 et cohésion +8 % dès réception |
 
 L'avantage préparé ne vaut que pour **un** match : il retombe à zéro au coup de sifflet
 final. C'est ce qui donne du poids à la préparation sans la rendre permanente.

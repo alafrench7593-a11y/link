@@ -71,7 +71,7 @@ tete('§7 l’argent se gagne en jouant, et aucune source ne tourne sans fin');
 tete('§8 et §9 j’ouvre un seul type de pack, dont les probabilités sont affichées');
 c.setState({ balance: c.state.balance + 0 });
 const kq = c.kiosque();
-t('un seul pack principal', kq.filter((x) => x.principal).length === 1 && kq[0].key === 'linkfoot');
+t('un seul pack dans tout le jeu', kq.length === 1 && kq[0].key === 'linkfoot', kq.map((x) => x.name).join(', '));
 t('ses familles et ses raretés sont affichées avant l’ouverture',
   kq[0].familles.length === 3 && kq[0].odds.length === c.RARITY().length);
 t('les taux de rareté sont ceux du réglage (70, 20, 7, 2, 0,9, 0,1)',

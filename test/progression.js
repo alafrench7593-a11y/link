@@ -99,7 +99,7 @@ const gbId = (c.state.squad.find((p) => p.pos === 'GB') || {}).id;
 const inc = c.equipSkill(9001, gbId);
 ok(inc.ok === false && inc.why.indexOf('COMPÉTENCE INCOMPATIBLE') === 0, '§15 : une compétence incompatible est refusée et nommée');
 
-console.log('§6 et §10 entraînement limité, Pack Entraînement');
+console.log('§6 entraînement limité, matériel venu du pack unique');
 const tc = new Club(); tc.createClub({ name: 'FC Entrain', seed: 77 });
 const t0 = tc.trainInfo();
 ok(t0.sessions > 0 && t0.can, 'on démarre avec quelques séances', t0.line);
@@ -107,23 +107,17 @@ let nSeances = 0;
 while (tc.train('technique').ok && nSeances < 40) nSeances++;
 ok(nSeances === t0.sessions, 'chaque séance consomme une séance en stock', nSeances + ' séances lancées');
 const refus = tc.train('technique');
-ok(refus.ok === false && /Pack Entraînement/.test(refus.why), '§6 : à court de séances, le refus dit où en trouver', refus.why);
+ok(refus.ok === false && /LinkFoot Pack/.test(refus.why), '§6 : à court de séances, le refus dit où en trouver', refus.why);
 const lots = tc.TRAIN_LOTS();
-ok(Math.abs(lots.reduce((a, x) => a + x.rate, 0) - 1) < 1e-9, '§11 : les taux du Pack Entraînement font 100 %');
-ok(lots.every((x) => ids.indexOf(x.rar) >= 0), 'ses lots utilisent les mêmes raretés que le reste du jeu');
-ok(lots.every((x, i) => i === 0 || x.rate <= lots[i - 1].rate), 'plus le lot est fort, plus il est rare',
-  lots.map((x) => (x.rate * 100).toFixed(1) + ' %').join(' · '));
-ok(tc.TRAIN_PACK().key === 'train' && tc.THE_PACK().key === 'linkfoot',
-  '§10 : le pack de cartes et le pack d’entraînement restent deux objets distincts');
-ok(lots.every((x) => !x.player && !x.skill), 'le Pack Entraînement ne contient ni joueur ni compétence');
-tc.setState({ balance: 2000 });
-const avant = tc.sessions(), pk2 = tc.openTrainPack({});
-ok(pk2.ok && pk2.got.length === 3, 'il s’ouvre et rend 3 lots', pk2.got.map((g) => g.label).join(', '));
-const got2 = tc.commitTrainPack(pk2);
-ok(tc.sessions() >= avant, 'ce qu’il donne arrive dans le stock', avant + ' → ' + tc.sessions() + ' séances');
-ok(tc.state.balance === 2000 - tc.TRAIN_PACK().cost, 'et il est payé', tc.state.balance + ' jetons');
-tc.setState({ balance: 0 });
-ok(tc.openTrainPack({}).ok === false, 'sans jetons, il refuse');
+ok(lots.every((x) => ids.indexOf(x.rar) >= 0) && new Set(lots.map((x) => x.rar)).size === lots.length,
+  'le matériel d’entraînement : un objet par rareté, les mêmes raretés que le reste du jeu');
+ok(lots.every((x) => !x.player && !x.skill), 'il ne contient ni joueur ni compétence');
+const avant = tc.sessions();
+tc.commitPack({ ok: true, def: tc.THE_PACK(), shards: 0, free: true,
+  got: [{ kind: 'objet', rar: 'epic', name: 'Double séance', label: 'Épique', objet: Object.assign({ famille: 'entrainement' }, lots.find((x) => x.id === 'duo')) }] });
+ok(tc.sessions() === Math.min(tc.SESSION_RULES().max, avant + 2), 'une Double séance sortie du pack arrive dans le stock', avant + ' → ' + tc.sessions() + ' séances');
+tc.setState({ sessions: 999 });
+tc.addSessions(5);
 ok(tc.sessions() <= tc.SESSION_RULES().max, '§29 : on ne peut pas empiler les séances sans limite',
   tc.sessions() + ' sur ' + tc.SESSION_RULES().max);
 const anyCard = tc.UPGRADE_CARDS()[0][0];
@@ -134,26 +128,11 @@ const u = tc.useUpgrade(pU.id, anyCard);
 ok(u.ok, 'une carte d’amélioration s’utilise sur un joueur', anyCard + ' : note ' + ovrAvant + ' → ' + u.ovr);
 ok(tc.useUpgrade(pU.id, anyCard).ok === false, 'et elle est bien consommée');
 
-console.log('§10 les quatre packs, une famille chacun');
-const reg = tc.PACK_REGISTRY();
-ok(reg.length === 4, 'quatre packs', reg.map((r) => r.name).join(' · '));
-ok(new Set(reg.map((r) => r.family)).size === 4 && reg.filter((r) => r.principal).length === 1 && reg[0].family === 'tout',
-  'un pack principal qui donne tout, et trois packs ciblés d’une famille chacun', reg.map((r) => r.family).join(', '));
-ok(new Set(reg.map((r) => r.key)).size === 4, 'chacun a sa propre clé');
-tc.setState({ balance: 5000, skillInv: [], coachInv: {} });
-const sp2 = tc.openSkillPack({});
-ok(sp2.ok && sp2.got.every((g) => g.kind === 'skill'), 'le Pack Compétence ne donne QUE des compétences',
-  sp2.got.map((g) => g.label).join(', '));
-tc.commitSkillPack(sp2);
-ok(tc.state.skillInv.length === sp2.got.length, 'elles arrivent dans l’inventaire');
-ok(Math.abs(tc.skillPackOdds().reduce((a, x) => a + x.pct, 0) - 100) < 1e-6, 'ses probabilités font 100 %');
+console.log('§8 un seul pack');
+ok(tc.kiosque().length === 1 && tc.PACK_DEFS().length === 1, 'un seul pack dans tout le jeu', tc.kiosque().map((x) => x.name).join(', '));
 const ci = tc.COACH_ITEMS();
-ok(Math.abs(ci.reduce((a, x) => a + x.rate, 0) - 1) < 1e-9, 'les taux du Pack Entraîneur font 100 %');
-ok(ci.every((x) => !x.player && !x.skill && !x.sessions), 'il ne donne ni joueur, ni compétence, ni séance');
-const cp2 = tc.openCoachPack({});
-ok(cp2.ok && cp2.got.length === 2, 'il s’ouvre', cp2.got.map((g) => g.label).join(', '));
-tc.commitCoachPack(cp2);
-ok(Object.keys(tc.state.coachInv).length > 0, 'son contenu arrive en réserve', JSON.stringify(tc.state.coachInv));
+ok(ci.every((x) => !x.player && !x.skill && !x.sessions), 'le matériel de l’entraîneur ne donne ni joueur, ni compétence, ni séance');
+ok(new Set(ci.map((x) => x.rar)).size === ci.length, 'un objet d’entraîneur par rareté');
 
 console.log('§24 réunion d’équipe et plan tactique');
 tc.setState({ coachInv: { causerie: 1, reunion: 1, plan: 1 }, cohBonus: 0 });

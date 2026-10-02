@@ -148,8 +148,8 @@ export const Cards = {
       return { kind: 'skill', rar: pick.id, skill: sk, name: sk.name, ovr: sk.power, label: pick.label, color: pick.color, shards: pick.shards };
     }
     if (slot === 'objet') {
-      // Un objet de la rareté tirée, pris dans les deux mêmes tables que le Pack
-      // Entraînement et le Pack Entraîneur : une seule source pour ce qu'un objet fait.
+      // Un objet de la rareté tirée, pris dans les deux tables du matériel (entraînement
+      // et entraîneur) : une seule source pour ce qu'un objet fait.
       const tous = this.TRAIN_LOTS().map((x) => Object.assign({ famille: 'entrainement' }, x))
         .concat(this.COACH_ITEMS().map((x) => Object.assign({ famille: 'tactique' }, x)));
       const ici = tous.filter((x) => x.rar === pick.id);
@@ -210,8 +210,8 @@ export const Cards = {
       missions: this.bumpMission(s.missions, 'pack', 1),
       freeQueue: res.free ? s.freeQueue.slice(1) : s.freeQueue });
     if (!res.free) this.logMoney(-cost, 'Ouverture ' + def.name);
-    // §3 une seule source de vérité : un objet sorti du pack principal passe par les
-    // MÊMES fonctions que s'il sortait du Pack Entraînement ou du Pack Entraîneur.
+    // §3 une seule source de vérité : un objet sorti du pack passe par les fonctions
+    // qui rangent le matériel, les mêmes pour tout ce qui en donne.
     this.appliquerObjetsEntrainement(objets.filter((o) => o.famille !== 'tactique'));
     this.rangerObjetsCoach(objets.filter((o) => o.famille === 'tactique'));
     this.bumpQuest('pack', 1);

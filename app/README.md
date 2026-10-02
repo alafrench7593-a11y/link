@@ -30,7 +30,7 @@ l'accueil, la section **DIRECTEUR SPORTIF** mène aux neuf écrans du cahier des
 | Accueil | le résumé (note, niveau, séances, solde) et la section DIRECTEUR SPORTIF |
 | Mon effectif | la liste, puis la fiche d'un joueur : niveau, XP, compétences, rapport du recruteur, vente |
 | Compétences | l'inventaire, et le choix du joueur qui porte chaque compétence |
-| Pack | le pack principal et ses deux tables de probabilités, puis les packs ciblés |
+| Pack | le pack unique et ses deux tables de probabilités (familles, raretés) |
 | Entraînement | les séances disponibles, les cartes d'amélioration, la réunion d'équipe |
 | Transferts | acheter sur le marché, vendre son effectif |
 | Quêtes | les objectifs en cours et leurs récompenses, sous le plafond du jour |
@@ -86,7 +86,7 @@ npm test --prefix ..      # les règles du jeu, sans interface
 
 `npm run verifier` construit l'app pour le navigateur, la sert, et fait ce qu'un
 joueur ferait : premier lancement, les six onglets, les neuf entrées du directeur
-sportif, le pack principal ouvert, second lancement. Vingt-cinq vérifications. C'est ce parcours qui a trouvé, au premier vrai
+sportif, le pack ouvert, second lancement. Vingt-cinq vérifications. C'est ce parcours qui a trouvé, au premier vrai
 lancement de l'app, qu'elle ne se construisait pas (il manquait `expo-asset`) et
 qu'elle ne créait jamais le club : tout nouveau joueur commençait sur le club de
 démonstration, niveau 7, 1 000 jetons.

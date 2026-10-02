@@ -73,15 +73,20 @@ const METHODS = ['rand', 'seedR', 'statW', 'ovrOf', 'genStats', 'cardStats', 'pr
   'equipSkill', 'unequipSkill', 'skillInventory', 'reqLine', 'skillCount',
   'playerXpNeed', 'playerLevel', 'playerXp', 'playerProgress', 'hiddenOf', 'hiddenMods', 'injuryRisk', 'xpRate', 'matchXp', 'addPlayerXp', 'grantPlayerXp',
   'SHARD_XP', 'shardTrainInfo', 'shardTrain',
-  'SESSION_RULES', 'sessions', 'takeSession', 'addSessions', 'trainInfo', 'TRAIN_PACK', 'TRAIN_LOTS', 'trainPackOdds',
-  'drawTrainLot', 'UPGRADE_CARDS', 'useUpgrade', 'openTrainPack', 'appliquerObjetsEntrainement', 'commitTrainPack', 'trainPackState', 'trainingOptions', 'TRAININGS', 'train', 'engineCfg',
-  'PACK_REGISTRY', 'KIOSQUE', 'kiosque', 'packPrincipal', 'kiosqueSummary',
-  'SKILL_PACK', 'skillPackOdds', 'skillPackState', 'openSkillPack', 'commitSkillPack',
-  'COACH_PACK', 'COACH_ITEMS', 'coachPackOdds', 'coachPackState', 'openCoachPack', 'rangerObjetsCoach', 'commitCoachPack',
+  'SESSION_RULES', 'sessions', 'takeSession', 'addSessions', 'trainInfo', 'TRAIN_LOTS', 'UPGRADE_CARDS', 'useUpgrade', 'appliquerObjetsEntrainement', 'trainingOptions', 'TRAININGS', 'train', 'engineCfg',
+  'KIOSQUE', 'kiosque', 'packPrincipal', 'COACH_ITEMS', 'rangerObjetsCoach',
   'meetings', 'holdMeeting', 'plansLeft', 'usePlan', 'styleList', 'FORMATIONS', 'TAC_GROUPS', 'setFormation', 'applyStyle', 'setMentality', 'setConsigne',
   'CAPS', 'DAILY_REWARDS', 'claimDaily', 'claimMission', 'logMoney', 'dayKey', 'earn', 'spend', 'PRONO_DEFS', 'MAX_STAKE', 'placeProno', 'settlePronos', 'QUEST_DEFS', 'activeQuests', 'rollQuests', 'bumpQuest', 'claimQuest', 'questsAfterMatch',
   'matchPlan', 'MENTALITES', 'IMPACT_DEFS', 'impactFigures', 'impactReport', 'impactLine',
   'isOnline', 'onlineSummary', 'onlineActions', 'NEWS_SECTIONS', 'buildNews', 'newsBySection', 'onlineSlides', 'demoFeed', 'CREATION_STEPS', 'COUNTRIES', 'starterSquad', 'starterRare', 'canEquipRaw', 'genStatsFor', 'createClub', 'creationSummary'];
+// Les méthodes retirées des sources. Le sync ne sait qu'ajouter et remplacer : sans
+// cette liste, une méthode supprimée de src/ resterait dans l'artboard, morte mais
+// toujours appelable par l'écran. Ici, elle est effacée, et --check échoue tant
+// qu'elle y est.
+const RETIREES = ['PACK_REGISTRY', 'kiosqueSummary',
+  'SKILL_PACK', 'skillPackOdds', 'skillPackState', 'openSkillPack', 'commitSkillPack',
+  'TRAIN_PACK', 'trainPackOdds', 'drawTrainLot', 'openTrainPack', 'commitTrainPack', 'trainPackState',
+  'COACH_PACK', 'coachPackOdds', 'coachPackState', 'openCoachPack', 'commitCoachPack'];
 const SOURCES = ['club.js', 'players.js', 'skills.js', 'cards.js', 'staff.js', 'training.js', 'transfer.js', 'progression.js', 'tactics.js', 'tracks.js', 'playerxp.js', 'quests.js', 'creation.js', 'onlineui.js', 'trainpack.js', 'packs.js', 'news.js', 'impact.js'];
 const club = SOURCES.map((f) => read('src/' + f)).join('\n');
 // Une méthode du club ne se cherche JAMAIS dans le corps du moteur : le moteur a ses
@@ -108,6 +113,21 @@ for (const name of METHODS) {
   }
   const cur = artboard.slice(hit.start, hit.end);
   if (cur.trim() !== body.trim()) { artboard = artboard.slice(0, hit.start) + body + artboard.slice(hit.end); changed.push(name); }
+}
+
+// 3. les méthodes retirées : effacées avec le commentaire qui les précède
+for (const name of RETIREES) {
+  const hit = horsMoteur(name);
+  if (!hit) continue;
+  let start = hit.start;
+  const lignes = artboard.slice(0, start).split('\n');
+  lignes.pop();                                        // le début de la ligne de la méthode
+  while (lignes.length && /^\s*\/\//.test(lignes[lignes.length - 1])) { start -= lignes.pop().length + 1; }
+  let end = hit.end;
+  if (artboard[end] === ',') end++;
+  if (artboard[end] === '\n') end++;
+  artboard = artboard.slice(0, start) + artboard.slice(end);
+  changed.push(name + ' (retirée)');
 }
 
 if (!changed.length) { console.log('canvas à jour, rien à faire'); process.exit(0); }
