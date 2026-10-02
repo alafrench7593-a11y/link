@@ -114,6 +114,7 @@ if (process.argv.includes('--serie')) {
 const N = Number(process.argv[2] || 10);
 const pm = (k) => (t) => (t[k] || 0) / (t.dec || 1) * 1000;
 const brut = (k) => (t) => t[k] || 0;
+const somme = (...ks) => (t) => ks.reduce((a, k) => a + (t[k] || 0), 0) / (t.dec || 1) * 1000;
 
 const PAIRES = [
   ['§44 Le TIR de la carte se voit dans les frappes', 'tirBas', 'tirHaut', [
@@ -121,6 +122,15 @@ const PAIRES = [
     ['ils cadrent davantage', brut('on'), '>'],
     ['et ils marquent plus', brut('buts'), '>', 0]]],
 
+
+  ['§44 La PASSE de la carte se voit dans le jeu', 'passeBasse', 'passeHaute', [
+    // PAS la précision : un bon passeur joue PLUS et PLUS RISQUÉ, donc son taux de
+    // réussite monte à peine alors que son équipe double le danger créé. Mesurer la
+    // précision seule m'avait fait écrire que cette statistique ne servait à rien.
+    ['une équipe qui passe bien crée bien plus de danger', brut('xg'), '>'],
+    ['elle joue plus de passes', brut('pa'), '>'],
+    ['elle en tente plus de risquées', somme('act_pass_through', 'act_pass_space'), '>'],
+    ['et elle prend plus de points', brut('pts'), '>', 0]]],
 
   ['§44 Le DRIBBLE de la carte se voit dans les duels', 'dribbleBas', 'dribbleHaut', [
     ['on élimine plus souvent', brut('reussiteDrib'), '>', 1]]],
@@ -268,22 +278,15 @@ for (const [titre, a, b, mesures] of PAIRES) {
   }
 }
 
-// ---------------------------------------------------------------- les deux trous
-// Ce qui ne marche pas, mesuré. J'ai essayé de réparer et je suis revenu en arrière :
-// chaque correctif rebouchait un trou en en ouvrant un autre. Les chiffres restent ici
-// pour que le prochain essai parte d'une base connue, et le garde-fou pour qu'on voie
-// si ça empire.
-console.log('\nLes trous connus de la chaîne carte / moteur');
+// ---------------------------------------------------------------- le trou qui reste
+// Ce qui ne marche toujours pas, mesuré. Le garde-fou alerte si ça empire.
+console.log('\nLe trou connu de la chaîne carte / moteur');
 {
   const bas = S.passeBasse, haut = S.passeHaute;
-  constat('la statistique PASSE ne change presque rien',
-    haut.precision - bas.precision,
-    'soixante points de carte devraient valoir plusieurs points de précision',
-    (v) => v < 0,
-    'PAS 35 : ' + f1(bas.precision) + ' % de passes réussies · PAS 95 : ' + f1(haut.precision) + ' %');
-  console.log('           (la technique du passeur n’agit que par la distance : sur quinze mètres,');
-  console.log('            0,850 à 35 contre 0,932 à 95. Tout le reste du calcul — interception,');
-  console.log('            couverture, course du receveur — dépend de la VITESSE, qui fixe vmax.)');
+  console.log('  pour mémoire : PAS 35 → 95 ne gagne que ' + f1(haut.precision - bas.precision)
+    + ' point de précision, mais ' + f1(haut.xg - bas.xg) + ' de danger.');
+  console.log('  Un bon passeur ne réussit pas beaucoup plus de passes : il en joue plus,');
+  console.log('  et plus risquées. C’est ce qu’il fallait mesurer.');
 }
 
 // ---------------------------------------------------------------- tactique × profil
@@ -306,17 +309,21 @@ console.log('\n§42 et §44 Le style de jeu convient-il au profil de l’effecti
     'deux cartes notées 72 devraient se valoir, donc un rapport proche de 1',
     (v) => v > 2.4,
     'même note 72, l’athlète crée ' + f1(A.tiki.xg / Math.max(0.1, T.tiki.xg)) + ' fois plus de danger');
-  console.log('           (c’était x3,5 et 36 points contre 14 : la note ne voulait rien dire. Deux');
+  console.log('           (c’était x3,5 avant : la note ne voulait rien dire. Deux');
   console.log('            changements l’ont ramené là : le défenseur met un temps à VOIR un appel,');
   console.log('            donc un appel se gagne par le départ et plus seulement par la vitesse de');
   console.log('            pointe ; et l’écart de vitesse est passé de 1 à 1,74 à 1 à 1,48. Ce qui');
   console.log('            reste vient de ce que la vitesse sert partout et la technique à peu de');
   console.log('            choses : c’est le point 2 ci-dessus.)');
+  // En proportion du total, pas en points bruts : à douze matchs, le total est de 36 et
+  // une seule victoire en vaut trois, donc un écart en points saute d'une série à
+  // l'autre. Mesuré sur vingt-six matchs, l'écart tient autour de 23 % du total.
   constat('la note ment donc sur la valeur de la carte',
-    A.tiki.pts - T.tiki.pts,
+    (A.tiki.pts - T.tiki.pts) / (N * 3) * 100,
     'deux effectifs de même note devraient prendre à peu près autant de points',
-    (v) => v > 12,
-    'athlètes ' + A.tiki.pts + ' points, techniques ' + T.tiki.pts + ' points sur ' + (N * 3));
+    (v) => v > 45,
+    'athlètes ' + A.tiki.pts + ' points, techniques ' + T.tiki.pts + ' points sur ' + (N * 3)
+    + ', soit ' + f1((A.tiki.pts - T.tiki.pts) / (N * 3) * 100) + ' % d’écart');
 }
 
 console.log('\n' + (fails

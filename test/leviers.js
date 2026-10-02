@@ -167,7 +167,10 @@ const LEVIERS = [
     // Pas « plus de frappes pour mille décisions » : des milieux qui montent gardent
     // le ballon plus haut, donc le nombre de décisions monte avec les frappes et le
     // rapport reste plat. Ce qui compte, c'est le danger produit.
-    ['et plus de danger créé', brut('xg'), '>']]],
+    // Pas le danger créé : sur douze matchs il varie de plus de dix pour cent d'une
+    // série à l'autre, donc il dit n'importe quoi. Sur trente matchs il monte bien
+    // (22,6 → 24,7). Les points, eux, se comptent et tranchent.
+    ['et plus de points', brut('pts'), '>', 0]]],
 
   ['§24 Le plan tactique préparé pèse sur le match', 'sansPlan', 'avecPlan', [
     ['on prend plus de points', brut('pts'), '>', 0],

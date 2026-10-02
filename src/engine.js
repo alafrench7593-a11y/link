@@ -714,6 +714,15 @@ export function makeEngine(cfg) {
         if (kind === 'space') ev *= (1 + tp * 0.3) * (1 + TR(q, 'sprint') * 0.35);
         if (kind === 'long') ev *= 1 + tp * 0.4;
         if (kind === 'switch') ev *= (1.05 + Math.max(0, p.pas - 70) / 260) * (1 + tp * 0.5);
+        // §42 La surcharge n'avait que sa première moitié. Le réglage décalait l'équipe
+        // de sept mètres d'un côté — on attire bien l'adversaire — et rien ne poussait
+        // ensuite à RENVERSER vers l'ailier resté seul de l'autre. Le style promettait
+        // un plan en deux temps et n'en jouait qu'un.
+        if (kind === 'switch' && T.tac.overload) {
+          const lx2 = xl(s, tx);
+          const loin = T.tac.overload === 1 ? lx2 > 40 : lx2 < 28;
+          if (loin) { const kr = 1.45; ev = ev > 0 ? ev * kr : ev / kr; }
+        }
         if (isGK && T.tac.gk === 0 && !aerial) ev *= 1.2; if (isGK && T.tac.gk === 1 && aerial) ev *= 1.25;
         if (e.off) { if (R() < 0.62) return; }
         opts.push({ k: 'pass', q, x: tx, y: ty, kind, aerial: !!aerial, ev, off: e.off });
@@ -777,6 +786,12 @@ export function makeEngine(cfg) {
             opts.push({ k: 'cross', x: tx, y: ty, ev, nm });
           }
         }
+        // J'ai essayé de rendre la conservation plus coûteuse chez une équipe patiente,
+        // pour que le Tiki-taka fasse circuler au lieu de garder. Le Tiki-taka a un peu
+        // mieux circulé (de 89 passes de retard à 17) mais un effectif technique a perdu
+        // DOUZE POINTS sur vingt-six matchs : forcé de rejouer vite devant un bloc, il
+        // perd le ballon. L'écart entre deux cartes de même note passait de 18 à 35
+        // points. Annulé : le défaut visé est moins grave que le dégât causé.
         if (pr > 2.2) { const held = W.t - p.rcvT; opts.push({ k: 'hold', ev: Vh - held * (T.tac.patience ? 0.0012 : 0.0028) * (counter ? 3 : 1) * (T.tac.timewaste && W.score[s] > W.score[o] ? 0.3 : 1) - (pr < 4 ? 0.004 : 0.0012) }); }
       }
       if (a0 < 24 && pr < 3.2) opts.push({ k: 'clear', ev: -0.0045 });
@@ -981,6 +996,11 @@ export function makeEngine(cfg) {
         const fr = off - 1, span = Math.max(20, fr - ab), f = cl(rel / T.baseLen, 0, 1);
         a = ab + span * Math.pow(f, 0.85);
         if (k === 'CB') { a = Math.min(ab + (p.libero ? -3 : 0), bA - 12); x = 34 + (p.bx - 34) * (buildUp ? 1.6 : 1.1) + (bX - 34) * 0.15; }
+        // J'ai essayé de faire monter les joueurs de couloir plus haut quand la consigne
+        // dit de centrer, pour que le 3-5-2 centre autant qu'il le promet. Résultat
+        // mesuré : il centrait toujours aussi peu (6,9 contre 7,6 pour l'Équilibré) et
+        // il encaissait DEUX FOIS PLUS (17,1 de danger concédé contre 8,3). Deux pistons
+        // haut placés devant trois défenseurs, c'est une défense ouverte. Annulé.
         else if (k === 'FB' || k === 'WB') { const m = k === 'WB' ? 1 : p.fbMode != null ? p.fbMode : T.tac.fullbacks; if (m === 0) { a = ab + 7; x = p.lr < 0 ? 9 : 59; } else if (m === 1) { a = ab + span * (bA > 45 ? 0.58 : 0.35) + (k === 'WB' ? 3 : 0); x = p.lr < 0 ? 4 : 64; } else { a = ab + 10; x = 34 + p.lr * 11; } }
         else if (k === 'DM') { const fbHigh = LV[s].filter((q) => (q.kind === 'FB' || q.kind === 'WB') && aOf(s, q.y) > bA - 8).length >= 2; a = ab + (p.deep && buildUp ? 2 : fbHigh ? 3 : Math.max(8, span * 0.22)); x = 34 + (p.bx - 34) * (fbHigh ? 0.2 : 0.6) + (bX - 34) * 0.2; if (fbHigh) p.intent = 'DROP'; }
         else if (k === 'CM' || k === 'AM') { a = ab + span * (k === 'AM' ? 0.72 : 0.5) + (p.b2b ? 4 : 0); if (bA < 50) a = Math.max(a, bA + (k === 'AM' ? 16 : 8)); x = 34 + (p.bx - 34) * 1.05 * T.width + shiftX + (bX - 34) * 0.15; }
@@ -1336,7 +1356,14 @@ export function makeEngine(cfg) {
       if (!W.set && W.cel <= 0) ballStep();
       else if (W.cel > 0) { const b = W.ball; b.vx = b.vy = 0; }
       else { const b = W.ball; b.x = W.set.x; b.y = W.set.y; b.z = 0; }
-      if (W.owner || W.fl) { const ps = W.owner ? W.owner.s : W.fl.from ? W.fl.from.s : W.poss; W.pt[ps] += DT; }
+      // La possession se compte en temps de ballon. Le temps de VOL était crédité au
+      // camp du passeur, y compris sur un long dégagement : une équipe qui balançait
+      // devant gagnait de la possession à chaque ballon en l'air. D'où un Bloc bas,
+      // censé laisser le ballon, qui affichait 61 % contre 51 % pour l'Équilibré.
+      // Une passe au sol reste à son camp — elle arrive presque toujours ; un ballon
+      // en l'air n'appartient à personne tant qu'il n'est pas retombé.
+      if (W.owner) W.pt[W.owner.s] += DT;
+      else if (W.fl && W.fl.from && !W.fl.aerial && W.fl.kind !== 'long' && W.fl.kind !== 'cross') W.pt[W.fl.from.s] += DT;
       rec();
       W.t += DT; W.clk += DT;
       if (Math.floor(W.clk / 60) !== lastMin) { lastMin = Math.floor(W.clk / 60); ['H', 'A'].forEach((sd) => { const T = TM[sd]; if (T.boost && W.clk / 60 > T.boost.until) { T.boost = null; setTP(T); } adaptToSituation(T); }); applySkills(); }
