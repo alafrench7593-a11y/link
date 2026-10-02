@@ -200,7 +200,14 @@ function makeEngine(cfg) {
     // avec ou sans, le match est le même au chiffre près (test/passerelle.js).
     const PONT = !!(cfg && cfg.pont);
     let curAc = [];
-    const act = PONT ? (p, a, d) => { curAc.push(Object.assign({ t: W.t, c: p ? p.code : -1, a }, d || null)); } : () => {};
+    // L'instant d'une action est celui où on la voit dans les images. Un pas se joue en deux
+    // temps : les décisions (passes, tirs, duels) partent des positions du début du pas (W.t) ;
+    // le ballon (réceptions, interceptions, duels aériens, arrêts, buts) se règle après le
+    // déplacement, sur les positions de la fin du pas (W.t + DT), celles de l'image. La
+    // passerelle datait tout de W.t : un contrôle arrivait à l'écran un dixième de seconde
+    // avant le ballon, à 1,5 m du joueur (le cœur C++ d'Unreal l'a mesuré).
+    let phaseBallon = false;
+    const act = PONT ? (p, a, d) => { curAc.push(Object.assign({ t: phaseBallon ? W.t + DT : W.t, c: p ? p.code : -1, a }, d || null)); } : () => {};
     const com = (text) => { W.com = text; W.comT = W.t; mark({ k: 'com', text }); };
     const banner = (text, sub, color, dur) => mark({ k: 'banner', text, sub: sub || '', color: color || '#F2F4F7', dur: dur || 1.6 });
     const possPct = () => { const tot = W.pt.H + W.pt.A; return tot ? Math.round(W.pt.H / tot * 100) : 50; };
@@ -1490,7 +1497,7 @@ function makeEngine(cfg) {
       }
       W.tn = (W.tn || 0) + 1; if (W.tn % 2 === 0 || W.dirty || W.set) { W.dirty = false; targets(); }
       move();
-      if (!W.set && W.cel <= 0) ballStep();
+      if (!W.set && W.cel <= 0) { phaseBallon = true; ballStep(); phaseBallon = false; }
       else if (W.cel > 0) { const b = W.ball; b.vx = b.vy = 0; }
       else { const b = W.ball; b.x = W.set.x; b.y = W.set.y; b.z = 0; }
       // La possession se compte en temps de ballon. Le temps de VOL était crédité au
@@ -1529,6 +1536,9 @@ function makeEngine(cfg) {
       if (!a.fl) return a;
       const f = a.fl, o = { t: a.t, c: a.c, a: f.kind === 'shot' ? 'tir' : f.kind === 'clear' ? 'degagement' : f.cpa === 'throw' ? 'touche' : 'passe',
         genre: f.kind, cpa: f.cpa, x0: f.x0, y0: f.y0, z0: f.z0, x1: f.x1, y1: f.y1, dur: f.dur, apex: f.apex, aerien: !!f.aerial, vers: f.to ? f.to.code : -1 };
+      // une frappe jouée pendant le pas du ballon (dégagement ou déviation de la tête après un
+      // duel aérien) : l'action date de la fin du pas, mais la formule du vol part du début
+      if (Math.abs(f.t0 - a.t) > 1e-6) o.t0 = f.t0;
       if (f.kind === 'shot') Object.assign(o, { variante: f.sv || null, issue: f.res, tete: !!f.head, cf: !!f.fk, penalty: !!f.pen, poteau: !!f.post, xg: f.xg });
       return o;
     };
@@ -5882,7 +5892,10 @@ const Passerelle = {
     const evenements = [];
     imgs.forEach((f) => (f.ev || []).forEach((e) => evenements.push(Object.assign({ t: Math.round((f.t + 0.1) * 10) / 10 }, e))));
     const champs = P.tete.concat(...Array.from({ length: 22 }, (_, k) => P.joueur.map((c) => c + k)), o.debug ? [].concat(...Array.from({ length: 22 }, (_, k) => P.cible.map((c) => c + k))) : []);
-    const feuille = this.feuillePont(ctx);
+    // la feuille du coup d'envoi (matchPont la prend avant de jouer) : relue en fin de match,
+    // un titulaire remplacé recevait les attributs du moteur de son remplaçant, qui porte
+    // désormais son code (E.player)
+    const feuille = ctx.feuille || this.feuillePont(ctx);
     const doc = {
       format: P.format, version: P.version,
       moteur: { hz: P.hz, pas: P.pas, graine: ctx.seed != null ? ctx.seed : null },
@@ -5904,6 +5917,8 @@ const Passerelle = {
   matchPont(opp, opts) {
     const o = Object.assign({}, opts, { pont: true });
     const ctx = this.ouvrirMatch(opp, o);
+    // la feuille de match se lit au coup d'envoi : c'est là que chaque code porte son titulaire
+    ctx.feuille = this.feuillePont(ctx);
     ctx.E.capture(1e9);
     ctx.E.finish();
     const doc = this.documentPont(ctx, o);

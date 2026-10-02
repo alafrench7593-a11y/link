@@ -53,6 +53,7 @@ let doc = null, images = [], actions = [], vue = null, T = null, renderer = null
 function decoder(d) {
   const evParT = new Map(); (d.evenements || []).forEach((e) => { const k = Math.round(e.t * 10); (evParT.get(k) || evParT.set(k, []).get(k)).push(e); });
   const vols = d.actions.filter((a) => a.a === 'passe' || a.a === 'tir' || a.a === 'degagement' || a.a === 'touche');
+  const depart = (a) => (a.t0 != null ? a.t0 : a.t);
   const plongeons = d.actions.filter((a) => a.a === 'plongeon');
   let iv = 0, ip = 0;
   return d.images.donnees.map((row) => {
@@ -63,8 +64,9 @@ function decoder(d) {
       if (row[N + k * J + 4] & 1) fa.push(k);
     }
     // le vol en cours : la dernière frappe partie avant cette image, tant que personne n'a le ballon
-    while (iv + 1 < vols.length && vols[iv + 1].t < tau - 0.05) iv++;
-    const v = vols[iv], fl = v && v.t < tau - 0.05 && tau - v.t <= v.dur + 0.15 && row[7] < 0 ? [v.x0, v.y0, v.x1, v.y1, v.genre] : null;
+    // (une frappe de la phase du ballon est datée de la fin du pas ; son vol part de t0)
+    while (iv + 1 < vols.length && depart(vols[iv + 1]) < tau - 0.05) iv++;
+    const v = vols[iv], fl = v && depart(v) < tau - 0.05 && tau - depart(v) <= v.dur + 0.15 && row[7] < 0 ? [v.x0, v.y0, v.x1, v.y1, v.genre] : null;
     while (ip + 1 < plongeons.length && plongeons[ip + 1].t < tau - 0.05) ip++;
     const pg = plongeons[ip], ecoule = pg ? tau - 0.1 - pg.t : -1;
     const dv = pg && ecoule >= 0 && ecoule < pg.dur + 1 ? [pg.c, pg.dir, Math.min(1, ecoule / Math.max(0.2, pg.dur))] : null;

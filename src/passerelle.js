@@ -178,7 +178,10 @@ export const Passerelle = {
     const evenements = [];
     imgs.forEach((f) => (f.ev || []).forEach((e) => evenements.push(Object.assign({ t: Math.round((f.t + 0.1) * 10) / 10 }, e))));
     const champs = P.tete.concat(...Array.from({ length: 22 }, (_, k) => P.joueur.map((c) => c + k)), o.debug ? [].concat(...Array.from({ length: 22 }, (_, k) => P.cible.map((c) => c + k))) : []);
-    const feuille = this.feuillePont(ctx);
+    // la feuille du coup d'envoi (matchPont la prend avant de jouer) : relue en fin de match,
+    // un titulaire remplacé recevait les attributs du moteur de son remplaçant, qui porte
+    // désormais son code (E.player)
+    const feuille = ctx.feuille || this.feuillePont(ctx);
     const doc = {
       format: P.format, version: P.version,
       moteur: { hz: P.hz, pas: P.pas, graine: ctx.seed != null ? ctx.seed : null },
@@ -200,6 +203,8 @@ export const Passerelle = {
   matchPont(opp, opts) {
     const o = Object.assign({}, opts, { pont: true });
     const ctx = this.ouvrirMatch(opp, o);
+    // la feuille de match se lit au coup d'envoi : c'est là que chaque code porte son titulaire
+    ctx.feuille = this.feuillePont(ctx);
     ctx.E.capture(1e9);
     ctx.E.finish();
     const doc = this.documentPont(ctx, o);

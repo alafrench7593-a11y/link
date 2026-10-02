@@ -59,6 +59,17 @@ t('et elle change si un seul centimètre change', (() => {
   const rem = D1.actions.filter((a) => a.a === 'remplacement');
   t('un remplaçant entre avec ses attributs du moteur (il n’en avait pas au coup d’envoi)', rem.every((a) => a.vitesse_max > 4 && a.acceleration > 0 && a.agilite > 0),
     rem.length + ' remplacement(s)' + (rem[0] ? ', ' + rem[0].entrant + ' ' + rem[0].vitesse_max.toFixed(2) + ' m/s' : ''));
+  // §57 et §91 : la fiche d'un titulaire porte les attributs avec lesquels le moteur l'a fait
+  // jouer. Lue en fin de match, celle d'un titulaire remplacé portait ceux de son remplaçant
+  // (qui reprend son code) : un défenseur recevait la vitesse et la défense d'un attaquant.
+  const c = club(), ctx = c.ouvrirMatch(ADV, { seed: 77, pont: true });
+  const R3 = (v) => Math.round(v * 1000) / 1000;
+  const depart = Array.from({ length: 22 }, (_, k) => { const q = ctx.E.player(k); return [R3(q.vmax), q.pace, q.sht, q.pas, q.def].join('/'); });
+  const fiches = D1.joueurs.filter((j) => j.code != null);
+  const justes = fiches.filter((j) => [j.moteur.vitesse_max, j.moteur.vitesse, j.moteur.tir, j.moteur.passe, j.moteur.defense].join('/') === depart[j.code]).length;
+  const remplaces = new Set(rem.map((a) => a.c));
+  t('§57 un titulaire remplacé garde SES attributs du moteur, pas ceux de son remplaçant', justes === 22 && remplaces.size > 0,
+    justes + ' fiches sur 22 conformes au moteur du coup d’envoi, dont ' + remplaces.size + ' titulaire(s) remplacé(s)');
 }
 
 tete('Le format décrit dans docs/passerelle-ue5.md');
@@ -179,11 +190,25 @@ tete('§55 ce que le rendu ne doit jamais avoir à cacher');
   t('le tireur d’un coup de pied arrêté frappe de sa place : pas de bond au ballon', cpa.length > 20 && bonds.every((d) => d <= 0.8),
     cpa.length + ' coups de pied arrêtés, plus grand pas ' + Math.max(...bonds).toFixed(2) + ' m en 0,1 s');
   // une tête ou une volée part de la hauteur du ballon, au lieu de retomber d'un coup au sol
-  // (un tir contré dure 0,15 s : le ballon rabattu au sol par le contreur, c'est voulu)
+  // (un tir contré dure 0,15 s : le ballon rabattu au sol par le contreur, c'est voulu). L'image
+  // de l'instant de l'action montre le ballon au point de frappe ; la suivante, le premier pas du vol.
   const enLAir = D1.actions.filter((a) => (a.a === 'passe' || a.a === 'tir' || a.a === 'degagement') && a.z0 > 0.5 && a.dur >= 0.3);
-  const chutes = enLAir.map((a) => { const r1 = ligne.get(Math.round(a.t * 10) + 1), r2 = ligne.get(Math.round(a.t * 10) + 2); return r1 && r2 ? (r1[6] - r2[6]) / 100 : 0; });
-  t('une tête ou une volée part de la hauteur du ballon (il ne perd plus 1,8 m en un pas)', enLAir.length > 10 && chutes.every((d) => d < 0.6),
-    enLAir.length + ' frappes au-dessus de 50 cm, plus forte chute ' + Math.max(...chutes).toFixed(2) + ' m en 0,1 s');
+  const chutes = enLAir.map((a) => { const r0 = ligne.get(Math.round(a.t * 10)), r1 = ligne.get(Math.round(a.t * 10) + 1); return r0 && r1 ? (r0[6] - r1[6]) / 100 : 0; });
+  const auPoint = enLAir.filter((a) => { const r0 = ligne.get(Math.round(a.t * 10)); return r0 && Math.abs(r0[6] / 100 - a.z0) <= 0.15; }).length;
+  t('une tête ou une volée part de la hauteur du ballon (il ne perd plus 1,8 m en un pas)', enLAir.length > 10 && chutes.every((d) => d < 0.6) && auPoint === enLAir.length,
+    enLAir.length + ' frappes au-dessus de 50 cm, ' + auPoint + ' au point de frappe à l’instant de l’action, plus forte chute ' + Math.max(...chutes).toFixed(2) + ' m au premier pas');
+  // l'instant d'une action est celui de l'image qui la montre : le receveur a le ballon dans les
+  // pieds au moment de son contrôle (le moteur règle le ballon après avoir déplacé les joueurs)
+  const recus = D1.actions.filter((a) => a.a === 'controle').map((a) => { const r = ligne.get(Math.round(a.t * 10)); return r ? Math.hypot(r[4] - r[col(a.c, 'x')], r[5] - r[col(a.c, 'y')]) / 100 : 99; }).sort((x, y) => x - y);
+  t('un contrôle se voit à l’image où le ballon arrive au receveur', recus.length > 300 && recus[Math.floor(recus.length * 0.9)] <= 1.2,
+    recus.length + ' contrôles, ballon à ' + recus[Math.floor(recus.length / 2)].toFixed(2) + ' m du receveur en médiane, ' + recus[Math.floor(recus.length * 0.9)].toFixed(2) + ' m au 9e décile');
+  // §22 la physique du ballon : un vol aérien du moteur est une courbe paramétrée (sommet,
+  // durée), pas une chute libre. Son accélération verticale, 8 × sommet / durée², dit s'il
+  // monte plus haut que la pesanteur ne le permet dans le temps qu'il passe en l'air.
+  const aeriens = D1.actions.filter((a) => a.aerien && a.dur > 0 && a.apex > 0);
+  const gs = aeriens.map((a) => 8 * a.apex / (a.dur * a.dur) / 9.81).sort((x, y) => x - y);
+  constat('vols aériens plus hauts que la pesanteur ne le permet (au-delà de 1,5 g)', gs.filter((g) => g > 1.5).length + ' sur ' + gs.length
+    + ', médiane ' + gs[Math.floor(gs.length / 2)].toFixed(1) + ' g, jusqu’à ' + gs[gs.length - 1].toFixed(1) + ' g (déviations de la tête courtes)');
   constat('ligne défensive étirée sur plus de 12 m', v.taux.ligne_cassee + ' % des images où l’équipe défend');
 }
 
