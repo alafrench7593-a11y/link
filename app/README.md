@@ -71,5 +71,13 @@ fait.
 
 ```bash
 npx expo start --web      # l'app dans un navigateur
-node ../test/progression.js   # les règles du jeu, sans interface
+npm run verifier          # l'app construite, puis parcourue comme un joueur
+npm test --prefix ..      # les règles du jeu, sans interface
 ```
+
+`npm run verifier` construit l'app pour le navigateur, la sert, et fait ce qu'un
+joueur ferait : premier lancement, les six onglets, un pack ouvert, second
+lancement. Quatorze vérifications. C'est ce parcours qui a trouvé, au premier vrai
+lancement de l'app, qu'elle ne se construisait pas (il manquait `expo-asset`) et
+qu'elle ne créait jamais le club : tout nouveau joueur commençait sur le club de
+démonstration, niveau 7, 1 000 jetons.

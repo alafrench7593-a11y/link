@@ -32,13 +32,16 @@ const TABS = [
 
 export default function App() {
   const store = useMemo(() => new PhoneStore('linkfoot.save.v1'), []);
-  const { club, state, ready, act } = useClub({ store, delay: 600 });
+  const { club, state, ready, fresh, act } = useClub({ store, delay: 600 });
   const [tab, setTab] = useState('home');
 
-  // Première partie : on crée le club, avec son effectif normal et son joueur rare offert.
+  // Première partie : on crée le club, avec son effectif normal et son joueur rare offert
+  // (§2 à §4). Le test était « l'effectif est vide », mais un Club neuf a déjà un effectif
+  // de démonstration : la création ne se déclenchait JAMAIS, et tout nouveau joueur
+  // commençait au niveau 7 avec 1 000 jetons. `fresh` dit si la sauvegarde était vide.
   useEffect(() => {
-    if (ready && (!state.squad || !state.squad.length)) act((c) => c.createClub({ name: 'FC TonPseudo' }));
-  }, [ready]);
+    if (ready && fresh) act((c) => c.createClub({ name: 'FC TonPseudo' }));
+  }, [ready, fresh]);
 
   if (!ready) {
     return (

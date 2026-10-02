@@ -20,6 +20,13 @@ export function createClubHooks(React) {
 
     const [, bump] = useState(0);
     const [ready, setReady] = useState(!o.store);
+    // Vrai quand le stockage n'avait AUCUNE partie à rendre : c'est une première
+    // installation, et l'app doit créer le club (§2). Sans ce signal, l'app ne pouvait
+    // pas distinguer un premier lancement d'une partie reprise, puisqu'un Club neuf a
+    // déjà un effectif de démonstration ; elle démarrait donc tout le monde sur ce
+    // club de démonstration, au niveau 7 avec 1 000 jetons, sans jamais passer par la
+    // création.
+    const [fresh, setFresh] = useState(false);
     const mgr = useMemo(() => (o.store ? new SaveManager(club, o.store, { delay: o.delay, onError: o.onError }) : null), [o.store]);
 
     useEffect(() => club.onChange(() => bump((n) => n + 1)), [club]);
@@ -27,14 +34,14 @@ export function createClubHooks(React) {
     useEffect(() => {
       if (!mgr) return undefined;
       let alive = true;
-      mgr.load().then(() => { if (alive) { setReady(true); mgr.start(); } });
+      mgr.load().then((restauree) => { if (alive) { setFresh(!restauree); setReady(true); mgr.start(); } });
       return () => { alive = false; mgr.stop(); };
     }, [mgr]);
 
     const playMatch = useCallback((opp, opts) => club.playMatch(opp, opts), [club]);
     const act = useCallback((fn) => { fn(club); bump((n) => n + 1); }, [club]);
 
-    return { club, state: club.state, ready, playMatch, act, save: () => (mgr ? mgr.save() : Promise.resolve(false)), lastSavedAt: mgr ? mgr.lastSavedAt : null };
+    return { club, state: club.state, ready, fresh, playMatch, act, save: () => (mgr ? mgr.save() : Promise.resolve(false)), lastSavedAt: mgr ? mgr.lastSavedAt : null };
   }
 
   // Déroule un match en temps réel pour l'affichage : une image toutes les 100 ms de temps

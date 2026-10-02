@@ -48,3 +48,25 @@ jobs:
           node-version: 22
       - name: Toutes les vérifications, longues comprises
         run: node test/tout.js --long
+
+  # L'application, lancée pour de vrai dans un navigateur : premier lancement, les six
+  # onglets, un pack ouvert, second lancement. Compiler ne prouve rien sur ce qu'un
+  # joueur voit ; c'est ce job qui a trouvé que l'app ne se construisait pas et
+  # qu'elle ne créait jamais le club.
+  application:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Dépendances de l'app
+        working-directory: app
+        run: npm ci --no-audit --no-fund
+      - name: Navigateur
+        working-directory: app
+        run: npx playwright install --with-deps chromium
+      - name: L'app, comme un joueur la verrait
+        working-directory: app
+        run: npm run verifier
