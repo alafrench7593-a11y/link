@@ -13,7 +13,13 @@ const ok = (cond, label, detail) => {
 
 // Joue N matchs avec le même effectif et les mêmes graines, en équipant éventuellement
 // une compétence sur tout le onze. Seule la compétence change d'une série à l'autre.
-function run(skillPicker) {
+// UN CLUB NEUF PAR MATCH. La première version enchaînait les N matchs sur le même club,
+// or ce qui suit le coup de sifflet — progression des jeunes, usure des trentenaires —
+// tire au sort sans graine. Le club du dixième match n'était donc jamais le même d'une
+// exécution à l'autre, et le test passait ici et échouait sur l'intégration continue
+// (« chaque série perd au moins un match » : une série y a tout gagné). Le match, lui,
+// est reproductible au chiffre près ; c'est l'enchaînement qui ne l'était pas.
+function equipe(skillPicker) {
   const c = new Club();
   if (skillPicker) {
     const inv = [], squad = c.state.squad;
@@ -24,8 +30,13 @@ function run(skillPicker) {
     });
     c.setState({ skillInv: inv });
   }
+  return c;
+}
+
+function run(skillPicker) {
   const tot = {};
   for (let i = 0; i < N; i++) {
+    const c = equipe(skillPicker);
     const r = c.playMatch({ club: 'Référence', ovr: 66, style: 'blocmed' }, { seed: 7000 + i });
     Object.keys(r.cnt).forEach((k) => { tot[k] = (tot[k] || 0) + r.cnt[k]; });
     tot.goals = (tot.goals || 0) + r.score[0];
@@ -96,8 +107,17 @@ const shot = run(strong('tueur'));
 ok(rate(shot, 'act_shot') > rate(base, 'act_shot') * 1.04, 'il tente davantage sa chance',
   fmt(rate(base, 'act_shot')) + ' → ' + fmt(rate(shot, 'act_shot')) + ' frappes pour mille décisions');
 const spec = (o) => (o.sv_volee || 0) + (o.sv_retourne || 0) + (o.sv_talon || 0) + (o.sv_enroule || 0);
-ok(spec(shot) >= spec(base), 'les frappes spectaculaires restent possibles sans devenir la norme',
-  spec(base) + ' → ' + spec(shot) + ' sur ' + (shot.shots || 0) + ' frappes');
+// Le libellé dit « restent possibles sans devenir la norme ». La première version
+// vérifiait autre chose : que la compétence n'en fasse pas MOINS que la série de
+// référence. Or le Tueur frappe plus souvent depuis des positions ordinaires, donc
+// la part de spectaculaire peut baisser sans rien perdre ; et sur une quinzaine de
+// frappes, deux de plus ou de moins, c'est le hasard. Le test passait ou cédait
+// selon l'exécution. On vérifie maintenant ce que le libellé annonce, exactement.
+const partSpec = spec(shot) / Math.max(1, shot.shots || 0);
+ok(spec(shot) > 0, 'les frappes spectaculaires restent possibles',
+  spec(shot) + ' volées, retournés, talonnades et enroulés sur ' + (shot.shots || 0) + ' frappes');
+ok(partSpec < 0.25, 'sans devenir la norme',
+  Math.round(partSpec * 100) + ' % des frappes, plafond 25 %');
 
 console.log('\n§21 aucune compétence ne garantit la victoire');
 const wins = [base, drib, pass, shot].map((o) => o.wins || 0);
