@@ -122,9 +122,33 @@ matchs, et la suite longue le montre (2 octobre 2026, 12 matchs par série) :
 | styles | 27 sur 27 | 23 sur 27 : presse fort sans plus de fautes, piège du hors-jeu, espace dans le dos, longs ballons |
 | cohérence | 22 sur 22 | 21 sur 22 : à note égale, un effectif athlétique prend 36 points sur 36, un technique 19 (sur `main` : 29 contre 27) |
 
-L'écart athlètes contre techniciens dépasse le bruit de douze matchs (environ deux écarts-types).
-Il faut trouver lequel de ces correctifs le provoque avant de les porter sur `main` ; jusque-là,
-`main` garde le moteur d'avant.
+**Remesuré le 3 octobre 2026 : ces écarts étaient du bruit.** Les deux moteurs ont rejoué, avec les
+mêmes tests (ceux de `main`) et les mêmes graines, les séries des promesses que `ue5` avait perdues,
+à 48 matchs par série au lieu de 12, et l'écart athlètes contre techniciens à 96 :
+
+| Promesse | `main`, 48 matchs | `ue5`, 48 matchs |
+| --- | --- | --- |
+| à cinq derrière, on concède moins de tirs | 448 → 403 | 406 → 398 |
+| pressing fort : on tacle davantage | 1 976 → 2 148 | 1 945 → 2 006 |
+| pressing fort : plus de fautes | 410 → 517 | 396 → 486 |
+| équipe fraîche : elle frappe davantage, elle tacle moins | tenues | tenues |
+| gegenpressing : plus de fautes | 485 → 562 | 467 → 513 |
+| bloc haut : l'adversaire plus souvent hors-jeu | 29 → 59 | 23 → 38 |
+| bloc bas : moins de danger concédé | 45,9 → 29,0 | 46,5 → 30,4 |
+| direct : plus de longs ballons (pour mille décisions) | 5,9 → 6,4 | 5,7 → 6,1 |
+| athlètes contre techniciens, même note 72 (96 matchs) | 273 contre 180 points (32 %) | 269 contre 178 (32 %) |
+
+Toutes tiennent sur les deux moteurs. À douze matchs, une série de 36 points bascule sur une
+victoire : `main` avait tiré 29 contre 27, `ue5` 36 contre 19, pour le même écart réel. Ce que les
+correctifs changent vraiment, d'un style à l'autre : 4 à 8 % de tacles et 3 à 10 % de fautes en
+moins (le coup d'envoi n'est plus une mêlée de vingt-deux joueurs dans le rond), et moins de
+hors-jeu (−20 à −35 %, sur de petits nombres). Les effets des styles en sortent un peu plus
+faibles, jamais inversés. Rien dans ces mesures n'interdit de porter les correctifs sur `main`.
+
+Deux leçons. La suite longue à douze matchs ne sait pas juger un changement du moteur : il faut 48
+matchs par série pour ces promesses-là. Et l'écart athlètes contre techniciens est réel, sur les
+deux moteurs (32 % des points, deux fois plus de danger) : c'est la note des cartes qui sous-pèse
+la vitesse, pas un correctif.
 
 ## 4. WHAT MOVES TO UNREAL : ce qui passe dans Unreal
 
