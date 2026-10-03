@@ -1,11 +1,14 @@
 // Le laboratoire du rendu réel : une scène du moteur LinkFoot, jouée par des corps humains
 // (MakeHuman) qui bougent avec de vraies captures (base CMU), dans un stade éclairé.
 // Paramètres d'URL : doc (le document), joueurs (« focus », « tous », ou des codes), focus (le
-// joueur suivi), camera (« tv », « suivi », « serre », « face », « dos »), t (instant de départ), lecture
-// (1 : temps réel), hud (0 : sans le bandeau du score en vue télé).
+// joueur suivi), camera (« tv », « suivi », « serre », « face », « dos », « cote », « portrait »), t (instant de départ), lecture
+// (1 : temps réel), hud (0 : sans le bandeau du score en vue télé), perso (un personnage riggé,
+// glTF, GLB ou FBX, à la place du corps MakeHuman pour tous les joueurs : voir personnage.js), base
+// (le dossier de la base de mouvements, /rendu/donnees/ par défaut).
 import * as THREE from 'three';
 import { chargerCorps, fabriquerJoueur } from './corps.js';
 import { chargerMouvements, Animateur } from './mouvement.js';
+import { chargerPersonnage, fabriquerJoueurPersonnage } from './personnage.js';
 import { Match } from './match.js';
 import { construireStade, precipitations } from './stade.js';
 
@@ -73,7 +76,9 @@ if (nuit) {
   ciel.color.set('#d0d7dd'); ciel.groundColor.set('#3a4a3a'); ciel.intensity = 1.15;
   soleil.color.set('#e6ecf2'); soleil.intensity = 1.0; decalSoleil = new THREE.Vector3(-8, 40, 6);
 }
-const [D, M] = await Promise.all([chargerCorps('/rendu/donnees/'), chargerMouvements('/rendu/donnees/')]);
+const persoUrl = params.get('perso');
+const [D, M, modele] = await Promise.all([chargerCorps('/rendu/donnees/'), chargerMouvements(params.get('base') || '/rendu/donnees/'),
+  persoUrl ? chargerPersonnage(persoUrl) : null]);
 const focus = params.has('focus') ? Number(params.get('focus')) : doc.scene ? doc.scene.focus : 0;
 const choix = params.get('joueurs') || 'focus';
 const codes = choix === 'focus' ? [focus] : choix === 'tous' ? [...match.joueurs.keys()].filter((c) => c < 22) : choix.split(',').map(Number);
@@ -85,9 +90,9 @@ for (const code of codes) {
   const coul = gb ? { maillot: j.camp === 'H' ? '#E8C547' : '#2B2F36', short: '#1d1f22', chaussettes: j.camp === 'H' ? '#E8C547' : '#2B2F36', chaussures: '#111111', numero: '#111111' }
     : { maillot: m.c1, short: m.c2, chaussettes: m.c1, chaussures: ['#151515', '#f2f2f2', '#d8342b', '#2457d6'][code % 4], numero: m.c2 };
   coul.numeroMaillot = j.numero;
-  const J = fabriquerJoueur(D, j, coul);
+  const J = modele ? fabriquerJoueurPersonnage(modele, j, coul, D.man) : fabriquerJoueur(D, j, coul);
   scene.add(J.maillage);
-  joueurs.push({ code, J, A: new Animateur(M, J, D.man) });
+  joueurs.push({ code, J, A: new Animateur(M, J, J.corpsMan || D.man) });
 }
 
 // ---- la caméra ----
@@ -97,7 +102,7 @@ const visee = new THREE.Vector3(), camPos = new THREE.Vector3();
 let camInit = false;
 // la caméra télé : dans la tribune principale (18 m derrière la touche, 15 m de haut), elle suit le
 // ballon en panoramique, glisse un peu le long de la touche, et cadre environ 31 m de terrain
-let largeurCadre = 31, lacetFace = null, lacetDos = null, camInitCadre = false;
+let largeurCadre = 31, lacetFace = null, lacetDos = null, lacetCote = null, camInitCadre = false;
 function placerCamera(t, dt) {
   let cible;
   if (mode === 'tv') { const b = match.ballon(t).p; cible = new THREE.Vector3(b[0] * 0.75, 0.6, b[2]); }
@@ -116,8 +121,24 @@ function placerCamera(t, dt) {
     lacetDos = lacetDos == null ? l : lacetDos + Math.atan2(Math.sin(l - lacetDos), Math.cos(l - lacetDos)) * (1 - Math.exp(-dt / 0.6));
     pos = new THREE.Vector3(cible.x - Math.sin(lacetDos) * 6, 2.0, cible.z - Math.cos(lacetDos) * 6);
   }
+  else if (mode === 'portrait') {
+    // le visage, à 1,4 m devant lui (pour juger la peau, les yeux, la barbe, le maillot)
+    const j = joueurs.find((x) => x.code === focus);
+    if (j) {
+      const tete = j.A.P[j.A.cou[2]], l = j.A.lacetLisse || 0;
+      cible = new THREE.Vector3(tete.x, tete.y + 0.02, tete.z);
+      pos = new THREE.Vector3(tete.x + Math.sin(l + 0.35) * 1.4, tete.y + 0.05, tete.z + Math.cos(l + 0.35) * 1.4);
+    } else pos = new THREE.Vector3(cible.x - 2, 1.7, cible.z);
+  }
+  else if (mode === 'cote') {
+    // de profil, à 7 m sur la gauche de la course, à hauteur de hanche : pour juger la foulée
+    const v = match.vitesse(focus, t), l = Math.hypot(v[0], v[1]);
+    const cap = l > 0.5 ? Math.atan2(v[0], v[1]) : match.lacet(focus, t);
+    lacetCote = lacetCote == null ? cap : lacetCote + Math.atan2(Math.sin(cap - lacetCote), Math.cos(cap - lacetCote)) * (1 - Math.exp(-dt / 0.8));
+    pos = new THREE.Vector3(cible.x + Math.cos(lacetCote) * 7, 1.0, cible.z - Math.sin(lacetCote) * 7);
+  }
   else pos = new THREE.Vector3(cible.x - 11, 3.2, cible.z + 2);
-  const k = camInit ? 1 - Math.exp(-dt / (mode === 'tv' ? 0.45 : 0.25)) : 1;
+  const k = camInit && mode !== 'cote' && mode !== 'portrait' ? 1 - Math.exp(-dt / (mode === 'tv' ? 0.45 : 0.25)) : 1;
   visee.lerp(cible, k); camPos.lerp(pos, k); camInit = true;
   cam.position.copy(camPos); cam.lookAt(visee);
   if (mode === 'tv') {

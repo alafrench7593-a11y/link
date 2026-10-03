@@ -9,7 +9,10 @@ Le moteur (`src/engine.js`) reste la seule autorité : le rendu lit ses position
 | Élément | Comment |
 |---|---|
 | Corps | Maillage de base MakeHuman (CC0), déformé par les cibles « macro » selon la morphologie de chaque joueur (taille, poids, carrure, muscles), équipement (maillot, short, chaussettes, chaussures) gonflé sur la peau, 10 teints, coiffures |
-| Mouvement | Motion Matching sur 152 captures CMU (course, virages, départs, arrêts, pas chassés, recul, marche, attente) : toutes les 0,1 s, la requête décrit la trajectoire que le moteur fera jouer au joueur dans 0,2, 0,4 et 0,6 s, et la pose actuelle ; transitions par inertialisation (demi-vie 0,08 s) |
+| Mouvement | Motion Matching sur 159 captures CMU (course, virages, départs, arrêts, pas chassés, recul, marche, attente) : toutes les 0,1 s, la requête décrit la trajectoire que le moteur fera jouer au joueur dans 0,2, 0,4 et 0,6 s, et la pose actuelle ; transitions par inertialisation (demi-vie 0,08 s) |
+| Allure de course | Quand le joueur court vite, la recherche pénalise les prises d'allure molle (bras serrés, genou qui ne remonte pas : mesurés sur chaque prise) ; plus vite que la prise, le balancier des bras s'élargit ; le buste se penche en accélérant et aux grandes vitesses |
+| Gestes de football (GRF) | 45 gestes de Google Research Football (domaine public), convertis dans la même base (`construire/grf.py`) : tacles glissés, chutes, déséquilibres, relevés, têtes (dont plongeante), contrôles de la poitrine et du genou, retourné, touches, célébrations, parades ; chacun garde l'instant et le point où il touche le ballon. Ils ne sont jamais cherchés par le Motion Matching (la locomotion est identique, os par os) ; la vitrine `labo/gestes.html` les montre sur n'importe quel corps. Pas encore branchés sur les actions du moteur |
+| Personnages | Le corps MakeHuman par défaut, ou n'importe quel personnage riggé (glTF, GLB, FBX : noms Quaternius, Mixamo, mannequin d'Unreal, Rigify) avec `perso=` : ses os sont reconnus, il est mis à la taille de la fiche et habillé aux couleurs du club, puis animé par le même Motion Matching (`labo/personnage.js`) |
 | Pieds | Verrouillage pendant les appuis (talon puis pointe), décollage quand la jambe ne peut plus tenir l'appui, pointe au-dessus de l'herbe en l'air, bassin abaissé si la foulée l'exige ; détecteur de glissade identique à celui du cœur C++ (pointe à moins de 3 cm du sol et plus de 15 cm/s pendant 0,1 s) |
 | Frappes | Passes, tirs, dégagements et tacles jouent une vraie capture de frappe (CMU 10 et 11), calée pour que le pied touche le ballon à l'instant de l'action du moteur ; le corps se tourne vers la cible ; le pied d'appui garde la course quand le joueur va vite |
 | Contrôles et conduite | Le pied le plus proche touche le ballon à la réception ; balle au pied, le ballon est poussé puis rattrapé (une touche toutes les 0,45 à 1 s selon la vitesse) |
@@ -44,13 +47,15 @@ Les sources ne sont pas dans le dépôt (seules les données générées le sont
 ```sh
 git clone --filter=blob:none --sparse https://github.com/makehumancommunity/makehuman.git mh-src/makehuman
 git clone --filter=blob:none --sparse https://github.com/Shriinivas/cmubvh.git mocap/cmubvh
+git clone --filter=blob:none --no-checkout --depth 1 https://github.com/google-research/football.git gfootball
+(cd gfootball && git sparse-checkout init --no-cone && printf '/third_party/gfootball_engine/data/media/objects/players/\n/third_party/gfootball_engine/data/media/animations/\n/third_party/gfootball_engine/LICENSE\n' > .git/info/sparse-checkout && git checkout HEAD)
 ```
 
 Puis (les BVH des clips listés dans `construire/mouvements.py` copiés dans `mocap/bvh`) :
 
 ```sh
 cd rendu/construire
-python3 mouvements.py <dossier des BVH> ../donnees          # mouvements.json / .bin
+python3 mouvements.py <dossier des BVH> ../donnees <gfootball/third_party/gfootball_engine/data/media>   # mouvements.json / .bin
 python3 corps.py <mh-src/makehuman> <BVH de référence, 16_35.bvh> ../donnees   # corps.json / .bin (le clone, qui contient makehuman/data)
 ```
 
@@ -61,12 +66,38 @@ node rendu/outils/photo.mjs "rendu/labo/index.html?doc=/unreal/LinkFoot/Content/
 node rendu/outils/filmer.mjs tele.mp4 "doc=/unreal/LinkFoot/Content/LinkFoot/Scenes/13-contre_attaque.json&joueurs=tous&camera=tv" 0 0 1280 720 30
 ```
 
-Paramètres de la page : `doc` (le document), `joueurs` (`focus`, `tous` ou des codes), `focus` (le joueur suivi), `camera` (`tv`, `suivi`, `serre`, `face`, `dos`), `t` (instant de départ), `lecture=1` (temps réel), `hud=0` (sans bandeau). `photo.mjs` part de l'instant demandé ; `cliche.mjs` joue la scène depuis son début (les gestes, la fatigue et les célébrations ont besoin de leur histoire). Les outils lancent Chromium sans écran (`/opt/pw-browsers/chromium`, SwiftShader).
+Paramètres de la page : `doc` (le document), `joueurs` (`focus`, `tous` ou des codes), `focus` (le joueur suivi), `camera` (`tv`, `suivi`, `serre`, `face`, `dos`, `cote` : de profil, `portrait` : le visage), `t` (instant de départ), `lecture=1` (temps réel), `hud=0` (sans bandeau), `perso` (un personnage riggé à la place du corps MakeHuman). `photo.mjs` part de l'instant demandé ; `cliche.mjs` joue la scène depuis son début (les gestes, la fatigue et les célébrations ont besoin de leur histoire). Les outils lancent Chromium sans écran (`/opt/pw-browsers/chromium`, SwiftShader).
+
+## Personnages riggés, comparaison, allures
+
+```sh
+# la scène de comparaison : même scène, même instant, même caméra, même lumière, une image par corps
+node rendu/outils/comparer.mjs comparaison.png "doc=/unreal/LinkFoot/Content/LinkFoot/Scenes/01-sprint_droit.json&joueurs=focus&camera=cote" 64.1 640 480 \
+  "LinkFoot actuel=" "Quaternius=/unreal/LinkFoot/SourceArt/Characters/Players/Quaternius/SK_LinkFoot_Quaternius.glb"
+# les allures : le meilleur exemple de chaque allure dans les scènes de test, filmé de profil
+node rendu/outils/allures.mjs sortie perso=/unreal/LinkFoot/SourceArt/Characters/Players/Quaternius/SK_LinkFoot_Quaternius.glb
+# la vitrine des gestes : chaque clip demandé (nom ou catégorie), une planche et un film
+node rendu/outils/gestes.mjs sortie "glisse,chute,releve,tete" perso=/unreal/LinkFoot/SourceArt/Characters/Players/Quaternius/SK_LinkFoot_Quaternius.glb
+# la porte des pieds avec un personnage riggé
+LINKFOOT_PERSO=/unreal/LinkFoot/SourceArt/Characters/Players/Quaternius/SK_LinkFoot_Quaternius.glb node rendu/outils/verifier-pieds.mjs
+```
+
+Dans Blender (le Python de Blender : `pip install bpy==4.5.4` dans un environnement Python 3.11) :
+
+- `construire/personnage_blend.py` : vérifie un personnage (maillages, triangles, squelette, pose en T ou en A, orientation, matériaux, textures, animations, unités, taille) et l'exporte en GLB (labo) et FBX (Unreal), avec un niveau de détail réduit si demandé ;
+- `construire/rigger.py` : le rig automatique d'un personnage qui n'en a pas (squelette aux noms du mannequin d'Unreal, articulations mesurées sur le maillage, pondération par la chaleur des os calculée sur une enveloppe étanche puis reportée sur le vrai maillage) ;
+- `construire/quaternius_ue.py` : le personnage Quaternius « Animated Men » (CC0) préparé pour Unreal (voir `unreal/LinkFoot/SourceArt/Characters/Players/Quaternius/README.md`) ;
+- `construire/grf.py` : la conversion des animations de Google Research Football dans la base (voir « Reconstruire les données ») ;
+- `construire/vitrine_blend.py` : des rendus Cycles d'un personnage (face, trois quarts, profil, dos), avec ses os dessinés à travers le corps ou dans une pose d'essai.
+
+Ce que le moteur ne produit pas encore, et que le rendu n'invente donc pas : les pas chassés et la course arrière (le moteur oriente le corps dans le sens du déplacement 97,7 % du temps, à moins de 10°, sur 23 432 instants des scènes de test).
 
 ## Licences
 
 - **MakeHuman** : les actifs (maillage de base, cibles, squelette, poids) sont sous CC0 1.0 (LICENSE.md de MakeHuman, sections C et D). Aucun code de MakeHuman (AGPL) n'est repris : `construire/makehuman.py` lit les fichiers de données et applique les facteurs des curseurs macro, réécrits.
 - **CMU Graphics Lab Motion Capture Database** (conversion BVH de B. Hahne, cgspeed) : « free for use in research projects. You may include this data in commercially-sold products, but you may not resell this data directly, even in converted form. » Mention demandée : « The data used in this project was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217. » `donnees/mouvements.bin` est une forme convertie de ces données : il peut être inclus dans LinkFoot, pas vendu ni distribué comme base de mouvements à part.
+- **Google Research Football** (`third_party/gfootball_engine`, d'après Gameplay Football de Bastiaan Konings Schuiling) : le fichier LICENSE de ce dossier le place dans le domaine public (The Unlicense) ; ses animations (.anim) et la description du corps (player.object) sont lues comme des données, aucun code n'est repris. Les gestes convertis portent le préfixe « grf: » dans la base.
+- **Quaternius** « Animated Men » : CC0 1.0 (`unreal/LinkFoot/SourceArt/Characters/Players/`, avec la licence d'origine).
 - Aucun modèle, visage, animation, texture, son ni code d'EA Sports FC, de FIFA, d'eFootball ou d'un autre studio. Le motif du ballon, les panneaux et le public sont générés ici.
 
 ## Vers Unreal

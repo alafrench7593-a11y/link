@@ -1,5 +1,5 @@
 {
- "source": "mocap.cs.cmu.edu (conversion BVH de B. Hahne, cgspeed) : « The data used in this project was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217. »",
+ "source": "mocap.cs.cmu.edu (conversion BVH de B. Hahne, cgspeed) : « The data used in this project was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217. » Gestes « grf: » : animations de Google Research Football (third_party/gfootball_engine, d'après Gameplay Football de Bastiaan Konings Schuiling), domaine public (The Unlicense).",
  "fps": 30,
  "horizons": [
   6,
@@ -60,60 +60,60 @@
   19,
   20
  ],
- "images": 25675,
+ "images": 27783,
  "tableaux": {
   "quat": [
    0,
    "int16",
    [
-    25675,
+    27783,
     25,
     4
    ]
   ],
   "hanches": [
-   5135000,
+   5556600,
    "float32",
    [
-    25675,
+    27783,
     3
    ]
   ],
   "vit": [
-   5443100,
+   5889996,
    "float32",
    [
-    25675,
+    27783,
     3
    ]
   ],
   "appuis": [
-   5751200,
+   6223392,
    "uint8",
    [
-    25675
+    27783
    ]
   ],
   "cherchable": [
-   5776876,
+   6251176,
    "uint8",
    [
-    25675
+    27783
    ]
   ],
   "feats": [
-   5802552,
+   6278960,
    "float32",
    [
-    25675,
+    27783,
     27
    ]
   ],
   "featsMiroir": [
-   8575452,
+   9279524,
    "float32",
    [
-    25675,
+    27783,
     27
    ]
   ]
@@ -124,887 +124,1518 @@
    "categorie": "course",
    "premier": 0,
    "n": 44,
-   "vitesse": 2.33
+   "vitesse": 2.33,
+   "allure": {
+    "bras": 0.321,
+    "buste": 5.9,
+    "genou": 105.6,
+    "vitesse": 2.53
+   }
   },
   {
    "nom": "09_01",
    "categorie": "course",
    "premier": 44,
    "n": 37,
-   "vitesse": 3.11
+   "vitesse": 3.11,
+   "allure": {
+    "bras": 0.241,
+    "buste": 12.7,
+    "genou": 107.6,
+    "vitesse": 3.35
+   }
   },
   {
    "nom": "09_02",
    "categorie": "course",
    "premier": 81,
    "n": 33,
-   "vitesse": 3.05
+   "vitesse": 3.05,
+   "allure": {
+    "bras": 0.219,
+    "buste": 14.3,
+    "genou": 106.8,
+    "vitesse": 3.27
+   }
   },
   {
    "nom": "09_03",
    "categorie": "course",
    "premier": 114,
    "n": 32,
-   "vitesse": 3.0
+   "vitesse": 3.0,
+   "allure": {
+    "bras": 0.203,
+    "buste": 10.9,
+    "genou": 109.6,
+    "vitesse": 3.22
+   }
   },
   {
    "nom": "09_04",
    "categorie": "course",
    "premier": 146,
    "n": 35,
-   "vitesse": 3.12
+   "vitesse": 3.12,
+   "allure": {
+    "bras": 0.254,
+    "buste": 13.0,
+    "genou": 111.2,
+    "vitesse": 3.35
+   }
   },
   {
    "nom": "09_05",
    "categorie": "course",
    "premier": 181,
    "n": 36,
-   "vitesse": 3.02
+   "vitesse": 3.02,
+   "allure": {
+    "bras": 0.24,
+    "buste": 15.5,
+    "genou": 110.4,
+    "vitesse": 3.26
+   }
   },
   {
    "nom": "09_06",
    "categorie": "course",
    "premier": 217,
    "n": 36,
-   "vitesse": 3.14
+   "vitesse": 3.14,
+   "allure": {
+    "bras": 0.238,
+    "buste": 12.7,
+    "genou": 111.2,
+    "vitesse": 3.36
+   }
   },
   {
    "nom": "09_07",
    "categorie": "course",
    "premier": 253,
    "n": 35,
-   "vitesse": 2.96
+   "vitesse": 2.96,
+   "allure": {
+    "bras": 0.249,
+    "buste": 15.0,
+    "genou": 107.1,
+    "vitesse": 3.18
+   }
   },
   {
    "nom": "09_08",
    "categorie": "course",
    "premier": 288,
    "n": 32,
-   "vitesse": 2.97
+   "vitesse": 2.97,
+   "allure": {
+    "bras": 0.225,
+    "buste": 12.9,
+    "genou": 108.2,
+    "vitesse": 3.19
+   }
   },
   {
    "nom": "09_09",
    "categorie": "course",
    "premier": 320,
    "n": 38,
-   "vitesse": 3.04
+   "vitesse": 3.04,
+   "allure": {
+    "bras": 0.222,
+    "buste": 15.1,
+    "genou": 113.0,
+    "vitesse": 3.25
+   }
   },
   {
    "nom": "09_10",
    "categorie": "course",
    "premier": 358,
    "n": 32,
-   "vitesse": 3.06
+   "vitesse": 3.06,
+   "allure": {
+    "bras": 0.254,
+    "buste": 14.7,
+    "genou": 116.9,
+    "vitesse": 3.34
+   }
   },
   {
    "nom": "09_11",
    "categorie": "course",
    "premier": 390,
    "n": 42,
-   "vitesse": 3.07
+   "vitesse": 3.07,
+   "allure": {
+    "bras": 0.274,
+    "buste": 13.9,
+    "genou": 113.6,
+    "vitesse": 3.31
+   }
   },
   {
    "nom": "16_35",
    "categorie": "course",
    "premier": 432,
    "n": 41,
-   "vitesse": 2.47
+   "vitesse": 2.47,
+   "allure": {
+    "bras": 0.127,
+    "buste": 10.0,
+    "genou": 101.9,
+    "vitesse": 2.66
+   }
   },
   {
    "nom": "16_36",
    "categorie": "course",
    "premier": 473,
    "n": 48,
-   "vitesse": 2.4
+   "vitesse": 2.4,
+   "allure": {
+    "bras": 0.094,
+    "buste": 3.7,
+    "genou": 86.2,
+    "vitesse": 2.54
+   }
   },
   {
    "nom": "16_45",
    "categorie": "course",
    "premier": 521,
    "n": 34,
-   "vitesse": 3.48
+   "vitesse": 3.48,
+   "allure": {
+    "bras": 0.183,
+    "buste": 6.2,
+    "genou": 101.2,
+    "vitesse": 3.76
+   }
   },
   {
    "nom": "16_46",
    "categorie": "course",
    "premier": 555,
    "n": 34,
-   "vitesse": 3.63
+   "vitesse": 3.63,
+   "allure": {
+    "bras": 0.17,
+    "buste": 7.2,
+    "genou": 99.4,
+    "vitesse": 3.9
+   }
   },
   {
    "nom": "16_55",
    "categorie": "course",
    "premier": 589,
    "n": 46,
-   "vitesse": 2.7
+   "vitesse": 2.7,
+   "allure": {
+    "bras": 0.34,
+    "buste": 26.0,
+    "genou": 101.0,
+    "vitesse": 3.37
+   }
   },
   {
    "nom": "16_56",
    "categorie": "course",
    "premier": 635,
    "n": 43,
-   "vitesse": 2.64
+   "vitesse": 2.64,
+   "allure": {
+    "bras": 0.282,
+    "buste": 24.3,
+    "genou": 98.0,
+    "vitesse": 3.18
+   }
   },
   {
    "nom": "35_17",
    "categorie": "course",
    "premier": 678,
    "n": 42,
-   "vitesse": 2.69
+   "vitesse": 2.69,
+   "allure": {
+    "bras": 0.136,
+    "buste": 8.7,
+    "genou": 92.7,
+    "vitesse": 2.83
+   }
   },
   {
    "nom": "35_18",
    "categorie": "course",
    "premier": 720,
    "n": 44,
-   "vitesse": 2.67
+   "vitesse": 2.67,
+   "allure": {
+    "bras": 0.148,
+    "buste": 9.0,
+    "genou": 91.8,
+    "vitesse": 2.81
+   }
   },
   {
    "nom": "35_19",
    "categorie": "course",
    "premier": 764,
    "n": 40,
-   "vitesse": 2.82
+   "vitesse": 2.82,
+   "allure": {
+    "bras": 0.143,
+    "buste": 10.3,
+    "genou": 103.9,
+    "vitesse": 3.0
+   }
   },
   {
    "nom": "35_20",
    "categorie": "course",
    "premier": 804,
    "n": 41,
-   "vitesse": 2.88
+   "vitesse": 2.88,
+   "allure": {
+    "bras": 0.134,
+    "buste": 7.8,
+    "genou": 109.2,
+    "vitesse": 3.06
+   }
   },
   {
    "nom": "35_21",
    "categorie": "course",
    "premier": 845,
    "n": 41,
-   "vitesse": 3.01
+   "vitesse": 3.01,
+   "allure": {
+    "bras": 0.135,
+    "buste": 9.5,
+    "genou": 106.5,
+    "vitesse": 3.19
+   }
   },
   {
    "nom": "35_22",
    "categorie": "course",
    "premier": 886,
    "n": 42,
-   "vitesse": 2.87
+   "vitesse": 2.87,
+   "allure": {
+    "bras": 0.123,
+    "buste": 9.5,
+    "genou": 107.2,
+    "vitesse": 3.22
+   }
   },
   {
    "nom": "35_23",
    "categorie": "course",
    "premier": 928,
    "n": 41,
-   "vitesse": 2.88
+   "vitesse": 2.88,
+   "allure": {
+    "bras": 0.143,
+    "buste": 9.2,
+    "genou": 106.4,
+    "vitesse": 3.06
+   }
   },
   {
    "nom": "35_24",
    "categorie": "course",
    "premier": 969,
    "n": 38,
-   "vitesse": 2.95
+   "vitesse": 2.95,
+   "allure": {
+    "bras": 0.191,
+    "buste": 10.4,
+    "genou": 113.2,
+    "vitesse": 3.17
+   }
   },
   {
    "nom": "35_25",
    "categorie": "course",
    "premier": 1007,
    "n": 42,
-   "vitesse": 2.83
+   "vitesse": 2.83,
+   "allure": {
+    "bras": 0.139,
+    "buste": 7.5,
+    "genou": 107.2,
+    "vitesse": 3.03
+   }
   },
   {
    "nom": "35_26",
    "categorie": "course",
    "premier": 1049,
    "n": 35,
-   "vitesse": 2.95
+   "vitesse": 2.95,
+   "allure": {
+    "bras": 0.15,
+    "buste": 9.1,
+    "genou": 108.4,
+    "vitesse": 3.18
+   }
   },
   {
    "nom": "78_06",
    "categorie": "course",
    "premier": 1084,
    "n": 28,
-   "vitesse": 4.05
+   "vitesse": 4.05,
+   "allure": {
+    "bras": 0.423,
+    "buste": 15.0,
+    "genou": 117.7,
+    "vitesse": 4.51
+   }
   },
   {
    "nom": "78_12",
    "categorie": "course",
    "premier": 1112,
    "n": 25,
-   "vitesse": 4.09
-  },
-  {
-   "nom": "102_05",
-   "categorie": "course",
-   "premier": 1137,
-   "n": 28,
-   "vitesse": 4.05
-  },
-  {
-   "nom": "102_10",
-   "categorie": "course",
-   "premier": 1165,
-   "n": 25,
-   "vitesse": 4.09
+   "vitesse": 4.09,
+   "allure": {
+    "bras": 0.378,
+    "buste": 16.1,
+    "genou": 124.9,
+    "vitesse": 4.59
+   }
   },
   {
    "nom": "104_01",
    "categorie": "course",
-   "premier": 1190,
+   "premier": 1137,
    "n": 83,
-   "vitesse": 2.04
+   "vitesse": 2.04,
+   "allure": {
+    "bras": 0.368,
+    "buste": 5.7,
+    "genou": 81.5,
+    "vitesse": 3.13
+   }
   },
   {
    "nom": "104_04",
    "categorie": "course",
-   "premier": 1273,
+   "premier": 1220,
    "n": 50,
-   "vitesse": 2.92
+   "vitesse": 2.92,
+   "allure": {
+    "bras": 0.32,
+    "buste": 2.8,
+    "genou": 86.0,
+    "vitesse": 3.1
+   }
   },
   {
    "nom": "104_37",
    "categorie": "course",
-   "premier": 1323,
+   "premier": 1270,
    "n": 38,
-   "vitesse": 3.41
+   "vitesse": 3.41,
+   "allure": {
+    "bras": 0.439,
+    "buste": 5.7,
+    "genou": 84.7,
+    "vitesse": 3.61
+   }
   },
   {
    "nom": "104_48",
    "categorie": "course",
-   "premier": 1361,
+   "premier": 1308,
    "n": 30,
-   "vitesse": 3.77
+   "vitesse": 3.77,
+   "allure": {
+    "bras": 0.438,
+    "buste": 6.1,
+    "genou": 83.5,
+    "vitesse": 4.0
+   }
   },
   {
    "nom": "111_23",
    "categorie": "course",
-   "premier": 1391,
+   "premier": 1338,
    "n": 283,
    "vitesse": 0.82
   },
   {
    "nom": "111_24",
    "categorie": "course",
-   "premier": 1674,
+   "premier": 1621,
    "n": 216,
    "vitesse": 0.99
   },
   {
+   "nom": "143_01",
+   "categorie": "course",
+   "premier": 1837,
+   "n": 25,
+   "vitesse": 5.8,
+   "allure": {
+    "bras": 0.316,
+    "buste": 10.6,
+    "genou": 91.5,
+    "vitesse": 6.42
+   }
+  },
+  {
+   "nom": "141_01",
+   "categorie": "course",
+   "premier": 1862,
+   "n": 19,
+   "vitesse": 5.47,
+   "allure": {
+    "bras": 0.363,
+    "buste": 7.9,
+    "genou": 77.3,
+    "vitesse": 5.99
+   }
+  },
+  {
+   "nom": "141_02",
+   "categorie": "course",
+   "premier": 1881,
+   "n": 28,
+   "vitesse": 4.06,
+   "allure": {
+    "bras": 0.234,
+    "buste": -0.7,
+    "genou": 70.0,
+    "vitesse": 4.78
+   }
+  },
+  {
+   "nom": "143_42",
+   "categorie": "course",
+   "premier": 1909,
+   "n": 135,
+   "vitesse": 2.11,
+   "allure": {
+    "bras": 0.288,
+    "buste": 11.1,
+    "genou": 84.6,
+    "vitesse": 4.32
+   }
+  },
+  {
+   "nom": "139_12",
+   "categorie": "course",
+   "premier": 2044,
+   "n": 245,
+   "vitesse": 2.16,
+   "allure": {
+    "bras": 0.322,
+    "buste": 10.2,
+    "genou": 86.3,
+    "vitesse": 3.27
+   }
+  },
+  {
+   "nom": "139_13",
+   "categorie": "course",
+   "premier": 2289,
+   "n": 347,
+   "vitesse": 2.54,
+   "allure": {
+    "bras": 0.322,
+    "buste": 11.8,
+    "genou": 86.4,
+    "vitesse": 3.56
+   }
+  },
+  {
+   "nom": "141_34",
+   "categorie": "course",
+   "premier": 2636,
+   "n": 79,
+   "vitesse": 1.99,
+   "allure": {
+    "bras": 0.311,
+    "buste": 6.2,
+    "genou": 68.6,
+    "vitesse": 4.19
+   }
+  },
+  {
    "nom": "16_37",
    "categorie": "virage",
-   "premier": 1890,
+   "premier": 2715,
    "n": 46,
-   "vitesse": 2.17
+   "vitesse": 2.17,
+   "allure": {
+    "bras": 0.12,
+    "buste": 7.4,
+    "genou": 89.7,
+    "vitesse": 2.25
+   }
   },
   {
    "nom": "16_38",
    "categorie": "virage",
-   "premier": 1936,
+   "premier": 2761,
    "n": 42,
-   "vitesse": 2.37
+   "vitesse": 2.37,
+   "allure": {
+    "bras": 0.111,
+    "buste": 6.3,
+    "genou": 90.5,
+    "vitesse": 2.51
+   }
   },
   {
    "nom": "16_39",
    "categorie": "virage",
-   "premier": 1978,
+   "premier": 2803,
    "n": 37,
-   "vitesse": 2.48
+   "vitesse": 2.48,
+   "allure": {
+    "bras": 0.089,
+    "buste": 5.9,
+    "genou": 89.7,
+    "vitesse": 2.69
+   }
   },
   {
    "nom": "16_40",
    "categorie": "virage",
-   "premier": 2015,
+   "premier": 2840,
    "n": 49,
-   "vitesse": 2.14
+   "vitesse": 2.14,
+   "allure": {
+    "bras": 0.138,
+    "buste": 7.9,
+    "genou": 86.5,
+    "vitesse": 2.28
+   }
   },
   {
    "nom": "16_41",
    "categorie": "virage",
-   "premier": 2064,
+   "premier": 2889,
    "n": 40,
-   "vitesse": 1.9
+   "vitesse": 1.9,
+   "allure": {
+    "bras": 0.058,
+    "buste": 0.7,
+    "genou": 75.0,
+    "vitesse": 2.27
+   }
   },
   {
    "nom": "16_42",
    "categorie": "virage",
-   "premier": 2104,
+   "premier": 2929,
    "n": 52,
-   "vitesse": 1.84
+   "vitesse": 1.84,
+   "allure": {
+    "bras": 0.118,
+    "buste": 8.0,
+    "genou": 76.9,
+    "vitesse": 2.16
+   }
   },
   {
    "nom": "16_43",
    "categorie": "virage",
-   "premier": 2156,
+   "premier": 2981,
    "n": 53,
-   "vitesse": 2.06
+   "vitesse": 2.06,
+   "allure": {
+    "bras": 0.185,
+    "buste": 9.9,
+    "genou": 82.6,
+    "vitesse": 2.23
+   }
   },
   {
    "nom": "16_44",
    "categorie": "virage",
-   "premier": 2209,
+   "premier": 3034,
    "n": 54,
-   "vitesse": 1.87
+   "vitesse": 1.87,
+   "allure": {
+    "bras": 0.12,
+    "buste": 10.4,
+    "genou": 69.7,
+    "vitesse": 2.11
+   }
   },
   {
    "nom": "16_48",
    "categorie": "virage",
-   "premier": 2263,
+   "premier": 3088,
    "n": 32,
-   "vitesse": 3.5
+   "vitesse": 3.5,
+   "allure": {
+    "bras": 0.154,
+    "buste": 12.0,
+    "genou": 89.6,
+    "vitesse": 3.77
+   }
   },
   {
    "nom": "16_49",
    "categorie": "virage",
-   "premier": 2295,
+   "premier": 3120,
    "n": 32,
-   "vitesse": 3.47
+   "vitesse": 3.47,
+   "allure": {
+    "bras": 0.16,
+    "buste": 13.1,
+    "genou": 89.4,
+    "vitesse": 3.72
+   }
   },
   {
    "nom": "16_50",
    "categorie": "virage",
-   "premier": 2327,
+   "premier": 3152,
    "n": 33,
-   "vitesse": 3.24
+   "vitesse": 3.24,
+   "allure": {
+    "bras": 0.115,
+    "buste": 9.5,
+    "genou": 92.5,
+    "vitesse": 3.49
+   }
   },
   {
    "nom": "16_51",
    "categorie": "virage",
-   "premier": 2360,
+   "premier": 3185,
    "n": 45,
-   "vitesse": 2.37
+   "vitesse": 2.37,
+   "allure": {
+    "bras": 0.138,
+    "buste": 10.1,
+    "genou": 84.2,
+    "vitesse": 2.31
+   }
   },
   {
    "nom": "16_52",
    "categorie": "virage",
-   "premier": 2405,
+   "premier": 3230,
    "n": 44,
-   "vitesse": 2.28
+   "vitesse": 2.28,
+   "allure": {
+    "bras": 0.168,
+    "buste": 13.2,
+    "genou": 88.1,
+    "vitesse": 2.24
+   }
   },
   {
    "nom": "16_53",
    "categorie": "virage",
-   "premier": 2449,
+   "premier": 3274,
    "n": 36,
-   "vitesse": 2.41
+   "vitesse": 2.41,
+   "allure": {
+    "bras": 0.119,
+    "buste": 21.7,
+    "genou": 85.5,
+    "vitesse": 2.51
+   }
   },
   {
    "nom": "16_54",
    "categorie": "virage",
-   "premier": 2485,
+   "premier": 3310,
    "n": 35,
-   "vitesse": 2.38
+   "vitesse": 2.38,
+   "allure": {
+    "bras": 0.199,
+    "buste": 13.3,
+    "genou": 89.9,
+    "vitesse": 2.42
+   }
   },
   {
    "nom": "78_01",
    "categorie": "virage",
-   "premier": 2520,
+   "premier": 3345,
    "n": 43,
-   "vitesse": 2.06
+   "vitesse": 2.06,
+   "allure": {
+    "bras": 0.415,
+    "buste": 47.6,
+    "genou": 104.8,
+    "vitesse": 3.21
+   }
   },
   {
    "nom": "78_02",
    "categorie": "virage",
-   "premier": 2563,
+   "premier": 3388,
    "n": 70,
-   "vitesse": 2.09
+   "vitesse": 2.09,
+   "allure": {
+    "bras": 0.355,
+    "buste": 30.5,
+    "genou": 106.2,
+    "vitesse": 3.12
+   }
   },
   {
    "nom": "78_03",
    "categorie": "virage",
-   "premier": 2633,
+   "premier": 3458,
    "n": 44,
-   "vitesse": 2.81
+   "vitesse": 2.81,
+   "allure": {
+    "bras": 0.343,
+    "buste": 30.9,
+    "genou": 103.2,
+    "vitesse": 3.22
+   }
   },
   {
    "nom": "78_07",
    "categorie": "virage",
-   "premier": 2677,
+   "premier": 3502,
    "n": 36,
-   "vitesse": 3.86
+   "vitesse": 3.86,
+   "allure": {
+    "bras": 0.342,
+    "buste": 17.2,
+    "genou": 111.7,
+    "vitesse": 4.15
+   }
   },
   {
    "nom": "78_08",
    "categorie": "virage",
-   "premier": 2713,
+   "premier": 3538,
    "n": 28,
-   "vitesse": 4.01
+   "vitesse": 4.01,
+   "allure": {
+    "bras": 0.323,
+    "buste": 15.0,
+    "genou": 111.0,
+    "vitesse": 4.37
+   }
   },
   {
    "nom": "78_09",
    "categorie": "virage",
-   "premier": 2741,
+   "premier": 3566,
    "n": 38,
-   "vitesse": 3.53
+   "vitesse": 3.53,
+   "allure": {
+    "bras": 0.343,
+    "buste": 21.7,
+    "genou": 103.0,
+    "vitesse": 3.84
+   }
   },
   {
    "nom": "78_10",
    "categorie": "virage",
-   "premier": 2779,
+   "premier": 3604,
    "n": 35,
-   "vitesse": 3.45
+   "vitesse": 3.45,
+   "allure": {
+    "bras": 0.188,
+    "buste": 14.4,
+    "genou": 97.1,
+    "vitesse": 3.84
+   }
   },
   {
    "nom": "78_35",
    "categorie": "virage",
-   "premier": 2814,
+   "premier": 3639,
    "n": 55,
-   "vitesse": 1.58
+   "vitesse": 1.58,
+   "allure": {
+    "bras": 0.471,
+    "buste": 40.3,
+    "genou": 111.8,
+    "vitesse": 2.92
+   }
   },
   {
-   "nom": "102_01",
+   "nom": "128_02",
    "categorie": "virage",
-   "premier": 2869,
-   "n": 70,
-   "vitesse": 2.09
+   "premier": 3694,
+   "n": 42,
+   "vitesse": 3.4,
+   "allure": {
+    "bras": 0.249,
+    "buste": 14.8,
+    "genou": 92.7,
+    "vitesse": 3.69
+   }
   },
   {
-   "nom": "102_02",
+   "nom": "128_03",
    "categorie": "virage",
-   "premier": 2939,
-   "n": 44,
-   "vitesse": 2.81
+   "premier": 3736,
+   "n": 41,
+   "vitesse": 3.32,
+   "allure": {
+    "bras": 0.261,
+    "buste": 16.3,
+    "genou": 99.7,
+    "vitesse": 3.52
+   }
   },
   {
-   "nom": "102_06",
+   "nom": "127_09",
    "categorie": "virage",
-   "premier": 2983,
-   "n": 36,
-   "vitesse": 3.86
+   "premier": 3777,
+   "n": 50,
+   "vitesse": 2.95,
+   "allure": {
+    "bras": 0.284,
+    "buste": 20.2,
+    "genou": 97.4,
+    "vitesse": 3.3
+   }
   },
   {
-   "nom": "102_07",
+   "nom": "127_11",
    "categorie": "virage",
-   "premier": 3019,
-   "n": 28,
-   "vitesse": 4.01
+   "premier": 3827,
+   "n": 50,
+   "vitesse": 2.75,
+   "allure": {
+    "bras": 0.268,
+    "buste": 20.5,
+    "genou": 93.6,
+    "vitesse": 2.81
+   }
   },
   {
-   "nom": "102_08",
+   "nom": "127_12",
    "categorie": "virage",
-   "premier": 3047,
-   "n": 35,
-   "vitesse": 3.45
+   "premier": 3877,
+   "n": 45,
+   "vitesse": 3.14,
+   "allure": {
+    "bras": 0.255,
+    "buste": 20.4,
+    "genou": 96.6,
+    "vitesse": 3.41
+   }
   },
   {
-   "nom": "102_33",
+   "nom": "127_15",
    "categorie": "virage",
-   "premier": 3082,
-   "n": 55,
-   "vitesse": 1.58
+   "premier": 3922,
+   "n": 41,
+   "vitesse": 2.87,
+   "allure": {
+    "bras": 0.223,
+    "buste": 19.5,
+    "genou": 101.1,
+    "vitesse": 3.11
+   }
+  },
+  {
+   "nom": "127_16",
+   "categorie": "virage",
+   "premier": 3963,
+   "n": 65,
+   "vitesse": 2.25,
+   "allure": {
+    "bras": 0.26,
+    "buste": 16.6,
+    "genou": 93.9,
+    "vitesse": 3.04
+   }
+  },
+  {
+   "nom": "143_04",
+   "categorie": "virage",
+   "premier": 4028,
+   "n": 272,
+   "vitesse": 2.53,
+   "allure": {
+    "bras": 0.252,
+    "buste": 13.6,
+    "genou": 86.7,
+    "vitesse": 3.36
+   }
   },
   {
    "nom": "104_06",
    "categorie": "depart",
-   "premier": 3137,
+   "premier": 4300,
    "n": 85,
-   "vitesse": 1.74
+   "vitesse": 1.74,
+   "allure": {
+    "bras": 0.347,
+    "buste": 7.9,
+    "genou": 86.3,
+    "vitesse": 2.59
+   }
   },
   {
    "nom": "104_08",
    "categorie": "depart",
-   "premier": 3222,
+   "premier": 4385,
    "n": 79,
-   "vitesse": 1.49
+   "vitesse": 1.49,
+   "allure": {
+    "bras": 0.354,
+    "buste": 12.4,
+    "genou": 83.5,
+    "vitesse": 2.73
+   }
   },
   {
    "nom": "104_53",
    "categorie": "depart",
-   "premier": 3301,
+   "premier": 4464,
    "n": 75,
-   "vitesse": 1.71
+   "vitesse": 1.71,
+   "allure": {
+    "bras": 0.48,
+    "buste": 22.9,
+    "genou": 87.6,
+    "vitesse": 3.3
+   }
   },
   {
    "nom": "104_54",
    "categorie": "depart",
-   "premier": 3376,
+   "premier": 4539,
    "n": 63,
-   "vitesse": 1.78
+   "vitesse": 1.78,
+   "allure": {
+    "bras": 0.468,
+    "buste": 36.1,
+    "genou": 86.7,
+    "vitesse": 3.26
+   }
   },
   {
    "nom": "104_55",
    "categorie": "depart",
-   "premier": 3439,
+   "premier": 4602,
    "n": 126,
-   "vitesse": 1.19
+   "vitesse": 1.19,
+   "allure": {
+    "bras": 0.453,
+    "buste": 25.2,
+    "genou": 89.5,
+    "vitesse": 3.25
+   }
   },
   {
    "nom": "78_32",
    "categorie": "depart",
-   "premier": 3565,
+   "premier": 4728,
    "n": 54,
-   "vitesse": 2.59
+   "vitesse": 2.59,
+   "allure": {
+    "bras": 0.348,
+    "buste": 48.2,
+    "genou": 109.7,
+    "vitesse": 3.4
+   }
   },
   {
-   "nom": "102_30",
+   "nom": "143_03",
    "categorie": "depart",
-   "premier": 3619,
-   "n": 54,
-   "vitesse": 2.59
+   "premier": 4782,
+   "n": 60,
+   "vitesse": 1.75,
+   "allure": {
+    "bras": 0.344,
+    "buste": 17.8,
+    "genou": 91.5,
+    "vitesse": 4.45
+   }
+  },
+  {
+   "nom": "141_03",
+   "categorie": "depart",
+   "premier": 4842,
+   "n": 58,
+   "vitesse": 2.8,
+   "allure": {
+    "bras": 0.319,
+    "buste": 7.4,
+    "genou": 70.8,
+    "vitesse": 5.16
+   }
   },
   {
    "nom": "104_09",
    "categorie": "arret",
-   "premier": 3673,
+   "premier": 4900,
    "n": 88,
-   "vitesse": 1.55
+   "vitesse": 1.55,
+   "allure": {
+    "bras": 0.339,
+    "buste": 0.7,
+    "genou": 85.4,
+    "vitesse": 2.7
+   }
   },
   {
    "nom": "104_10",
    "categorie": "arret",
-   "premier": 3761,
+   "premier": 4988,
    "n": 84,
-   "vitesse": 1.63
+   "vitesse": 1.63,
+   "allure": {
+    "bras": 0.319,
+    "buste": -0.2,
+    "genou": 87.9,
+    "vitesse": 2.75
+   }
   },
   {
    "nom": "104_56",
    "categorie": "arret",
-   "premier": 3845,
+   "premier": 5072,
    "n": 92,
-   "vitesse": 1.43
+   "vitesse": 1.43,
+   "allure": {
+    "bras": 0.437,
+    "buste": -2.3,
+    "genou": 88.1,
+    "vitesse": 3.27
+   }
   },
   {
    "nom": "104_57",
    "categorie": "arret",
-   "premier": 3937,
+   "premier": 5164,
    "n": 96,
-   "vitesse": 1.26
+   "vitesse": 1.26,
+   "allure": {
+    "bras": 0.483,
+    "buste": 4.4,
+    "genou": 82.5,
+    "vitesse": 3.01
+   }
   },
   {
    "nom": "16_08",
    "categorie": "arret",
-   "premier": 4033,
+   "premier": 5260,
    "n": 60,
-   "vitesse": 1.44
+   "vitesse": 1.44,
+   "allure": {
+    "bras": 0.147,
+    "buste": -5.2,
+    "genou": 86.5,
+    "vitesse": 2.59
+   }
   },
   {
    "nom": "16_57",
    "categorie": "arret",
-   "premier": 4093,
+   "premier": 5320,
    "n": 67,
-   "vitesse": 1.21
+   "vitesse": 1.21,
+   "allure": {
+    "bras": 0.131,
+    "buste": -3.5,
+    "genou": 86.5,
+    "vitesse": 2.48
+   }
   },
   {
    "nom": "78_25",
    "categorie": "arret",
-   "premier": 4160,
+   "premier": 5387,
    "n": 89,
-   "vitesse": 1.34
+   "vitesse": 1.34,
+   "allure": {
+    "bras": 0.309,
+    "buste": 32.3,
+    "genou": 92.6,
+    "vitesse": 2.95
+   }
+  },
+  {
+   "nom": "143_02",
+   "categorie": "arret",
+   "premier": 5476,
+   "n": 52,
+   "vitesse": 2.21,
+   "allure": {
+    "bras": 0.232,
+    "buste": 6.4,
+    "genou": 84.6,
+    "vitesse": 4.65
+   }
+  },
+  {
+   "nom": "127_05",
+   "categorie": "arret",
+   "premier": 5528,
+   "n": 97,
+   "vitesse": 1.37,
+   "allure": {
+    "bras": 0.425,
+    "buste": 6.4,
+    "genou": 98.7,
+    "vitesse": 3.46
+   }
+  },
+  {
+   "nom": "127_17",
+   "categorie": "arret",
+   "premier": 5625,
+   "n": 96,
+   "vitesse": 1.25,
+   "allure": {
+    "bras": 0.334,
+    "buste": 15.9,
+    "genou": 96.9,
+    "vitesse": 2.71
+   }
+  },
+  {
+   "nom": "127_19",
+   "categorie": "arret",
+   "premier": 5721,
+   "n": 110,
+   "vitesse": 1.29,
+   "allure": {
+    "bras": 0.293,
+    "buste": 16.5,
+    "genou": 98.5,
+    "vitesse": 3.34
+   }
+  },
+  {
+   "nom": "127_20",
+   "categorie": "arret",
+   "premier": 5831,
+   "n": 90,
+   "vitesse": 1.57,
+   "allure": {
+    "bras": 0.343,
+    "buste": 16.7,
+    "genou": 98.6,
+    "vitesse": 3.11
+   }
   },
   {
    "nom": "78_24",
    "categorie": "lateral",
-   "premier": 4249,
+   "premier": 5921,
    "n": 62,
-   "vitesse": 1.71
+   "vitesse": 1.71,
+   "allure": {
+    "bras": 0.304,
+    "buste": 37.3,
+    "genou": 91.7,
+    "vitesse": 3.27
+   }
   },
   {
    "nom": "78_26",
    "categorie": "lateral",
-   "premier": 4311,
+   "premier": 5983,
    "n": 82,
-   "vitesse": 1.45
+   "vitesse": 1.45,
+   "allure": {
+    "bras": 0.251,
+    "buste": 34.2,
+    "genou": 90.4,
+    "vitesse": 2.85
+   }
   },
   {
    "nom": "78_27",
    "categorie": "lateral",
-   "premier": 4393,
+   "premier": 6065,
    "n": 74,
-   "vitesse": 1.58
+   "vitesse": 1.58,
+   "allure": {
+    "bras": 0.211,
+    "buste": 43.5,
+    "genou": 96.1,
+    "vitesse": 2.86
+   }
   },
   {
    "nom": "78_29",
    "categorie": "lateral",
-   "premier": 4467,
+   "premier": 6139,
    "n": 43,
-   "vitesse": 2.08
+   "vitesse": 2.08,
+   "allure": {
+    "bras": 0.07,
+    "buste": 6.1,
+    "genou": 99.2,
+    "vitesse": 2.58
+   }
   },
   {
    "nom": "78_30",
    "categorie": "lateral",
-   "premier": 4510,
+   "premier": 6182,
    "n": 176,
-   "vitesse": 1.54
-  },
-  {
-   "nom": "102_22",
-   "categorie": "lateral",
-   "premier": 4686,
-   "n": 62,
-   "vitesse": 1.71
-  },
-  {
-   "nom": "102_23",
-   "categorie": "lateral",
-   "premier": 4748,
-   "n": 89,
-   "vitesse": 1.34
-  },
-  {
-   "nom": "102_24",
-   "categorie": "lateral",
-   "premier": 4837,
-   "n": 82,
-   "vitesse": 1.45
-  },
-  {
-   "nom": "102_25",
-   "categorie": "lateral",
-   "premier": 4919,
-   "n": 74,
-   "vitesse": 1.58
-  },
-  {
-   "nom": "102_27",
-   "categorie": "lateral",
-   "premier": 4993,
-   "n": 43,
-   "vitesse": 2.08
-  },
-  {
-   "nom": "102_28",
-   "categorie": "lateral",
-   "premier": 5036,
-   "n": 176,
-   "vitesse": 1.54
+   "vitesse": 1.54,
+   "allure": {
+    "bras": 0.561,
+    "buste": 11.2,
+    "genou": 89.2,
+    "vitesse": 2.52
+   }
   },
   {
    "nom": "83_01",
    "categorie": "lateral",
-   "premier": 5212,
+   "premier": 6358,
    "n": 159,
    "vitesse": 0.24
   },
   {
    "nom": "83_19",
    "categorie": "lateral",
-   "premier": 5371,
+   "premier": 6517,
    "n": 128,
    "vitesse": 0.22
   },
   {
    "nom": "83_33",
    "categorie": "lateral",
-   "premier": 5499,
+   "premier": 6645,
    "n": 323,
    "vitesse": 0.14
   },
   {
    "nom": "83_55",
    "categorie": "lateral",
-   "premier": 5822,
+   "premier": 6968,
    "n": 184,
    "vitesse": 0.16
   },
   {
    "nom": "69_42",
    "categorie": "lateral",
-   "premier": 6006,
+   "premier": 7152,
    "n": 1279,
    "vitesse": 0.39
   },
   {
    "nom": "69_48",
    "categorie": "lateral",
-   "premier": 7285,
+   "premier": 8431,
    "n": 1256,
    "vitesse": 0.35
   },
   {
    "nom": "69_50",
    "categorie": "lateral",
-   "premier": 8541,
+   "premier": 9687,
    "n": 132,
    "vitesse": 0.7
   },
   {
    "nom": "76_09",
    "categorie": "recul",
-   "premier": 8673,
+   "premier": 9819,
    "n": 397,
    "vitesse": 0.12
   },
   {
    "nom": "76_11",
    "categorie": "recul",
-   "premier": 9070,
+   "premier": 10216,
    "n": 129,
    "vitesse": 0.58
   },
   {
    "nom": "111_01",
    "categorie": "recul",
-   "premier": 9199,
+   "premier": 10345,
    "n": 250,
    "vitesse": 0.47
   },
   {
    "nom": "69_34",
    "categorie": "recul",
-   "premier": 9449,
+   "premier": 10595,
    "n": 1193,
    "vitesse": 0.52
   },
   {
    "nom": "69_39",
    "categorie": "recul",
-   "premier": 10642,
+   "premier": 11788,
    "n": 1120,
    "vitesse": 0.47
   },
   {
    "nom": "09_12",
    "categorie": "recul",
-   "premier": 11762,
+   "premier": 12908,
    "n": 480,
    "vitesse": 0.9
   },
   {
    "nom": "16_17",
    "categorie": "marche",
-   "premier": 12242,
+   "premier": 13388,
    "n": 130,
    "vitesse": 0.83
   },
   {
    "nom": "16_18",
    "categorie": "marche",
-   "premier": 12372,
+   "premier": 13518,
    "n": 130,
    "vitesse": 0.86
   },
   {
    "nom": "16_19",
    "categorie": "marche",
-   "premier": 12502,
+   "premier": 13648,
    "n": 103,
    "vitesse": 0.82
   },
   {
    "nom": "16_20",
    "categorie": "marche",
-   "premier": 12605,
+   "premier": 13751,
    "n": 126,
    "vitesse": 0.86
   },
   {
    "nom": "16_33",
    "categorie": "marche",
-   "premier": 12731,
+   "premier": 13877,
    "n": 72,
    "vitesse": 0.65
   },
   {
    "nom": "16_34",
    "categorie": "marche",
-   "premier": 12803,
+   "premier": 13949,
    "n": 87,
    "vitesse": 0.68
   },
   {
    "nom": "69_06",
    "categorie": "marche",
-   "premier": 12890,
+   "premier": 14036,
    "n": 1304,
    "vitesse": 0.63
   },
   {
    "nom": "69_12",
    "categorie": "marche",
-   "premier": 14194,
+   "premier": 15340,
    "n": 1206,
    "vitesse": 0.59
   },
   {
    "nom": "69_13",
    "categorie": "marche",
-   "premier": 15400,
+   "premier": 16546,
    "n": 1188,
    "vitesse": 0.58
   },
   {
    "nom": "69_16",
    "categorie": "marche",
-   "premier": 16588,
+   "premier": 17734,
    "n": 282,
    "vitesse": 0.1
   },
   {
    "nom": "69_18",
    "categorie": "marche",
-   "premier": 16870,
+   "premier": 18016,
    "n": 264,
    "vitesse": 0.08
   },
   {
    "nom": "69_20",
    "categorie": "marche",
-   "premier": 17134,
+   "premier": 18280,
    "n": 137,
    "vitesse": 0.63
   },
   {
    "nom": "69_24",
    "categorie": "marche",
-   "premier": 17271,
+   "premier": 18417,
    "n": 107,
    "vitesse": 0.84
   },
   {
    "nom": "69_28",
    "categorie": "marche",
-   "premier": 17378,
+   "premier": 18524,
    "n": 116,
    "vitesse": 0.78
   },
   {
    "nom": "69_31",
    "categorie": "marche",
-   "premier": 17494,
+   "premier": 18640,
    "n": 93,
    "vitesse": 0.86
   },
   {
    "nom": "82_08",
    "categorie": "marche",
-   "premier": 17587,
+   "premier": 18733,
    "n": 425,
    "vitesse": 0.29
   },
   {
    "nom": "111_26",
    "categorie": "marche",
-   "premier": 18012,
+   "premier": 19158,
    "n": 681,
    "vitesse": 0.31
   },
   {
    "nom": "77_02",
    "categorie": "immobile",
-   "premier": 18693,
+   "premier": 19839,
    "n": 235,
    "vitesse": 0.13
   },
   {
    "nom": "111_28",
    "categorie": "immobile",
-   "premier": 18928,
+   "premier": 20074,
    "n": 477,
    "vitesse": 0.04
   },
   {
    "nom": "40_10",
    "categorie": "immobile",
-   "premier": 19405,
+   "premier": 20551,
    "n": 1554,
    "vitesse": 0.22
   },
   {
    "nom": "40_11",
    "categorie": "immobile",
-   "premier": 20959,
+   "premier": 22105,
    "n": 1505,
    "vitesse": 0.23
   },
   {
    "nom": "10_01",
    "categorie": "frappe",
-   "premier": 22464,
+   "premier": 23610,
    "n": 201,
    "vitesse": 0.28,
    "contact": {
@@ -1025,7 +1656,7 @@
   {
    "nom": "10_02",
    "categorie": "frappe",
-   "premier": 22665,
+   "premier": 23811,
    "n": 148,
    "vitesse": 0.39,
    "contact": {
@@ -1046,7 +1677,7 @@
   {
    "nom": "10_03",
    "categorie": "frappe",
-   "premier": 22813,
+   "premier": 23959,
    "n": 91,
    "vitesse": 0.98,
    "contact": {
@@ -1062,12 +1693,18 @@
      0.1267,
      0.2733
     ]
+   },
+   "allure": {
+    "bras": 0.225,
+    "buste": 22.0,
+    "genou": 89.7,
+    "vitesse": 2.47
    }
   },
   {
    "nom": "10_05",
    "categorie": "frappe",
-   "premier": 22904,
+   "premier": 24050,
    "n": 109,
    "vitesse": 0.88,
    "contact": {
@@ -1083,12 +1720,18 @@
      0.1349,
      0.0334
     ]
+   },
+   "allure": {
+    "bras": 0.129,
+    "buste": 22.4,
+    "genou": 87.2,
+    "vitesse": 2.41
    }
   },
   {
    "nom": "10_06",
    "categorie": "frappe",
-   "premier": 23013,
+   "premier": 24159,
    "n": 143,
    "vitesse": 0.8,
    "contact": {
@@ -1104,12 +1747,18 @@
      0.1322,
      0.1919
     ]
+   },
+   "allure": {
+    "bras": 0.154,
+    "buste": 21.2,
+    "genou": 78.0,
+    "vitesse": 2.41
    }
   },
   {
    "nom": "11_01",
    "categorie": "frappe",
-   "premier": 23156,
+   "premier": 24302,
    "n": 150,
    "vitesse": 0.63,
    "contact": {
@@ -1125,206 +1774,1029 @@
      0.1379,
      0.0863
     ]
+   },
+   "allure": {
+    "bras": 0.092,
+    "buste": 17.4,
+    "genou": 80.2,
+    "vitesse": 2.4
    }
   },
   {
    "nom": "13_11",
    "categorie": "saut",
-   "premier": 23306,
+   "premier": 24452,
    "n": 104,
    "vitesse": 0.37
   },
   {
    "nom": "13_39",
    "categorie": "saut",
-   "premier": 23410,
+   "premier": 24556,
    "n": 88,
    "vitesse": 0.08
   },
   {
    "nom": "13_40",
    "categorie": "saut",
-   "premier": 23498,
+   "premier": 24644,
    "n": 80,
    "vitesse": 0.08
   },
   {
    "nom": "13_41",
    "categorie": "saut",
-   "premier": 23578,
+   "premier": 24724,
    "n": 93,
    "vitesse": 0.13
   },
   {
    "nom": "13_42",
    "categorie": "saut",
-   "premier": 23671,
+   "premier": 24817,
    "n": 100,
    "vitesse": 0.12
   },
   {
    "nom": "16_05",
    "categorie": "saut",
-   "premier": 23771,
+   "premier": 24917,
    "n": 74,
    "vitesse": 0.44
   },
   {
    "nom": "16_06",
    "categorie": "saut",
-   "premier": 23845,
+   "premier": 24991,
    "n": 102,
    "vitesse": 0.39
   },
   {
    "nom": "16_07",
    "categorie": "saut",
-   "premier": 23947,
+   "premier": 25093,
    "n": 106,
    "vitesse": 0.38
   },
   {
    "nom": "16_09",
    "categorie": "saut",
-   "premier": 24053,
+   "premier": 25199,
    "n": 124,
-   "vitesse": 0.59
+   "vitesse": 0.59,
+   "allure": {
+    "bras": 0.475,
+    "buste": 19.6,
+    "genou": 66.9,
+    "vitesse": 2.13
+   }
   },
   {
    "nom": "16_10",
    "categorie": "saut",
-   "premier": 24177,
+   "premier": 25323,
    "n": 116,
-   "vitesse": 0.54
+   "vitesse": 0.54,
+   "allure": {
+    "bras": 0.583,
+    "buste": 10.5,
+    "genou": 70.8,
+    "vitesse": 2.18
+   }
   },
   {
    "nom": "49_04",
    "categorie": "saut",
-   "premier": 24293,
+   "premier": 25439,
    "n": 63,
-   "vitesse": 2.22
+   "vitesse": 2.22,
+   "allure": {
+    "bras": 0.617,
+    "buste": 8.3,
+    "genou": 102.3,
+    "vitesse": 2.66
+   }
   },
   {
    "nom": "49_05",
    "categorie": "saut",
-   "premier": 24356,
+   "premier": 25502,
    "n": 41,
-   "vitesse": 2.59
+   "vitesse": 2.59,
+   "allure": {
+    "bras": 0.616,
+    "buste": 2.5,
+    "genou": 119.3,
+    "vitesse": 2.73
+   }
   },
   {
    "nom": "75_01",
    "categorie": "saut",
-   "premier": 24397,
+   "premier": 25543,
    "n": 95,
-   "vitesse": 1.02
+   "vitesse": 1.02,
+   "allure": {
+    "bras": 0.364,
+    "buste": 15.0,
+    "genou": 78.9,
+    "vitesse": 3.67
+   }
   },
   {
    "nom": "75_02",
    "categorie": "saut",
-   "premier": 24492,
+   "premier": 25638,
    "n": 60,
-   "vitesse": 1.76
+   "vitesse": 1.76,
+   "allure": {
+    "bras": 0.471,
+    "buste": 8.7,
+    "genou": 84.6,
+    "vitesse": 4.05
+   }
   },
   {
    "nom": "75_03",
    "categorie": "saut",
-   "premier": 24552,
+   "premier": 25698,
    "n": 52,
-   "vitesse": 1.94
+   "vitesse": 1.94,
+   "allure": {
+    "bras": 0.533,
+    "buste": 8.1,
+    "genou": 81.1,
+    "vitesse": 3.91
+   }
   },
   {
    "nom": "77_16",
    "categorie": "chute",
-   "premier": 24604,
+   "premier": 25750,
    "n": 164,
    "vitesse": 0.32
   },
   {
    "nom": "77_17",
    "categorie": "chute",
-   "premier": 24768,
+   "premier": 25914,
    "n": 180,
    "vitesse": 0.34
   },
   {
    "nom": "77_18",
    "categorie": "chute",
-   "premier": 24948,
+   "premier": 26094,
    "n": 214,
    "vitesse": 0.3
   },
   {
    "nom": "85_15",
    "categorie": "chute",
-   "premier": 25162,
+   "premier": 26308,
    "n": 332,
    "vitesse": 0.33
   },
   {
    "nom": "90_16",
    "categorie": "chute",
-   "premier": 25494,
+   "premier": 26640,
    "n": 181,
    "vitesse": 0.13
+  },
+  {
+   "nom": "grf:sliding/sprint/000",
+   "categorie": "glisse",
+   "source": "grf",
+   "premier": 26821,
+   "n": 19,
+   "vitesse": 5.07,
+   "balises": {
+    "balldirection": "0.000000,-1.000000,0.000000",
+    "outgoing_special_state": "lay_back",
+    "type": "sliding"
+   },
+   "contact": {
+    "image": 10,
+    "partie": "pied_d",
+    "balle": [
+     0.0,
+     0.1066,
+     0.9102
+    ]
+   }
+  },
+  {
+   "nom": "grf:sliding/sprint/000_ballside",
+   "categorie": "glisse",
+   "source": "grf",
+   "premier": 26840,
+   "n": 27,
+   "vitesse": 3.55,
+   "balises": {
+    "balldirection": "-1.000000,0.000000,0.000000",
+    "type": "sliding"
+   },
+   "contact": {
+    "image": 5,
+    "partie": "pied_d",
+    "balle": [
+     -0.4823,
+     0.1066,
+     0.987
+    ]
+   }
+  },
+  {
+   "nom": "grf:sliding/walk/000",
+   "categorie": "glisse",
+   "source": "grf",
+   "premier": 26867,
+   "n": 18,
+   "vitesse": 3.62,
+   "balises": {
+    "balldirection": "0.000000,-1.000000,0.000000",
+    "outgoing_special_state": "lay_back",
+    "type": "sliding"
+   },
+   "contact": {
+    "image": 9,
+    "partie": "pied_d",
+    "balle": [
+     0.0,
+     0.1066,
+     1.09
+    ]
+   }
+  },
+  {
+   "nom": "grf:sliding/idle/000",
+   "categorie": "glisse",
+   "source": "grf",
+   "premier": 26885,
+   "n": 14,
+   "vitesse": 1.87,
+   "balises": {
+    "balldirection": "0.000000,-1.000000,0.000000",
+    "outgoing_special_state": "lay_back",
+    "type": "sliding"
+   },
+   "contact": {
+    "image": 7,
+    "partie": "pied_g",
+    "balle": [
+     0.3008,
+     0.1066,
+     0.9481
+    ]
+   }
+  },
+  {
+   "nom": "grf:sliding/idle/090",
+   "categorie": "glisse",
+   "source": "grf",
+   "premier": 26899,
+   "n": 15,
+   "vitesse": 2.28,
+   "balises": {
+    "balldirection": "0.707107, -0.707107, 0.000000",
+    "outgoing_special_state": "lay_back",
+    "type": "sliding"
+   },
+   "contact": {
+    "image": 7,
+    "partie": "pied_g",
+    "balle": [
+     0.628,
+     0.1066,
+     0.8757
+    ]
+   }
+  },
+  {
+   "nom": "grf:trip/trip_t3/sprint/000",
+   "categorie": "chute",
+   "source": "grf",
+   "premier": 26914,
+   "n": 22,
+   "vitesse": 4.36,
+   "balises": {
+    "bumpdirection": "0.000000,-1.000000,0.000000",
+    "outgoing_special_state": "lay_front",
+    "type": "trip"
+   }
+  },
+  {
+   "nom": "grf:trip/trip_t3/sprint/045",
+   "categorie": "chute",
+   "source": "grf",
+   "premier": 26936,
+   "n": 25,
+   "vitesse": 3.18,
+   "balises": {
+    "bumpdirection": "-1.000000,0.000000,0.000000",
+    "outgoing_special_state": "lay_front",
+    "type": "trip"
+   }
+  },
+  {
+   "nom": "grf:trip/trip_t3/walk/000_000",
+   "categorie": "chute",
+   "source": "grf",
+   "premier": 26961,
+   "n": 26,
+   "vitesse": 3.58,
+   "balises": {
+    "bumpdirection": "0.000000,-1.000000,0.000000",
+    "outgoing_special_state": "lay_front",
+    "type": "trip"
+   }
+  },
+  {
+   "nom": "grf:trip/trip_t2/sprint/side_behind",
+   "categorie": "chute",
+   "source": "grf",
+   "premier": 26987,
+   "n": 29,
+   "vitesse": 2.97,
+   "balises": {
+    "bumpdirection": "-0.832050,-0.554700,0.000000",
+    "outgoing_special_state": "lay_front",
+    "type": "trip"
+   }
+  },
+  {
+   "nom": "grf:trip/trip_t2/idle/000_000",
+   "categorie": "chute",
+   "source": "grf",
+   "premier": 27016,
+   "n": 14,
+   "vitesse": 1.7,
+   "balises": {
+    "bumpdirection": "0.000000, -1.000000, 0.000000",
+    "type": "trip"
+   }
+  },
+  {
+   "nom": "grf:trip/trip_t2/idle/000_090",
+   "categorie": "chute",
+   "source": "grf",
+   "premier": 27030,
+   "n": 19,
+   "vitesse": 1.17,
+   "balises": {
+    "bumpdirection": "-1.000000, 0.000000, 0.000000",
+    "outgoing_special_state": "lay_front",
+    "type": "trip"
+   }
+  },
+  {
+   "nom": "grf:trip/trip_t2/idle/000_180",
+   "categorie": "chute",
+   "source": "grf",
+   "premier": 27049,
+   "n": 18,
+   "vitesse": 1.09,
+   "balises": {
+    "bumpdirection": "0.000000, 1.000000, 0.000000",
+    "outgoing_special_state": "lay_back",
+    "type": "trip"
+   }
+  },
+  {
+   "nom": "grf:trip/trip_t2/dribble/000_accel",
+   "categorie": "chute",
+   "source": "grf",
+   "premier": 27067,
+   "n": 18,
+   "vitesse": 3.29,
+   "balises": {
+    "bumpdirection": "0.000000,-1.000000,0.000000",
+    "type": "trip"
+   }
+  },
+  {
+   "nom": "grf:trip/trip_t1/sprint/000_decel",
+   "categorie": "desequilibre",
+   "source": "grf",
+   "premier": 27085,
+   "n": 15,
+   "vitesse": 3.38,
+   "balises": {
+    "bumpdirection": "-0.287348,0.957826,0.000000",
+    "type": "trip"
+   }
+  },
+  {
+   "nom": "grf:trip/trip_t1/sprint/000_sidebump",
+   "categorie": "desequilibre",
+   "source": "grf",
+   "premier": 27100,
+   "n": 14,
+   "vitesse": 5.31,
+   "balises": {
+    "bumpdirection": "-0.287348,-0.957826,0.000000",
+    "type": "trip"
+   }
+  },
+  {
+   "nom": "grf:trip/trip_t1/sprint/045_decel",
+   "categorie": "desequilibre",
+   "source": "grf",
+   "premier": 27114,
+   "n": 28,
+   "vitesse": 4.72,
+   "balises": {
+    "bumpdirection": "-1.000000,0.000000,0.000000",
+    "type": "trip"
+   }
+  },
+  {
+   "nom": "grf:trip/trip_t1/walk/000_protectfront",
+   "categorie": "desequilibre",
+   "source": "grf",
+   "premier": 27142,
+   "n": 8,
+   "vitesse": 2.82,
+   "balises": {
+    "bumpdirection": "0.000000,1.000000,0.000000",
+    "type": "trip"
+   }
+  },
+  {
+   "nom": "grf:trip/trip_t1/walk/000_protectback",
+   "categorie": "desequilibre",
+   "source": "grf",
+   "premier": 27150,
+   "n": 8,
+   "vitesse": 3.25,
+   "balises": {
+    "bumpdirection": "0.000000,-1.000000,0.000000",
+    "type": "trip"
+   }
+  },
+  {
+   "nom": "grf:trip/trip_t1/walk/028_D045_sidebump",
+   "categorie": "desequilibre",
+   "source": "grf",
+   "premier": 27158,
+   "n": 11,
+   "vitesse": 3.31,
+   "balises": {
+    "bumpdirection": "-0.707107,-0.707107,0.000000",
+    "type": "trip"
+   }
+  },
+  {
+   "nom": "grf:movement_special/idle/special/000_stand_up_from_front",
+   "categorie": "releve",
+   "source": "grf",
+   "premier": 27169,
+   "n": 23,
+   "vitesse": 0.14,
+   "balises": {
+    "incoming_special_state": "lay_front",
+    "type": "movement"
+   }
+  },
+  {
+   "nom": "grf:movement_special/idle/special/000_stand_up_from_back",
+   "categorie": "releve",
+   "source": "grf",
+   "premier": 27192,
+   "n": 22,
+   "vitesse": 0.12,
+   "balises": {
+    "incoming_special_state": "lay_back",
+    "type": "movement"
+   }
+  },
+  {
+   "nom": "grf:pass/idle/nonbase/000_header",
+   "categorie": "tete",
+   "source": "grf",
+   "premier": 27214,
+   "n": 13,
+   "vitesse": 0.16,
+   "balises": {
+    "balldirection": "0.000000,-1.000000,0.000000",
+    "type": "shortpass"
+   },
+   "contact": {
+    "image": 8,
+    "partie": "tete",
+    "balle": [
+     0.0,
+     1.5984,
+     0.4369
+    ]
+   }
+  },
+  {
+   "nom": "grf:pass/idle/nonbase/000_header_jump_forwards",
+   "categorie": "tete",
+   "source": "grf",
+   "premier": 27227,
+   "n": 28,
+   "vitesse": 0.98,
+   "balises": {
+    "balldirection": "0.196116, -0.980581, 0.000000",
+    "type": "shortpass"
+   },
+   "contact": {
+    "image": 13,
+    "partie": "tete",
+    "balle": [
+     0.0676,
+     1.7437,
+     0.6266
+    ]
+   }
+  },
+  {
+   "nom": "grf:pass/idle/nonbase/070_header_jump",
+   "categorie": "tete",
+   "source": "grf",
+   "premier": 27255,
+   "n": 29,
+   "vitesse": 0.69,
+   "balises": {
+    "balldirection": "-0.928477, -0.371391, 0.000000",
+    "type": "shortpass"
+   },
+   "contact": {
+    "image": 15,
+    "partie": "tete",
+    "balle": [
+     -0.1472,
+     1.8212,
+     0.2878
+    ]
+   }
+  },
+  {
+   "nom": "grf:pass/sprint/nonbase/000_header_jump",
+   "categorie": "tete",
+   "source": "grf",
+   "premier": 27284,
+   "n": 20,
+   "vitesse": 2.76,
+   "balises": {
+    "balldirection": "0.196116,-0.980581,0.000000",
+    "type": "shortpass"
+   },
+   "contact": {
+    "image": 8,
+    "partie": "tete",
+    "balle": [
+     0.0368,
+     1.7244,
+     0.4446
+    ]
+   }
+  },
+  {
+   "nom": "grf:interfere/sprint/000_header_jump",
+   "categorie": "tete",
+   "source": "grf",
+   "premier": 27304,
+   "n": 20,
+   "vitesse": 2.76,
+   "balises": {
+    "type": "interfere"
+   },
+   "contact": {
+    "image": 8,
+    "partie": "tete",
+    "balle": [
+     0.0368,
+     1.7244,
+     0.4446
+    ]
+   }
+  },
+  {
+   "nom": "grf:interfere/idle/000_header_jump",
+   "categorie": "tete",
+   "source": "grf",
+   "premier": 27324,
+   "n": 28,
+   "vitesse": 0.98,
+   "balises": {
+    "type": "interfere"
+   },
+   "contact": {
+    "image": 13,
+    "partie": "tete",
+    "balle": [
+     0.0676,
+     1.7437,
+     0.6266
+    ]
+   }
+  },
+  {
+   "nom": "grf:shot/sprint/000_headerdive",
+   "categorie": "tete",
+   "source": "grf",
+   "premier": 27352,
+   "n": 24,
+   "vitesse": 4.68,
+   "balises": {
+    "balldirection": "0.000000,-1.000000,0.000000",
+    "outgoing_special_state": "lay_front",
+    "type": "shot"
+   },
+   "contact": {
+    "image": 10,
+    "partie": "tete",
+    "balle": [
+     0.0962,
+     1.0172,
+     0.9049
+    ]
+   }
+  },
+  {
+   "nom": "grf:shot/walk/angled/D045_20_header",
+   "categorie": "tete",
+   "source": "grf",
+   "premier": 27376,
+   "n": 16,
+   "vitesse": 3.75,
+   "balises": {
+    "balldirection": "-0.371391,-0.928477,0.000000",
+    "type": "shot"
+   },
+   "contact": {
+    "image": 10,
+    "partie": "tete",
+    "balle": [
+     0.1481,
+     1.5887,
+     0.5596
+    ]
+   }
+  },
+  {
+   "nom": "grf:trap/idle/highballs/000_chest",
+   "categorie": "controle_haut",
+   "source": "grf",
+   "premier": 27392,
+   "n": 21,
+   "vitesse": 0.29,
+   "balises": {
+    "type": "trap"
+   },
+   "contact": {
+    "image": 12,
+    "partie": "main_d",
+    "balle": [
+     0.0097,
+     1.1916,
+     0.2499
+    ]
+   }
+  },
+  {
+   "nom": "grf:trap/idle/highballs/000_chest_jump",
+   "categorie": "controle_haut",
+   "source": "grf",
+   "premier": 27413,
+   "n": 29,
+   "vitesse": 0.53,
+   "balises": {
+    "type": "trap"
+   },
+   "contact": {
+    "image": 15,
+    "partie": "poitrine",
+    "balle": [
+     -0.0158,
+     1.5209,
+     0.2051
+    ]
+   }
+  },
+  {
+   "nom": "grf:trap/idle/highballs/000_knee",
+   "categorie": "controle_haut",
+   "source": "grf",
+   "premier": 27442,
+   "n": 10,
+   "vitesse": 1.56,
+   "balises": {
+    "type": "trap"
+   },
+   "contact": {
+    "image": 3,
+    "partie": "main_g",
+    "balle": [
+     -0.1259,
+     0.7556,
+     0.4263
+    ]
+   }
+  },
+  {
+   "nom": "grf:trap/sprint/highballs/000_chest",
+   "categorie": "controle_haut",
+   "source": "grf",
+   "premier": 27452,
+   "n": 17,
+   "vitesse": 5.38,
+   "balises": {
+    "type": "trap"
+   },
+   "contact": {
+    "image": 10,
+    "partie": "main_d",
+    "balle": [
+     -0.0159,
+     1.2981,
+     0.3045
+    ]
+   }
+  },
+  {
+   "nom": "grf:shot/idle/180_bicycle",
+   "categorie": "acrobatie",
+   "source": "grf",
+   "premier": 27469,
+   "n": 19,
+   "vitesse": 0.05,
+   "balises": {
+    "balldirection": "0.000000, 1.000000, 0.000000",
+    "outgoing_special_state": "lay_back",
+    "type": "shot"
+   },
+   "contact": {
+    "image": 10,
+    "partie": "pied_g",
+    "balle": [
+     -0.0298,
+     1.7437,
+     0.2135
+    ]
+   }
+  },
+  {
+   "nom": "grf:pass/idle/special/000_throw",
+   "categorie": "touche",
+   "source": "grf",
+   "premier": 27488,
+   "n": 15,
+   "vitesse": 0.2,
+   "balises": {
+    "balldirection": "0.000000, -1.000000, 0.000000",
+    "type": "shortpass"
+   },
+   "contact": {
+    "image": 7,
+    "partie": "main_g",
+    "balle": [
+     0.0,
+     1.7728,
+     0.621
+    ]
+   }
+  },
+  {
+   "nom": "grf:highpass/idle/special/000_throw",
+   "categorie": "touche",
+   "source": "grf",
+   "premier": 27503,
+   "n": 15,
+   "vitesse": 0.2,
+   "balises": {
+    "balldirection": "0.000000, -1.000000, 0.000000",
+    "type": "highpass"
+   },
+   "contact": {
+    "image": 7,
+    "partie": "main_g",
+    "balle": [
+     0.0,
+     1.7728,
+     0.621
+    ]
+   }
+  },
+  {
+   "nom": "grf:celebration/happy_extreme/000_decel_decel",
+   "categorie": "celebration_grf",
+   "source": "grf",
+   "premier": 27518,
+   "n": 92,
+   "vitesse": 0.66,
+   "balises": {
+    "type": "special"
+   }
+  },
+  {
+   "nom": "grf:celebration/happy_normal/000",
+   "categorie": "celebration_grf",
+   "source": "grf",
+   "premier": 27610,
+   "n": 31,
+   "vitesse": 0.0,
+   "balises": {
+    "type": "special"
+   }
+  },
+  {
+   "nom": "grf:celebration/sad_normal/000",
+   "categorie": "celebration_grf",
+   "source": "grf",
+   "premier": 27641,
+   "n": 31,
+   "vitesse": 0.08,
+   "balises": {
+    "type": "special"
+   }
+  },
+  {
+   "nom": "grf:deflect/idle/090_high_deflect_far",
+   "categorie": "gardien_grf",
+   "source": "grf",
+   "premier": 27672,
+   "n": 25,
+   "vitesse": 1.18,
+   "balises": {
+    "outgoing_special_state": "lay_front",
+    "type": "deflect"
+   },
+   "contact": {
+    "image": 9,
+    "partie": "main_d",
+    "balle": [
+     -0.74,
+     2.0247,
+     0.4441
+    ]
+   }
+  },
+  {
+   "nom": "grf:deflect/idle/090_midheight_deflect_far",
+   "categorie": "gardien_grf",
+   "source": "grf",
+   "premier": 27697,
+   "n": 24,
+   "vitesse": 2.43,
+   "balises": {
+    "outgoing_special_state": "lay_front",
+    "type": "deflect"
+   },
+   "contact": {
+    "image": 9,
+    "partie": "main_d",
+    "balle": [
+     -0.9188,
+     0.9106,
+     0.7771
+    ]
+   }
+  },
+  {
+   "nom": "grf:deflect/idle/090_ground_deflect_far",
+   "categorie": "gardien_grf",
+   "source": "grf",
+   "premier": 27721,
+   "n": 16,
+   "vitesse": 2.72,
+   "balises": {
+    "outgoing_special_state": "lay_front",
+    "type": "deflect"
+   },
+   "contact": {
+    "image": 11,
+    "partie": "main_g",
+    "balle": [
+     0.898,
+     0.1066,
+     1.005
+    ]
+   }
+  },
+  {
+   "nom": "grf:deflect/idle/000_high_holdball",
+   "categorie": "gardien_grf",
+   "source": "grf",
+   "premier": 27737,
+   "n": 16,
+   "vitesse": 0.35,
+   "balises": {
+    "type": "deflect"
+   },
+   "contact": {
+    "image": 4,
+    "partie": "main_g",
+    "balle": [
+     0.191,
+     1.9956,
+     0.2901
+    ]
+   }
+  },
+  {
+   "nom": "grf:deflect/idle/000_trunk_holdball",
+   "categorie": "gardien_grf",
+   "source": "grf",
+   "premier": 27753,
+   "n": 14,
+   "vitesse": 0.03,
+   "balises": {
+    "type": "deflect"
+   },
+   "contact": {
+    "image": 3,
+    "partie": "main_g",
+    "balle": [
+     0.0,
+     1.3756,
+     0.5353
+    ]
+   }
+  },
+  {
+   "nom": "grf:deflect/sprint/000_ground_holdball",
+   "categorie": "gardien_grf",
+   "source": "grf",
+   "premier": 27767,
+   "n": 16,
+   "vitesse": 3.28,
+   "balises": {
+    "type": "deflect",
+    "outgoing_special_state": "lay_front"
+   },
+   "contact": {
+    "image": 6,
+    "partie": "main_d",
+    "balle": [
+     -0.3076,
+     0.1066,
+     0.7622
+    ]
+   }
   }
  ],
  "moyennes": [
-  -0.0,
-  0.10473,
-  -0.0,
-  0.20566,
-  -0.0,
-  0.30079,
   0.0,
-  0.98239,
-  0.0,
-  0.94358,
+  0.12341,
   -0.0,
-  0.89631,
-  0.09455,
-  0.12149,
-  -0.04426,
-  -0.09455,
-  0.12149,
-  -0.04426,
-  0.00787,
-  0.00304,
-  0.56505,
-  -0.00787,
-  0.00304,
-  0.56505,
+  0.23973,
+  -0.0,
+  0.34461,
   0.0,
-  0.00232,
-  0.54893
+  0.97882,
+  0.0,
+  0.93127,
+  -0.0,
+  0.87432,
+  0.09076,
+  0.12187,
+  -0.04533,
+  -0.09076,
+  0.12187,
+  -0.04533,
+  0.00835,
+  0.00152,
+  0.67319,
+  -0.00835,
+  0.00152,
+  0.67319,
+  0.0,
+  0.00239,
+  0.64688
  ],
  "ecarts": [
-  0.27147,
-  0.27147,
-  0.27147,
-  0.27147,
-  0.27147,
-  0.27147,
-  0.21471,
-  0.21471,
-  0.21471,
-  0.21471,
-  0.21471,
-  0.21471,
-  0.12549,
-  0.12549,
-  0.12549,
-  0.12549,
-  0.12549,
-  0.12549,
-  0.89435,
-  0.89435,
-  0.89435,
-  0.89435,
-  0.89435,
-  0.89435,
-  0.59288,
-  0.59288,
-  0.59288
+  0.28979,
+  0.28979,
+  0.28979,
+  0.28979,
+  0.28979,
+  0.28979,
+  0.23827,
+  0.23827,
+  0.23827,
+  0.23827,
+  0.23827,
+  0.23827,
+  0.12463,
+  0.12463,
+  0.12463,
+  0.12463,
+  0.12463,
+  0.12463,
+  0.95291,
+  0.95291,
+  0.95291,
+  0.95291,
+  0.95291,
+  0.95291,
+  0.62387,
+  0.62387,
+  0.62387
  ],
  "hanches_ref": 0.93
 }

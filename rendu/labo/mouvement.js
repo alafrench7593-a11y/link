@@ -31,6 +31,33 @@ export async function chargerMouvements(base) {
   man.clips.forEach((c, ci) => { for (let i = c.premier; i < c.premier + c.n; i++) clipDe[i] = ci; });
   const locomotion = [];
   for (let i = 0; i < N; i++) if (cherchable[i] && CATS_LOCOMOTION.includes(man.clips[clipDe[i]].categorie)) locomotion.push(i);
+  // l'allure de chaque image : l'amplitude des bras de sa prise quand elle court (un joggeur aux
+  // bras serrés court mal un sprint de footballeur ; la recherche le pénalise quand ça va vite)
+  // la position moyenne des bras de chaque prise (le centre de leur balancier)
+  const ARTS_BRAS = [18, 19, 22, 23];
+  const brasMoyen = man.clips.map((c) => {
+    const r = {};
+    for (const j of ARTS_BRAS) {
+      const m = new THREE.Quaternion(0, 0, 0, 0), q = new THREE.Quaternion(), ref = new THREE.Quaternion();
+      for (let i = c.premier; i < c.premier + c.n; i++) {
+        const b = (i * J + j) * 4;
+        q.set(quat[b], quat[b + 1], quat[b + 2], quat[b + 3]);
+        if (i === c.premier) ref.copy(q);
+        const sg = q.x * ref.x + q.y * ref.y + q.z * ref.z + q.w * ref.w < 0 ? -1 : 1;
+        m.x += sg * q.x; m.y += sg * q.y; m.z += sg * q.z; m.w += sg * q.w;
+      }
+      r[j] = m.normalize();
+    }
+    return r;
+  });
+  // la pénalité d'allure, payée seulement quand la course est rapide : bras serrés, ou genou qui
+  // ne se plie pas (un vrai coureur ramène le talon vers la fesse)
+  const allureDe = new Float32Array(N);
+  man.clips.forEach((c) => {
+    if (!c.allure) return;
+    const p = Math.max(0, 0.28 - c.allure.bras) * 20 + Math.max(0, 108 - (c.allure.genou || 108)) * 0.05;
+    for (let i = c.premier; i < c.premier + c.n; i++) allureDe[i] = p;
+  });
   // l'accélération de la recherche par boîtes englobantes : par paquets de 16 images de
   // locomotion consécutives, le minimum et le maximum de chaque grandeur ; un paquet dont la
   // borne basse du coût dépasse déjà le meilleur trouvé est sauté en entier (résultat identique
@@ -45,7 +72,7 @@ export async function chargerMouvements(base) {
     return { mn, mx };
   });
   return { man, quat, hanches, vit, appuis, cherchable, feats, featsM, norm, normM, clipDe, N, F, J, locomotion: Int32Array.from(locomotion),
-    boites, tailleBloc: TAILLE, nbBlocs };
+    boites, tailleBloc: TAILLE, nbBlocs, allureDe, brasMoyen };
 }
 
 // poids des grandeurs : trajectoire (positions, directions), pieds (positions, vitesses), hanches
@@ -56,7 +83,7 @@ const POIDS = new Float32Array([
   1, 1, 1, 1, 1, 1,
   1, 1, 1]);
 
-const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _v = new THREE.Vector3(), _v2 = new THREE.Vector3();
+const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _m = new THREE.Matrix4();
 const Y = new THREE.Vector3(0, 1, 0);
 
 // les articulations de la base CMU, par groupe (ordre de mouvements.json)
@@ -95,23 +122,40 @@ export class Animateur {
       for (const n of ch.os) { const b = idx(n); this.cmu[b] = art.indexOf(ch.cmu); this.fix[b].copy(f); }
     }
     this.racine = this.parent.indexOf(-1);
-    const hg = idx('upperleg01.L'), hd = idx('upperleg01.R');
+    // les rôles des os : fournis avec le squelette d'un personnage venu d'ailleurs (personnage.js),
+    // sinon ceux du squelette de MakeHuman, par leurs noms
+    const R = corpsMan.roles || {
+      jambes: ['L', 'R'].map((c) => ({ cuisse: [idx(`upperleg01.${c}`), idx(`upperleg02.${c}`)], tibia: [idx(`lowerleg01.${c}`), idx(`lowerleg02.${c}`)],
+        pied: idx(`foot.${c}`), orteil: idx(`toe1-1.${c}`) })),
+      bras: ['L', 'R'].map((c) => ({ cuisse: [idx(`upperarm01.${c}`), idx(`upperarm02.${c}`)], tibia: [idx(`lowerarm01.${c}`), idx(`lowerarm02.${c}`)], pied: idx(`wrist.${c}`), suit: [idx(`wrist.${c}`)] })),
+      cou: ['neck01', 'neck03', 'head'].map(idx),
+      poitrine: idx('spine01'),
+      mains: [idx('wrist.L'), idx('wrist.R')],
+      haut: os.map((o) => /^(spine0[1-4]|neck|head|eye|clavicle|shoulder|upperarm|lowerarm|wrist)/.test(o.nom)),
+      regard: os.map((o) => (o.nom === 'neck01' ? 0.2 : o.nom === 'neck02' ? 0.4 : o.nom === 'neck03' ? 0.6 : (o.nom === 'head' || o.nom.startsWith('eye.')) ? 1 : 0))
+    };
+    const hg = R.jambes[0].cuisse[0], hd = R.jambes[1].cuisse[0];
     this.centreHanches = joueur.tetes[hg].clone().add(joueur.tetes[hd]).multiplyScalar(0.5);
     this.echelleHanches = this.centreHanches.y / M.man.hanches_ref;
-    this.jambes = ['L', 'R'].map((c) => ({
-      cuisse: [idx(`upperleg01.${c}`), idx(`upperleg02.${c}`)], tibia: [idx(`lowerleg01.${c}`), idx(`lowerleg02.${c}`)],
-      pied: idx(`foot.${c}`), orteil: idx(`toe1-1.${c}`), bit: c === 'L' ? 1 : 2,
-      cheville0: joueur.tetes[idx(`foot.${c}`)].y, verrou: null, sortie: 0, posePrec: false,
-      pointe0: joueur.tetes[idx(`toe1-1.${c}`)].y,
-      versPointe: new THREE.Vector3().subVectors(joueur.tetes[idx(`toe1-1.${c}`)], joueur.tetes[idx(`foot.${c}`)]),
-      detecteur: new DetecteurPied(joueur.tetes[idx(`toe1-1.${c}`)].y)
+    this.jambes = R.jambes.map((L, i) => ({
+      cuisse: L.cuisse.slice(), tibia: L.tibia.slice(), pied: L.pied, orteil: L.orteil, bit: i === 0 ? 1 : 2,
+      cheville0: joueur.tetes[L.pied].y, verrou: null, sortie: 0, posePrec: false,
+      pointe0: joueur.tetes[L.orteil].y,
+      versPointe: new THREE.Vector3().subVectors(joueur.tetes[L.orteil], joueur.tetes[L.pied]),
+      detecteur: new DetecteurPied(joueur.tetes[L.orteil].y)
     }));
-    this.cou = ['neck01', 'neck03', 'head'].map(idx);
-    this.poitrine = idx('spine01');
-    this.bras = ['L', 'R'].map((c) => ({ cuisse: [idx(`upperarm01.${c}`), idx(`upperarm02.${c}`)], tibia: [idx(`lowerarm01.${c}`), idx(`lowerarm02.${c}`)], pied: idx(`wrist.${c}`), suit: [idx(`wrist.${c}`)] }));
-    this.haut = os.map((o) => /^(spine0[1-4]|neck|head|eye|clavicle|shoulder|upperarm|lowerarm|wrist)/.test(o.nom));
+    this.cou = R.cou.slice();
+    this.poitrine = R.poitrine;
+    this.bras = R.bras.map((B) => ({ cuisse: B.cuisse.slice(), tibia: B.tibia.slice(), pied: B.pied, suit: B.suit.slice() }));
+    this.haut = R.haut.slice();
+    this.partsRegard = R.regard.slice();
     this.plongeons = []; this.poidsTenue = 0;
-    this.mainsOs = [idx('wrist.L'), idx('wrist.R')];
+    this.mainsOs = R.mains.slice();
+    // l'écriture d'un personnage venu d'ailleurs passe par les matrices du monde
+    if (joueur.personnage) {
+      this.monde = joueur.ordre.map(() => new THREE.Matrix4());
+      this.voulu = os.map(() => new THREE.Matrix4());
+    }
     this.gestes = null; this.geste = null;
     this.regard = null;
     // état de lecture
@@ -159,8 +203,10 @@ export class Animateur {
       const a = match.lacet(code, t + dt) - psi;
       q[6 + k * 2] = Math.sin(a); q[6 + k * 2 + 1] = Math.cos(a);
     });
-    // plus vite que la base : on cherche la forme de la course, la vitesse viendra de la foulée
-    const VMAX = 4.2;
+    this.vitesseRequete = vmax;
+    // plus vite que les meilleures courses de la base (4,5 à 6 m/s) : on cherche la forme de la
+    // course, la vitesse viendra de la cadence et de la foulée
+    const VMAX = 5.0;
     this.facteurVitesse = vmax > VMAX ? vmax / VMAX : 1;
     if (vmax > VMAX) for (let k = 0; k < 6; k++) q[k] /= this.facteurVitesse;
     // la pose actuelle : celle de l'image jouée
@@ -172,9 +218,12 @@ export class Animateur {
     return q;
   }
 
+  // le poids de la pénalité d'allure : nul en marchant, plein au-dessus de 3,5 m/s
+  poidsAllure() { return Math.max(0, Math.min(1, ((this.vitesseRequete || 0) - 2.5) / 1.0)); }
+
   cout(q, norm, i, avecPose) {
     const F = this.M.F, b = i * F;
-    let s = 0;
+    let s = this.poidsAllure() * this.M.allureDe[i];
     const n = avecPose ? F : 12;
     for (let k = 0; k < n; k++) { const d = q[k] - norm[b + k]; s += POIDS[k] * d * d; }
     return s;
@@ -182,6 +231,9 @@ export class Animateur {
 
   chercher(q, avecPose) {
     const M = this.M, L = M.locomotion, F = M.F, T = M.tailleBloc, n = avecPose ? F : 12;
+    // en course, une image d'allure molle coûte jusqu'à 4 de plus (le coût médian d'une
+    // recherche est 2,2) ; la borne des boîtes reste une borne basse (biais positif)
+    const pa = this.poidsAllure();
     let best = Infinity, bi = -1, bm = false;
     for (let m = 0; m < 2; m++) {
       const norm = m ? M.normM : M.norm, { mn, mx } = M.boites[m];
@@ -196,7 +248,7 @@ export class Animateur {
         const fin = Math.min(L.length, (c + 1) * T);
         for (let k = c * T; k < fin; k++) {
           const i = L[k], b = i * F;
-          let s = 0;
+          let s = pa * M.allureDe[i];
           for (let d = 0; d < 12; d++) { const e = q[d] - norm[b + d]; s += POIDS[d] * e * e; }
           if (s >= best) continue;
           if (avecPose) for (let d = 12; d < F && s < best; d++) { const e = q[d] - norm[b + d]; s += POIDS[d] * e * e; }
@@ -209,13 +261,13 @@ export class Animateur {
 
   // la recherche exhaustive, gardée pour vérifier que l'accélération ne change rien
   chercherExhaustif(q, avecPose) {
-    const M = this.M, L = M.locomotion;
+    const M = this.M, L = M.locomotion, pa = this.poidsAllure();
     let best = Infinity, bi = -1, bm = false;
     for (let m = 0; m < 2; m++) {
       const norm = m ? M.normM : M.norm, F = M.F;
       for (let k = 0; k < L.length; k++) {
         const i = L[k], b = i * F;
-        let s = 0;
+        let s = pa * M.allureDe[i];
         for (let d = 0; d < 12; d++) { const e = q[d] - norm[b + d]; s += POIDS[d] * e * e; }
         if (s >= best) continue;
         if (avecPose) for (let d = 12; d < F && s < best; d++) { const e = q[d] - norm[b + d]; s += POIDS[d] * e * e; }
@@ -233,7 +285,8 @@ export class Animateur {
   preparerGestes(match, code) {
     const M = this.M, fiche = match.joueurs.get(code) || {};
     const gaucher = fiche.pied === 'Gauche';
-    const frappes = M.man.clips.filter((c) => c.contact);
+    // les frappes : les captures CMU de frappe (les gestes de GRF ont aussi un contact, d'une autre forme)
+    const frappes = M.man.clips.filter((c) => c.categorie === 'frappe' && c.contact);
     this.gestes = [];
     this.gardien = fiche.poste === 'GB';
     if (!frappes.length) return;
@@ -502,6 +555,10 @@ export class Animateur {
       for (let j = 0; j < M.J; j++) this.qCmu[j].slerp(this.poseGelee.q[j], plo.poids);
       hb.lerp(this.poseGelee.h, plo.poids);
     }
+    // 3d. plus vite que la prise : le balancier des bras s'élargit (jusqu'à 35 % à deux fois sa
+    // vitesse), comme celui d'un sprinteur
+    const vPrise = Math.hypot(M.vit[Math.floor(this.image) * 3], M.vit[Math.floor(this.image) * 3 + 1]);
+    if (w < 0.1 && !plo && vPrise > 1.5 && vitesseMoteur > vPrise) this.amplifierBras(1 + 0.35 * Math.min(1, (vitesseMoteur - vPrise) / vPrise));
     // 4. dans le monde : la position et l'orientation du moteur
     const p0 = match.position(code, t);
     let psi = match.lacet(code, t);
@@ -642,8 +699,9 @@ export class Animateur {
       // le pied garde le déroulé de la capture (talon, plante, pointe) autour de la cheville verrouillée
     }
     this.cinematique();
-    // 5c. la fatigue (cahier qualité §24)
+    // 5c. la fatigue (cahier qualité §24) et l'inclinaison de la course
     if (!this.gardien) this.fatigue(match, code, t, dt, vitesseMoteur);
+    if (!plo && w < 0.1) this.inclinerCourse(match, code, t, dt, vitesseMoteur);
     // 5b. le gardien : plongeon, arrêt, ballon tenu dans les mains
     if (this.plongeons.length || this.gardien) this.gardienEnAction(match, code, t, dt, plo);
     // 5d. la célébration d'un but
@@ -734,6 +792,34 @@ export class Animateur {
       const c = P.clone().addScaledVector(avant, 0.3).add(new THREE.Vector3(0, -0.12, 0));
       this.mainsVers(c.clone().addScaledVector(cote, 0.11), c.clone().addScaledVector(cote, -0.11), this.poidsTenue);
     }
+  }
+
+  // le balancier des bras élargi : chaque bras s'écarte de sa position moyenne dans la prise
+  // (l'avant-bras et la main suivent le bras, le coude garde son angle)
+  amplifierBras(a) {
+    const M = this.M, moyennes = M.brasMoyen[M.clipDe[Math.floor(this.image)]];
+    for (const [bras, avantBras, main] of [[18, 19, 20], [22, 23, 24]]) {
+      const moy = moyennes[this.miroir ? M.man.miroir[bras] : bras].clone();
+      if (this.miroir) { moy.y = -moy.y; moy.z = -moy.z; }
+      const q = this.qCmu[bras];
+      const ample = moy.slerp(q, a);
+      const delta = ample.clone().multiply(q.clone().invert());
+      q.copy(ample);
+      this.qCmu[avantBras].premultiply(delta); this.qCmu[main].premultiply(delta);
+    }
+  }
+
+  // L'inclinaison de la course : un coureur se penche quand il accélère (jusqu'à 7°) et un peu
+  // plus quand il va plus vite que les prises (au-delà de 4,6 m/s) ; il se redresse en freinant.
+  // Pas pendant un départ ou un arrêt capturés, qui ont déjà la leur.
+  inclinerCourse(match, code, t, dt, vit) {
+    const M = this.M, cat = M.man.clips[M.clipDe[Math.floor(this.image)]].categorie;
+    const v0 = match.vitesse(code, t - 0.1), v1 = match.vitesse(code, t + 0.1);
+    const acc = (Math.hypot(v1[0], v1[1]) - Math.hypot(v0[0], v0[1])) / 0.2;
+    let voulu = Math.min(0.05, Math.max(0, 0.012 * (vit - 4.6)));
+    if (cat !== 'depart' && cat !== 'arret') voulu += Math.max(-0.06, Math.min(0.12, 0.03 * acc));
+    this.inclinaison = (this.inclinaison || 0) + (voulu - (this.inclinaison || 0)) * (1 - Math.exp(-dt / 0.15));
+    if (Math.abs(this.inclinaison) > 0.003) this.pencher(this.inclinaison);
   }
 
   // La fatigue (cahier qualité §24) : sous 50 d'énergie, le buste se penche en courant ; un
@@ -881,7 +967,7 @@ export class Animateur {
     const devant = new THREE.Vector3(0, 0, 1).applyQuaternion(this.D[this.cou[2]]);
     const R = new THREE.Quaternion().setFromUnitVectors(devant, voulu);
     const I = new THREE.Quaternion();
-    const parts = this.partsRegard || (this.partsRegard = this.nomOs.map((n) => n === 'neck01' ? 0.2 : n === 'neck02' ? 0.4 : n === 'neck03' ? 0.6 : (n === 'head' || n.startsWith('eye.')) ? 1 : 0));
+    const parts = this.partsRegard;
     for (let o = 0; o < this.nb; o++) if (parts[o] > 0) this.D[o].premultiply(_q.copy(I).slerp(R, parts[o] * 0.8));
     this.cinematique();
   }
@@ -931,11 +1017,37 @@ export class Animateur {
   }
 
   ecrire() {
+    if (this.J.personnage) return this.ecrireMonde();
     const os = this.J.os;
     for (let b = 0; b < this.nb; b++) {
       const p = this.parent[b];
       if (p < 0) { os[b].position.copy(this.P[b]); os[b].quaternion.copy(this.D[b]); }
       else os[b].quaternion.copy(_q.copy(this.D[p]).invert().multiply(this.D[b]));
+    }
+  }
+
+  // un personnage venu d'ailleurs : ses os n'ont pas une rotation nulle au repos, et sa hiérarchie
+  // n'est pas forcément celle de l'animation (les pieds de Quaternius sont des enfants de la racine).
+  // Chaque os logique reçoit sa matrice voulue dans le monde (position calculée, rotation D fois
+  // celle du repos, échelle du repos ; un os décalé de son articulation, comme un pied qui part du
+  // talon, garde son décalage) ; la locale s'en déduit par la matrice du monde de son vrai
+  // parent ; les autres nœuds (doigts, racines, cibles) gardent leur pose locale.
+  ecrireMonde() {
+    const J = this.J, ordre = J.ordre, monde = this.monde;
+    for (let b = 0; b < this.nb; b++) {
+      if (!J.os[b]) continue;
+      _q.copy(this.D[b]).multiply(J.reposMonde[b]);
+      _v.copy(this.P[b]);
+      if (J.decalages[b]) _v.add(_v2.copy(J.decalages[b]).applyQuaternion(this.D[b]));
+      this.voulu[b].compose(_v, _q, J.echelleMonde[b]);
+    }
+    for (let k = 0; k < ordre.length; k++) {
+      const e = ordre[k];
+      if (e.b >= 0) {
+        monde[k].copy(this.voulu[e.b]);
+        _m.copy(monde[e.p]).invert().multiply(monde[k]).decompose(e.o.position, e.o.quaternion, e.o.scale);
+      } else if (e.p < 0) monde[k].copy(e.o.matrix);
+      else monde[k].multiplyMatrices(monde[e.p], e.o.matrix);
     }
   }
 }

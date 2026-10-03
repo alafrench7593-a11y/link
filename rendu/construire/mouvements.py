@@ -17,6 +17,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 import bvh
+import grf
 
 FPS = 30
 UNITE = 0.05644            # une unité des fichiers CMU, en mètres (1/0.45 pouce)
@@ -43,17 +44,21 @@ MIROIR = [ARTICULATIONS.index(miroir_nom(n)) for n in ARTICULATIONS]
 
 # Le catalogue : clip, catégorie, et la plage utile (images à 120 i/s, fin exclue ; None : tout).
 CATALOGUE = {
+    # 102_xx n'est pas repris : ce sont les mêmes prises que 78_xx (images identiques)
     "course": ["02_03", "09_01", "09_02", "09_03", "09_04", "09_05", "09_06", "09_07", "09_08", "09_09",
                "09_10", "09_11", "16_35", "16_36", "16_45", "16_46", "16_55", "16_56",
                "35_17", "35_18", "35_19", "35_20", "35_21", "35_22", "35_23", "35_24", "35_25", "35_26",
-               "78_06", "78_12", "102_05", "102_10", "104_01", "104_04", "104_37", "104_48", "111_23", "111_24"],
+               "78_06", "78_12", "104_01", "104_04", "104_37", "104_48", "111_23", "111_24",
+               # des courses plus rapides (jusqu'à 6 m/s) et plus longues
+               "143_01", "141_01", "141_02", "143_42", "139_12", "139_13", "141_34"],
     "virage": ["16_37", "16_38", "16_39", "16_40", "16_41", "16_42", "16_43", "16_44", "16_48", "16_49",
                "16_50", "16_51", "16_52", "16_53", "16_54", "78_01", "78_02", "78_03", "78_07", "78_08",
-               "78_09", "78_10", "78_35", "102_01", "102_02", "102_06", "102_07", "102_08", "102_33"],
-    "depart": ["104_06", "104_08", "104_53", "104_54", "104_55", "78_32", "102_30"],
-    "arret": ["104_09", "104_10", "104_56", "104_57", "16_08", "16_57", "78_25"],
-    "lateral": ["78_24", "78_26", "78_27", "78_29", "78_30", "102_22", "102_23", "102_24", "102_25",
-                "102_27", "102_28", "83_01", "83_19", "83_33", "83_55", "69_42", "69_48", "69_50"],
+               "78_09", "78_10", "78_35",
+               "128_02", "128_03", "127_09", "127_11", "127_12", "127_15", "127_16", "143_04"],
+    "depart": ["104_06", "104_08", "104_53", "104_54", "104_55", "78_32", "143_03", "141_03"],
+    "arret": ["104_09", "104_10", "104_56", "104_57", "16_08", "16_57", "78_25",
+              "143_02", "127_05", "127_17", "127_19", "127_20"],
+    "lateral": ["78_24", "78_26", "78_27", "78_29", "78_30", "83_01", "83_19", "83_33", "83_55", "69_42", "69_48", "69_50"],
     "recul": ["76_09", "76_11", "111_01", "69_34", "69_39", "09_12"],
     "marche": ["16_17", "16_18", "16_19", "16_20", "16_33", "16_34", "69_06", "69_12", "69_13", "69_16",
                "69_18", "69_20", "69_24", "69_28", "69_31", "82_08", "111_26"],
@@ -62,6 +67,29 @@ CATALOGUE = {
     "saut": ["13_11", "13_39", "13_40", "13_41", "13_42", "16_05", "16_06", "16_07", "16_09", "16_10",
              "49_04", "49_05", "75_01", "75_02", "75_03"],
     "chute": ["77_16", "77_17", "77_18", "85_15", "90_16"],
+}
+
+
+# Les gestes de Google Research Football (domaine public : voir grf.py), là où la base CMU n'a
+# rien : tacles glissés, chutes, déséquilibres, relevés, têtes, contrôles de la poitrine, retourné,
+# touches, célébrations, parades du gardien. Chemins relatifs à data/media/animations de GRF.
+GRF_CATALOGUE = {
+    "glisse": ["sliding/sprint/000", "sliding/sprint/000_ballside", "sliding/walk/000", "sliding/idle/000", "sliding/idle/090"],
+    "chute": ["trip/trip_t3/sprint/000", "trip/trip_t3/sprint/045", "trip/trip_t3/walk/000_000", "trip/trip_t2/sprint/side_behind",
+              "trip/trip_t2/idle/000_000", "trip/trip_t2/idle/000_090", "trip/trip_t2/idle/000_180", "trip/trip_t2/dribble/000_accel"],
+    "desequilibre": ["trip/trip_t1/sprint/000_decel", "trip/trip_t1/sprint/000_sidebump", "trip/trip_t1/sprint/045_decel",
+                     "trip/trip_t1/walk/000_protectfront", "trip/trip_t1/walk/000_protectback", "trip/trip_t1/walk/028_D045_sidebump"],
+    "releve": ["movement_special/idle/special/000_stand_up_from_front", "movement_special/idle/special/000_stand_up_from_back"],
+    "tete": ["pass/idle/nonbase/000_header", "pass/idle/nonbase/000_header_jump_forwards", "pass/idle/nonbase/070_header_jump",
+             "pass/sprint/nonbase/000_header_jump", "interfere/sprint/000_header_jump", "interfere/idle/000_header_jump",
+             "shot/sprint/000_headerdive", "shot/walk/angled/D045_20_header"],
+    "controle_haut": ["trap/idle/highballs/000_chest", "trap/idle/highballs/000_chest_jump", "trap/idle/highballs/000_knee",
+                      "trap/sprint/highballs/000_chest"],
+    "acrobatie": ["shot/idle/180_bicycle"],
+    "touche": ["pass/idle/special/000_throw", "highpass/idle/special/000_throw"],
+    "celebration_grf": ["celebration/happy_extreme/000_decel_decel", "celebration/happy_normal/000", "celebration/sad_normal/000"],
+    "gardien_grf": ["deflect/idle/090_high_deflect_far", "deflect/idle/090_midheight_deflect_far", "deflect/idle/090_ground_deflect_far",
+                    "deflect/idle/000_high_holdball", "deflect/idle/000_trunk_holdball", "deflect/sprint/000_ground_holdball"],
 }
 
 
@@ -113,6 +141,21 @@ def traiter(chemin, categorie):
     # le sol : le plus bas des orteils sur tout le clip
     sol = min(Pm[:, I["LeftToeBase"], 1].min(), Pm[:, I["RightToeBase"], 1].min()) - 0.025
     Pm[:, :, 1] -= sol
+    GG = np.einsum("njab,jcb->njac", Gm[:, J], G0[J])          # G(f) · G(pose en T)ᵀ
+    return finir(GG, {nom: Pm[:, I[nom]] for nom in POINTS}, n, categorie)
+
+
+# les points du corps dont la suite a besoin (cap, racine, appuis, frappes, allure)
+POINTS = ("Hips", "LeftUpLeg", "RightUpLeg", "LeftLeg", "RightLeg", "LeftFoot", "RightFoot", "LeftToeBase",
+          "RightToeBase", "LeftArm", "RightArm", "LeftHand", "RightHand", "Neck1")
+
+
+def finir(GG, pos, n, categorie, contacts=None):
+    """La suite commune à toutes les sources : GG, l'écart de chaque articulation à la pose en T
+    (n x 25 x 3 x 3, repère du labo) ; pos, les positions des POINTS (n x 3, en mètres, sol à 0)."""
+    I = {nom: k for k, nom in enumerate(pos)}
+    Pm = np.stack([pos[nom] for nom in pos], axis=1)
+    J = ARTICULATIONS
     # le cap : du bassin (perpendiculaire à la ligne des hanches), lissé sur ±0,2 s
     droite = Pm[:, I["RightUpLeg"]] - Pm[:, I["LeftUpLeg"]]
     avant = np.cross(np.array([0.0, 1.0, 0.0]), droite)
@@ -123,7 +166,6 @@ def traiter(chemin, categorie):
     racine3 = np.stack([racine[:, 0], np.zeros(n), racine[:, 1]], axis=1)
     Rinv = ry(-phi)
     # les rotations : écart à la pose en T, cap retiré
-    GG = np.einsum("njab,jcb->njac", Gm[:, J], G0[J])          # G(f) · G(pose en T)ᵀ
     D = np.einsum("nab,njbc->njac", Rinv, GG)
     quat = Rotation.from_matrix(D.reshape(-1, 3, 3)).as_quat().reshape(n, len(J), 4)   # x y z w
     # continuité des quaternions dans le temps
@@ -197,6 +239,32 @@ def traiter(chemin, categorie):
         op = R @ (o - racine3[f])
         contact = dict(image=f, pied=cote, vitesse=round(vmax, 2), dir=[round(float(dv[0]), 4), round(float(dv[2]), 4)],
                        pointe=[round(float(x), 4) for x in op])
+    # l'allure, pour préférer une vraie course de footballeur : l'amplitude des bras le long de la
+    # course et l'inclinaison du buste, sur les images où le personnage court (plus de 2 m/s)
+    vit_sol = np.linalg.norm(dr[:, [0, 2]], axis=1)
+    court = vit_sol > 2.0
+    allure = None
+    if court.sum() >= 5:
+        fwd = dr[:, [0, 2]] / np.maximum(vit_sol[:, None], 1e-6)
+
+        def le_long(v):
+            return v[:, 0] * fwd[:, 0] + v[:, 2] * fwd[:, 1]
+
+        amplitudes = []
+        for main, epaule in (("LeftHand", "LeftArm"), ("RightHand", "RightArm")):
+            a = le_long(Pm[:, I[main]] - Pm[:, I[epaule]])[court]
+            amplitudes.append(np.percentile(a, 95) - np.percentile(a, 5))
+        torse = Pm[:, I["Neck1"]] - Pm[:, I["Hips"]]
+        buste = np.degrees(np.arctan2(le_long(torse), torse[:, 1]))[court]
+        # la flexion du genou quand la jambe revient (le talon monte vers la fesse en courant vite)
+        flexions = []
+        for c in ("Left", "Right"):
+            a = Pm[:, I[c + "Leg"]] - Pm[:, I[c + "UpLeg"]]
+            b = Pm[:, I[c + "Foot"]] - Pm[:, I[c + "Leg"]]
+            cos = (a * b).sum(1) / np.linalg.norm(a, axis=1) / np.linalg.norm(b, axis=1)
+            flexions.append(np.percentile(np.degrees(np.arccos(np.clip(cos, -1, 1)))[court], 95))
+        allure = dict(bras=round(float(np.mean(amplitudes)), 3), buste=round(float(np.median(buste)), 1),
+                      genou=round(float(np.mean(flexions)), 1), vitesse=round(float(np.median(vit_sol[court])), 2))
     # cherchable : pas les deux dernières images (il faut pouvoir continuer)
     cherchable = np.ones(n, dtype=np.uint8)
     cherchable[-2:] = 0
@@ -210,11 +278,35 @@ def traiter(chemin, categorie):
             vm = np.linalg.norm(np.gradient(m - hanches_p, dt, axis=0), axis=1)
             sur_hanches &= (np.linalg.norm(m - hanches_p, axis=1) < 0.27) & (m[:, 1] - hanches_p[:, 1] > -0.1) & (vm < 0.35)
         cherchable[sur_hanches] = 0
-    if categorie in ("frappe", "saut", "chute"):
+    if categorie in ("frappe", "saut", "chute") or categorie in GRF_CATALOGUE:
         cherchable[:] = 0      # seulement quand une action du moteur les demande
+    # un geste de GRF qui touche le ballon : l'image du contact, le ballon à cet instant (espace du
+    # personnage) et la partie du corps la plus proche
+    if contacts:
+        f, p = contacts[0]
+        f = int(min(max(f, 0), n - 1))
+        R = Rinv[f]
+        balle = R @ (p - racine3[f])
+        parties = {"pied_g": "LeftToeBase", "pied_d": "RightToeBase", "tete": "HeadTop", "poitrine": "Neck1",
+                   "main_g": "LeftHand", "main_d": "RightHand"}
+        partie = min((k for k, v in parties.items() if v in I), key=lambda k: np.linalg.norm(Pm[f, I[parties[k]]] - p))
+        contact = dict(image=f, partie=partie, balle=[round(float(x), 4) for x in balle])
     return dict(n=n, quat=quat, hanches=hanches, vit=np.stack([vit[:, 0], vit[:, 2], omega], axis=1),
-                appuis=appuis, feats=feats, cherchable=cherchable, contact=contact,
+                appuis=appuis, feats=feats, cherchable=cherchable, contact=contact, allure=allure,
                 vitesse_moy=float(np.linalg.norm(dr[:, [0, 2]], axis=1).mean()))
+
+
+def traiter_grf(chemin, categorie, objet, directions):
+    e = grf.echantillonner(objet, chemin, FPS, ARTICULATIONS, directions, HANCHES_REF)
+    P = e["P"]
+    pos = {"Hips": P["body"], "LeftUpLeg": P["left_thigh"], "RightUpLeg": P["right_thigh"], "LeftLeg": P["left_knee"],
+           "RightLeg": P["right_knee"], "LeftFoot": P["left_ankle"], "RightFoot": P["right_ankle"],
+           "LeftToeBase": P["orteils_g"], "RightToeBase": P["orteils_d"], "LeftArm": P["left_shoulder"],
+           "RightArm": P["right_shoulder"], "LeftHand": P["main_g"], "RightHand": P["main_d"], "Neck1": P["neck"],
+           "HeadTop": P["sommet"]}
+    r = finir(e["G"], pos, e["n"], categorie, contacts=e["contacts"])
+    r["balises"] = {k: v for k, v in e["balises"].items() if k in ("type", "outgoing_special_state", "incoming_special_state", "bumpdirection", "balldirection")}
+    return r
 
 
 def miroir_feats(F):
@@ -231,9 +323,10 @@ def miroir_feats(F):
     return M
 
 
-def construire(dossier_bvh, sortie):
+def construire(dossier_bvh, sortie, dossier_grf=None):
     clips, morceaux = [], []
     total = 0
+    sources = []
     for cat, noms in CATALOGUE.items():
         for nom in noms:
             chemin = os.path.join(dossier_bvh, nom + ".bvh")
@@ -244,9 +337,30 @@ def construire(dossier_bvh, sortie):
             clip = dict(nom=nom, categorie=cat, premier=total, n=r["n"], vitesse=round(r["vitesse_moy"], 2))
             if r["contact"]:
                 clip["contact"] = r["contact"]
+            if r["allure"]:
+                clip["allure"] = r["allure"]
             clips.append(clip)
             morceaux.append(r)
+            sources.append("cmu")
             total += r["n"]
+    if dossier_grf:
+        objet = grf.lire_objet(os.path.join(dossier_grf, "objects", "players", "player.object"))
+        directions = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "donnees", "corps.json"), encoding="utf-8"))["directions_tpose"]
+        for cat, noms in GRF_CATALOGUE.items():
+            for nom in noms:
+                chemin = os.path.join(dossier_grf, "animations", nom + ".anim")
+                if not os.path.exists(chemin):
+                    print("absent :", nom)
+                    continue
+                r = traiter_grf(chemin, cat, objet, directions)
+                clip = dict(nom="grf:" + nom, categorie=cat, source="grf", premier=total, n=r["n"], vitesse=round(r["vitesse_moy"], 2),
+                            balises=r["balises"])
+                if r["contact"]:
+                    clip["contact"] = r["contact"]
+                clips.append(clip)
+                morceaux.append(r)
+                sources.append("grf")
+                total += r["n"]
     quat = np.concatenate([m["quat"] for m in morceaux])
     hanches = np.concatenate([m["hanches"] for m in morceaux])
     vit = np.concatenate([m["vit"] for m in morceaux])
@@ -254,7 +368,10 @@ def construire(dossier_bvh, sortie):
     feats = np.concatenate([m["feats"] for m in morceaux])
     cherchable = np.concatenate([m["cherchable"] for m in morceaux])
     featsM = miroir_feats(feats)
-    tout = np.concatenate([feats, featsM])
+    # la normalisation du Motion Matching : sur les captures CMU seulement (les gestes de GRF ne sont
+    # jamais cherchés ; les ajouter ne change aucun choix de la locomotion)
+    cmu = np.concatenate([np.full(m["n"], src == "cmu") for m, src in zip(morceaux, sources)])
+    tout = np.concatenate([feats[cmu], featsM[cmu]])
     moy, ecart = tout.mean(axis=0), tout.std(axis=0) + 1e-6
     # les écarts par groupe (comme le fait Motion Matching) : chaque groupe pèse son nombre de dims
     groupes = [(0, 6), (6, 12), (12, 18), (18, 24), (24, 27)]
@@ -273,7 +390,9 @@ def construire(dossier_bvh, sortie):
             f.write(arr.tobytes())
     manifeste = dict(
         source="mocap.cs.cmu.edu (conversion BVH de B. Hahne, cgspeed) : « The data used in this project was obtained "
-               "from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217. »",
+               "from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217. »"
+               + (" Gestes « grf: » : animations de Google Research Football (third_party/gfootball_engine, d'après "
+                  "Gameplay Football de Bastiaan Konings Schuiling), domaine public (The Unlicense)." if dossier_grf else ""),
         fps=FPS, horizons=list(HORIZONS), articulations=ARTICULATIONS, miroir=MIROIR, images=int(total),
         tableaux=decal, clips=clips, moyennes=moy.round(5).tolist(), ecarts=ecart.round(5).tolist(),
         hanches_ref=HANCHES_REF)
@@ -283,5 +402,5 @@ def construire(dossier_bvh, sortie):
 
 if __name__ == "__main__":
     import sys
-    m = construire(sys.argv[1], sys.argv[2])
+    m = construire(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)
     print(len(m["clips"]), "clips,", m["images"], "images à", FPS, "i/s")
