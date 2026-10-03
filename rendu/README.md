@@ -27,6 +27,8 @@ Le moteur (`src/engine.js`) reste la seule autorité : le rendu lit ses position
 
 `node rendu/outils/verifier-pieds.mjs` joue les 16 scènes de test en entier, 22 joueurs chacune, avec le détecteur du cœur C++ sur les deux pieds de chaque joueur : **0 glissement** (porte VALIDE). Environ 25 minutes sur deux cœurs.
 
+Coût de l'animation (22 joueurs, sans le dessin) : 0,15 s de calcul par seconde de match sur la machine de test (deux cœurs, sans GPU). La recherche du Motion Matching saute les paquets de 16 images dont la borne basse du coût dépasse déjà le meilleur trouvé : 6,5 fois plus rapide que la recherche exhaustive, avec les mêmes choix (1 632 recherches comparées, 0 différence).
+
 ## Ce que le rendu invente (et ses bornes)
 
 - La conduite de balle : au plus 0,35 m autour de la position du moteur, éteinte 0,15 s avant une frappe (le ballon part toujours d'où le moteur le fait partir).

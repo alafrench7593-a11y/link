@@ -31,7 +31,21 @@ export async function chargerMouvements(base) {
   man.clips.forEach((c, ci) => { for (let i = c.premier; i < c.premier + c.n; i++) clipDe[i] = ci; });
   const locomotion = [];
   for (let i = 0; i < N; i++) if (cherchable[i] && CATS_LOCOMOTION.includes(man.clips[clipDe[i]].categorie)) locomotion.push(i);
-  return { man, quat, hanches, vit, appuis, cherchable, feats, featsM, norm, normM, clipDe, N, F, J, locomotion: Int32Array.from(locomotion) };
+  // l'accélération de la recherche par boîtes englobantes : par paquets de 16 images de
+  // locomotion consécutives, le minimum et le maximum de chaque grandeur ; un paquet dont la
+  // borne basse du coût dépasse déjà le meilleur trouvé est sauté en entier (résultat identique
+  // à la recherche exhaustive, dans le même ordre)
+  const TAILLE = 16, nbBlocs = Math.ceil(locomotion.length / TAILLE);
+  const boites = [norm, normM].map((nm) => {
+    const mn = new Float32Array(nbBlocs * F).fill(Infinity), mx = new Float32Array(nbBlocs * F).fill(-Infinity);
+    for (let k = 0; k < locomotion.length; k++) {
+      const o = Math.floor(k / TAILLE) * F, b = locomotion[k] * F;
+      for (let d = 0; d < F; d++) { const v = nm[b + d]; if (v < mn[o + d]) mn[o + d] = v; if (v > mx[o + d]) mx[o + d] = v; }
+    }
+    return { mn, mx };
+  });
+  return { man, quat, hanches, vit, appuis, cherchable, feats, featsM, norm, normM, clipDe, N, F, J, locomotion: Int32Array.from(locomotion),
+    boites, tailleBloc: TAILLE, nbBlocs };
 }
 
 // poids des grandeurs : trajectoire (positions, directions), pieds (positions, vitesses), hanches
@@ -167,6 +181,34 @@ export class Animateur {
   }
 
   chercher(q, avecPose) {
+    const M = this.M, L = M.locomotion, F = M.F, T = M.tailleBloc, n = avecPose ? F : 12;
+    let best = Infinity, bi = -1, bm = false;
+    for (let m = 0; m < 2; m++) {
+      const norm = m ? M.normM : M.norm, { mn, mx } = M.boites[m];
+      for (let c = 0; c < M.nbBlocs; c++) {
+        let borne = 0;
+        const o = c * F;
+        for (let d = 0; d < n && borne < best; d++) {
+          const v = q[d], e = v < mn[o + d] ? mn[o + d] - v : v > mx[o + d] ? v - mx[o + d] : 0;
+          borne += POIDS[d] * e * e;
+        }
+        if (borne >= best) continue;
+        const fin = Math.min(L.length, (c + 1) * T);
+        for (let k = c * T; k < fin; k++) {
+          const i = L[k], b = i * F;
+          let s = 0;
+          for (let d = 0; d < 12; d++) { const e = q[d] - norm[b + d]; s += POIDS[d] * e * e; }
+          if (s >= best) continue;
+          if (avecPose) for (let d = 12; d < F && s < best; d++) { const e = q[d] - norm[b + d]; s += POIDS[d] * e * e; }
+          if (s < best) { best = s; bi = i; bm = !!m; }
+        }
+      }
+    }
+    return { image: bi, miroir: bm, cout: best };
+  }
+
+  // la recherche exhaustive, gardée pour vérifier que l'accélération ne change rien
+  chercherExhaustif(q, avecPose) {
     const M = this.M, L = M.locomotion;
     let best = Infinity, bi = -1, bm = false;
     for (let m = 0; m < 2; m++) {
