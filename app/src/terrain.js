@@ -14,7 +14,7 @@ import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { GLView } from 'expo-gl';
 import * as THREE from 'three';
 import { REEL_DISPONIBLE, chargerReel, creerReel } from './reel';
-import { C } from './theme';
+import { C, F } from './theme';
 
 export function Terrain({ club, d, hauteur }) {
   const [vue3d, setVue3d] = useState(true);
@@ -135,12 +135,12 @@ function Vue2D({ club, d, onInfo }) {
 }
 
 const st = StyleSheet.create({
-  cadre: { borderRadius: 10, overflow: 'hidden', backgroundColor: '#0B1210', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  bascule: { position: 'absolute', top: 8, left: 8, height: 26, paddingHorizontal: 11, borderRadius: 13, borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', backgroundColor: 'rgba(11,15,12,0.72)', justifyContent: 'center' },
-  basculeTxt: { color: C.text, fontSize: 10.5, fontWeight: '800', letterSpacing: 0.4 },
-  nom: { position: 'absolute', transform: [{ translateX: -40 }, { translateY: -22 }], width: 80, textAlign: 'center', color: C.text, fontSize: 10, fontWeight: '700', backgroundColor: 'rgba(12,18,16,0.82)', borderRadius: 9, paddingVertical: 2, overflow: 'hidden' },
-  saut: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(6,10,8,0.55)' },
-  sautTxt: { color: C.text, fontSize: 13, fontWeight: '800', backgroundColor: 'rgba(12,18,16,0.85)', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 14, overflow: 'hidden' },
+  cadre: { borderRadius: 16, overflow: 'hidden', backgroundColor: '#0B1210', borderWidth: 1, borderColor: C.line },
+  bascule: { position: 'absolute', top: 10, left: 10, height: 28, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', backgroundColor: 'rgba(5,5,5,0.72)', justifyContent: 'center' },
+  basculeTxt: { fontFamily: F.texte, color: C.text, fontSize: 10.5, fontWeight: '700', letterSpacing: 0.8 },
+  nom: { position: 'absolute', transform: [{ translateX: -40 }, { translateY: -22 }], width: 80, textAlign: 'center', fontFamily: F.texte, color: C.text, fontSize: 10, fontWeight: '700', backgroundColor: 'rgba(5,5,5,0.82)', borderRadius: 9, paddingVertical: 2, overflow: 'hidden' },
+  saut: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(5,5,5,0.55)' },
+  sautTxt: { fontFamily: F.texte, color: C.text, fontSize: 13, fontWeight: '700', backgroundColor: 'rgba(5,5,5,0.85)', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 14, overflow: 'hidden' },
   pelouse: { flex: 1, backgroundColor: '#2F7A36' },
   lignes: { position: 'absolute', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.8)' },
   mediane: { position: 'absolute', left: 0, right: 0, height: 1.5, backgroundColor: 'rgba(255,255,255,0.8)' },

@@ -71,8 +71,11 @@ const ouvre = async () => {
   return pg;
 };
 const lit = async (pg) => (await pg.evaluate(() => document.body.innerText)).replace(/\s+/g, ' ');
+// toucher le texte exact ; à défaut, le bouton qui porte ce nom (les boutons ronds de la barre du
+// haut, En ligne et Quêtes, n'ont qu'une icône et leur nom pour les lecteurs d'écran)
 const touche = (pg, texte) => pg.evaluate((v) => {
-  const e = [...document.querySelectorAll('*')].find((x) => !x.children.length && x.textContent.trim() === v);
+  const e = [...document.querySelectorAll('*')].find((x) => !x.children.length && x.textContent.trim() === v)
+    || document.querySelector('[aria-label="' + v + '"]');
   if (!e) return false; e.click(); return true;
 }, texte);
 
@@ -83,7 +86,7 @@ t('le joueur commence au niveau 1', /\b1 niveau/.test(a), (a.match(/(\d+) niveau
 t('avec 600 jetons', /\b600\b/.test(a));
 t('et quinze joueurs : quatorze normaux et le joueur rare offert', /15 joueurs/.test(a), (a.match(/(\d+) joueurs/) || [])[0]);
 
-console.log('\nLes six onglets s’ouvrent sans erreur');
+console.log('\nLes six onglets s’ouvrent sans erreur (cinq en bas, En ligne en haut)');
 for (const o of ['Effectif', 'Match', 'Entraîn.', 'Packs', 'En ligne', 'Accueil']) {
   erreurs.length = 0;
   const trouve = await touche(p1, o);

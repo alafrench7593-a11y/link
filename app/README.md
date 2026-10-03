@@ -22,8 +22,10 @@ npx expo start --tunnel
 
 ## Ce qu'il y a dedans
 
-Six onglets en bas : Accueil, Effectif, Match, Entraînement, Packs, En ligne. Sur
-l'accueil, la section **DIRECTEUR SPORTIF** mène aux neuf écrans du cahier des charges.
+Cinq onglets en bas : Accueil, Effectif, **Match** (le bouton central citron), Entraînement,
+Packs. En haut, deux boutons ronds : **En ligne** et les **Quêtes** (une pastille citron quand
+une récompense attend). Sur l'accueil, la section **DIRECTEUR SPORTIF** mène aux neuf écrans
+du cahier des charges ; ces écrans ont un bouton retour en haut à gauche.
 
 | Écran | Ce qu'on y fait |
 | --- | --- |
@@ -51,6 +53,33 @@ et le personnage (400 Ko) partent avec l'app comme des fichiers à part (`metro.
 chargent à la première vue 3D ; en attendant, ou si l'appareil ne suit pas, les footballeurs en
 géométrie restent. Sur téléphone, ce n'est pas encore vérifié sur un appareil : `src/reel.js`
 est vide (le web prend `src/reel.web.js`) ; y mettre le contenu de `reel.web.js` pour l'essayer.
+
+## Le dessin
+
+Il suit la maquette Figma « Football-app » (Figma Make, prototype LINKCONNECT), adaptée à un
+jeu de directeur sportif : rien n'y est inventé en données, chaque chiffre affiché vient du
+moteur. Ce qui en est repris :
+
+- les couleurs (`src/theme.js`) : noir `#050505`, surfaces `#101010` à `#202020` bordées d'un
+  filet blanc à 10 %, citron `#C7FF32` pour ce qui agit et ce qui compte, rouge `#FF4559` pour
+  le direct ; rayons 10, 16 et 24 ;
+- les polices : Manrope (titres, chiffres) et DM Sans (texte), livrées avec l'app dans
+  `assets/polices` (licence SIL OFL 1.1, jointe), sans service de polices en ligne. Sur le web
+  elles se chargent au démarrage (`src/polices.web.js`) ; sur téléphone, la police du système en
+  attendant de les embarquer avec expo-font ;
+- les briques (`src/ui.js`) : icônes au trait de la maquette (et quelques-unes dessinées au même
+  trait), marque, surtitres, en-têtes de section, pastilles, blasons de club, boutons ronds ;
+- la barre du haut et la barre du bas à bouton central, le héros de l'accueil, la carte du
+  match à venir, les chiffres du club, le bloc de score, les statistiques en barres, le fil du
+  match en frise.
+
+Le nom reste LinkFoot (la maquette dit LINKCONNECT, un réseau social de football : ses écrans
+de fil d'actualité, de communautés et d'événements n'ont pas d'équivalent dans le jeu et ne sont
+pas repris). L'image du héros n'est pas une photo : c'est le footballeur du jeu, rendu par le
+moteur 3D de LinkFoot (`rendu/outils/cliche.mjs`, scène 16, caméra serrée), retouché comme les
+photos de la maquette (moins saturé, plus sombre).
+
+Les icônes et les dégradés passent par `react-native-svg` (la version d'Expo SDK 52).
 
 ## La sauvegarde
 
@@ -97,9 +126,10 @@ npm test --prefix ..      # les règles du jeu, sans interface
 ```
 
 `npm run verifier` construit l'app pour le navigateur, la sert, et fait ce qu'un
-joueur ferait : premier lancement, les six onglets, les neuf entrées du directeur
-sportif, le pack ouvert en 3D, le match en direct en 3D et en 2D, second lancement.
-Quarante-trois vérifications. C'est ce parcours qui a trouvé, au premier vrai
+joueur ferait : premier lancement, les six onglets (cinq en bas, En ligne en haut), les
+neuf entrées du directeur sportif, le pack ouvert en 3D, le match en direct en 3D et en
+2D, second lancement.
+Quarante-six vérifications. C'est ce parcours qui a trouvé, au premier vrai
 lancement de l'app, qu'elle ne se construisait pas (il manquait `expo-asset`) et
 qu'elle ne créait jamais le club : tout nouveau joueur commençait sur le club de
 démonstration, niveau 7, 1 000 jetons.
