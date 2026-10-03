@@ -101,3 +101,5 @@ jobs:
         run: python3 unreal/verif-syntaxe/verifier.py
       - name: La fabrique des MetaHumans, contre un faux éditeur
         run: python3 unreal/tests-python/test_metahumans.py
+      - name: L'import des personnages (maillage, IK Rig, Retargeter), contre un faux éditeur
+        run: python3 unreal/tests-python/test_personnage.py
