@@ -13,7 +13,8 @@ npm install
 npx expo start
 ```
 
-Puis scanner le QR code avec **Expo Go** (App Store ou Play Store). Le téléphone et
+Puis scanner le QR code avec **Expo Go** (App Store ou Play Store). L'app est en Expo SDK 57,
+celui de l'Expo Go actuel des stores (Expo Go n'ouvre que le dernier SDK). Le téléphone et
 l'ordinateur doivent être sur le même réseau Wi-Fi. Si ça ne passe pas :
 
 ```bash
@@ -107,7 +108,7 @@ rendu par le moteur 3D de LinkFoot (`rendu/outils/cliche.mjs`, scène 16, de jou
 retouché comme les photos de la maquette (moins saturé, plus sombre). Elles sont à remplacer
 par tes photos de référence quand tu les fournis.
 
-Les icônes et les dégradés passent par `react-native-svg` (la version d'Expo SDK 52).
+Les icônes et les dégradés passent par `react-native-svg` (la version d'Expo SDK 57).
 
 ## La sauvegarde
 
