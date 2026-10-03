@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Corps LinkFoot</title>
+<style>html,body{margin:0;background:#8fa9c4}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"/three/build/three.module.js"}}</script>
+</head><body>
+<script type="module">
+import * as THREE from 'three';
+import { chargerCorps, fabriquerJoueur } from './corps.js';
+const L = 1280, H = 720;
+const rendu = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+rendu.setSize(L, H); rendu.shadowMap.enabled = true; rendu.shadowMap.type = THREE.PCFSoftShadowMap;
+rendu.toneMapping = THREE.ACESFilmicToneMapping; rendu.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(rendu.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#9fb7cf');
+scene.add(new THREE.HemisphereLight('#dfefff', '#4a6b3a', 1.1));
+const soleil = new THREE.DirectionalLight('#fff4e0', 2.4); soleil.position.set(4, 8, 6); soleil.castShadow = true;
+soleil.shadow.mapSize.set(2048, 2048); Object.assign(soleil.shadow.camera, { left: -6, right: 6, top: 6, bottom: -2 });
+scene.add(soleil);
+const sol = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({ color: '#3f7d35', roughness: 0.95 }));
+sol.rotation.x = -Math.PI / 2; sol.receiveShadow = true; scene.add(sol);
+const cam = new THREE.PerspectiveCamera(30, L / H, 0.1, 100); cam.position.set(0, 1.4, 9); cam.lookAt(0, 0.95, 0);
+const params = new URLSearchParams(location.search);
+const doc = await fetch(params.get('doc') || '/unreal/LinkFoot/Content/LinkFoot/Scenes/01-sprint_droit.json').then((r) => r.json());
+const D = await chargerCorps('/rendu/donnees/');
+const choix = (params.get('codes') || '0,3,6,9,14,17,20').split(',').map(Number);
+const eq = doc.equipes;
+choix.forEach((code, k) => {
+  const j = doc.joueurs.find((q) => q.code === code);
+  const m = eq[j.camp].maillot;
+  const coul = j.poste === 'GB' ? { maillot: '#E8C547', short: '#222', chaussettes: '#E8C547', chaussures: '#111' }
+    : { maillot: m.c1, short: m.c2, chaussettes: m.c1, chaussures: ['#111', '#f2f2f2', '#d33', '#2457d6'][code % 4] };
+  const J = fabriquerJoueur(D, j, coul);
+  J.maillage.position.x = (k - (choix.length - 1) / 2) * 1.05;
+  J.maillage.rotation.y = params.get('dos') ? Math.PI : 0;
+  scene.add(J.maillage);
+});
+rendu.render(scene, cam);
+window.pret = true;
+</script></body></html>
