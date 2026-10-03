@@ -24,4 +24,10 @@ export class DetecteurPied {
     } else { this.debut = -1; this.enCours = false; }
     this.prec = { t, x, z, auSol };
   }
+  // pendant un geste qui glisse ou couche le corps (tacle glissé, chute), le pied n'est pas
+  // jugé ; les images sont comptées à part, et la mesure reprend de zéro après
+  suspendre(t) {
+    this.imagesSuspendues = (this.imagesSuspendues || 0) + 1;
+    this.prec = null; this.debut = -1; this.enCours = false;
+  }
 }

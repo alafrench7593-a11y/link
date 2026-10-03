@@ -356,6 +356,125 @@ export class Animateur {
       }
     }
     this.gestes.sort((a, b) => a.tc - b.tc);
+    this.preparerCorps(match, code);
+  }
+
+  // Les gestes de tout le corps (les clips « grf: » de la base, Google Research Football) : ce
+  // que le moteur décide, joué par le corps entier. Tacle glissé (action « tacle » de genre
+  // « glisse »), tête (« duel_aerien »), touche (« touche »), et la chute puis le relevé quand le
+  // moteur met le joueur au sol (une faute subie : l'état « au_sol »). Le moteur ne déplace pas
+  // le joueur comme le geste : le corps suit le déplacement du clip, ancré pour que la partie qui
+  // touche le ballon le touche à l'instant et au point du moteur (au plus 1,5 m de la position du
+  // moteur), puis il la rejoint en 0,3 s.
+  preparerCorps(match, code) {
+    const M = this.M;
+    this.corps = [];
+    const de = (cat) => M.man.clips.filter((c) => c.categorie === cat && c.source === 'grf');
+    const parNom = (liste, motif) => liste.find((c) => c.nom.endsWith(motif)) || liste[0];
+    const glisse = de('glisse'), tete = de('tete'), touche = de('touche'), chute = de('chute'), releve = de('releve');
+    for (const a of match.actions) {
+      if (a.c !== code) continue;
+      const v = match.vitesse(code, a.t), sp = Math.hypot(v[0], v[1]);
+      if (a.a === 'tacle' && a.genre === 'glisse' && glisse.length) {
+        const g = this.ajouterCorps(match, code, parNom(glisse, sp > 4 ? 'sliding/sprint/000' : sp > 1.5 ? 'sliding/walk/000' : 'sliding/idle/000'), a.t, 'ballon');
+        // couché sur le dos, il se relève
+        if (g && releve.length) this.ajouterCorps(match, code, parNom(releve, 'stand_up_from_back'), g.fin + 0.25, 'suite', g);
+      } else if (a.a === 'duel_aerien' && tete.length) {
+        // la tête : seulement si le ballon est en l'air quand le duel se joue (sinon le moteur l'a
+        // laissé retomber) ; le geste dont le contact est à la hauteur du ballon, en course ou non
+        const hb = match.ballon(a.t).p[1] + 0.11, e = this.echelleHanches;
+        if (hb < 1.2) continue;
+        const candidats = tete.filter((c) => c.contact && !c.nom.includes('headerdive') && (sp > 3) === /sprint/.test(c.nom));
+        const liste = candidats.length ? candidats : tete.filter((c) => c.contact && !c.nom.includes('headerdive'));
+        const clip = liste.reduce((m, c) => (Math.abs(c.contact.balle[1] * e - hb) < Math.abs(m.contact.balle[1] * e - hb) ? c : m));
+        const g = this.ajouterCorps(match, code, clip, a.t, 'ballon');
+        // le saut monte un peu plus si le ballon est plus haut que le contact du geste (au plus 0,25 m)
+        if (g) g.leve = Math.max(-0.1, Math.min(0.25, hb - clip.contact.balle[1] * e));
+      } else if (a.a === 'touche' && touche.length) {
+        this.ajouterCorps(match, code, touche[0], a.t0 != null ? a.t0 : a.t, 'ballon');
+      }
+    }
+    // la chute : les périodes « au sol » des images du moteur
+    if (chute.length) {
+      const col = match.col['etats' + code];
+      let debut = null;
+      for (let i = 0; i < match.n; i++) {
+        const sol = (match.lignes[i][col] & 1) !== 0, ti = match.lignes[i][match.col.t] / 10;
+        if (sol && debut == null) debut = ti;
+        if ((!sol || i === match.n - 1) && debut != null) {
+          const v = match.vitesse(code, debut), sp = Math.hypot(v[0], v[1]);
+          const c = parNom(chute, sp > 4 ? 'trip/trip_t3/sprint/000' : sp > 1.5 ? 'trip/trip_t3/walk/000_000' : 'trip/trip_t2/idle/000_090');
+          const g = this.ajouterCorps(match, code, c, debut, 'debut');
+          if (g && releve.length) {
+            const dos = (c.balises || {}).outgoing_special_state === 'lay_back';
+            const r = parNom(releve, dos ? 'stand_up_from_back' : 'stand_up_from_front');
+            // le relevé finit quand le moteur relève le joueur
+            this.ajouterCorps(match, code, r, Math.max(g.fin + 0.2, ti - r.n / M.man.fps + 0.3), 'suite', g);
+          }
+          debut = null;
+        }
+      }
+    }
+    this.corps.sort((a, b) => a.t0 - b.t0);
+  }
+
+  // un geste de tout le corps : le chemin du clip (sa racine et son cap à chaque image, depuis
+  // l'image 0), son ancrage dans le monde, et ses instants
+  ajouterCorps(match, code, clip, tc, mode, avant) {
+    const M = this.M, fps = M.man.fps, e = this.echelleHanches;
+    const chemin = [];
+    let psi = 0, x = 0, z = 0;
+    for (let f = 0; f < clip.n; f++) {
+      chemin.push({ x, z, psi });
+      const k = (clip.premier + f) * 3, vx = M.vit[k], vz = M.vit[k + 1], w = M.vit[k + 2];
+      x += (Math.cos(psi) * vx + Math.sin(psi) * vz) / fps;
+      z += (-Math.sin(psi) * vx + Math.cos(psi) * vz) / fps;
+      psi += w / fps;
+    }
+    let t0, psi0, racine0;
+    if (mode === 'ballon' && clip.contact) {
+      // la partie qui touche le ballon le touche à l'instant et au point du moteur
+      const fc = Math.min(clip.n - 1, clip.contact.image), cc = chemin[fc];
+      t0 = tc - fc / fps;
+      const b = match.ballon(tc).p, p = match.position(code, tc);
+      const bx = clip.contact.balle[0] * e, bz = clip.contact.balle[2] * e;
+      let dx = b[0] - p[0], dz = b[2] - p[1];
+      if (Math.hypot(dx, dz) < 0.05) { const l = match.lacet(code, tc); dx = Math.sin(l); dz = Math.cos(l); }
+      const psiC = Math.atan2(dx, dz) - Math.atan2(bx, bz);
+      let rx = b[0] - (Math.cos(psiC) * bx + Math.sin(psiC) * bz), rz = b[2] - (-Math.sin(psiC) * bx + Math.cos(psiC) * bz);
+      // au plus 1,5 m de la position du moteur
+      const ex = rx - p[0], ez = rz - p[1], d = Math.hypot(ex, ez);
+      if (d > 1.5) { rx = p[0] + ex * 1.5 / d; rz = p[1] + ez * 1.5 / d; }
+      psi0 = psiC - cc.psi;
+      const cs = Math.cos(psi0), sn = Math.sin(psi0);
+      racine0 = { x: rx - (cs * cc.x + sn * cc.z) * e, z: rz - (-sn * cc.x + cs * cc.z) * e };
+    } else if (mode === 'suite' && avant) {
+      // il reprend là où le geste d'avant a laissé le corps
+      t0 = tc;
+      const der = avant.chemin[avant.chemin.length - 1], cs = Math.cos(avant.psi0), sn = Math.sin(avant.psi0);
+      racine0 = { x: avant.racine0.x + (cs * der.x + sn * der.z) * e, z: avant.racine0.z + (-sn * der.x + cs * der.z) * e };
+      psi0 = avant.psi0 + der.psi;
+      avant.garde = Math.max(avant.garde, tc - avant.fin);
+    } else {
+      t0 = tc;
+      const p = match.position(code, tc);
+      racine0 = { x: p[0], z: p[1] };
+      psi0 = match.lacet(code, tc);
+    }
+    const g = { type: 'corps', clip, t0, fin: t0 + (clip.n - 1) / fps, tc, chemin, psi0, racine0, garde: 0, entree: mode === 'suite' ? 0.05 : 0.12, sortie: 0.3 };
+    this.corps.push(g);
+    return g;
+  }
+
+  // le geste de tout le corps à l'instant t (le plus présent) et son poids
+  corpsEnCours(t) {
+    let g = null, w = 0;
+    for (const x of this.corps || []) {
+      if (t < x.t0 - x.entree || t > x.fin + x.garde + x.sortie) continue;
+      const wx = lisse((t - (x.t0 - x.entree)) / x.entree) * (t <= x.fin + x.garde ? 1 : lisse((x.fin + x.garde + x.sortie - t) / x.sortie));
+      if (wx >= w) { w = wx; g = x; }
+    }
+    return g ? { g, w } : null;
   }
 
   gesteFrappe(match, code, tc, B, dir, fort, clip, gaucher, poke) {
@@ -543,6 +662,20 @@ export class Animateur {
         appuisPerso = ag;
       }
     }
+    // 3b'. le geste de tout le corps (tacle glissé, tête, touche, chute, relevé)
+    const gc = this.corpsEnCours(t), wc = gc ? gc.w : 0;
+    this.poidsCorps = wc;
+    if (gc) {
+      const c = gc.g.clip, f = Math.max(0, Math.min(c.n - 1, (t - gc.g.t0) * M.man.fps));
+      const qG = this.qGeste || (this.qGeste = Array.from({ length: M.J }, () => new THREE.Quaternion()));
+      const hG = this.hGeste || (this.hGeste = new THREE.Vector3());
+      this.poseBase(c.premier + f, false, qG, hG);
+      for (let j = 0; j < M.J; j++) this.qCmu[j].slerp(qG[j], wc);
+      hb.lerp(hG, wc);
+      if (wc > 0.3 && c.categorie !== 'touche') appuisPerso = 0;
+      else if (wc > 0.3) appuisPerso = 3;    // la touche : les deux pieds au sol
+      gc.f = f;
+    }
     // 3c. le plongeon latéral garde la pose du départ (les jambes suivent le corps qui vole)
     const plo = this.plongeons.length ? this.etatPlongeon(t) : null;
     if (plo && plo.pl.genre === 'lateral') {
@@ -569,9 +702,20 @@ export class Animateur {
     this.lacetLisse += d * (1 - Math.exp(-dt / 0.06));
     psi = this.lacetLisse;
     if (g && g.type === 'frappe') psi += ecartAngle(g.lacet, psi) * w;
+    let racX = p0[0], racZ = p0[1];
+    if (gc) {
+      // le corps suit le déplacement du clip depuis son ancrage
+      const k = Math.floor(gc.f), u = gc.f - k, a = gc.g.chemin[k], b = gc.g.chemin[Math.min(k + 1, gc.g.chemin.length - 1)];
+      const cx = a.x + (b.x - a.x) * u, cz = a.z + (b.z - a.z) * u, cp = a.psi + (b.psi - a.psi) * u;
+      const cs = Math.cos(gc.g.psi0), sn = Math.sin(gc.g.psi0), e0 = this.echelleHanches;
+      const gx = gc.g.racine0.x + (cs * cx + sn * cz) * e0, gz = gc.g.racine0.z + (-sn * cx + cs * cz) * e0;
+      racX += (gx - racX) * wc; racZ += (gz - racZ) * wc;
+      psi += ecartAngle(gc.g.psi0 + cp, psi) * wc;
+    }
     const lacet = new THREE.Quaternion().setFromAxisAngle(Y, psi);
     const e = this.echelleHanches;
-    this.hanches.set(hb.x * e, hb.y * e, hb.z * e).applyQuaternion(lacet).add(_v.set(p0[0], 0, p0[1]));
+    this.hanches.set(hb.x * e, hb.y * e, hb.z * e).applyQuaternion(lacet).add(_v.set(racX, 0, racZ));
+    if (gc && gc.g.leve) this.hanches.y += gc.g.leve * wc * Math.exp(-Math.pow((t - gc.g.tc) / 0.18, 2));
     if (g) {
       // le corps va au ballon : tout le poids au contact, rien au début et à la fin du geste
       const k = g.type === 'frappe' ? w : Math.exp(-Math.pow((t - g.tc) / 0.22, 2));
@@ -604,7 +748,11 @@ export class Animateur {
       const fenetre = g && g.pied === iL ? (g.type === 'frappe' ? [g.tc - 0.32 / g.cadence, g.tc + 0.15] : [g.tc - 0.2, g.tc + 0.1]) : null;
       const frappeur = !!(fenetre && t > fenetre[0] && t < fenetre[1]);
       const enVol = !!(plo && plo.poids > 0.3 && (plo.pl.genre === 'lateral' || plo.pl.genre === 'saut'));
-      const pose = (appuis & L.bit) !== 0 && !frappeur && !enVol;
+      // pendant un geste de tout le corps, les pieds suivent le geste, sauf ceux du lanceur d'une
+      // touche (il garde ses appuis)
+      const libres = wc >= 0.3 && !(gc && gc.g.clip.categorie === 'touche');
+      const pose = (appuis & L.bit) !== 0 && !frappeur && !enVol && !libres;
+      if (libres) { L.verrou = null; L.libere = false; }
       // un pied posé sur le talon ne tourne pas sur lui-même (sa pointe balaierait l'herbe) : il
       // garde le cap qu'il avait en se posant ; c'est sur la pointe qu'il pivote, et l'écart
       // s'éteint alors en 0,1 s
@@ -621,7 +769,7 @@ export class Animateur {
       }
       const cheville = this.P[L.pied].clone();
       // la foulée : l'écart du pied aux hanches, le long de la course
-      if (this.foulee !== 1) {
+      if (this.foulee !== 1 && wc < 0.3) {
         const rel = _v.subVectors(cheville, this.hanches); rel.y = 0;
         const along = rel.dot(avance);
         cheville.addScaledVector(avance, along * (this.foulee - 1));
@@ -708,6 +856,8 @@ export class Animateur {
     if (this.celebrations && this.celebrations.length) this.celebrer(match, code, t, dt, vitesseMoteur);
     // 6. la tête suit le ballon (ou la tribune, pendant une célébration)
     this.regarder(match, code, t, dt);
+    // les gestes où le corps glisse ou se couche : le détecteur de glissement n'y juge pas les pieds
+    const auSol = !!(gc && wc >= 0.3 && ['glisse', 'chute', 'releve'].includes(gc.g.clip.categorie));
     // la glissade réelle : la vitesse d'un pied en appui (le détecteur du cœur C++ tolère 15 cm/s)
     for (const L of this.jambes) {
       const p = this.P[L.pied];
@@ -722,7 +872,8 @@ export class Animateur {
       L.etaitVerrouille = verrouille;
       const o = this.P[L.orteil];
       L.detecteur.etat = (L.verrou ? (L.libere || !(appuis & bit) ? 'sortie' : L.verrou.mode) : 'vol') + (appuis & bit ? '+appui' : '');
-      L.detecteur.ajouter(t, o.x, o.y, o.z);   // l'avant du pied, comme l'os ball_l dans Unreal
+      if (auSol) L.detecteur.suspendre(t);   // un geste au sol (tacle glissé, chute, relevé) : glisser est voulu
+      else L.detecteur.ajouter(t, o.x, o.y, o.z);   // l'avant du pied, comme l'os ball_l dans Unreal
       L.dernier = (L.dernier || new THREE.Vector3()).copy(p);
     }
     this.ecrire();
@@ -1013,7 +1164,8 @@ export class Animateur {
   }
 
   detecteurs() {
-    return this.jambes.map((L) => ({ glissements: L.detecteur.glissements, imagesAuSol: L.detecteur.imagesAuSol, pireCmS: Math.round(L.detecteur.pire), evenements: L.detecteur.evenements || [] }));
+    return this.jambes.map((L) => ({ glissements: L.detecteur.glissements, imagesAuSol: L.detecteur.imagesAuSol, pireCmS: Math.round(L.detecteur.pire), evenements: L.detecteur.evenements || [],
+      imagesSuspendues: L.detecteur.imagesSuspendues || 0 }));
   }
 
   ecrire() {

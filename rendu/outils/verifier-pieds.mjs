@@ -8,10 +8,11 @@ import { demarrer } from './serveur.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const dossier = 'unreal/LinkFoot/Content/LinkFoot/Scenes';
+// les scènes de test officielles, ou un autre dossier de fenêtres de match (LINKFOOT_SCENES=rendu/labo/scenes)
+const dossier = process.env.LINKFOOT_SCENES || 'unreal/LinkFoot/Content/LinkFoot/Scenes';
 const voulues = process.argv.slice(2);
 const perso = process.env.LINKFOOT_PERSO ? '&perso=' + process.env.LINKFOOT_PERSO : '';
-const scenes = fs.readdirSync(dossier).filter((f) => /^\d\d-.*\.json$/.test(f)).filter((f) => !voulues.length || voulues.includes(f.slice(0, 2)));
+const scenes = fs.readdirSync(dossier).filter((f) => (process.env.LINKFOOT_SCENES ? /\.json$/.test(f) && f !== 'index.json' : /^\d\d-.*\.json$/.test(f))).filter((f) => !voulues.length || voulues.includes(f.slice(0, 2)));
 const { serveur, port } = await demarrer();
 const nav = await chromium.launch({ executablePath: process.env.LINKFOOT_CHROMIUM || '/opt/pw-browsers/chromium',
   args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
@@ -24,12 +25,14 @@ for (const f of scenes) {
     const L = window.labo;
     L.aller(L.t1 - 0.7);
     return L.joueurs.map((j) => ({ code: j.code, glissements: j.A.detecteurs().reduce((a, d) => a + d.glissements, 0),
+      suspendues: j.A.detecteurs().reduce((a, d) => a + (d.imagesSuspendues || 0), 0),
       evenements: j.A.detecteurs().flatMap((d) => d.evenements || []) }));
   });
   const n = r.reduce((a, x) => a + x.glissements, 0);
   total += n;
   const detail = n ? ' : ' + JSON.stringify(r.filter((x) => x.glissements)) : '';
-  console.log(`${f.padEnd(28)} ${r.length} joueurs, ${n} glissement(s)${detail}`);
+  const susp = r.reduce((a, x) => a + x.suspendues, 0);
+  console.log(`${f.padEnd(28)} ${r.length} joueurs, ${n} glissement(s)${susp ? `, ${susp} images de gestes au sol (tacle glissé, chute, relevé) non jugées` : ''}${detail}`);
   await p.close();
 }
 await nav.close(); serveur.close();

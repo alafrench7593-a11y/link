@@ -10,8 +10,10 @@ les autres en viennent, ou du code de ce dépôt.
 
 ## 1. Où on en est, sans détour
 
-**Aucun personnage n'existe encore** : aucun visage, aucun MetaHuman, aucune coiffure, aucun maillot,
-aucune animation capturée. Ce dépôt n'a pas d'Unreal ; rien de visuel n'a pu être fait ni vu.
+**Aucun personnage final n'existe encore** : aucun visage, aucun MetaHuman, aucune coiffure, aucun
+maillot. Une **base technique temporaire** existe (section 1 bis) : un personnage Quaternius (CC0)
+préparé pour Unreal, pour construire et valider la chaîne entière avant le personnage réaliste. Ce
+dépôt n'a pas d'Unreal : ce personnage n'a été vu que dans Blender et dans le labo three.js.
 
 Ce qui existe, et que les personnages consommeront :
 
@@ -31,6 +33,27 @@ Ce qui existe, et que les personnages consommeront :
 Le rendu final dépend de quatre chantiers qui ne se font que dans l'éditeur ou en studio : les
 modèles de visage dans MetaHuman Creator, la garde-robe (coiffures, barbes, maillots, crampons), les
 matériaux (sueur, pluie), et les **captures de mouvement** de football. Le dernier est le plus long.
+
+## 1 bis. La base technique temporaire : le Quaternius (option A)
+
+| Quoi | Où | Vérifié par |
+| --- | --- | --- |
+| Le personnage, squelette aux noms du mannequin d'Unreal (root, pelvis, spine_01 à 03, neck_01, head, clavicle, upperarm, lowerarm, hand, thigh, calf, foot, ball), poids d'origine, 1,80 m | `unreal/LinkFoot/SourceArt/Characters/Players/Quaternius/SK_LinkFoot_Quaternius.fbx` (README à côté : origine, licence CC0, ce qui a changé) | rendus Blender ; labo three.js : 0 glissement de pied sur les 16 scènes |
+| Le script d'import : maillage, IK Rig (chaînes reconnues, sinon posées d'après les noms du mannequin ; IK du corps entier), IK Retargeter depuis l'IK Rig du mannequin, branchement aux footballeurs | `Content/Python/personnage_linkfoot.py` | `unreal/tests-python/test_personnage.py` (contre un faux éditeur ; chaque fonction relevée dans la doc Python 5.8) |
+| Les gestes de football (tacle glissé, chute, relevé, tête, touche...) | la base du labo (`rendu/`, clips « grf: », Google Research Football, domaine public) | labo three.js, branchés sur les actions du moteur |
+
+Ce personnage n'est pas le personnage final : il sert à faire marcher le joueur, ses animations, son
+IK, le ballon et le match. Le personnage réaliste prendra sa place en suivant les mêmes noms d'os.
+
+### Premier essai du Quaternius dans l'éditeur
+
+1. Unreal 5.8 ouvert sur `unreal/LinkFoot/LinkFoot.uproject`, plugins IK Rig et Python Editor Script actifs.
+2. Output Log, mode Python : `import personnage_linkfoot as pl` puis
+   `pl.tout("<chemin du dépôt>/unreal/LinkFoot/SourceArt/Characters/Players/Quaternius/SK_LinkFoot_Quaternius.fbx")`.
+3. Ouvrir `/Game/LinkFoot/Characters/Players/Quaternius/IK_LinkFoot_Quaternius` : les chaînes (bras, jambes, colonne, tête) et le solveur du corps entier doivent apparaître. Si l'import a nommé le maillage autrement (Interchange ignore `destination_name`), le rapport rendu par `pl.tout` donne le vrai chemin.
+4. Avec un IK Rig de mannequin dans le projet (celui du Game Animation Sample, par exemple) : `pl.retargeter("<son chemin>", "<chemin de IK_LinkFoot_Quaternius>")`, puis l'ouvrir et jouer une animation du mannequin sur le Quaternius.
+5. Avec l'asset de définitions des personnages : `pl.brancher("<son chemin>", "<chemin du maillage>")`, puis la carte LinkFoot.Scenes.
+6. **Me renvoyer** le rapport et les messages de l'Output Log, et une capture du viewport : je corrige.
 
 ## 2. L'originalité (§1)
 

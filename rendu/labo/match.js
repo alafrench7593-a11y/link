@@ -82,13 +82,16 @@ export class Match {
     for (const a of this.actions) {
       if (a.x1 == null || !(a.dur > 0)) continue;
       const v = { t0: a.t0 != null ? a.t0 : a.t, dur: a.dur, x0: a.x0, y0: a.y0, z0: a.z0 || 0, x1: a.x1, y1: a.y1, apex: a.apex || 0, lineaire: !!a.aerien || a.a === 'tir', c: a.c, action: a };
+      // une touche part des mains du lanceur, au-dessus de sa tête (le moteur la fait partir du sol) :
+      // le rendu ajoute cette hauteur au départ, éteinte avant l'arrivée (le ballon arrive où le moteur le dit)
+      if (a.a === 'touche' && a.cpa === 'throw') v.levee = 2.1;
       // la formule vaut tant que les images du moteur la suivent (une interception la coupe)
       v.fin = v.t0;
       for (let k = 0; k < this.n; k++) {
         const tk = tImg(k);
         if (tk <= v.t0 + 1e-6) continue;
         if (tk > v.t0 + v.dur + 1e-6) break;
-        const p = this.volEn(v, tk), r = L[k];
+        const p = this.volEn(v, tk, false), r = L[k];
         if (Math.hypot(p[0] - r[col.bx] / 100, p[1] - r[col.by] / 100, p[2] - r[col.bz] / 100) > 0.25) break;
         v.fin = tk;
       }
@@ -121,13 +124,16 @@ export class Match {
       // un gardien qui capte garde le ballon dans les mains
       const gb = this.joueurs.get(p.c);
       p.mains = !!(gb && gb.poste === 'GB' && this.actions.some((a) => a.c === p.c && (a.a === 'arret' || a.a === 'prise_aerienne') && Math.abs(a.t - tImg(p.ks)) < 0.25));
+      // le lanceur d'une touche tient le ballon dans ses mains jusqu'au lancer
+      if (this.actions.some((a) => a.c === p.c && a.a === 'touche' && a.cpa === 'throw' && Math.abs((a.t0 != null ? a.t0 : a.t) - p.te) < 0.3)) p.mains = true;
     }
   }
 
-  volEn(v, t) {
+  volEn(v, t, visuel = true) {
     const u = Math.max(0, Math.min(1, (t - v.t0) / v.dur));
     const e = v.lineaire ? u : 1 - Math.pow(1 - u, 1.35);
-    return [v.x0 + (v.x1 - v.x0) * e, v.y0 + (v.y1 - v.y0) * e, v.z0 * (1 - u) + (v.apex ? 4 * v.apex * u * (1 - u) : 0)];
+    const levee = visuel && v.levee ? v.levee * (1 - u) * (1 - u) : 0;
+    return [v.x0 + (v.x1 - v.x0) * e, v.y0 + (v.y1 - v.y0) * e, v.z0 * (1 - u) + (v.apex ? 4 * v.apex * u * (1 - u) : 0) + levee];
   }
 
   // le ballon porté par c au temps t (mètres, repère du moteur), selon la règle du moteur
@@ -156,6 +162,12 @@ export class Match {
   ballon(t) {
     this.preparerBallon();
     const scene = (q) => [q[0] - 34, q[2], q[1] - 52.5];
+    // avant une touche, le lanceur a le ballon dans les mains (1,2 s), quel que soit le régime du moteur
+    const lancer = this.vols.find((v) => v.levee && t >= v.t0 - 1.2 && t < v.t0);
+    if (lancer) {
+      const p = this.position(lancer.c, t);
+      return { p: [p[0], 2.1, p[1]], porteur: lancer.c, regime: 'porte', mains: true, te: lancer.t0 };
+    }
     const pos = this.possessions.find((p) => t >= p.tb - 1e-9 && t <= p.te + 1e-9);
     if (pos) {
       let q = this.ballonPorte(pos.c, t);

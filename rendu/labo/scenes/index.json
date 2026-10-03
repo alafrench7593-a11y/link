@@ -1,0 +1,38 @@
+{
+ "format": "linkfoot-scenes-labo",
+ "version": 1,
+ "scenes": {
+  "faute_chute": {
+   "fichier": "faute_chute.json",
+   "titre": "Faute et chute",
+   "graine": 1,
+   "instant": 121.6,
+   "focus": 12,
+   "action": "faute"
+  },
+  "tacle_glisse": {
+   "fichier": "tacle_glisse.json",
+   "titre": "Tacle glissé",
+   "graine": 1,
+   "instant": 1028,
+   "focus": 1,
+   "action": "tacle/glisse"
+  },
+  "duel_aerien": {
+   "fichier": "duel_aerien.json",
+   "titre": "Duel aérien",
+   "graine": 1,
+   "instant": 60.8,
+   "focus": 17,
+   "action": "duel_aerien"
+  },
+  "touche": {
+   "fichier": "touche.json",
+   "titre": "Touche",
+   "graine": 1,
+   "instant": 68.8,
+   "focus": 4,
+   "action": "touche/pass"
+  }
+ }
+}
