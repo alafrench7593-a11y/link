@@ -4,11 +4,35 @@
 // Mon Club) ou en 2D vue de dessus. Les deux lisent le match en direct (d.vue() : les
 // images du moteur autour de chaque action) et ne décident rien. Si l'appareil n'a pas de
 // WebGL, la vue 2D prend le relais sans erreur.
+//
+// Les joueurs de la vue 3D sont de vrais corps (le footballeur de Gameplay Football, domaine
+// public) animés par de vraies captures (rendu/labo/reel.js, le même code que le labo du rendu) :
+// la base de mouvements (12 Mo) et le personnage se chargent une fois, à la première vue 3D. Tant
+// qu'ils ne sont pas là, ou s'ils ne se chargent pas, ou si l'appareil ne suit pas, la vue garde
+// ses footballeurs en géométrie. Sur téléphone, ce n'est pas encore vérifié sur un appareil : les
+// vrais corps n'y sont branchés que si REEL_SUR_TELEPHONE est vrai.
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { GLView } from 'expo-gl';
+import { Asset } from 'expo-asset';
 import * as THREE from 'three';
+import { preparerReel, creerReel } from '../../rendu/labo/reel.js';
 import { C } from './theme';
+
+const REEL_SUR_TELEPHONE = false;
+let ressourcesReel = null;
+function chargerReel() {
+  if (!ressourcesReel) {
+    const lien = async (m) => { const a = Asset.fromModule(m); await a.downloadAsync(); return a.localUri || a.uri; };
+    const binaire = async (m) => { const r = await fetch(await lien(m)); if (!r.ok) throw new Error('rendu réel : ' + r.status); return r.arrayBuffer(); };
+    ressourcesReel = Promise.all([
+      binaire(require('../../rendu/donnees/mouvements.bin')),
+      binaire(require('../../unreal/LinkFoot/SourceArt/Characters/Players/GameplayFootball/SK_LinkFoot_GPF.glb'))
+    ]).then(([bin, glb]) => preparerReel({ mouvements: { json: require('../../rendu/donnees/mouvements.json'), bin },
+      squelette: require('../../rendu/donnees/corps.json'), personnage: glb }));
+  }
+  return ressourcesReel;
+}
 
 export function Terrain({ club, d, hauteur }) {
   const [vue3d, setVue3d] = useState(true);
@@ -51,13 +75,30 @@ function Vue3D({ club, d, onPanne, onInfo }) {
       renderer.setSize(w, h, false);
       v = club.stade3d(THREE, { renderer, largeur: w, hauteur: h, maillot: club.state.kit, adverse: (d.opp && d.opp.color) || '#2F8FE0', meteo: d.meteo, ombres: false });
     } catch (e) { onPanne(); return; }
-    let n = 0;
+    // les vrais corps, dès qu'ils sont chargés
+    let reel = null;
+    if (Platform.OS === 'web' || REEL_SUR_TELEPHONE) {
+      chargerReel().then((R) => {
+        if (!vivant.current) return;
+        reel = creerReel(R, v.scene, { feuille: d.feuille ? d.feuille() : null, couleurs: v.couleurs });
+        v.brancherReel(reel);
+        if (Platform.OS === 'web' && typeof window !== 'undefined') window.__LF_REEL = reel.mesure;
+      }).catch(() => { /* la vue garde ses footballeurs en géométrie */ });
+    }
+    let n = 0, t0 = Date.now(), ms0 = 0, images0 = 0;
     const boucle = () => {
       // le GLView peut avoir déjà rendu son contexte : libérer sans faire tomber l'écran
       if (!vivant.current) { try { v.detruire(); renderer.dispose(); } catch (e) { /* contexte déjà perdu */ } return; }
       const f = d.vue();
-      v.image(f.A, f.B, f.fr, f.evs);
+      v.image(f.A, f.B, f.fr, f.evs, f);
       if (gl.endFrameEXP) gl.endFrameEXP();
+      // un appareil qui ne suit pas (plus de 25 ms de calcul des corps par image, en moyenne sur
+      // trois secondes) repasse aux footballeurs en géométrie
+      if (reel && Date.now() - t0 > 3000) {
+        const images = n - images0, ms = reel.mesure.ms - ms0;
+        if (images > 0 && ms / images > 25) { v.brancherReel(null); reel = null; }
+        t0 = Date.now(); ms0 = reel ? reel.mesure.ms : 0; images0 = n;
+      }
       if ((n++ % 5) === 0) {
         // la position du nom, ramenée des pixels du rendu à ceux de l'écran
         const p = f.A && f.A.o >= 0 ? v.projeter(f.A.o) : null, k = taille.current.w / Math.max(1, gl.drawingBufferWidth);

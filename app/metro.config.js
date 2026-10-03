@@ -1,5 +1,6 @@
-// Metro doit pouvoir sortir du dossier app/ pour atteindre le moteur, qui vit dans ../src.
-// C'est tout ce que ce fichier fait : lui ouvrir la porte du dossier parent.
+// Metro doit pouvoir sortir du dossier app/ pour atteindre le moteur, qui vit dans ../src, et le
+// rendu réel du match (../rendu/labo, sa base de mouvements en .bin et son personnage en .glb,
+// livrés comme des fichiers à part).
 const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
@@ -13,5 +14,6 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules')
 ];
 config.resolver.disableHierarchicalLookup = true;
+for (const ext of ['bin', 'glb']) if (!config.resolver.assetExts.includes(ext)) config.resolver.assetExts.push(ext);
 
 module.exports = config;

@@ -9,7 +9,8 @@
 import * as THREE from 'three';
 import { chargerCorps, fabriquerJoueur } from './corps.js';
 import { chargerMouvements, Animateur } from './mouvement.js';
-import { chargerPersonnage, fabriquerJoueurPersonnage } from './personnage.js';
+import { fabriquerJoueurPersonnage } from './personnage.js';
+import { chargerPersonnage } from './charger.js';
 import { construireStade } from './stade.js';
 
 const params = new URLSearchParams(location.search);

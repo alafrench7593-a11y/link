@@ -229,30 +229,44 @@ export const Passerelle = {
     };
   },
 
+  // Une image du moteur, en ligne du document : l'en-tête, puis 6 valeurs par joueur (code 0 à
+  // 21) ; en débogage, les cibles de l'IA. Le rendu réel de l'app (rendu/labo/reel.js) lit ainsi
+  // le match en direct, image par image, comme le document d'un match fini.
+  lignePont(f, debug) {
+    const cm = (v) => Math.round(v * 100), cpa = this.PASSERELLE().cpa;
+    const row = [Math.round((f.t + 0.1) * 10), Math.round(f.m), f.h, f.coupe ? 1 : 0, cm(f.b[0]), cm(f.b[1]), cm(f.b[2]), f.o,
+      f.sc[0], f.sc[1], Math.max(0, cpa.indexOf(f.set || '')), f.tk];
+    for (let k = 0; k < 22; k++) row.push(cm(f.P[k * 2]), cm(f.P[k * 2 + 1]), f.F[k], f.E[k], f.S[k], f.I[k]);
+    if (debug) for (let k = 0; k < 22; k++) row.push(cm(f.T[k * 2]), cm(f.T[k * 2 + 1]));
+    return row;
+  },
+
+  // Une action du moteur telle que le document l'écrit : à l'instant du geste (le ballon part
+  // de x0, y0 à cet instant), les nombres au centième, l'xG au millième.
+  actionPont(a) {
+    const b = {};
+    Object.keys(a).forEach((k) => { const v = a[k]; b[k] = typeof v === 'number' && !Number.isInteger(v) ? (k === 'xg' ? Math.round(v * 1000) / 1000 : Math.round(v * 100) / 100) : v; });
+    b.t = Math.round(a.t * 10) / 10;
+    return b;
+  },
+
+  // Les noms des colonnes d'une ligne d'image.
+  champsPont(debug) {
+    const P = this.PASSERELLE();
+    return P.tete.concat(...Array.from({ length: 22 }, (_, k) => P.joueur.map((c) => c + k)), debug ? [].concat(...Array.from({ length: 22 }, (_, k) => P.cible.map((c) => c + k))) : []);
+  },
+
   // Le document du match, à partir des images que le moteur a gardées (capture).
   documentPont(ctx, opts) {
-    const o = opts || {}, E = ctx.E, P = this.PASSERELLE(), cm = (v) => Math.round(v * 100), r2 = (v) => Math.round(v * 100) / 100;
+    const o = opts || {}, E = ctx.E, P = this.PASSERELLE();
     const imgs = E.images();
     if (!imgs.length || !imgs[0].F) throw new Error('Pas d’images de passerelle : ouvrir le match avec { pont: true } et E.capture()');
-    const cpa = P.cpa;
-    const donnees = imgs.map((f) => {
-      const row = [Math.round((f.t + 0.1) * 10), Math.round(f.m), f.h, f.coupe ? 1 : 0, cm(f.b[0]), cm(f.b[1]), cm(f.b[2]), f.o,
-        f.sc[0], f.sc[1], Math.max(0, cpa.indexOf(f.set || '')), f.tk];
-      for (let k = 0; k < 22; k++) row.push(cm(f.P[k * 2]), cm(f.P[k * 2 + 1]), f.F[k], f.E[k], f.S[k], f.I[k]);
-      if (o.debug) for (let k = 0; k < 22; k++) row.push(cm(f.T[k * 2]), cm(f.T[k * 2 + 1]));
-      return row;
-    });
-    // les actions : à l'instant du geste (le ballon part de x0, y0 à cet instant)
+    const donnees = imgs.map((f) => this.lignePont(f, o.debug));
     const actions = [];
-    imgs.forEach((f) => (f.ac || []).forEach((a) => {
-      const b = {};
-      Object.keys(a).forEach((k) => { const v = a[k]; b[k] = typeof v === 'number' && !Number.isInteger(v) ? (k === 'xg' ? Math.round(v * 1000) / 1000 : r2(v)) : v; });
-      b.t = Math.round(a.t * 10) / 10;
-      actions.push(b);
-    }));
+    imgs.forEach((f) => (f.ac || []).forEach((a) => actions.push(this.actionPont(a))));
     const evenements = [];
     imgs.forEach((f) => (f.ev || []).forEach((e) => evenements.push(Object.assign({ t: Math.round((f.t + 0.1) * 10) / 10 }, e))));
-    const champs = P.tete.concat(...Array.from({ length: 22 }, (_, k) => P.joueur.map((c) => c + k)), o.debug ? [].concat(...Array.from({ length: 22 }, (_, k) => P.cible.map((c) => c + k))) : []);
+    const champs = this.champsPont(o.debug);
     // la feuille du coup d'envoi (matchPont la prend avant de jouer) : relue en fin de match,
     // un titulaire remplacé recevait les attributs du moteur de son remplaçant, qui porte
     // désormais son code (E.player)

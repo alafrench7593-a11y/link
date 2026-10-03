@@ -45,6 +45,13 @@ La 3D (le match, le pack) passe par `expo-gl` et `three`, installés avec le res
 le même rendu que l'écran Mon Club (`src/stade3d.js`). Sur un appareil sans WebGL, le match
 repasse en 2D et le pack 3D s'efface, sans erreur : le bouton OUVRIR LE PACK marche pareil.
 
+Sur le web, les joueurs du match en 3D sont de vrais corps (le footballeur de Gameplay
+Football, animé par de vraies captures : `rendu/labo/reel.js`). La base de mouvements (12 Mo)
+et le personnage (400 Ko) partent avec l'app comme des fichiers à part (`metro.config.js`) et se
+chargent à la première vue 3D ; en attendant, ou si l'appareil ne suit pas, les footballeurs en
+géométrie restent. Sur téléphone, ce n'est pas encore vérifié sur un appareil : passer
+`REEL_SUR_TELEPHONE` à `true` dans `src/terrain.js` pour l'essayer.
+
 ## La sauvegarde
 
 `src/store.js` range la partie dans AsyncStorage, c'est-à-dire sur le téléphone. Le

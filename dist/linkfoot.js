@@ -4853,7 +4853,9 @@ const Direct = {
   // jusqu'au bout. Sinon, un joueur mené pouvait fuir une défaite en fermant l'app.
   matchEnDirect(opp, opts) {
     const self = this, R = this.REGLES_DIRECT();
-    const ctx = this.ouvrirMatch(opp, Object.assign({}, opts, { depart: true }));   // ouvrirMatch refuse un second match
+    // pont : le moteur enregistre aussi ce que lit le rendu réel de la vue 3D (orientation, états,
+    // actions : passerelle.js), sans rien changer au match
+    const ctx = this.ouvrirMatch(opp, Object.assign({}, opts, { depart: true, pont: true }));   // ouvrirMatch refuse un second match
     ctx.banc = this.benchOf(ctx.xi).map((p) => Object.assign({}, p, { energy: p.fit != null ? p.fit : 100, yc: 0, red: false }));
     Object.assign(ctx, { faits: 0, cri: null, decisions: [], sortis: [], entres: {}, ticks: 0 });
     this.setState({ matchEngage: { opp: ctx.opp, amical: ctx.amical, plan: ctx.plan, xi: ctx.xi, oxi: ctx.oxi, banc: ctx.banc,
@@ -4946,7 +4948,7 @@ const Direct = {
       if (dernier.done && S.tVue >= finImages()) return true;
       if (S.tVue > S.fin && !dernier.done) {
         S.mode = 'saut'; S.finPrec = S.fin;
-        const v = api.vue(); S.gel = { A: v.A, B: v.B, fr: v.fr };
+        const v = api.vue(); S.gel = { A: v.A, B: v.B, fr: v.fr, t: v.t };
         diffuser();
       }
       return false;
@@ -5065,11 +5067,12 @@ const Direct = {
         else ctx.E.capture(0);
         diffuser();
       },
-      // l'image à montrer maintenant : { A, B, fr, evs, saut }
+      // l'image à montrer maintenant : { A, B, fr, evs, saut }, et pour le rendu réel (labo/reel.js)
+      // toutes les images gardées (imgs) et l'instant montré (t, temps du moteur)
       vue() {
         const imgs = ctx.E.images();
         if (!S.on || !imgs.length) return { A: null };
-        if (S.mode === 'saut' && S.gel) return Object.assign({}, S.gel, { evs: null, saut: true });
+        if (S.mode === 'saut' && S.gel) return Object.assign({}, S.gel, { evs: null, saut: true, imgs });
         const vLect = 1.25 * (rythme === Infinity ? 4 : rythme) / 1.5;
         let t = S.tVue;
         if (!enPause && !resultat) t += Math.min(0.2, (Date.now() - S.tourT) / 1000) * vLect;
@@ -5082,7 +5085,13 @@ const Direct = {
         const changeMinute = !S.vu || Math.floor(S.vu.m / 60) !== Math.floor(A.m / 60) || (S.vu.sc && A.sc && (S.vu.sc[0] !== A.sc[0] || S.vu.sc[1] !== A.sc[1]));
         S.vuT = A.t; S.vu = A;
         if (changeMinute) diffuser();
-        return { A, B, fr, evs, saut: false };
+        return { A, B, fr, evs, saut: false, imgs, t: A.t + (B.t - A.t) * fr };
+      },
+      // la feuille de match (passerelle.js) : qui porte quel code, son poste, son corps, son
+      // visage ; le rendu réel en habille les 22 joueurs
+      feuille() {
+        if (ctx.feuille === undefined) { try { ctx.feuille = self.feuillePont(ctx); } catch (e) { ctx.feuille = null; } }
+        return ctx.feuille;
       },
       lancer() {
         if (promesse) return promesse;
@@ -5152,9 +5161,13 @@ const Direct = {
 // navigateur et sur téléphone.
 //
 //   const v = club.stade3d(THREE, { renderer, largeur, hauteur, maillot, adverse, meteo })
-//   v.image(A, B, fr, evs)   A, B : deux images du moteur, fr entre 0 et 1 ; evs : les
-//                            événements d'images sautées (avance rapide), facultatif
+//   v.image(A, B, fr, evs, src)   A, B : deux images du moteur, fr entre 0 et 1 ; evs : les
+//                            événements d'images sautées (avance rapide), facultatif ; src : ce
+//                            que lit le rendu réel ({ imgs, t } de direct.js), facultatif
 //   v.taille(l, h)           v.projeter(code) → { x, y } en pixels    v.detruire()
+//   v.brancherReel(r)        de vrais corps à la place des footballeurs en géométrie : r vient de
+//                            rendu/labo/reel.js, que l'écran charge (base de mouvements et
+//                            personnage) ; sans lui, rien ne change
 const Stade3D = {
   stade3d(T, o) {
     o = o || {};
@@ -5291,12 +5304,17 @@ const Stade3D = {
     const ombreJoueur = basique('#000000', { transparent: true, opacity: 0.28, depthWrite: false });
     const ombreGeo = g(new T.CircleGeometry(0.42, 18));
     const ECH = 1.3;   // un peu plus grands que nature : lisibles sur un téléphone
-    const fabrique = (code) => {
+    // les couleurs d'un joueur : maillot, short, chaussettes, crampons (le rendu réel les reprend)
+    const couleurs = (code) => {
       const H = code < 11, i = H ? code : code - 11, gardien = i === 0;
       const tShirt = gardien ? (H ? '#F2C66B' : '#2B2F36') : H ? maillot.c1 : adverse;
-      const tManche = gardien ? tShirt : H && maillot.pat === 'manches' ? (maillot.c2 || tShirt) : tShirt;
-      const tShort = H ? (maillot.c2 && maillot.c2 !== maillot.c1 ? maillot.c2 : '#101814') : '#F2F4F7';
-      const tChaus = H ? (gardien ? '#2B2F36' : maillot.c1) : adverse, peau = PEAUX[(i * 3 + (H ? 0 : 2)) % PEAUX.length];
+      return { maillot: tShirt, manche: gardien ? tShirt : H && maillot.pat === 'manches' ? (maillot.c2 || tShirt) : tShirt,
+        short: H ? (maillot.c2 && maillot.c2 !== maillot.c1 ? maillot.c2 : '#101814') : '#F2F4F7',
+        chaussettes: H ? (gardien ? '#2B2F36' : maillot.c1) : adverse, chaussures: ['#141414', '#F2F4F7', '#FF4757', '#1B4DFF'][(i + (H ? 0 : 1)) % 4] };
+    };
+    const fabrique = (code) => {
+      const H = code < 11, i = H ? code : code - 11, gardien = i === 0, cj = couleurs(code);
+      const tShirt = cj.maillot, tManche = cj.manche, tShort = cj.short, tChaus = cj.chaussettes, peau = PEAUX[(i * 3 + (H ? 0 : 2)) % PEAUX.length];
       const racine = new T.Group(), corps = new T.Group(); corps.scale.setScalar(ECH); racine.add(corps);
       const hanche = new T.Group(); hanche.position.y = 0.92; corps.add(hanche);
       const jambe = (cote) => {
@@ -5304,7 +5322,7 @@ const Stade3D = {
         cuisse.add(new T.Mesh(G.cuisse, M(peau)));
         const genou = new T.Group(); genou.position.y = -0.42; cuisse.add(genou);
         const tib = new T.Mesh(G.tibia, M(tChaus)); genou.add(tib);
-        const ch = new T.Mesh(G.chaussure, M(['#141414', '#F2F4F7', '#FF4757', '#1B4DFF'][(i + (H ? 0 : 1)) % 4])); ch.position.set(0, -0.44, 0.06); genou.add(ch);
+        const ch = new T.Mesh(G.chaussure, M(cj.chaussures)); ch.position.set(0, -0.44, 0.06); genou.add(ch);
         return { cuisse, genou };
       };
       const jg = jambe(-1), jd = jambe(1);
@@ -5391,9 +5409,16 @@ const Stade3D = {
       } else if (e.k === 'roar') clameur = Math.max(clameur, e.v || 0.5);
     };
 
+    // ---- le rendu réel (rendu/labo/reel.js), quand l'écran l'a branché : de vrais corps animés par
+    // de vraies captures prennent la place des footballeurs en géométrie. Ils lisent les mêmes
+    // images du moteur ; ce rendu-ci garde le terrain, le public, la caméra, le ballon et les signes
+    // (anneau du porteur, trajectoire, cartons). Tant qu'il n'a rien à montrer, les footballeurs en
+    // géométrie restent.
+    let reel = null, reelVu = null;
+
     // ---- une image ----
     const v3 = new T.Vector3();
-    const image = (A, B, fr, evs) => {
+    const image = (A, B, fr, evs, src) => {
       if (!A) { o.renderer.render(scene, cam); return; }
       B = B || A; fr = cl(fr || 0, 0, 1);
       if (A !== dernierA) {
@@ -5463,14 +5488,28 @@ const Stade3D = {
         j.x = X + dx; j.z = Z;
       }
       if (fete) { fete.t += dt; if (fete.t > 4.5) fete = null; }
-      // le ballon
-      const hb = 0.3 + Math.max(0, bz);
+      // le rendu réel : les corps, et le ballon qu'ils jouent ; les footballeurs en géométrie
+      // s'effacent, leur ombre suit le vrai corps
+      const R = reel ? (reel.image(src) || reelVu) : null;
+      if (R) reelVu = R;
+      for (const j of joueurs) {
+        j.corps.visible = !R;
+        if (!R) continue;
+        const q = R.joueurs[j.code];
+        if (!q || !q.present) { j.racine.visible = false; continue; }
+        j.racine.visible = true; j.racine.position.set(q.x, 0, q.z); j.ombre.scale.setScalar(0.62);
+        j.x = q.x; j.z = q.z;
+      }
+      // le ballon ; avec les vrais corps, 30 cm au lieu de 22 (encore lisible sur un téléphone),
+      // posé sur l'herbe là où le rendu réel le met
+      const ech = R ? 0.15 / 0.3 : 1;
+      const hv = R ? Math.max(0, R.ballon.y - 0.11) : bz, hb = R ? 0.15 + hv : 0.3 + Math.max(0, bz), BXv = R ? R.ballon.x : BX, BZv = R ? R.ballon.z : BZ;
       const avant = ballon.position.clone();
-      ballon.position.set(BX, hb, BZ);
+      ballon.position.set(BXv, hb, BZv); ballon.scale.setScalar(ech);
       const roule = avant.distanceTo(ballon.position);
-      ballon.rotation.x += roule * 2.2; ballon.rotation.z += roule * 0.5;
-      ombreBallon.position.set(BX + bz * 0.18, 0.025, BZ + bz * 0.1); ombreBallon.scale.setScalar(1 + bz * 0.08);
-      ombreBallon.material.opacity = cl(0.38 - bz * 0.03, 0.08, 0.38);
+      ballon.rotation.x += roule * 2.2 / ech; ballon.rotation.z += roule * 0.5 / ech;
+      ombreBallon.position.set(BXv + hv * 0.18, 0.025, BZv + hv * 0.1); ombreBallon.scale.setScalar((1 + hv * 0.08) * ech);
+      ombreBallon.material.opacity = cl(0.38 - hv * 0.03, 0.08, 0.38);
       // le porteur
       const own = A.o != null && A.o >= 0 ? joueurs[A.o] : null;
       anneauPorteur.visible = !!own && own.racine.visible;
@@ -5514,8 +5553,10 @@ const Stade3D = {
       const bvx = (B.b[0] - A.b[0]) * 10, bvy = (B.b[1] - A.b[1]) * 10;
       const proche = Math.abs(BZ) > 34 || !!A.set;
       const portrait = W / Math.max(1, Hh) < 1;
-      // assez près pour lire les gestes sur un téléphone ; plus près encore dans la surface
-      const distV = (proche ? 30 : 37) * (portrait ? 1.2 : 1), hautV = (proche ? 18 : 22) * (portrait ? 1.12 : 1);
+      // assez près pour lire les gestes sur un téléphone ; plus près encore dans la surface ; plus
+      // près aussi avec de vrais corps, à leur vraie taille
+      const zoom = R ? 0.66 : 1;
+      const distV = (proche ? 30 : 37) * (portrait ? 1.2 : 1) * zoom, hautV = (proche ? 18 : 22) * (portrait ? 1.12 : 1) * zoom;
       const k = cl(dt * 1.6, 0, 1);
       C.x += (cl(BX * 0.5 + bvx * 0.2, -16, 16) - C.x) * k;
       C.z += (cl(BZ + bvy * 0.35, -46, 46) - C.z) * k;
@@ -5540,15 +5581,20 @@ const Stade3D = {
       scene, camera: cam,
       image,
       evenement,
+      // le rendu réel : r = creerReel(..., v.scene, { couleurs: v.couleurs, ... }) ; null le débranche
+      brancherReel(r) { if (reel && reel !== r && reel.detruire) reel.detruire(); reel = r; reelVu = null; },
+      couleurs,
+      reelActif: () => !!reelVu,
       taille(l, h) { W = l; Hh = h; cam.aspect = l / Math.max(1, h); cam.updateProjectionMatrix(); },
       // la position d'un joueur à l'écran, en pixels : pour écrire son nom au-dessus
       projeter(code) {
         const j = joueurs[code]; if (!j || !j.racine.visible) return null;
-        v3.set(j.x, 2.6 * ECH, j.z).project(cam);
+        v3.set(j.x, reelVu ? 2.2 : 2.6 * ECH, j.z).project(cam);
         if (v3.z > 1) return null;
         return { x: (v3.x + 1) / 2 * W, y: (1 - v3.y) / 2 * Hh };
       },
       detruire() {
+        if (reel && reel.detruire) { reel.detruire(); reel = null; }
         scene.traverse((m) => { if (m.isInstancedMesh) m.dispose(); });
         jetables.forEach((x) => { try { x.dispose(); } catch (e) { /* déjà libéré */ } });
         cartons.forEach((c) => c.m.material.dispose());
@@ -6067,30 +6113,44 @@ const Passerelle = {
     };
   },
 
+  // Une image du moteur, en ligne du document : l'en-tête, puis 6 valeurs par joueur (code 0 à
+  // 21) ; en débogage, les cibles de l'IA. Le rendu réel de l'app (rendu/labo/reel.js) lit ainsi
+  // le match en direct, image par image, comme le document d'un match fini.
+  lignePont(f, debug) {
+    const cm = (v) => Math.round(v * 100), cpa = this.PASSERELLE().cpa;
+    const row = [Math.round((f.t + 0.1) * 10), Math.round(f.m), f.h, f.coupe ? 1 : 0, cm(f.b[0]), cm(f.b[1]), cm(f.b[2]), f.o,
+      f.sc[0], f.sc[1], Math.max(0, cpa.indexOf(f.set || '')), f.tk];
+    for (let k = 0; k < 22; k++) row.push(cm(f.P[k * 2]), cm(f.P[k * 2 + 1]), f.F[k], f.E[k], f.S[k], f.I[k]);
+    if (debug) for (let k = 0; k < 22; k++) row.push(cm(f.T[k * 2]), cm(f.T[k * 2 + 1]));
+    return row;
+  },
+
+  // Une action du moteur telle que le document l'écrit : à l'instant du geste (le ballon part
+  // de x0, y0 à cet instant), les nombres au centième, l'xG au millième.
+  actionPont(a) {
+    const b = {};
+    Object.keys(a).forEach((k) => { const v = a[k]; b[k] = typeof v === 'number' && !Number.isInteger(v) ? (k === 'xg' ? Math.round(v * 1000) / 1000 : Math.round(v * 100) / 100) : v; });
+    b.t = Math.round(a.t * 10) / 10;
+    return b;
+  },
+
+  // Les noms des colonnes d'une ligne d'image.
+  champsPont(debug) {
+    const P = this.PASSERELLE();
+    return P.tete.concat(...Array.from({ length: 22 }, (_, k) => P.joueur.map((c) => c + k)), debug ? [].concat(...Array.from({ length: 22 }, (_, k) => P.cible.map((c) => c + k))) : []);
+  },
+
   // Le document du match, à partir des images que le moteur a gardées (capture).
   documentPont(ctx, opts) {
-    const o = opts || {}, E = ctx.E, P = this.PASSERELLE(), cm = (v) => Math.round(v * 100), r2 = (v) => Math.round(v * 100) / 100;
+    const o = opts || {}, E = ctx.E, P = this.PASSERELLE();
     const imgs = E.images();
     if (!imgs.length || !imgs[0].F) throw new Error('Pas d’images de passerelle : ouvrir le match avec { pont: true } et E.capture()');
-    const cpa = P.cpa;
-    const donnees = imgs.map((f) => {
-      const row = [Math.round((f.t + 0.1) * 10), Math.round(f.m), f.h, f.coupe ? 1 : 0, cm(f.b[0]), cm(f.b[1]), cm(f.b[2]), f.o,
-        f.sc[0], f.sc[1], Math.max(0, cpa.indexOf(f.set || '')), f.tk];
-      for (let k = 0; k < 22; k++) row.push(cm(f.P[k * 2]), cm(f.P[k * 2 + 1]), f.F[k], f.E[k], f.S[k], f.I[k]);
-      if (o.debug) for (let k = 0; k < 22; k++) row.push(cm(f.T[k * 2]), cm(f.T[k * 2 + 1]));
-      return row;
-    });
-    // les actions : à l'instant du geste (le ballon part de x0, y0 à cet instant)
+    const donnees = imgs.map((f) => this.lignePont(f, o.debug));
     const actions = [];
-    imgs.forEach((f) => (f.ac || []).forEach((a) => {
-      const b = {};
-      Object.keys(a).forEach((k) => { const v = a[k]; b[k] = typeof v === 'number' && !Number.isInteger(v) ? (k === 'xg' ? Math.round(v * 1000) / 1000 : r2(v)) : v; });
-      b.t = Math.round(a.t * 10) / 10;
-      actions.push(b);
-    }));
+    imgs.forEach((f) => (f.ac || []).forEach((a) => actions.push(this.actionPont(a))));
     const evenements = [];
     imgs.forEach((f) => (f.ev || []).forEach((e) => evenements.push(Object.assign({ t: Math.round((f.t + 0.1) * 10) / 10 }, e))));
-    const champs = P.tete.concat(...Array.from({ length: 22 }, (_, k) => P.joueur.map((c) => c + k)), o.debug ? [].concat(...Array.from({ length: 22 }, (_, k) => P.cible.map((c) => c + k))) : []);
+    const champs = this.champsPont(o.debug);
     // la feuille du coup d'envoi (matchPont la prend avant de jouer) : relue en fin de match,
     // un titulaire remplacé recevait les attributs du moteur de son remplaçant, qui porte
     // désormais son code (E.player)

@@ -174,6 +174,12 @@ await touche(p2, 'VUE 3D');
 await p2.waitForTimeout(800);
 const retour = await p2.evaluate(() => document.querySelectorAll('canvas').length);
 t('§28 le match se regarde en 3D, et la vue 2D reste en bascule', en3d >= 1 && en2d === 0 && retour >= 1, en3d + ' canvas en 3D, ' + en2d + ' en 2D, ' + retour + ' au retour');
+// les joueurs de la vue 3D sont de vrais corps animés par de vraies captures (rendu/labo/reel.js)
+const reel = await p2.waitForFunction(() => (window.__LF_REEL && window.__LF_REEL.pas > 0 ? Object.assign({}, window.__LF_REEL) : null), null, { timeout: 30000 })
+  .then((h) => h.jsonValue()).catch(() => null);
+t('§28 les joueurs de la vue 3D sont de vrais corps, animés par de vraies captures', !!reel,
+  reel ? `${reel.images} images du moteur lues, ${reel.pas} pas des corps, ${(reel.ms / Math.max(1, reel.pas)).toFixed(1)} ms par pas` : 'rendu réel absent');
+if (process.env.LINKFOOT_CAPTURE) { await p2.waitForTimeout(1500); await p2.screenshot({ path: process.env.LINKFOOT_CAPTURE }); }
 await touche(p2, 'Exiger plus');
 await p2.waitForTimeout(400);
 t('une consigne de la voix s’applique, et son effet est écrit', /Exiger plus : Pressing plus large/.test(await lit(p2)));

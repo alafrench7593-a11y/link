@@ -18,6 +18,12 @@ export async function chargerMouvements(base) {
     fetch(base + 'mouvements.json').then((r) => r.json()),
     fetch(base + 'mouvements.bin').then((r) => r.arrayBuffer())
   ]);
+  return preparerMouvements(man, bin);
+}
+
+// la base, à partir de sa description (mouvements.json) et de ses données (mouvements.bin) déjà
+// en mémoire : l'app LinkFoot les charge elle-même (reel.js)
+export function preparerMouvements(man, bin) {
   const T = (k) => vue(bin, man.tableaux[k]);
   const quat = T('quat'), hanches = T('hanches'), vit = T('vit'), appuis = T('appuis'), cherchable = T('cherchable');
   const feats = T('feats'), featsM = T('featsMiroir');
@@ -359,6 +365,33 @@ export class Animateur {
     this.preparerCorps(match, code);
   }
 
+  // Le match en direct (reel.js) grandit : les gestes sont repris sur tout ce que le moteur a
+  // joué jusqu'ici. Un geste déjà prévu garde son objet (un geste en cours garde ainsi son état :
+  // le pied choisi, l'image jouée, la pose de départ d'un plongeon), ceux des nouvelles actions
+  // s'ajoutent.
+  actualiserGestes(match, code) {
+    if (!this.gestes) return;   // pas encore préparés : ils le seront au prochain pas
+    const avant = { gestes: this.gestes, plongeons: this.plongeons, corps: this.corps || [] };
+    this.plongeons = [];
+    this.preparerGestes(match, code);
+    const cle = (x) => x.type + ':' + Math.round((x.tc != null ? x.tc : x.t0) * 1000) + ':' + (x.clip ? x.clip.nom : '') + (x.conduite ? ':c' : '');
+    const reprendre = (nouveaux, anciens) => {
+      const m = new Map(anciens.map((x) => [cle(x), x]));
+      return nouveaux.map((x) => {
+        const y = m.get(cle(x));
+        if (!y) return x;
+        const pied = y.pied, f = y.f;
+        Object.assign(y, x);
+        if (y.type === 'touche') y.pied = pied;
+        if (f != null) y.f = f;
+        return y;
+      });
+    };
+    this.gestes = reprendre(this.gestes, avant.gestes);
+    this.plongeons = reprendre(this.plongeons, avant.plongeons);
+    this.corps = reprendre(this.corps, avant.corps);
+  }
+
   // Les gestes de tout le corps (les clips « grf: » de la base, Google Research Football) : ce
   // que le moteur décide, joué par le corps entier. Tacle glissé (action « tacle » de genre
   // « glisse »), tête (« duel_aerien »), touche (« touche »), et la chute puis le relevé quand le
@@ -412,11 +445,22 @@ export class Animateur {
           const v = match.vitesse(code, debut), sp = Math.hypot(v[0], v[1]);
           const c = parNom(chute, sp > 4 ? 'trip/trip_t3/sprint/000' : sp > 1.5 ? 'trip/trip_t3/walk/000_000' : 'trip/trip_t2/idle/000_090');
           const g = this.ajouterCorps(match, code, c, debut, 'debut');
-          if (g && releve.length) {
+          // en direct, tant que le moteur ne l'a pas relevé, on ne sait pas encore quand il se relève
+          if (g && releve.length && !(sol && match.enDirect)) {
             const dos = (c.balises || {}).outgoing_special_state === 'lay_back';
             const r = parNom(releve, dos ? 'stand_up_from_back' : 'stand_up_from_front');
-            // le relevé finit quand le moteur relève le joueur
-            this.ajouterCorps(match, code, r, Math.max(g.fin + 0.2, ti - r.n / M.man.fps + 0.3), 'suite', g);
+            // le relevé finit quand le moteur relève le joueur ; en direct, ce qu'on regarde déjà
+            // ne se rejoue pas : il commence au plus tôt maintenant, et une fois pour toutes
+            const cle = Math.round(debut * 1000);
+            let t0r = this.relevesDirect ? this.relevesDirect.get(cle) : undefined;
+            if (t0r == null) {
+              t0r = Math.max(g.fin + 0.2, ti - r.n / M.man.fps + 0.3);
+              if (match.enDirect) {
+                if (match.tAffiche != null) t0r = Math.max(t0r, match.tAffiche);
+                (this.relevesDirect || (this.relevesDirect = new Map())).set(cle, t0r);
+              }
+            }
+            this.ajouterCorps(match, code, r, t0r, 'suite', g);
           }
           debut = null;
         }

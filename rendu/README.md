@@ -108,6 +108,19 @@ Dans Blender (le Python de Blender : `pip install bpy==4.5.4` dans un environnem
 
 Le moteur oriente maintenant le corps comme Gameplay Football (règle reprise et réécrite, voir `src/engine.js`, « Orientation du corps ») : sans le ballon, un joueur peut regarder le ballon sans courir vers lui, en pas chassés ou en reculant (en défense, sous 3,5 m/s), le corps à 45° au plus de la course au-delà, 22° en sprint. C'est l'angle des images de la passerelle ; le jeu ne le lit pas (12 matchs identiques au geste près, angles mis à part) et `test/corps.js` vérifie la règle sur des matchs entiers. Le Motion Matching trouve donc enfin ses captures de pas chassés et de recul (`outils/allures.mjs` en filme un exemple de chaque).
 
+## Dans l'app : le match en direct avec les vrais corps
+
+Le même code joue le match que l'app regarde en direct (`labo/reel.js`) : la vue 3D de l'app (`src/stade3d.js`) garde le terrain, le public, la caméra et les signes ; les 22 joueurs sont le footballeur de Gameplay Football animé par le Motion Matching et les gestes GRF, comme dans le labo. Le moteur garde un peu plus d'une seconde d'avance sur l'image montrée (`src/direct.js`) ; les images qui arrivent allongent le document lu par `labo/match.js` (`etendre`), et les gestes des joueurs concernés sont repris sans casser un geste en cours (`actualiserGestes`). Le relevé après une chute commence au plus tôt à l'image montrée (en direct, on ne sait pas d'avance quand le moteur relèvera le joueur). Le personnage est lu par `labo/glb.js` (sans GLTFLoader : même résultat, image pour image, vérifié sur trois vues des deux personnages), ce que l'app peut faire sur téléphone.
+
+```sh
+# la page d'essai : un club, un match en direct regardé, la vue 3D de l'app et les vrais corps
+#   rendu/labo/essai-reel.html?seed=5   (reel=0 : la vue telle qu'elle était, footballeurs en géométrie)
+# le premier but d'un match en direct, filmé comme l'app le montre (de 5 s avant à 3 s après)
+node rendu/outils/direct.mjs but 5 -5 3 390 320
+```
+
+Mesuré dans Chromium sans GPU (SwiftShader, deux cœurs) : 3 à 5 ms de calcul des corps par pas de 1/60 s pour les 22 joueurs. `app/verifier.mjs` vérifie que la vue 3D de l'app charge et anime les vrais corps. Pas encore vérifié : un téléphone réel (les vrais corps n'y sont pas branchés, `REEL_SUR_TELEPHONE`), l'écran Mon Club (il ne charge que three.js).
+
 ## Licences
 
 - **MakeHuman** : les actifs (maillage de base, cibles, squelette, poids) sont sous CC0 1.0 (LICENSE.md de MakeHuman, sections C et D). Aucun code de MakeHuman (AGPL) n'est repris : `construire/makehuman.py` lit les fichiers de données et applique les facteurs des curseurs macro, réécrits.

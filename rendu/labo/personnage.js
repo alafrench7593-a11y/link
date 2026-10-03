@@ -2,21 +2,11 @@
 // reconnaît ses os (Quaternius, Mixamo, mannequin d'Unreal, Rigify, ...), on décrit son
 // squelette comme celui de MakeHuman (chaînes vers les articulations des captures CMU, rôles des
 // os pour l'IK, la tête, les mains), et l'Animateur l'anime tel quel. Le modèle n'est jamais
-// modifié : chaque joueur en est une copie, habillée aux couleurs de son club.
+// modifié : chaque joueur en est un exemplaire neuf (modele.creer() : glb.js pour un GLB,
+// charger.js pour le labo), habillé aux couleurs de son club. Ce fichier ne charge rien : le labo
+// et l'app LinkFoot s'en servent tous les deux.
 import * as THREE from 'three';
-import { GLTFLoader } from '/three/examples/jsm/loaders/GLTFLoader.js';
-import { FBXLoader } from '/three/examples/jsm/loaders/FBXLoader.js';
-import { clone as clonerSquelette } from '/three/examples/jsm/utils/SkeletonUtils.js';
 import { TEINTS, CHEVEUX } from './corps.js';
-
-export async function chargerPersonnage(url) {
-  if (/\.fbx$/i.test(url)) {
-    const scene = await new FBXLoader().loadAsync(url);
-    return { scene, animations: scene.animations || [], url };
-  }
-  const g = await new GLTFLoader().loadAsync(url);
-  return { scene: g.scene, animations: g.animations || [], url };
-}
 
 // ---- reconnaître les os ----
 // le côté d'un os, d'après son nom (les points et les espaces sont déjà retirés ou changés en « _ »
@@ -88,7 +78,7 @@ const _v = new THREE.Vector3(), _q = new THREE.Quaternion(), _s = new THREE.Vect
 // Un joueur à partir du modèle : copie, mise à la taille de la fiche, face à +Z, habillée ; et la
 // description du squelette pour l'Animateur (os, chaînes CMU, rôles, repos dans le monde).
 export function fabriquerJoueurPersonnage(modele, fiche, couleurs, man) {
-  const scene = clonerSquelette(modele.scene);
+  const scene = modele.creer();
   scene.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; o.castShadow = true; o.material = Array.isArray(o.material) ? o.material.map((m) => m.clone()) : o.material.clone(); } });
   coiffure(scene, fiche);
   const r = trouverOs(scene);

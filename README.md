@@ -572,9 +572,27 @@ const v = club.stade3d(THREE, { renderer, largeur, hauteur, maillot, adverse, me
 const d = club.matchEnDirect(club.prochainMatch().opp);
 d.spectacle(true);                 // regarder : chaque action en temps réel, le reste sauté
 d.lancer();
-// à chaque image d'écran
-const f = d.vue(); v.image(f.A, f.B, f.fr, f.evs);
+// à chaque image d'écran (f porte aussi les images gardées et l'instant montré, pour les vrais corps)
+const f = d.vue(); v.image(f.A, f.B, f.fr, f.evs, f);
 ```
+
+Dans l'app (sur le web), les joueurs du match sont de vrais corps : le footballeur de Gameplay
+Football (domaine public), animé par de vraies captures (Motion Matching sur la base CMU, gestes
+de Google Research Football), le même code que le laboratoire du rendu (`rendu/labo/reel.js`).
+L'écran charge la base de mouvements (12 Mo) et le personnage, puis les branche :
+
+```js
+const R = await preparerReel({ mouvements: { json, bin }, squelette: corpsJson, personnage: glb });
+v.brancherReel(creerReel(R, v.scene, { feuille: d.feuille(), couleurs: v.couleurs }));
+```
+
+Ils lisent les mêmes images du moteur, qui garde un peu plus d'une seconde d'avance sur l'image
+montrée : de quoi savoir où va chaque joueur et caler une frappe, une tête ou un plongeon sur
+l'instant du moteur. Tant qu'ils ne sont pas chargés, ou si l'appareil ne suit pas (plus de 25 ms
+de calcul par image), la vue garde les footballeurs en géométrie. Sur téléphone (Expo Go, build
+natif), ce n'est pas encore vérifié sur un appareil : les vrais corps n'y sont pas branchés
+(`REEL_SUR_TELEPHONE` dans `app/src/terrain.js`). L'écran Mon Club garde aussi les footballeurs
+en géométrie (il ne charge rien d'autre que three.js).
 
 En spectacle, le moteur calcule toujours en rapide et garde ses images (`capture`) ; l'écran
 les montre en temps réel autour de chaque frappe, penalty, corner, coup franc direct, carton
@@ -590,8 +608,12 @@ sauvegardé avant l'animation : fermer l'app pendant l'éclat ne rejoue pas le t
 
 L'app native n'a pas de `<canvas>` pour écrire du texte dans une texture. La face du pack
 et les panneaux du stade sont donc peints en JavaScript pur (`peintre` : formes lissées et
-un alphabet en traits), la même image dans un navigateur et sur téléphone. Aucun modèle,
-sprite, son ni code n'est repris d'un autre jeu : tout est construit en géométrie.
+un alphabet en traits), la même image dans un navigateur et sur téléphone. Le stade, le
+public, le pack et les footballeurs en géométrie sont construits ici. Les vrais corps viennent
+de sources libres, sous leurs licences (`rendu/README.md`, « Licences ») : le footballeur de
+Gameplay Football et les gestes de Google Research Football (domaine public), les captures CMU
+(incluses dans le produit, jamais revendues comme base de mouvements). Aucun modèle, visage,
+animation, texture, son ni code d'EA Sports FC, de FIFA ou d'un autre studio.
 
 ### La passerelle vers Unreal Engine 5
 

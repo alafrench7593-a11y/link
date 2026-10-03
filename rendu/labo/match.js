@@ -17,6 +17,16 @@ export class Match {
     this.actions = (doc.actions || []).slice().sort((a, b) => a.t - b.t);
   }
 
+  // Le match en direct (reel.js) : le document grandit pendant qu'on le regarde, de nouvelles
+  // images et de nouvelles actions s'ajoutent à la fin. Ce qui en est tiré (vols, possessions,
+  // conduite) est refait à la demande.
+  etendre() {
+    this.n = this.lignes.length;
+    this.t1 = this.lignes[this.n - 1][this.col.t] / 10;
+    this.actions = (this.doc.actions || []).slice().sort((a, b) => a.t - b.t);
+    this.vols = null; this.possessions = null; this.conduitePrete = false;
+  }
+
   index(t) {
     const f = (t - this.t0) * 10;
     const i = Math.max(0, Math.min(this.n - 2, Math.floor(f)));

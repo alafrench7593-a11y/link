@@ -235,7 +235,9 @@ export const Direct = {
   // jusqu'au bout. Sinon, un joueur mené pouvait fuir une défaite en fermant l'app.
   matchEnDirect(opp, opts) {
     const self = this, R = this.REGLES_DIRECT();
-    const ctx = this.ouvrirMatch(opp, Object.assign({}, opts, { depart: true }));   // ouvrirMatch refuse un second match
+    // pont : le moteur enregistre aussi ce que lit le rendu réel de la vue 3D (orientation, états,
+    // actions : passerelle.js), sans rien changer au match
+    const ctx = this.ouvrirMatch(opp, Object.assign({}, opts, { depart: true, pont: true }));   // ouvrirMatch refuse un second match
     ctx.banc = this.benchOf(ctx.xi).map((p) => Object.assign({}, p, { energy: p.fit != null ? p.fit : 100, yc: 0, red: false }));
     Object.assign(ctx, { faits: 0, cri: null, decisions: [], sortis: [], entres: {}, ticks: 0 });
     this.setState({ matchEngage: { opp: ctx.opp, amical: ctx.amical, plan: ctx.plan, xi: ctx.xi, oxi: ctx.oxi, banc: ctx.banc,
@@ -328,7 +330,7 @@ export const Direct = {
       if (dernier.done && S.tVue >= finImages()) return true;
       if (S.tVue > S.fin && !dernier.done) {
         S.mode = 'saut'; S.finPrec = S.fin;
-        const v = api.vue(); S.gel = { A: v.A, B: v.B, fr: v.fr };
+        const v = api.vue(); S.gel = { A: v.A, B: v.B, fr: v.fr, t: v.t };
         diffuser();
       }
       return false;
@@ -447,11 +449,12 @@ export const Direct = {
         else ctx.E.capture(0);
         diffuser();
       },
-      // l'image à montrer maintenant : { A, B, fr, evs, saut }
+      // l'image à montrer maintenant : { A, B, fr, evs, saut }, et pour le rendu réel (labo/reel.js)
+      // toutes les images gardées (imgs) et l'instant montré (t, temps du moteur)
       vue() {
         const imgs = ctx.E.images();
         if (!S.on || !imgs.length) return { A: null };
-        if (S.mode === 'saut' && S.gel) return Object.assign({}, S.gel, { evs: null, saut: true });
+        if (S.mode === 'saut' && S.gel) return Object.assign({}, S.gel, { evs: null, saut: true, imgs });
         const vLect = 1.25 * (rythme === Infinity ? 4 : rythme) / 1.5;
         let t = S.tVue;
         if (!enPause && !resultat) t += Math.min(0.2, (Date.now() - S.tourT) / 1000) * vLect;
@@ -464,7 +467,13 @@ export const Direct = {
         const changeMinute = !S.vu || Math.floor(S.vu.m / 60) !== Math.floor(A.m / 60) || (S.vu.sc && A.sc && (S.vu.sc[0] !== A.sc[0] || S.vu.sc[1] !== A.sc[1]));
         S.vuT = A.t; S.vu = A;
         if (changeMinute) diffuser();
-        return { A, B, fr, evs, saut: false };
+        return { A, B, fr, evs, saut: false, imgs, t: A.t + (B.t - A.t) * fr };
+      },
+      // la feuille de match (passerelle.js) : qui porte quel code, son poste, son corps, son
+      // visage ; le rendu réel en habille les 22 joueurs
+      feuille() {
+        if (ctx.feuille === undefined) { try { ctx.feuille = self.feuillePont(ctx); } catch (e) { ctx.feuille = null; } }
+        return ctx.feuille;
       },
       lancer() {
         if (promesse) return promesse;
