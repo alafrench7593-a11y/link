@@ -1,15 +1,15 @@
 # Les vérifications de LinkFoot.
 #
-# À chaque push et chaque pull request : les onze vérifications rapides, huit minutes.
+# À chaque push et chaque pull request : les quatorze vérifications rapides, un quart d'heure.
 # Elles protègent ce qui casse le plus souvent sans qu'on le voie : le canvas qui
 # diverge du moteur, le serveur qui accepte une triche, un match découpé qui ne donne
 # plus le même score, un pack dont les probabilités affichées ne sont plus celles du
 # tirage.
 #
-# Chaque lundi, et à la demande : les trois longues, qui jouent des centaines de
-# matchs pour vérifier l'équilibre du jeu (les leviers tactiques, la valeur des cartes,
-# les promesses des styles). Trop lentes pour chaque push, indispensables avant de
-# toucher au moteur.
+# Chaque lundi, et à la demande : les trois longues, qui jouent des milliers de matchs
+# pour vérifier l'équilibre du jeu (les leviers tactiques, la valeur des cartes, les
+# promesses des styles), 48 matchs par série, en trois travaux parallèles. Trop lentes
+# pour chaque push, indispensables avant de toucher au moteur.
 name: Vérifications
 
 on:
@@ -34,20 +34,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Les onze vérifications rapides
+      - name: Les vérifications rapides
         run: node test/tout.js
 
   longues:
     if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.longues)
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [leviers, coherence, styles]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Toutes les vérifications, longues comprises
-        run: node test/tout.js --long
+      - name: La vérification longue ${{ matrix.suite }}
+        run: node test/tout.js --seule ${{ matrix.suite }}
 
   # L'application, lancée pour de vrai dans un navigateur : premier lancement, les six
   # onglets, un pack ouvert, le onze choisi, un match en direct avec un remplacement et

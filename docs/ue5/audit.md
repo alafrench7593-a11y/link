@@ -150,6 +150,17 @@ matchs par série pour ces promesses-là. Et l'écart athlètes contre technicie
 deux moteurs (32 % des points, deux fois plus de danger) : c'est la note des cartes qui sous-pèse
 la vitesse, pas un correctif.
 
+**Correction du 3 octobre 2026 au soir.** « Toutes tiennent » voulait dire : dans le bon sens. Les
+suites longues de `ue5`, rejouées en entier à 48 matchs par série (40 par style), avec leur propre
+seuil (un écart d'au moins 4 % pour un levier), donnent : cohérence 22 sur 22, styles 27 sur 27
+(une alerte venait d'un seuil écrit pour dix matchs, ramené à dix matchs), leviers 24 sur 27. Les
+trois leviers qui restent sous le seuil sont dans le bon sens mais trop faibles : à cinq derrière,
+406 → 391 tirs concédés (−3,7 %, contre −10 % sur `main`) ; pressing fort, 1 945 → 2 006 tacles
+(+3,1 %, contre +8,7 %) ; équipe fraîche, 2 066 → 2 017 tacles (−2,4 %). `test/leviers.js` les
+affiche en constats (ils ne cassent la vérification que s'ils s'inversent), les suites longues
+jouent 48 matchs par série, et l'intégration continue les lance en trois travaux parallèles. Les
+renforcer dans le moteur reste à faire.
+
 ## 4. WHAT MOVES TO UNREAL : ce qui passe dans Unreal
 
 La présentation, et seulement elle : les personnages (MetaHuman, morphotypes du §44), l'animation

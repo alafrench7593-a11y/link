@@ -6,8 +6,10 @@
 //
 //   node test/tout.js            les vérifications rapides, quelques minutes
 //   node test/tout.js --long     plus les trois longues (leviers, cohérence, styles),
-//                                qui jouent des centaines de matchs : compter une
-//                                demi-heure sur deux cœurs
+//                                qui jouent des milliers de matchs : compter une heure
+//                                et demie sur deux cœurs
+//   node test/tout.js --seule leviers   une seule des trois longues (l'intégration
+//                                continue les lance en parallèle)
 //
 // Sortie en erreur dès qu'une seule vérification cède : c'est ce que regarde
 // l'intégration continue.
@@ -34,14 +36,20 @@ const RAPIDES = [
   ['en ligne', ['test/online.js'], 'le multijoueur, le classement, le marché'],
   ['tournoi', ['test/tournament.js', '16'], 'ligues, coupes et récompenses']
 ];
+// 48 matchs par série (40 par style) : à 12, une promesse bascule sur une victoire de plus ou
+// de moins. Le 3 octobre 2026, huit promesses « perdues » à 12 matchs tenaient à 48, et les trois
+// leviers vraiment trop faibles s'y voyaient seuls (docs/ue5/audit.md).
 const LONGUES = [
-  ['leviers', ['test/leviers.js', '12'], 'chaque décision tactique se joue vraiment'],
-  ['cohérence', ['test/coherence.js', '12'], 'la note de la carte dit ce que vaut le joueur'],
-  ['styles', ['test/styles.js', '10'], 'chaque style tient la promesse de sa description']
+  ['leviers', ['test/leviers.js', '48'], 'chaque décision tactique se joue vraiment'],
+  ['cohérence', ['test/coherence.js', '48'], 'la note de la carte dit ce que vaut le joueur'],
+  ['styles', ['test/styles.js', '40'], 'chaque style tient la promesse de sa description']
 ];
 
 const long = process.argv.includes('--long');
-const liste = long ? RAPIDES.concat(LONGUES) : RAPIDES;
+const iSeule = process.argv.indexOf('--seule'), seule = iSeule >= 0 ? process.argv[iSeule + 1] : null;
+const liste = seule ? LONGUES.filter((t) => t[1][0] === 'test/' + seule + '.js')
+  : long ? RAPIDES.concat(LONGUES) : RAPIDES;
+if (seule && !liste.length) { console.log('vérification longue inconnue : ' + seule + ' (leviers, coherence, styles)'); process.exit(2); }
 
 function lance([nom, args]) {
   return new Promise((res) => {
@@ -84,5 +92,5 @@ for (const r of rates) {
     console.log('::error title=' + net(r.nom + ' : ' + r.promesse) + '::' + net(extrait.slice(0, 1800)));
   }
 }
-if (!long && !rates.length) console.log('Les trois vérifications longues ne sont pas lancées : node test/tout.js --long');
+if (!long && !seule && !rates.length) console.log('Les trois vérifications longues ne sont pas lancées : node test/tout.js --long');
 process.exit(rates.length ? 1 : 0);

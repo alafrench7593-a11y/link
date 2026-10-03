@@ -119,7 +119,7 @@ Le même code joue le match que l'app regarde en direct (`labo/reel.js`) : la vu
 node rendu/outils/direct.mjs but 5 -5 3 390 320
 ```
 
-Mesuré dans Chromium sans GPU (SwiftShader, deux cœurs) : 3 à 5 ms de calcul des corps par pas de 1/60 s pour les 22 joueurs. `app/verifier.mjs` vérifie que la vue 3D de l'app charge et anime les vrais corps. Pas encore vérifié : un téléphone réel (les vrais corps n'y sont pas branchés, `REEL_SUR_TELEPHONE`), l'écran Mon Club (il ne charge que three.js).
+Mesuré dans Chromium sans GPU (SwiftShader, deux cœurs) : 3 à 5 ms de calcul des corps par pas de 1/60 s pour les 22 joueurs. `app/verifier.mjs` vérifie que la vue 3D de l'app charge et anime les vrais corps. Pas encore vérifié : un téléphone réel (les vrais corps n'y sont pas branchés : `app/src/reel.js`), l'écran Mon Club (il ne charge que three.js).
 
 ## Licences
 

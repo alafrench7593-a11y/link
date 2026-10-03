@@ -49,8 +49,8 @@ Sur le web, les joueurs du match en 3D sont de vrais corps (le footballeur de Ga
 Football, animé par de vraies captures : `rendu/labo/reel.js`). La base de mouvements (12 Mo)
 et le personnage (400 Ko) partent avec l'app comme des fichiers à part (`metro.config.js`) et se
 chargent à la première vue 3D ; en attendant, ou si l'appareil ne suit pas, les footballeurs en
-géométrie restent. Sur téléphone, ce n'est pas encore vérifié sur un appareil : passer
-`REEL_SUR_TELEPHONE` à `true` dans `src/terrain.js` pour l'essayer.
+géométrie restent. Sur téléphone, ce n'est pas encore vérifié sur un appareil : `src/reel.js`
+est vide (le web prend `src/reel.web.js`) ; y mettre le contenu de `reel.web.js` pour l'essayer.
 
 ## La sauvegarde
 

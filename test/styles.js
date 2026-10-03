@@ -127,7 +127,7 @@ async function toutes(noms, largeur) {
 }
 
 const f1 = (v) => (Math.round(v * 10) / 10).toString().replace('.', ',');
-let fails = 0, checks = 0;
+let fails = 0, checks = 0, constats = 0;
 
 const club = new Club();
 const S0 = club.styles();
@@ -163,7 +163,7 @@ console.log('\nCe qui ne tient pas, mesuré');
     const mauvais = pire(valeur);
     console.log((mauvais ? '  ALERTE ' : '  constat ') + nom + ' : ' + detail + (mauvais ? '  ← PIRE QU’AVANT' : ''));
     console.log('            devrait être : ' + attendu);
-    checks++; if (mauvais) fails++;
+    checks++; constats++; if (mauvais) fails++;
   };
 
   dit('une équipe qui défend bas garde quand même le ballon',
@@ -174,7 +174,7 @@ console.log('\nCe qui ne tient pas, mesuré');
 
   dit('le marquage individuel se fait démonter',
     R.homme.adv_xg - neutre.adv_xg, 'un système risqué, pas un système perdant d’avance',
-    (v) => v > 30,
+    (v) => v * 10 / N > 30,   // pour dix matchs : le danger concédé se somme sur la série
     'Pressing homme à homme ' + f1(R.homme.adv_xg) + ' de danger concédé contre ' + f1(neutre.adv_xg));
   console.log('            (3-5-2 plus marquage individuel plus ligne haute : chaque');
   console.log('             défenseur suit son homme, donc plus personne ne tient la ligne,');
@@ -195,7 +195,7 @@ console.log('\nCe qui ne tient pas, mesuré');
 
   dit('le 3-5-2 n’est pas solide',
     R.pistons.adv_xg - neutre.adv_xg, 'trois centraux et deux pistons, c’est cinq derrière',
-    (v) => v > 16,
+    (v) => v * 10 / N > 16,
     'Pistons ' + f1(R.pistons.adv_xg) + ' de danger concédé contre ' + f1(neutre.adv_xg) + ' pour le 4-3-3');
   console.log('            (les pistons laissent le couloir, et trois centraux ne couvrent pas');
   console.log('             toute la largeur. J’ai essayé de les faire monter pour qu’ils');
@@ -236,5 +236,5 @@ console.log('\n§42 Aucun style ne domine tous les autres');
 
 console.log('\n' + (fails
   ? 'ÉCHECS : ' + fails + ' sur ' + checks + ' — une promesse a cédé'
-  : 'OK : ' + checks + ' vérifications, dont 5 constats de promesses non tenues'));
+  : 'OK : ' + checks + ' vérifications, dont ' + constats + ' constats de promesses non tenues'));
 process.exit(fails ? 1 : 0);

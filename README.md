@@ -591,7 +591,7 @@ montrée : de quoi savoir où va chaque joueur et caler une frappe, une tête ou
 l'instant du moteur. Tant qu'ils ne sont pas chargés, ou si l'appareil ne suit pas (plus de 25 ms
 de calcul par image), la vue garde les footballeurs en géométrie. Sur téléphone (Expo Go, build
 natif), ce n'est pas encore vérifié sur un appareil : les vrais corps n'y sont pas branchés
-(`REEL_SUR_TELEPHONE` dans `app/src/terrain.js`). L'écran Mon Club garde aussi les footballeurs
+(`app/src/reel.js`, le web prend `reel.web.js`). L'écran Mon Club garde aussi les footballeurs
 en géométrie (il ne charge rien d'autre que three.js).
 
 En spectacle, le moteur calcule toujours en rapide et garde ses images (`capture`) ; l'écran
