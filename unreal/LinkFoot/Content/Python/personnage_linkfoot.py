@@ -1,7 +1,9 @@
 """LinkFoot : un personnage riggé importé dans Unreal 5.8 et branché aux footballeurs.
 
-Le premier personnage est la base technique temporaire (option A) : le Quaternius « Animated
-Men » (CC0) préparé pour Unreal, `SourceArt/Characters/Players/Quaternius/SK_LinkFoot_Quaternius.fbx`.
+Deux personnages sont prêts, préparés pour Unreal avec le même squelette : la base technique
+temporaire (option A), le Quaternius « Animated Men » (CC0),
+`SourceArt/Characters/Players/Quaternius/SK_LinkFoot_Quaternius.fbx` ; et le footballeur de
+Gameplay Football (domaine public), `SourceArt/Characters/Players/GameplayFootball/SK_LinkFoot_GPF.fbx`.
 Son squelette porte les noms du mannequin d'Unreal (root, pelvis, spine_01 à spine_03, neck_01,
 head, clavicle, upperarm, lowerarm, hand, thigh, calf, foot, ball) : le personnage réaliste qui
 le remplacera n'aura qu'à suivre la même convention, ces fonctions resteront les mêmes.
@@ -154,12 +156,25 @@ def brancher(definitions, maillage):
     return True
 
 
-def tout(fichier_fbx, source_ik_rig=None, definitions=None, dossier=DOSSIER):
-    """Les quatre étapes ; le reciblage et le branchement seulement si leurs assets sont donnés."""
+def noms(fichier_fbx):
+    """Le dossier et les noms des assets d'un personnage, tirés de son fichier : le dossier de
+    SourceArt qui le contient (Quaternius, GameplayFootball) et son nom sans « SK_ »."""
+    parties = fichier_fbx.replace("\\", "/").split("/")
+    nom = parties[-1].rsplit(".", 1)[0]
+    court = nom[3:] if nom.startswith("SK_") else nom
+    dossier = "/Game/LinkFoot/Characters/Players/" + (parties[-2] if len(parties) > 1 else court)
+    return {"dossier": dossier, "ik_rig": "IK_" + court, "retargeter": "RTG_Mannequin_vers_" + court}
+
+
+def tout(fichier_fbx, source_ik_rig=None, definitions=None, dossier=None):
+    """Les quatre étapes ; le reciblage et le branchement seulement si leurs assets sont donnés.
+    Les assets vont dans /Game/LinkFoot/Characters/Players/<dossier du FBX> (sauf dossier donné)."""
+    n = noms(fichier_fbx)
+    dossier = dossier or n["dossier"]
     rapport = {"maillage": importer(fichier_fbx, dossier)}
-    rapport.update(ik_rig(rapport["maillage"], dossier=dossier))
+    rapport.update(ik_rig(rapport["maillage"], nom=n["ik_rig"], dossier=dossier))
     if source_ik_rig:
-        rapport["retargeter"] = retargeter(source_ik_rig, rapport["ik_rig"], dossier=dossier)
+        rapport["retargeter"] = retargeter(source_ik_rig, rapport["ik_rig"], nom=n["retargeter"], dossier=dossier)
     if definitions:
         rapport["branche"] = brancher(definitions, rapport["maillage"])
     return rapport

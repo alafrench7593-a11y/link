@@ -90,6 +90,7 @@ const _v = new THREE.Vector3(), _q = new THREE.Quaternion(), _s = new THREE.Vect
 export function fabriquerJoueurPersonnage(modele, fiche, couleurs, man) {
   const scene = clonerSquelette(modele.scene);
   scene.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; o.castShadow = true; o.material = Array.isArray(o.material) ? o.material.map((m) => m.clone()) : o.material.clone(); } });
+  coiffure(scene, fiche);
   const r = trouverOs(scene);
   // face à +Z : la main gauche du personnage doit être du côté +X
   scene.updateMatrixWorld(true);
@@ -241,6 +242,21 @@ function sommetsDominants(scene, bones) {
     }
   });
   return res;
+}
+
+// Un modèle peut porter plusieurs coiffures, chacune un maillage « cheveux_<style> » attaché à la
+// tête (le footballeur de Gameplay Football en a six : rendu/construire/gpf_joueur.py). Un seul
+// reste visible, choisi d'après la coiffure de la fiche ; rasé : aucun. Sans ces maillages, rien
+// ne change.
+const COIFFURES = { ras: null, court: 'short01', degrade: 'short02', boucles: 'medium01', frises: 'medium02', afro: 'medium02',
+  dreadlocks: 'long01', tresses: 'long02', long: 'long01', attache: 'medium01' };
+function coiffure(scene, fiche) {
+  const styles = [];
+  scene.traverse((o) => { if (/^cheveux_/.test(o.name) && (o.isMesh || o.isGroup)) styles.push(o); });
+  if (!styles.length) return;
+  const ap = fiche.apparence || {};
+  const voulue = ap.coiffure in COIFFURES ? COIFFURES[ap.coiffure] : styles[0].name.slice(8);
+  styles.forEach((o) => { o.visible = voulue !== null && o.name === 'cheveux_' + voulue; });
 }
 
 // les couleurs du club sur les matériaux du modèle, reconnus par leur nom

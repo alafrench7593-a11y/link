@@ -1,0 +1,148 @@
+{
+ "source": "github.com/google-research/football, commit 3d9e754720a9, third_party/gfootball_engine/data/media",
+ "fichiers_lus": [
+  "objects/players/models/fullbody.ase",
+  "objects/players/player.object",
+  "animations/base.anim.util",
+  "objects/players/textures/kit_UVWnormal.bmp",
+  "objects/players/textures/shoe.bmp",
+  "objects/players/textures/arm_normal.bmp",
+  "objects/players/textures/knee_normal.bmp",
+  "objects/players/textures/referee_kit.bmp",
+  "objects/players/hairstyles/short01.ase",
+  "objects/players/hairstyles/short02.ase",
+  "objects/players/hairstyles/medium01.ase",
+  "objects/players/hairstyles/medium02.ase",
+  "objects/players/hairstyles/long01.ase",
+  "objects/players/hairstyles/long02.ase"
+ ],
+ "hauteur_debout_origine_m": 1.9038,
+ "echelle": 0.9455,
+ "pieds": {
+  "g": {
+   "base_orteils": [
+    0.087,
+    -0.16,
+    0.025
+   ],
+   "pointe": [
+    0.087,
+    -0.201,
+    0.02
+   ]
+  },
+  "d": {
+   "base_orteils": [
+    -0.087,
+    -0.16,
+    0.025
+   ],
+   "pointe": [
+    -0.087,
+    -0.2,
+    0.02
+   ]
+  }
+ },
+ "avant_bras_et_main_m": {
+  "l": 0.31,
+  "r": 0.31
+ },
+ "normales_d_accord_avec_les_faces": {
+  "shoe_right": "52/52",
+  "knee_right": "48/48",
+  "sole_right": "8/8",
+  "sole_left": "8/8",
+  "shoe_left": "52/52",
+  "knee_left": "48/48",
+  "arm_left": "76/76",
+  "arm_right": "76/76",
+  "head": "109/109",
+  "sock_right": "38/38",
+  "sock_left": "38/38",
+  "body": "194/194"
+ },
+ "triangles_corps": 747,
+ "pieces": {
+  "maillot": 124,
+  "short": 70,
+  "chaussettes": 76,
+  "chaussures": 104,
+  "semelle": 16,
+  "peau_bras": 152,
+  "peau_genoux": 96,
+  "peau_tete": 109
+ },
+ "coiffures": {
+  "short01": 98,
+  "short02": 98,
+  "medium01": 98,
+  "medium02": 98,
+  "long01": 98,
+  "long02": 98
+ },
+ "os_ue": [
+  "root",
+  "pelvis",
+  "spine_01",
+  "spine_02",
+  "spine_03",
+  "neck_01",
+  "head",
+  "clavicle_l",
+  "upperarm_l",
+  "lowerarm_l",
+  "hand_l",
+  "clavicle_r",
+  "upperarm_r",
+  "lowerarm_r",
+  "hand_r",
+  "thigh_l",
+  "calf_l",
+  "foot_l",
+  "ball_l",
+  "thigh_r",
+  "calf_r",
+  "foot_r",
+  "ball_r"
+ ],
+ "hierarchie": {
+  "root": null,
+  "pelvis": "root",
+  "spine_01": "pelvis",
+  "spine_02": "spine_01",
+  "spine_03": "spine_02",
+  "neck_01": "spine_03",
+  "head": "neck_01",
+  "clavicle_l": "spine_03",
+  "upperarm_l": "clavicle_l",
+  "lowerarm_l": "upperarm_l",
+  "hand_l": "lowerarm_l",
+  "clavicle_r": "spine_03",
+  "upperarm_r": "clavicle_r",
+  "lowerarm_r": "upperarm_r",
+  "hand_r": "lowerarm_r",
+  "thigh_l": "pelvis",
+  "calf_l": "thigh_l",
+  "foot_l": "calf_l",
+  "ball_l": "foot_l",
+  "thigh_r": "pelvis",
+  "calf_r": "thigh_r",
+  "foot_r": "calf_r",
+  "ball_r": "foot_r"
+ },
+ "hauteur_m": 1.8,
+ "fbx_coiffures": [
+  "coiffures/SK_LinkFoot_GPF_cheveux_short01.fbx",
+  "coiffures/SK_LinkFoot_GPF_cheveux_short02.fbx",
+  "coiffures/SK_LinkFoot_GPF_cheveux_medium01.fbx",
+  "coiffures/SK_LinkFoot_GPF_cheveux_medium02.fbx",
+  "coiffures/SK_LinkFoot_GPF_cheveux_long01.fbx",
+  "coiffures/SK_LinkFoot_GPF_cheveux_long02.fbx"
+ ],
+ "fichiers": {
+  "SK_LinkFoot_GPF.blend": 827660,
+  "SK_LinkFoot_GPF.fbx": 452172,
+  "SK_LinkFoot_GPF.glb": 403956
+ }
+}

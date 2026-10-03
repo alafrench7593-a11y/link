@@ -127,6 +127,24 @@ export class Match {
       // le lanceur d'une touche tient le ballon dans ses mains jusqu'au lancer
       if (this.actions.some((a) => a.c === p.c && a.a === 'touche' && a.cpa === 'throw' && Math.abs((a.t0 != null ? a.t0 : a.t) - p.te) < 0.3)) p.mains = true;
     }
+    // Le contrôle d'un ballon haut (le moteur l'écrit quand personne ne dispute un ballon long,
+    // ballon à la hauteur z de l'action) : le ballon descend jusqu'à cette hauteur, le joueur
+    // l'amortit, puis il tombe à ses pieds pendant le transfert. L'instant du contact (tHaut) est
+    // celui où la descente du vol passe à cette hauteur ; le geste s'y ancre (mouvement.js).
+    for (const a of this.actions) {
+      if (a.a !== 'controle' || !a.haut) continue;
+      const p = this.possessions.find((q) => q.c === a.c && Math.abs(tImg(q.ks) - a.t) < 0.25);
+      if (!p) continue;
+      // la descente passe à la hauteur du contrôle entre deux images d'avant la réception
+      const h = a.z || 1.15, z = (k) => L[k][col.bz] / 100;
+      for (let k = p.ks - 1; k > Math.max(0, p.ks - 15); k--) {
+        if (!(z(k - 1) >= h && z(k) < h)) continue;
+        const u = (z(k - 1) - h) / (z(k - 1) - z(k)), tc = tImg(k - 1) + u * (tImg(k) - tImg(k - 1));
+        const x = (L[k - 1][col.bx] + u * (L[k][col.bx] - L[k - 1][col.bx])) / 100, y = (L[k - 1][col.by] + u * (L[k][col.by] - L[k - 1][col.by])) / 100;
+        a.tHaut = tc; p.tb = Math.min(p.tb, tc); p.tTransfert = tc; p.avant = { point: [x, y, h] };
+        break;
+      }
+    }
   }
 
   volEn(v, t, visuel = true) {
@@ -174,7 +192,7 @@ export class Match {
       const k = (t - pos.tTransfert) / 0.35;
       if (k < 1) {
         const a = pos.avant;
-        const avant = a.vol ? this.volEn(a.vol, Math.min(t, a.tFin)) : a.c != null ? this.ballonPorte(a.c, t) : this.ballonImages(pos.tb);
+        const avant = a.point ? a.point : a.vol ? this.volEn(a.vol, Math.min(t, a.tFin)) : a.c != null ? this.ballonPorte(a.c, t) : this.ballonImages(pos.tb);
         const s = k <= 0 ? 0 : k * k * (3 - 2 * k);
         q = [avant[0] + (q[0] - avant[0]) * s, avant[1] + (q[1] - avant[1]) * s, avant[2] * (1 - s)];
       }

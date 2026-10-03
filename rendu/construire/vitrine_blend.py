@@ -195,8 +195,16 @@ def main():
     ap.add_argument("--vues", default="face,trois_quarts,profil,dos")
     ap.add_argument("--taille", type=int, default=512)
     ap.add_argument("--echantillons", type=int, default=24)
+    ap.add_argument("--cacher", default="", help="expression : les objets dont le nom correspond ne sont pas rendus "
+                    "(une seule coiffure sur plusieurs, par exemple)")
     a = ap.parse_args(argv)
     ouvrir(os.path.abspath(a.fichier))
+    if a.cacher:
+        import re
+        for o in bpy.context.scene.objects:
+            if re.search(a.cacher, o.name):
+                o.hide_render = True
+                o.hide_set(True)
     arm = next((o for o in bpy.context.scene.objects if o.type == "ARMATURE"), None)
     if arm is not None:
         if arm.animation_data:

@@ -45,6 +45,19 @@ matériaux (sueur, pluie), et les **captures de mouvement** de football. Le dern
 Ce personnage n'est pas le personnage final : il sert à faire marcher le joueur, ses animations, son
 IK, le ballon et le match. Le personnage réaliste prendra sa place en suivant les mêmes noms d'os.
 
+Un second personnage suit la même convention : **le footballeur de Gameplay Football** (Bastiaan
+Schuiling, domaine public), dans son dessin d'origine (747 triangles, visage sans traits, six
+coiffures), `SourceArt/Characters/Players/GameplayFootball/SK_LinkFoot_GPF.fbx` (README à côté :
+origine, licence, ce qui a changé ; `data/databases` du jeu, logos et noms de vrais clubs, jamais lu).
+`pl.tout("<chemin du dépôt>/unreal/LinkFoot/SourceArt/Characters/Players/GameplayFootball/SK_LinkFoot_GPF.fbx")`
+range ses assets dans `/Game/LinkFoot/Characters/Players/GameplayFootball` (`IK_LinkFoot_GPF`).
+Le FBX du corps porte une coiffure ; les cinq autres sont des FBX à part sur le même squelette
+(`coiffures/`), à importer avec ce squelette et à attacher une à la fois (non scripté).
+
+Depuis le 3 octobre, le moteur oriente le corps comme Gameplay Football : sans le ballon, pas chassés
+et recul face au jeu (angle des images de la passerelle, `test/corps.js`). La base Pose Search devra
+contenir des captures de pas chassés et de recul, que le labo trouve déjà dans les captures CMU.
+
 ### Premier essai du Quaternius dans l'éditeur
 
 1. Unreal 5.8 ouvert sur `unreal/LinkFoot/LinkFoot.uproject`, plugins IK Rig et Python Editor Script actifs.

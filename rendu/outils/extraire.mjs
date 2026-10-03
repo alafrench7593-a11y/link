@@ -30,7 +30,8 @@ const RECHERCHES = [
   ['faute_chute', 'Faute et chute', (a) => a.a === 'faute' && a.chute, (a) => a.victime],
   ['tacle_glisse', 'Tacle glissé', (a) => a.a === 'tacle' && a.genre === 'glisse', (a) => a.c],
   ['duel_aerien', 'Duel aérien', (a) => a.a === 'duel_aerien', (a) => a.c],
-  ['touche', 'Touche', (a) => a.a === 'touche' && a.cpa === 'throw', (a) => a.c]
+  ['touche', 'Touche', (a) => a.a === 'touche' && a.cpa === 'throw', (a) => a.c],
+  ['controle_haut', 'Contrôle de la poitrine', (a) => a.a === 'controle' && a.haut, (a) => a.c]
 ];
 
 function decouper(doc, t, avant = 4, apres = 5) {

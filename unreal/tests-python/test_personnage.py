@@ -271,6 +271,13 @@ def main():
     verifier("buts des mains et des pieds", rig.buts == {"LeftArmGoal": "hand_l", "RightArmGoal": "hand_r", "LeftLegGoal": "foot_l", "RightLegGoal": "foot_r"}, rig.buts)
     verifier("ni retargeter ni branchement sans leurs assets", "retargeter" not in r and "branche" not in r)
 
+    print("2 bis. le footballeur de Gameplay Football : son dossier et ses noms, tirés du fichier")
+    u = faux_unreal(auto_reconnu=True)
+    m = charger(u)
+    r = m.tout("C:/link/unreal/LinkFoot/SourceArt/Characters/Players/GameplayFootball/SK_LinkFoot_GPF.fbx")
+    verifier("maillage dans le dossier GameplayFootball", r["maillage"] == "/Game/LinkFoot/Characters/Players/GameplayFootball/SK_LinkFoot_GPF.SK_LinkFoot_GPF", r["maillage"])
+    verifier("IK Rig nommé d'après le personnage", r["ik_rig"].endswith("IK_LinkFoot_GPF"), r["ik_rig"])
+
     print("3. rien n'est supposé : un asset absent arrête tout, en le nommant")
     u = faux_unreal()
     m = charger(u)

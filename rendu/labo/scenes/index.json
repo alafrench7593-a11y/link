@@ -33,6 +33,14 @@
    "instant": 68.8,
    "focus": 4,
    "action": "touche/pass"
+  },
+  "controle_haut": {
+   "fichier": "controle_haut.json",
+   "titre": "Contrôle de la poitrine",
+   "graine": 1,
+   "instant": 70.8,
+   "focus": 10,
+   "action": "controle"
   }
  }
 }

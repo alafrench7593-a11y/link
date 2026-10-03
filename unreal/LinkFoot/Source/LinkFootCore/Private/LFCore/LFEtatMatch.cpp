@@ -328,15 +328,21 @@ namespace lf
 			}
 			case TypeAction::Controle:
 			{
-				// Tout contrôle du moteur est la réception d'un ballon frappé par un partenaire
-				// (receive) : une passe réussie pour l'équipe (W.st.pc).
-				++se.passesReussies;
+				// Un contrôle du moteur est la réception d'un ballon frappé par un partenaire
+				// (receive) : une passe réussie pour l'équipe (W.st.pc). Sauf le contrôle haut d'un
+				// ballon long que personne ne disputait (aerialContest, « haut ») : le moteur ne le
+				// compte pas comme une passe réussie, le cœur non plus.
+				const bool aerien = a.vrai("haut");
+				if (!aerien)
+				{
+					++se.passesReussies;
+				}
 				const std::string* niveau = a.texte("niveau");
 				if (niveau && *niveau == "rate" && sj)
 				{
 					++sj->pertes;
 				}
-				if (frappe >= 0 && estPasseComptee(A, static_cast<std::size_t>(frappe)))
+				if (!aerien && frappe >= 0 && estPasseComptee(A, static_cast<std::size_t>(frappe)))
 				{
 					const Action& passe = A[static_cast<std::size_t>(frappe)];
 					if (passe.code >= 0 && equipeDe(passe.code) == eq)

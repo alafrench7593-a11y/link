@@ -3061,7 +3061,11 @@ class Component extends DCLogic {
       let r = R() * w.reduce((a, v) => a + v, 0), win = cands[0];
       for (let k = 0; k < cands.length; k++) { r -= w[k]; if (r <= 0) { win = cands[k]; break; } }
       const b = W.ball; b.x = L.x; b.y = L.y; b.z = 1.8;
-      act(win, 'duel_aerien', { autres: cands.filter((q) => q !== win).map((q) => q.code) });
+      // Personne pour le disputer (seuls des coéquipiers sous le ballon, hors centre) : pas de duel,
+      // un contrôle haut, de la poitrine, comme le « trap » de Gameplay Football. Mêmes tirages, même
+      // issue qu'avant ; seuls changent l'action écrite et la hauteur du ballon à cet instant.
+      const seul = !isCross && cands.every((q) => q.s === win.s);
+      if (!seul) act(win, 'duel_aerien', { autres: cands.filter((q) => q !== win).map((q) => q.code) });
       if (R() < 0.035) { const opp = cands.find((q) => q.s !== win.s); if (opp) { W.fl = null; const boxD = inBox(aOf(kS, L.y), L.x); if (boxD && R() < 0.65) { const at = cands.find((q) => q.s === kS), df = cands.find((q) => q.s === dS); if (at && df) { foul(at, df, 'air'); return true; } } foul(opp, win, 'air'); return true; } }
       if (isCross) {
         if (win.s === kS) { const a = aOf(win.s, win.y), contested = cands.some((q) => q.s === dS && hy(q.x - win.x, q.y - win.y) < 1.5); if (contested && R() < 0.5) { b.vx = (R() - 0.5) * 8; b.vy = (R() - 0.5) * 8; b.z = 1.2; b.vz = 1; W.owner = null; W.last = win.s; com('Duel aérien, le ballon retombe dans la surface'); return true; } if (a > 86 && Math.abs(win.x - 34) < 15) { W.owner = null; const tech2 = win.dri * 0.5 + win.sht * 0.5; const foot = b.z < 2.1 && R() < cl((tech2 - 60) * 0.013, 0, 0.45);   // §23 reprise de volée au lieu de la tête
@@ -3070,7 +3074,19 @@ class Component extends DCLogic {
         rt(win, 0.04); W.st[dS].tk++; clearance(win, true); return true;
       }
       rt(win, 0.03);
-      if (R() < 0.5 + (win.phy - 65) / 100) { gain(win, 'air'); if (win.s === kS && f.kind !== 'clear') com(win.short + ' remporte le duel aérien'); return true; }
+      if (R() < 0.5 + (win.phy - 65) / 100) {
+        gain(win, 'air');
+        if (seul) {
+          // le ballon à cet instant, à hauteur de poitrine (au tick suivant, à ses pieds, comme
+          // toujours). Sa position au sol ne bouge pas : les joueurs la lisent dans ce même tick.
+          b.z = 1.15;
+          act(win, 'controle', { niveau: 'correct', haut: true, z: 1.15, presse: false });
+          if (win.s === kS && f.kind !== 'clear') com('Contrôle de la poitrine de ' + win.short);
+        }
+        else if (win.s === kS && f.kind !== 'clear') com(win.short + ' remporte le duel aérien');
+        return true;
+      }
+      if (seul) act(win, 'duel_aerien', { autres: [] });   // il ne le garde pas : une remise de la tête
       const mate = nearestOf(win.s, win.x, win.y, win).p;
       if (mate && hy(mate.x - win.x, mate.y - win.y) < 16) { const ff = kick(win, mate.x + mate.vx * 0.5, mate.y + mate.vy * 0.5, 'pass', mate, { aerial: true, apex: 1.5 }); ff.dur *= 0.8; com('Déviation de la tête de ' + win.short); return true; }
       return false;
@@ -4013,6 +4029,63 @@ class Component extends DCLogic {
       }
       for (const p of ALL) { const tl = p.tl; if (!tl) continue; p.tx = cl(xl(p.s, tl.x), 0.5, PW - 0.5); p.ty = cl(yOf(p.s, tl.a), -0.5, PL + 0.5); p.urg = tl.urg; }
     };
+    // Orientation du corps, reprise de Gameplay Football (humanoidbase.cpp:64-75 et 1694, domaine
+    // public) : sans le ballon, un joueur peut regarder le ballon sans courir vers lui. GPF permet
+    // au corps 0, 45 ou 135° du sens de la course, et 22° au plus en sprint. Ici : sous 3,5 m/s, le
+    // corps fait face au ballon (pas chassé, ou recul quand on défend, gardien compris) ; de 3,5 à
+    // 6 m/s, 45° au plus vers un ballon de côté ; en sprint, 22° ; ballon derrière sans défendre,
+    // on court droit. Le corps tourne au plus de 540°/s (1 080°/s pour le porteur, qui doit regarder
+    // où il conduit le ballon dès la réception). Ce n'est qu'une sortie : le jeu lit toujours fx et
+    // fy, aucun tirage n'est ajouté, un match ne change pas d'un geste (seul l'angle des images).
+    const ang = (x) => Math.atan2(Math.sin(x), Math.cos(x));
+    const corps = (p, v) => {
+      if (p.ox == null) { p.ox = p.fx; p.oy = p.fy; p.vl = v; p.mx = p.fx; p.my = p.fy; }
+      // vitesse et sens de course lissés (un quart de seconde) : à petite vitesse, la direction du
+      // moteur tremble, et le corps tremblerait avec elle
+      p.vl += (v - p.vl) * 0.35;
+      if (v > 0.3) { p.mx += (p.vx / v - p.mx) * 0.5; p.my += (p.vy / v - p.my) * 0.5; }
+      const c0 = Math.atan2(p.oy, p.ox);
+      let a = Math.atan2(p.fy, p.fx);
+      // pendant la célébration d'un but, chacun va où la fête l'emmène (le rendu la met en scène)
+      if (p !== W.owner && p.fall <= 0 && !(W.cel > 0)) {
+        const bx = W.ball.x - p.x, by = W.ball.y - p.y, bd = hy(bx, by);
+        // on défend : le ballon est à l'adversaire, ou il l'a eu en dernier (une passe en l'air ne
+        // fait pas changer d'attitude toute l'équipe pendant le vol)
+        const gb = p.line === 'GB', def = (W.owner ? W.owner.s : W.poss) !== p.s;
+        // les seuils ont du jeu (3 m, 18°) : un ballon qui va et vient autour d'une limite ne fait
+        // pas tourner le corps d'un côté puis de l'autre
+        const portee = gb ? 40 : def ? 22 : 14;
+        p.vu = p.vu ? bd < portee + 3 : bd < portee;
+        if (bd > 1 && p.vu) {
+          const ab = Math.atan2(by, bx);
+          if (p.vl < 0.6) a = ab;   // à l'arrêt ou presque : il regarde le ballon
+          else {
+            const mv = Math.atan2(p.my, p.mx), dd = ang(ab - mv), ad = Math.abs(dd);
+            p.dv = p.dv == null ? ad <= 0.75 * Math.PI : p.dv ? ad <= 0.8 * Math.PI : ad <= 0.7 * Math.PI;
+            const devant = p.dv;
+            // pas chassé, ou recul quand on défend, sous 3,5 m/s ; sinon 45° au plus, 22° en sprint ;
+            // ballon derrière sans défendre : on court, c'est la tête qui regarde
+            const lim = p.vl >= 6 ? (devant ? 0.12 * Math.PI : 0) : p.vl < 3.5 && (devant || def || gb) ? Math.PI : devant ? 0.25 * Math.PI : 0;
+            if (ad <= lim) a = ab;
+            else {
+              // le bord autorisé le plus proche du ballon ; à égalité (ballon juste derrière), celui
+              // du côté où le corps est déjà tourné
+              const e1 = mv - lim, e2 = mv + lim, d1 = Math.abs(ang(ab - e1)), d2 = Math.abs(ang(ab - e2));
+              a = Math.abs(d1 - d2) > 0.2 ? (d1 < d2 ? e1 : e2) : (Math.abs(ang(e1 - c0)) < Math.abs(ang(e2 - c0)) ? e1 : e2);
+            }
+          }
+        }
+      }
+      // la cible elle-même est lissée (moitié du chemin par image) : quand elle hésite entre deux
+      // directions (ballon et course, possession qui change), le corps ne tourne pas d'un côté puis de l'autre
+      // (seulement au pas : en course et balle au pied, le corps suit la course sans retard)
+      const lisse = p !== W.owner && p.vl < 3.5 ? 0.5 : 1;
+      if (p.cx == null) { p.cx = Math.cos(a); p.cy = Math.sin(a); }
+      p.cx += (Math.cos(a) - p.cx) * lisse; p.cy += (Math.sin(a) - p.cy) * lisse;
+      if (hy(p.cx, p.cy) > 0.05) a = Math.atan2(p.cy, p.cx);
+      const r = ang(a - c0), mx = (p === W.owner ? 6 : 3) * Math.PI * DT;
+      const c1 = c0 + cl(r, -mx, mx); p.ox = Math.cos(c1); p.oy = Math.sin(c1);
+    };
     const move = () => {
       const A2 = all();
       for (const p of A2) {
@@ -4033,6 +4106,7 @@ class Component extends DCLogic {
       for (const p of A2) {
         p.x = cl(p.x + p.vx * DT, -1, PW + 1); p.y = cl(p.y + p.vy * DT, -1.5, PL + 1.5);
         const v = hy(p.vx, p.vy); if (v > 0.5) { p.fx = p.vx / v; p.fy = p.vy / v; } else { const bx = W.ball.x - p.x, by = W.ball.y - p.y, bd = hy(bx, by); if (bd > 0.5) { p.fx += (bx / bd - p.fx) * 0.2; p.fy += (by / bd - p.fy) * 0.2; } }
+        corps(p, v);
         if (p.beat > 0) p.beat -= DT; if (p.fall > 0) p.fall -= DT;
         const vr = v / p.vmax; p.energy = Math.max(12, p.energy - DT * (0.0078 + 0.016 * vr * vr) * (1.25 - p.phy / 200) * (p.line === 'GB' ? 0.3 : 1) * TM[p.s].fatK * (p.drain || 1));
       }
@@ -4161,7 +4235,7 @@ class Component extends DCLogic {
       const F = new Int16Array(22), E = new Uint8Array(22), S = new Uint8Array(22), I = new Uint8Array(22), T = new Float32Array(44);
       for (let k = 0; k < 22; k++) {
         const p = k < 11 ? TM.H.ps[k] : TM.A.ps[k - 11]; if (!p) continue;
-        F[k] = Math.round(Math.atan2(p.fy, p.fx) * 1000);
+        F[k] = Math.round((p.ox != null ? Math.atan2(p.oy, p.ox) : Math.atan2(p.fy, p.fx)) * 1000);
         E[k] = Math.max(0, Math.min(100, Math.round(p.energy)));
         S[k] = (p.fall > 0 ? 1 : 0) | (p.beat > 0 ? 2 : 0) | (W.owner === p ? 4 : 0) | (p.red ? 8 : 0) | (p.urg > 0.9 ? 16 : 0) | (p.press ? 32 : 0) | (p.run ? 64 : 0) | (p.carry && p.carry.drib ? 128 : 0);
         I[k] = INTENTIONS.indexOf(p.intent) + 1;

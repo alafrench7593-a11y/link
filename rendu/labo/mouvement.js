@@ -372,6 +372,8 @@ export class Animateur {
     const de = (cat) => M.man.clips.filter((c) => c.categorie === cat && c.source === 'grf');
     const parNom = (liste, motif) => liste.find((c) => c.nom.endsWith(motif)) || liste[0];
     const glisse = de('glisse'), tete = de('tete'), touche = de('touche'), chute = de('chute'), releve = de('releve');
+    const amorti = de('controle_haut').filter((c) => c.contact);
+    match.ballon(match.t0);   // prépare les vols et l'instant des contrôles hauts (a.tHaut)
     for (const a of match.actions) {
       if (a.c !== code) continue;
       const v = match.vitesse(code, a.t), sp = Math.hypot(v[0], v[1]);
@@ -392,6 +394,11 @@ export class Animateur {
         if (g) g.leve = Math.max(-0.1, Math.min(0.25, hb - clip.contact.balle[1] * e));
       } else if (a.a === 'touche' && touche.length) {
         this.ajouterCorps(match, code, touche[0], a.t0 != null ? a.t0 : a.t, 'ballon');
+      } else if (a.a === 'controle' && a.haut && a.tHaut != null && amorti.length) {
+        // le contrôle d'un ballon haut : le geste d'amorti dont le contact est à la hauteur du ballon
+        const hb = match.ballon(a.tHaut).p[1], e = this.echelleHanches;
+        const clip = amorti.reduce((m, c) => (Math.abs(c.contact.balle[1] * e - hb) < Math.abs(m.contact.balle[1] * e - hb) ? c : m));
+        this.ajouterCorps(match, code, clip, a.tHaut, 'ballon');
       }
     }
     // la chute : les périodes « au sol » des images du moteur
@@ -755,9 +762,11 @@ export class Animateur {
       if (libres) { L.verrou = null; L.libere = false; }
       // un pied posé sur le talon ne tourne pas sur lui-même (sa pointe balaierait l'herbe) : il
       // garde le cap qu'il avait en se posant ; c'est sur la pointe qu'il pivote, et l'écart
-      // s'éteint alors en 0,1 s
+      // s'éteint alors en 0,1 s. Le cap est celui de la pointe elle-même (cheville vers l'avant du
+      // pied), pas d'un axe du squelette : sur un pied dont la pointe est bien plus basse que la
+      // cheville (celui de Gameplay Football), le pied qui roule ou bascule la ferait sinon tourner
       if (pose && L.verrou && !L.libere) {
-        const f = _v.set(0, 0, 1).applyQuaternion(this.D[L.pied]), cap = Math.atan2(f.x, f.z);
+        const f = _v.copy(L.versPointe).applyQuaternion(this.D[L.pied]), cap = Math.atan2(f.x, f.z);
         if (L.verrou.mode === 'cheville') {
           if (L.verrou.cap == null) L.verrou.cap = cap;
           L.verrou.corr = ecartAngle(L.verrou.cap, cap);
