@@ -4,12 +4,13 @@
     "slug": "linkfoot",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icone.png",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#0B0F0C",
-    "splash": { "backgroundColor": "#0B0F0C", "resizeMode": "contain" },
+    "backgroundColor": "#050505",
+    "splash": { "backgroundColor": "#050505", "resizeMode": "contain" },
     "assetBundlePatterns": ["**/*"],
     "ios": { "supportsTablet": false },
-    "android": { "adaptiveIcon": { "backgroundColor": "#0B0F0C" } },
-    "web": { "bundler": "metro" }
+    "android": { "adaptiveIcon": { "foregroundImage": "./assets/icone-android.png", "backgroundColor": "#171B21" } },
+    "web": { "bundler": "metro", "favicon": "./assets/favicon.png" }
   }
 }

@@ -40,12 +40,14 @@ export const C = {
 
 export const S = { pad: 16, gap: 12, radius: 16, radiusSm: 10, radiusLg: 24, pill: 22 };
 
-// Sur le web, les deux polices partent avec l'app (src/polices.web.js). Sur téléphone, la police
-// du système : aucun nom de police inconnu n'y est demandé.
+// Sur le web, les polices partent avec l'app (src/polices.web.js). Sur téléphone, la police du
+// système : aucun nom de police inconnu n'y est demandé.
 const WEB = Platform.OS === 'web';
 export const F = {
   titre: WEB ? 'Manrope, "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' : undefined,
-  texte: WEB ? '"DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' : undefined
+  texte: WEB ? '"DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' : undefined,
+  // le nom de la marque, dans la police du logo LinkFoot choisi dans le canvas
+  marque: WEB ? 'Sora, Manrope, "DM Sans", system-ui, sans-serif' : undefined
 };
 
 // Les styles de texte de la maquette, partagés par tous les écrans.

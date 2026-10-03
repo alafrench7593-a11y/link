@@ -14,6 +14,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet, Animated, Image } from '
 import { C, S, T, F, rarityTint } from './theme';
 import { Card, Title, Row, Btn, Bar, Tag, Stat, Empty, EnTete, Groupe, Ligne, Blason, Fond, Pastille, Icone } from './ui';
 import { Composition, EnDirect, TableauDirect } from './direct';
+import { SalonMatch, PartageResultat } from './reseau';
 import { Terrain } from './terrain';
 import { Pack3D } from './pack3d';
 import { image } from './fichiers';
@@ -22,7 +23,12 @@ import { image } from './fichiers';
 // (rendu/labo, footballeur de Gameplay Football), pas une photo
 const HEROS = image(require('../assets/heros.jpg'));
 
-// ---------- accueil ----------
+// ---------- Mon Club : le jeu ----------
+// Tout le jeu du directeur sportif tient dans cet onglet, comme « Mon Club » dans les écrans
+// d'origine de LinkFoot : en haut, les raccourcis vers les écrans les plus utilisés.
+const RACCOURCIS = [['squad', 'Effectif'], ['train', 'Entraîn.'], ['packs', 'Packs'], ['tactic', 'Tactique'], ['transfers', 'Transferts'], ['online', 'En ligne']];
+export function MonClubScreen(props) { return <HomeScreen {...props} />; }
+
 export function HomeScreen({ club, state, act, go }) {
   const xi = club.pickXI(state.formation);
   const ovr = Math.round(club.metrics(xi).ovr);
@@ -39,6 +45,13 @@ export function HomeScreen({ club, state, act, go }) {
   const style = state.preset === 'perso' ? 'tactique perso' : (club.styles()[state.preset] || {}).name;
   return (
     <ScrollView contentContainerStyle={st.accueil}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={st.raccourcis}>
+        {RACCOURCIS.map(([id, label]) => (
+          <Pressable key={id} accessibilityRole="button" onPress={() => go(id)} style={st.raccourci}>
+            <Text style={st.raccourciTxt}>{label}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
       <Heros nom={nom} division={state.division} pm={pm} go={go} />
 
       <View style={st.section}>
@@ -310,7 +323,7 @@ function PlayerScreen({ club, p, act, back }) {
 }
 
 // ---------- match ----------
-export function MatchScreen({ club, state, act, go }) {
+export function MatchScreen({ club, state, act, go, social, majSocial }) {
   const [res, setRes] = useState(null);
   // §2 le match se suit en direct, et le directeur sportif décide depuis le banc :
   // remplacements, consigne de la voix, cartes de match (src/direct.js). Le match en
@@ -353,6 +366,7 @@ export function MatchScreen({ club, state, act, go }) {
 
       {enDirect ? <TableauDirect club={club} d={direct} vue={vue} /> : null}
       {enDirect ? <Terrain club={club} d={direct} hauteur={300} /> : null}
+      {enDirect && social ? <SalonMatch club={club} vue={vue} social={social} majSocial={majSocial} /> : null}
       {enDirect ? <EnDirect club={club} d={direct} vue={vue} /> : null}
 
       {res ? (
@@ -379,6 +393,7 @@ export function MatchScreen({ club, state, act, go }) {
           {res.log.slice(-6).reverse().map((l, i) => (
             <Text key={i} style={T.aide}>{l.text}</Text>
           ))}
+          {social ? <PartageResultat club={club} state={state} res={res} social={social} majSocial={majSocial} go={go} /> : null}
           <Row>
             <Btn label="Fermer" tone="ghost" small onPress={() => setRes(null)} />
             {!res.amical ? <Btn label="Le classement" small onPress={() => go('division')} /> : null}
@@ -839,6 +854,9 @@ export function OnlineScreen({ club, state, act }) {
 const st = StyleSheet.create({
   page: { padding: S.pad, gap: S.gap, paddingBottom: 56 },
   accueil: { paddingBottom: 56 },
+  raccourcis: { gap: 8, paddingHorizontal: S.pad, paddingTop: 12, paddingBottom: 12 },
+  raccourci: { paddingHorizontal: 14, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.line, backgroundColor: C.card },
+  raccourciTxt: { fontFamily: F.texte, color: C.text, fontSize: 12.5, fontWeight: '600' },
   section: { paddingHorizontal: S.pad, paddingTop: 30, gap: 14 },
   // le héros
   heros: { height: 420, marginHorizontal: 12, borderBottomLeftRadius: 28, borderBottomRightRadius: 28, overflow: 'hidden', backgroundColor: '#111111' },

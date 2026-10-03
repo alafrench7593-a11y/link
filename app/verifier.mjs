@@ -9,8 +9,9 @@
 //     démonstration, niveau 7, 1 000 jetons, sans passer par la création du §2.
 //
 // Ce fichier construit l'app pour le navigateur, la sert, et la parcourt comme un
-// joueur : premier lancement, les six onglets, les neuf entrées du directeur sportif,
-// le pack ouvert, second lancement.
+// joueur : premier lancement, les onglets (Accueil, Explorer, Match, Mon Club, Profil) et les
+// écrans du jeu, les neuf entrées du directeur sportif, le pack ouvert, le match en direct,
+// le réseau social (publier, relier X, suivre), second lancement.
 //
 //   npm run verifier        depuis app/, après npm install
 import { spawn } from 'node:child_process';
@@ -81,14 +82,18 @@ const touche = (pg, texte) => pg.evaluate((v) => {
 
 console.log('\n§2 Premier lancement : le club est créé');
 const p1 = await ouvre();
+await touche(p1, 'Mon Club');
+await p1.waitForTimeout(600);
 const a = await lit(p1);
 t('le joueur commence au niveau 1', /\b1 niveau/.test(a), (a.match(/(\d+) niveau/) || [])[0]);
 t('avec 600 jetons', /\b600\b/.test(a));
 t('et quinze joueurs : quatorze normaux et le joueur rare offert', /15 joueurs/.test(a), (a.match(/(\d+) joueurs/) || [])[0]);
 
-console.log('\nLes six onglets s’ouvrent sans erreur (cinq en bas, En ligne en haut)');
-for (const o of ['Effectif', 'Match', 'Entraîn.', 'Packs', 'En ligne', 'Accueil']) {
+console.log('\nLes onglets s’ouvrent sans erreur (cinq en bas ; les écrans du jeu depuis Mon Club)');
+for (const [o, avant] of [['Explorer'], ['Match'], ['Profil'], ['Accueil'], ['Mon Club'], ['Effectif', 'Mon Club'],
+  ['Entraîn.', 'Mon Club'], ['Packs', 'Mon Club'], ['En ligne', 'Mon Club']]) {
   erreurs.length = 0;
+  if (avant) { await touche(p1, avant); await p1.waitForTimeout(400); }
   const trouve = await touche(p1, o);
   await p1.waitForTimeout(900);
   t(o, trouve && !erreurs.length, erreurs[0] || '');
@@ -96,13 +101,15 @@ for (const o of ['Effectif', 'Match', 'Entraîn.', 'Packs', 'En ligne', 'Accueil
 
 // §17 la section DIRECTEUR SPORTIF : ses neuf entrées, chacune vers un vrai écran.
 console.log('\n§17 DIRECTEUR SPORTIF : les neuf entrées mènent à leur écran');
-t('la section est sur l’accueil', /DIRECTEUR SPORTIF/.test(await lit(p1)));
+await touche(p1, 'Mon Club');
+await p1.waitForTimeout(500);
+t('la section est dans Mon Club', /DIRECTEUR SPORTIF/.test(await lit(p1)));
 const ENTREES = [['Mon effectif', /Effectif/], ['Compétences', /combinaisons possibles/], ['Pack', /OUVRIR LE PACK/],
   ['Entraînement', /Séances disponibles/], ['Transferts', /VENDRE/], ['Quêtes', /Plafond du jour/],
   ['Finances', /JOURNAL DES TRANSACTIONS/], ['Tactique', /FORMATION/], ['Club', /PROGRESSION DU CLUB/]];
 for (const [entree, attendu] of ENTREES) {
   erreurs.length = 0;
-  await touche(p1, 'Accueil');
+  await touche(p1, 'Mon Club');
   await p1.waitForTimeout(500);
   const trouve = await touche(p1, entree);
   await p1.waitForTimeout(900);
@@ -111,6 +118,8 @@ for (const [entree, attendu] of ENTREES) {
 }
 
 console.log('\n§8 et §19 Le pack unique s’ouvre, et ce qu’on fait se garde');
+await touche(p1, 'Mon Club');
+await p1.waitForTimeout(400);
 await touche(p1, 'Packs');
 await p1.waitForTimeout(700);
 t('§9 la part de chaque famille est affichée avant l’ouverture', /CE QUE PEUT DONNER CHAQUE TIRAGE/.test(await lit(p1)));
@@ -124,12 +133,14 @@ t('le pack s’ouvre et dit ce qu’il a donné', /Dernier tirage/.test(apres));
 const lots = await p1.evaluate(() => { const r = document.querySelector('[data-testid="revelation"]'); return r ? [...r.children].map((x) => x.innerText.replace(/\s+/g, ' ')) : []; });
 t('§11 les trois lots se révèlent sous le pack, avec leur rareté', lots.length === 3 && lots.every((l) => /^(Normal|Rare|Épique|Élite|Gold|Legendary) /.test(l)), lots.join(' | '));
 // le pack a pu donner un joueur : on relève l'effectif tel qu'il est APRÈS l'ouverture
-await touche(p1, 'Accueil');
+await touche(p1, 'Mon Club');
 await p1.waitForTimeout(600);
 const effectif = ((await lit(p1)).match(/(\d+) joueurs/) || [])[1];
 await p1.close();
 
 const p2 = await ouvre();
+await touche(p2, 'Mon Club');
+await p2.waitForTimeout(600);
 const c = await lit(p2);
 t('au second lancement, la partie est retrouvée : 350 jetons', /\b350\b/.test(c));
 t('et le club n’est pas recréé : le même effectif qu’avant de fermer', !!effectif && new RegExp('\\b' + effectif + ' joueurs').test(c),
@@ -144,6 +155,8 @@ const toucheContient = (pg, v) => pg.evaluate((x) => {
   if (!e) return false; e.click(); return true;
 }, v);
 erreurs.length = 0;
+await touche(p2, 'Mon Club');
+await p2.waitForTimeout(400);
 await touche(p2, 'Effectif');
 await p2.waitForTimeout(700);
 t('l’effectif montre le onze, automatique au départ', /LE ONZE · 4-3-3 · AUTOMATIQUE/.test(await lit(p2)));
@@ -183,6 +196,15 @@ const reel = await p2.waitForFunction(() => (window.__LF_REEL && window.__LF_REE
 t('§28 les joueurs de la vue 3D sont de vrais corps, animés par de vraies captures', !!reel,
   reel ? `${reel.images} images du moteur lues, ${reel.pas} pas des corps, ${(reel.ms / Math.max(1, reel.pas)).toFixed(1)} ms par pas` : 'rendu réel absent');
 if (process.env.LINKFOOT_CAPTURE) { await p2.waitForTimeout(1500); await p2.screenshot({ path: process.env.LINKFOOT_CAPTURE }); }
+// le salon du match : une réaction se compte, le score se partage sur X
+await p2.click('[aria-label="Réaction 🔥"]');
+await p2.waitForTimeout(300);
+const salon = await p2.evaluate(() => {
+  const r = document.querySelector('[aria-label="Réaction 🔥"]');
+  const x = [...document.querySelectorAll('a')].map((a) => a.href).find((h) => h.startsWith('https://twitter.com/intent/tweet?text='));
+  return { n: r ? r.innerText.replace(/\s+/g, ' ').trim() : '', x: x ? decodeURIComponent(x.split('text=')[1]).slice(0, 70) : '' };
+});
+t('le salon du match : une réaction se compte, et le score se partage sur X', /🔥 1/.test(salon.n) && /en direct sur LinkFoot/.test(salon.x), salon.n + ' · ' + salon.x);
 await touche(p2, 'Exiger plus');
 await p2.waitForTimeout(400);
 t('une consigne de la voix s’applique, et son effet est écrit', /Exiger plus : Pressing plus large/.test(await lit(p2)));
@@ -214,6 +236,11 @@ await touche(p2, 'Résultat direct');
 for (let i = 0; i < 40 && !/TES DÉCISIONS/.test(await lit(p2)); i++) await p2.waitForTimeout(500);
 vu = await lit(p2);
 t('le match va au bout, et le résultat rappelle tes décisions', /CHAMPIONNAT/.test(vu) && /TES DÉCISIONS/.test(vu) && /remplace/.test(vu) && /Consigne : Exiger plus/.test(vu));
+const partage = await p2.evaluate(() => {
+  const x = [...document.querySelectorAll('a')].map((a) => decodeURIComponent(a.href)).find((h) => /intent\/tweet\?text=.+\d-\d .+division/.test(h));
+  return x ? x.split('text=')[1].slice(0, 80) : '';
+});
+t('le résultat se partage sur X, score compris', !!partage, partage);
 await touche(p2, 'Le classement');
 await p2.waitForTimeout(800);
 vu = await lit(p2);
@@ -222,7 +249,7 @@ t('aucune erreur dans la console pendant le match', !erreurs.length, erreurs[0] 
 await p2.close();
 
 const p3 = await ouvre();
-await touche(p3, 'Accueil');
+await touche(p3, 'Mon Club');
 await p3.waitForTimeout(500);
 t('au lancement suivant, la division a avancé : le prochain match est la journée 2', /Journée 2\/5 contre/.test(await lit(p3)));
 
@@ -236,13 +263,57 @@ t('le match de la journée 2 est en direct', /CHAMPIONNAT · EN DIRECT/.test(awa
 await p3.waitForTimeout(1000);          // la sauvegarde écrit après 600 ms
 await p3.close();                       // l'app est fermée en plein match
 const p4 = await ouvre();
-await touche(p4, 'Accueil');
+await touche(p4, 'Mon Club');
 await p4.waitForTimeout(600);
 vu = await lit(p4);
 t('au retour, le match interrompu a été joué jusqu’au bout', /Match interrompu contre .+ joué jusqu’au bout/.test(vu), (vu.match(/Match interrompu[^·]+/) || [])[0]);
 t('   et la division est passée à la journée 3', /Journée 3\/5 contre/.test(vu));
 t('aucune erreur dans la console au retour', !erreurs.length, erreurs[0] || '');
 await p4.close();
+
+// Le réseau social : l'accueil, publier un post (aussi sur X), relier son compte X, suivre.
+// Les autres personnes sont des exemples étiquetés tant que le serveur en ligne n'est pas branché.
+console.log('\nLe réseau social : publier, relier X, suivre');
+const p5 = await ouvre();
+erreurs.length = 0;
+await touche(p5, 'Accueil');
+await p5.waitForTimeout(500);
+vu = await lit(p5);
+t('l’accueil est le réseau : le direct de la division, le fil, le journal de la partie, des exemples étiquetés',
+  /En direct/.test(vu) && /Le fil/.test(vu) && /LinkFoot Journal/.test(vu) && /EXEMPLE/.test(vu));
+await touche(p5, 'Profil');
+await p5.waitForTimeout(400);
+await touche(p5, 'Modifier le profil');
+await p5.waitForTimeout(300);
+await p5.fill('[aria-label="Pseudo X"]', '@essai_linkfoot');
+await touche(p5, 'Enregistrer');
+await p5.waitForTimeout(400);
+const lienX = await p5.evaluate(() => [...document.querySelectorAll('a')].map((a) => a.href).find((h) => h === 'https://x.com/essai_linkfoot'));
+t('le profil relie un compte X : un vrai lien vers x.com', !!lienX, lienX || 'aucun lien');
+await p5.click('[aria-label="Publier"]');
+await p5.waitForTimeout(300);
+await touche(p5, 'Post');
+await p5.waitForTimeout(200);
+await p5.fill('[aria-label="Texte du post"]', 'Essai du vérificateur');
+await touche(p5, 'Publier le post');
+await p5.waitForTimeout(400);
+const intention = await p5.evaluate(() => [...document.querySelectorAll('a')].map((a) => decodeURIComponent(a.href)).find((h) => h.startsWith('https://twitter.com/intent/tweet?text=Essai du vérificateur')));
+t('un post se publie, et « Aussi sur X » ouvre X avec le même texte', /C’est publié/.test(await lit(p5)) && !!intention, intention ? intention.slice(0, 70) : '');
+await touche(p5, 'Voir le fil');
+await p5.waitForTimeout(500);
+t('le post est dans le fil', /Essai du vérificateur/.test(await lit(p5)));
+await touche(p5, 'Suivre');
+await p5.waitForTimeout(300);
+t('suivre une personne (un exemple)', /Suivi/.test(await lit(p5)));
+await p5.waitForTimeout(700);           // le réseau s'enregistre après 400 ms
+await p5.close();
+const p6 = await ouvre();
+await touche(p6, 'Accueil');
+await p6.waitForTimeout(500);
+vu = await lit(p6);
+t('au lancement suivant, le post, le suivi et le compte X sont gardés', /Essai du vérificateur/.test(vu) && /Suivi/.test(vu) && /aussi sur X/.test(vu));
+t('aucune erreur dans la console sur le réseau social', !erreurs.length, erreurs[0] || '');
+await p6.close();
 
 await b.close();
 srv.close();

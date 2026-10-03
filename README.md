@@ -154,12 +154,13 @@ npm install
 npx expo start        # puis scanner le QR code avec Expo Go
 ```
 
-Cinq onglets en bas (Accueil, Effectif, Match au centre, Entraînement, Packs), En ligne et
-Quêtes en haut, et, sur l'accueil, la section **DIRECTEUR SPORTIF** et ses neuf entrées :
-Mon effectif, Compétences, Pack, Entraînement, Transferts, Quêtes, Finances, Tactique, Club.
-Le dessin suit la maquette Figma « Football-app » (noir, citron `#C7FF32`, Manrope et
-DM Sans). La partie est sauvegardée sur le téléphone (AsyncStorage) ; remplacer
-`PhoneStore` par `HttpStore` la fait suivre d'un appareil à l'autre. Détails dans
+Le réseau social du foot, lié à X, et le jeu du directeur sportif dans une seule app : cinq
+onglets en bas (Accueil, Explorer, Match, Mon Club, Profil) et le bouton « + » pour publier ;
+dans Mon Club, la section **DIRECTEUR SPORTIF** et ses neuf entrées : Mon effectif,
+Compétences, Pack, Entraînement, Transferts, Quêtes, Finances, Tactique, Club. Le dessin suit la
+maquette Figma « Football-app » (noir, citron `#C7FF32`, Manrope et DM Sans) ; le logo est celui
+de LinkFoot (le maillon-ballon). La partie est sauvegardée sur le téléphone (AsyncStorage) ;
+remplacer `PhoneStore` par `HttpStore` la fait suivre d'un appareil à l'autre. Détails dans
 `app/README.md`.
 
 ## Dans une app React ou React Native

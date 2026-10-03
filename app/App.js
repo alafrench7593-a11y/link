@@ -4,9 +4,10 @@
 // contente de l'afficher. Le même code décide des matchs ici, sur le web, et sur le
 // serveur. Une règle changée dans le moteur change les trois d'un coup.
 //
-// Le dessin suit la maquette Figma « Football-app » (Figma Make) : la barre du haut avec la
-// marque et ses boutons ronds, la barre du bas à icônes et son bouton central citron, qui est
-// ici le Match.
+// Deux parties dans une seule app, comme dans les écrans d'origine de LinkFoot : le réseau
+// social du foot (Accueil, Explorer, Profil, le bouton « + » pour publier, le partage vers X) et
+// le jeu du directeur sportif (Mon Club, et le Match). Le dessin suit la maquette Figma
+// « Football-app » ; le logo est celui de LinkFoot (le maillon-ballon du canvas).
 //
 //   npx expo start   puis scanner le QR code avec Expo Go
 import React, { useEffect, useMemo, useState } from 'react';
@@ -21,7 +22,9 @@ import { PhoneStore } from './src/store';
 import { C, F } from './src/theme';
 import { chargerPolices } from './src/polices';
 import { Icone, Marque, BoutonRond } from './src/ui';
-import { HomeScreen, SquadScreen, MatchScreen, TrainScreen, PacksScreen, SkillsScreen, OnlineScreen } from './src/screens';
+import { useSocial } from './src/social';
+import { AccueilScreen, ExplorerScreen, ProfilScreen, FeuilleCreer } from './src/reseau';
+import { MonClubScreen, SquadScreen, MatchScreen, TrainScreen, PacksScreen, SkillsScreen, OnlineScreen } from './src/screens';
 import { TransfersScreen, QuestsScreen, FinancesScreen, TacticScreen, ClubScreen, DivisionScreen } from './src/directeur';
 
 const { useClub } = createClubHooks(React);
@@ -33,18 +36,22 @@ chargerPolices();
 //   import { OnlineClient, connectOnline } from '../src/online.js';
 //   connectOnline(club, new OnlineClient({ url: 'https://ton-serveur/online', headers: { 'x-club-id': monId } }));
 
-// Les cinq onglets du bas (le troisième, le Match, est le bouton central). En ligne est en haut,
-// à côté des Quêtes, comme les deux boutons ronds de la maquette.
+// Les cinq onglets du bas, comme la maquette : Accueil, Explorer, Match, Mon Club, Profil ; au-dessus
+// du Match, le bouton « + » pour publier.
 const TABS = [
-  ['home', 'Accueil', 'home'], ['squad', 'Effectif', 'users'], ['match', 'Match', 'match'],
-  ['train', 'Entraîn.', 'chrono'], ['packs', 'Packs', 'pack']
+  ['accueil', 'Accueil', 'home'], ['explorer', 'Explorer', 'explore'], ['match', 'Match', 'match'],
+  ['monclub', 'Mon Club', 'shield'], ['profil', 'Profil', 'profile']
 ];
-const PREMIERS = ['home', 'squad', 'match', 'train', 'packs', 'online'];
+const PREMIERS = TABS.map((t) => t[0]);
+// les écrans du jeu : l'onglet Mon Club reste allumé quand on y est
+const DU_JEU = ['squad', 'train', 'packs', 'skills', 'online', 'transfers', 'quests', 'finances', 'tactic', 'club', 'division'];
 
 export default function App() {
   const store = useMemo(() => new PhoneStore('linkfoot.save.v1'), []);
   const { club, state, ready, fresh, act, save } = useClub({ store, delay: 600 });
-  const [tab, setTab] = useState('home');
+  const [tab, setTab] = useState('accueil');
+  const [social, majSocial] = useSocial();
+  const [creation, setCreation] = useState(false);
   // d'où l'on vient, pour le bouton retour des écrans du directeur sportif
   const [pile, setPile] = useState([]);
 
@@ -78,18 +85,19 @@ export default function App() {
   // se souvient d'où il vient
   const ouvrir = (id) => { setPile([]); setTab(id); };
   const go = (id) => { if (id !== tab) { setPile((p) => p.concat([tab])); setTab(id); } };
-  const retour = () => { const p = pile.slice(); const avant = p.pop() || 'home'; setPile(p); setTab(avant); };
+  const retour = () => { const p = pile.slice(); const avant = p.pop() || (DU_JEU.includes(tab) ? 'monclub' : 'accueil'); setPile(p); setTab(avant); };
   const sousEcran = !PREMIERS.includes(tab);
+  const allume = DU_JEU.includes(tab) ? 'monclub' : tab;
   const aRecuperer = club.activeQuests().some((q) => q.prog >= q.goal && !q.claimed);
 
-  const props = { club, state, act, go, save };
+  const props = { club, state, act, go, save, social, majSocial, creer: () => setCreation(true) };
   const Screen = {
-    home: HomeScreen, squad: SquadScreen, match: MatchScreen,
-    train: TrainScreen, packs: PacksScreen, skills: SkillsScreen, online: OnlineScreen,
+    accueil: AccueilScreen, explorer: ExplorerScreen, match: MatchScreen, monclub: MonClubScreen, profil: ProfilScreen,
+    squad: SquadScreen, train: TrainScreen, packs: PacksScreen, skills: SkillsScreen, online: OnlineScreen,
     // §17 les entrées du directeur sportif qui n'avaient pas d'écran ici
     transfers: TransfersScreen, quests: QuestsScreen, finances: FinancesScreen, tactic: TacticScreen, club: ClubScreen,
     division: DivisionScreen
-  }[tab] || HomeScreen;
+  }[tab] || AccueilScreen;
 
   return (
     <SafeAreaProvider>
@@ -101,7 +109,7 @@ export default function App() {
             <Marque />
           </View>
           <View style={st.hautDroite}>
-            <BoutonRond icone="globe" label="En ligne" actif={tab === 'online'} onPress={() => ouvrir('online')} />
+            <BoutonRond icone="search" label="Rechercher" actif={tab === 'explorer'} onPress={() => ouvrir('explorer')} />
             <BoutonRond icone="bell" label="Quêtes" point={aRecuperer} actif={tab === 'quests'} onPress={() => go('quests')} />
           </View>
         </View>
@@ -112,20 +120,25 @@ export default function App() {
 
         <View style={st.nav}>
           {TABS.map(([id, label, icone]) => {
-            const on = tab === id;
-            const central = id === 'match';
+            const on = allume === id;
             return (
-              <Pressable key={id} accessibilityRole="button" onPress={() => ouvrir(id)} style={st.navBtn}>
-                {central
-                  ? <View style={[st.fab, on && st.fabOn]}><Icone nom="match" taille={24} couleur={C.onAccent} trait={1.9} /></View>
-                  : null}
-                {central ? <View style={{ height: 22 }} /> : <Icone nom={icone} taille={22} couleur={on ? C.text : '#646464'} plein={on} />}
-                <Text style={[st.navTxt, on && st.navOn]}>{label}</Text>
-                <View style={[st.navPoint, on && { backgroundColor: C.accent }]} />
-              </Pressable>
+              <View key={id} style={st.navSlot}>
+                {id === 'match' ? (
+                  <Pressable accessibilityRole="button" accessibilityLabel="Publier" onPress={() => setCreation(true)} style={st.fab}>
+                    <Icone nom="plus" taille={24} couleur={C.onAccent} trait={2.2} />
+                  </Pressable>
+                ) : null}
+                <Pressable accessibilityRole="button" onPress={() => ouvrir(id)} style={st.navBtn}>
+                  <Icone nom={icone} taille={22} couleur={on ? C.text : '#646464'} plein={on} />
+                  <Text style={[st.navTxt, on && st.navOn]}>{label}</Text>
+                  <View style={[st.navPoint, on && { backgroundColor: C.accent }]} />
+                </Pressable>
+              </View>
             );
           })}
         </View>
+
+        {creation ? <FeuilleCreer club={club} state={state} social={social} majSocial={majSocial} go={go} fermer={() => setCreation(false)} /> : null}
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -141,13 +154,13 @@ const st = StyleSheet.create({
   hautDroite: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   nav: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: C.line, backgroundColor: 'rgba(9,9,9,0.96)',
     paddingTop: 7, paddingBottom: 6, paddingHorizontal: 6 },
-  navBtn: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 2 },
+  navSlot: { flex: 1, alignItems: 'center' },
+  navBtn: { alignSelf: 'stretch', alignItems: 'center', gap: 4, paddingVertical: 2 },
   navTxt: { fontFamily: F.texte, color: '#646464', fontSize: 10, fontWeight: '600' },
   navOn: { color: C.text },
   navPoint: { width: 4, height: 4, borderRadius: 2, backgroundColor: 'transparent', marginTop: 1 },
-  // le bouton central de la maquette : rond citron, bordé de noir, qui dépasse de la barre
-  fab: { position: 'absolute', top: -27, width: 50, height: 50, borderRadius: 25, backgroundColor: C.accent,
+  // le bouton « + » de la maquette : rond citron, bordé de noir, au-dessus du Match
+  fab: { position: 'absolute', zIndex: 2, top: -41, width: 46, height: 46, borderRadius: 23, backgroundColor: C.accent,
     borderWidth: 4, borderColor: '#080808', alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#000', shadowOpacity: 0.7, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
-  fabOn: { borderColor: '#1A2208' }
+    shadowColor: '#000', shadowOpacity: 0.7, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8 }
 });

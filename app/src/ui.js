@@ -3,7 +3,7 @@
 // surtitres espacés, pastilles, blasons de club, icônes au trait.
 // Rien de malin ici : elles affichent, le moteur décide.
 import React, { useRef } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, TextInput, Linking, Platform } from 'react-native';
 import Svg, { G, Path, Circle, Rect, Defs, LinearGradient, RadialGradient, Stop } from 'react-native-svg';
 import { C, S, T, F } from './theme';
 
@@ -31,6 +31,11 @@ const ICONES = {
   play: ['p:m9 7 8 5-8 5V7Z'],
   pin: ['p:M12 21s6-5.5 6-11a6 6 0 0 0-12 0c0 5.5 6 11 6 11Z', 'c:12 10 2'],
   message: ['p:M20 11.5a7.7 7.7 0 0 1-8 7.5 9.4 9.4 0 0 1-3.6-.7L4 20l1.5-4A7.1 7.1 0 0 1 4 11.5 7.7 7.7 0 0 1 12 4a7.7 7.7 0 0 1 8 7.5Z', 'p:M8 11.5h8'],
+  explore: ['c:12 12 9', 'p:m15.5 8.5-2 5-5 2 2-5 5-2Z'],
+  heart: ['p:M20.8 8.7c0 5.3-8.8 10.4-8.8 10.4S3.2 14 3.2 8.7A4.5 4.5 0 0 1 12 7.3a4.5 4.5 0 0 1 8.8 1.4Z'],
+  comment: ['p:M20 11.5a7.7 7.7 0 0 1-8 7.5 9.4 9.4 0 0 1-3.6-.7L4 20l1.5-4A7.1 7.1 0 0 1 4 11.5 7.7 7.7 0 0 1 12 4a7.7 7.7 0 0 1 8 7.5Z'],
+  share: ['c:18 5 2', 'c:6 12 2', 'c:18 19 2', 'p:m8 11 8-5M8 13l8 5'],
+  camera: ['r:3 6.5 18 13 3', 'p:m8 6.5 1.5-2h5l1.5 2', 'c:12 13 3.2'],
   // au même trait, pour LinkFoot
   bolt: ['p:M13 3 5.5 13.5h6L10.5 21l8-10.5h-6L13 3Z'],
   pack: ['r:4 9.5 16 10.5 2', 'p:M3.5 9.5h17M12 9.5V20', 'p:M12 9.5C10.6 6 6.5 5.3 6.5 7.6c0 1.6 3 1.9 5.5 1.9Zm0 0c1.4-3.5 5.5-4.2 5.5-1.9 0 1.6-3 1.9-5.5 1.9Z'],
@@ -50,7 +55,7 @@ const ICONES = {
   star: ['p:m12 4 2.4 5 5.5.7-4 3.8 1 5.4L12 16.3l-4.9 2.6 1-5.4-4-3.8 5.5-.7L12 4Z']
 };
 // celles qui se remplissent quand l'onglet est actif (comme la maison de la maquette)
-const PLEINES = { home: 1, users: 1, profile: 1, connect: 1 };
+const PLEINES = { home: 1, users: 1, profile: 1, connect: 1, heart: 1, shield: 1, explore: 0 };
 
 export function Icone({ nom, taille = 21, couleur = C.text, plein = false, trait = 1.7 }) {
   const formes = ICONES[nom] || [];
@@ -71,18 +76,27 @@ export function Icone({ nom, taille = 21, couleur = C.text, plein = false, trait
 }
 
 // ---------- la marque ----------
-// Le symbole de la maquette et le nom de l'app, la fin du nom en citron (LINK + FOOT).
-export function Marque({ compacte }) {
+// Le logo LinkFoot choisi dans le canvas (« A · Le maillon-ballon ») : un maillon de chaîne accroché
+// à un ballon, « on relie les fans et leurs réseaux autour du foot ». Le maillon en blanc, le
+// ballon vert, « Link » en blanc et « Foot » en vert clair, en Sora.
+export const VERT_LOGO = '#2ECC71';
+export const VERT_FOOT = '#9BEE8C';
+export function Symbole({ taille = 30, creux = '#171B21' }) {
+  return (
+    <Svg width={taille} height={taille} viewBox="0 0 96 96">
+      <Rect x="6" y="30" width="54" height="36" rx="18" fill="none" stroke="#F2F4F7" strokeWidth="8" />
+      <Circle cx="64" cy="48" r="25" fill={VERT_LOGO} />
+      <Path d="M64 37 l10.5 7.6 -4 12.4 h-13 l-4-12.4z" fill={creux} />
+      <Path d="M64 37 V25 M74.5 44.6 l10.5-3.4 M70.5 57 l6.5 8.8 M57.5 57 l-6.5 8.8 M53.5 44.6 l-10.5-3.4" fill="none" stroke={creux} strokeWidth="3.2" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function Marque({ compacte, taille = 32 }) {
   return (
     <View style={st.marque}>
-      <Svg width={27} height={27} viewBox="0 0 32 32">
-        <G fill="none" stroke={C.text} strokeWidth={3.1} strokeLinecap="square">
-          <Path d="M8 6v13.5c0 3.6 2.9 6.5 6.5 6.5H25" />
-          <Path d="M24 11.5A9.5 9.5 0 1 0 21.5 23" />
-          <Path d="M13.5 15.8h8" />
-        </G>
-      </Svg>
-      {compacte ? null : <Text style={st.marqueTxt}>LINK<Text style={{ color: C.accent }}>FOOT</Text></Text>}
+      <Symbole taille={taille} />
+      {compacte ? null : <Text style={st.marqueTxt}>Link<Text style={{ color: VERT_FOOT }}>Foot</Text></Text>}
     </View>
   );
 }
@@ -234,6 +248,7 @@ export function Row({ children, style }) {
 // Un bouton qui sait refuser : quand `why` est rempli, il est grisé et la raison
 // s'affiche sous lui. C'est la règle du §81 appliquée au natif.
 export function Btn({ label, onPress, why, tone, small, style, icone }) {
+  // `why` d'un seul espace : le bouton est grisé sans phrase sous lui (rien à expliquer)
   const off = !!why;
   const ghost = tone === 'ghost';
   const bg = off ? C.raised : ghost ? 'transparent' : C.accent;
@@ -254,7 +269,7 @@ export function Btn({ label, onPress, why, tone, small, style, icone }) {
         <Text style={[st.btnTxt, small && st.btnTxtSmall, { color: fg }]}>{label}</Text>
         {icone && !off ? <Icone nom={icone} taille={small ? 14 : 17} couleur={fg} trait={2} /> : null}
       </Pressable>
-      {off ? <Text style={st.why}>{why}</Text> : null}
+      {off && String(why).trim() ? <Text style={st.why}>{why}</Text> : null}
     </View>
   );
 }
@@ -323,9 +338,101 @@ export function Empty({ children }) {
   );
 }
 
+// ---------- réseau social ----------
+// L'avatar de la maquette : les initiales dans un rond (pas de photo de personne), cerclé de
+// citron pour soi ou pour quelqu'un qu'on suit.
+export function Avatar({ nom, taille = 38, anneau, couleur }) {
+  const ini = String(nom || '?').replace(/^@/, '').split(/[\s._-]+/).filter(Boolean).slice(0, 2).map((m) => m[0]).join('').toUpperCase() || '?';
+  const fond = couleur || '#232823';
+  const rond = (
+    <View style={{ width: taille, height: taille, borderRadius: taille / 2, backgroundColor: fond, alignItems: 'center', justifyContent: 'center', borderWidth: anneau ? 2 : 0, borderColor: C.bg }}>
+      <Text style={{ fontFamily: F.texte, fontWeight: '700', color: clair(fond) ? '#0B0D09' : '#FFFFFF', fontSize: Math.max(9, taille * 0.34) }}>{ini}</Text>
+    </View>
+  );
+  if (!anneau) return rond;
+  return <View style={{ padding: 2, borderRadius: taille / 2 + 4, backgroundColor: C.accent }}>{rond}</View>;
+}
+
+// un lien vers un autre site (X, TikTok…) : un vrai lien sur le web, qui s'ouvre dans un nouvel
+// onglet ; sur téléphone, l'application ou le navigateur
+export function LienExterne({ url, children, style, label }) {
+  if (Platform.OS === 'web') {
+    return <Text accessibilityRole="link" accessibilityLabel={label} href={url} hrefAttrs={{ target: '_blank', rel: 'noopener noreferrer' }} style={style}>{children}</Text>;
+  }
+  return <Text accessibilityRole="link" accessibilityLabel={label} onPress={() => Linking.openURL(url).catch(() => {})} style={style}>{children}</Text>;
+}
+
+// un bouton qui est un lien vers un autre site (« Partager sur X »), au dessin des boutons :
+// sur le web, un vrai lien (une page privée n'ouvre pas de fenêtre par script) ; sur téléphone,
+// le même bouton que les autres
+export function BtnLien({ url, label, small, tone, style }) {
+  const ghost = tone === 'ghost';
+  if (Platform.OS !== 'web') {
+    return <Btn label={label} small={small} tone={tone} style={style} onPress={() => Linking.openURL(url).catch(() => {})} />;
+  }
+  return (
+    <View style={style}>
+      <Text accessibilityRole="link" href={url} hrefAttrs={{ target: '_blank', rel: 'noopener noreferrer' }}
+        style={[st.btn, small && st.btnSmall, st.btnLien, { backgroundColor: ghost ? 'transparent' : C.accent }, ghost ? st.btnGhost : null,
+          st.btnTxt, small && st.btnTxtSmall, { color: ghost ? C.text : C.onAccent }]}>{label}</Text>
+    </View>
+  );
+}
+
+// le X du réseau, dessiné au trait (pas le logo officiel) : deux barres croisées
+export function MarqueX({ taille = 14, couleur = C.text }) {
+  return (
+    <Svg width={taille} height={taille} viewBox="0 0 24 24">
+      <Path d="M4 4l16 16M20 4 4 20" stroke={couleur} strokeWidth={2.4} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function Champ({ valeur, onChange, placeholder, multiline, prefixe, style, max, nom }) {
+  return (
+    <View style={[st.champ, multiline && { alignItems: 'flex-start', minHeight: 96 }, style]}>
+      {prefixe ? <Text style={st.champPrefixe}>{prefixe}</Text> : null}
+      <TextInput value={valeur} onChangeText={onChange} placeholder={placeholder} placeholderTextColor="#5E5E5E"
+        multiline={multiline} maxLength={max} accessibilityLabel={nom || placeholder} nativeID={nom}
+        style={[st.champTxt, multiline && { minHeight: 80, textAlignVertical: 'top' }]} />
+    </View>
+  );
+}
+
+// l'interrupteur « Aussi sur X »
+export function Interrupteur({ actif, onChange, label }) {
+  return (
+    <Pressable accessibilityRole="switch" accessibilityState={{ checked: !!actif }} onPress={() => onChange(!actif)} style={st.inter}>
+      <View style={[st.interRail, actif && { backgroundColor: C.accent }]}>
+        <View style={[st.interBouton, actif && { transform: [{ translateX: 16 }], backgroundColor: C.onAccent }]} />
+      </View>
+      <Text style={st.interTxt}>{label}</Text>
+    </Pressable>
+  );
+}
+
+// les onglets soulignés de la maquette (« Timeline · Stats · Lineups · Social »)
+export function Onglets({ items, valeur, onChange }) {
+  return (
+    <View style={st.onglets}>
+      {items.map(([id, label]) => (
+        <Pressable key={id} accessibilityRole="tab" accessibilityState={{ selected: valeur === id }} onPress={() => onChange(id)} style={st.onglet}>
+          <Text style={[st.ongletTxt, valeur === id && st.ongletOn]}>{label}</Text>
+          <View style={[st.ongletTrait, valeur === id && { backgroundColor: C.accent }]} />
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+// ce qui n'est pas une vraie personne, un vrai lieu ou un vrai événement porte ce mot
+export function Exemple() {
+  return <View style={st.exemple}><Text style={st.exempleTxt}>EXEMPLE</Text></View>;
+}
+
 const st = StyleSheet.create({
-  marque: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  marqueTxt: { fontFamily: F.titre, color: C.text, fontSize: 16, fontWeight: '800', letterSpacing: -0.6 },
+  marque: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  marqueTxt: { fontFamily: F.marque, color: '#F2F4F7', fontSize: 20, fontWeight: '700', letterSpacing: -0.4 },
   sigle: { fontFamily: F.texte, fontWeight: '700', letterSpacing: 0.3, textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 2, textShadowOffset: { width: 0, height: 1 } },
   entete: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10 },
   action: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingVertical: 4 },
@@ -341,6 +448,7 @@ const st = StyleSheet.create({
   btn: { minHeight: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 10, paddingHorizontal: 18 },
   btnSmall: { minHeight: 34, borderRadius: 17, paddingHorizontal: 13, gap: 6 },
   btnGhost: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' },
+  btnLien: { display: 'flex', textAlign: 'center', textDecorationLine: 'none' },
   btnTxt: { fontFamily: F.texte, fontSize: 13.5, fontWeight: '700', letterSpacing: 0.1 },
   btnTxtSmall: { fontSize: 12 },
   why: { fontFamily: F.texte, color: C.amber, fontSize: 10.5, marginTop: 5, lineHeight: 14 },
@@ -358,5 +466,19 @@ const st = StyleSheet.create({
   statV: { fontFamily: F.titre, color: C.text, fontSize: 20, fontWeight: '800', letterSpacing: -0.6 },
   statL: { fontFamily: F.texte, color: '#6E6E6E', fontSize: 10.5, marginTop: 3 },
   empty: { padding: 20, borderRadius: S.radius, borderWidth: 1, borderStyle: 'dashed', borderColor: '#2A2A2A' },
+  champ: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 46, borderRadius: 13, borderWidth: 1, borderColor: '#303030', backgroundColor: C.card, paddingHorizontal: 13 },
+  champPrefixe: { fontFamily: F.texte, color: C.faint, fontSize: 14 },
+  champTxt: { flex: 1, fontFamily: F.texte, color: C.text, fontSize: 14, paddingVertical: 10, outlineStyle: 'none' },
+  inter: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 4 },
+  interRail: { width: 36, height: 20, borderRadius: 10, backgroundColor: '#2A2A2A', padding: 2 },
+  interBouton: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#8A8A8A' },
+  interTxt: { fontFamily: F.texte, color: C.dim, fontSize: 12.5, fontWeight: '600' },
+  onglets: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: C.line },
+  onglet: { flex: 1, alignItems: 'center', paddingTop: 12, gap: 10 },
+  ongletTxt: { fontFamily: F.texte, color: '#6A6A6A', fontSize: 12.5, fontWeight: '600' },
+  ongletOn: { color: C.text, fontWeight: '700' },
+  ongletTrait: { height: 2, width: '44%', backgroundColor: 'transparent' },
+  exemple: { alignSelf: 'flex-start', borderRadius: 6, borderWidth: 1, borderColor: '#3A3A3A', paddingHorizontal: 5, paddingVertical: 1 },
+  exempleTxt: { fontFamily: F.texte, color: '#7A7A7A', fontSize: 8.5, fontWeight: '700', letterSpacing: 0.9 },
   emptyTxt: { fontFamily: F.texte, color: C.faint, fontSize: 12, textAlign: 'center', lineHeight: 18 }
 });

@@ -1,7 +1,8 @@
-// Les deux polices de la maquette Figma : Manrope pour les titres et les chiffres, DM Sans pour
-// le texte. Elles partent avec l'app (assets/polices, licence SIL OFL 1.1, jointe), sans service
-// de polices en ligne : l'app s'affiche pareil hors connexion. Déclarées une fois, au démarrage ;
-// le navigateur ne les télécharge qu'au premier texte qui les demande.
+// Les polices : Manrope pour les titres et les chiffres, DM Sans pour le texte (maquette Figma),
+// Sora pour le nom de la marque (le logo LinkFoot du canvas). Elles partent avec l'app
+// (assets/polices, licence SIL OFL 1.1, jointe), sans service de polices en ligne : l'app
+// s'affiche pareil hors connexion. Déclarées une fois, au démarrage ; le navigateur ne les
+// télécharge qu'au premier texte qui les demande.
 import { adresse } from './fichiers';
 
 const POLICES = [
@@ -9,7 +10,8 @@ const POLICES = [
   ['Manrope', 800, require('../assets/polices/manrope-800.woff2')],
   ['DM Sans', 400, require('../assets/polices/dm-sans-400.woff2')],
   ['DM Sans', 500, require('../assets/polices/dm-sans-500.woff2')],
-  ['DM Sans', 700, require('../assets/polices/dm-sans-700.woff2')]
+  ['DM Sans', 700, require('../assets/polices/dm-sans-700.woff2')],
+  ['Sora', 700, require('../assets/polices/sora-700.woff2')]
 ];
 
 let fait = false;
