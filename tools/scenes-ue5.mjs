@@ -137,9 +137,15 @@ const r2 = (v) => Math.round(v * 100) / 100;
 const r1 = (v) => Math.round(v * 10) / 10;
 const champ = (k) => k !== 0 && k !== 11;
 
+// §71 : une scène porte les délibérations du moteur dans sa fenêtre (le cœur C++ le vérifie). Un
+// instant sans délibération autour (une tête sur corner, une reprise de volée : des réflexes, pas des
+// choix du porteur) n'est donc pris qu'à défaut d'un autre. Sans cette préférence, la scène « Centre
+// et tête » et celle de nuit tombaient sur de tels instants dès que le moteur changeait un peu.
+let enCours = null;
 function premier(liste, note) {
+  const delibere = (x) => !enCours || x == null || x.t == null || (enCours.doc.decisions || []).some((d) => d.t >= x.t - 4 && d.t <= x.t + 4);
   let meilleur = null;
-  for (const x of liste) { const s = note(x); if (s != null && (!meilleur || s > meilleur.s)) meilleur = { x, s }; }
+  for (const x of liste) { let s = note(x); if (s == null) continue; if (!delibere(x)) s -= 1000; if (!meilleur || s > meilleur.s) meilleur = { x, s }; }
   return meilleur ? meilleur.x : null;
 }
 
@@ -327,7 +333,7 @@ for (const [id, numero, titre, chercher] of RECHERCHES) {
   let trouve = null;
   for (const [reglage, liste] of OU[id] || [['base', graines]]) {
     for (const g of liste) {
-      const m = match(reglage, g), r = chercher(m);
+      const m = match(reglage, g); enCours = m; const r = chercher(m);
       if (r) { trouve = { m, r }; break; }
     }
     if (trouve) break;

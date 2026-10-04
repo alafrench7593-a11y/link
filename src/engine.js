@@ -962,7 +962,11 @@ export function makeEngine(cfg) {
           if (drib) ev *= (T.tac.dribble ? 1.12 : 0.94) * (1 + TR(p, 'drib') * 0.42);
           if (counter && label !== 'side') ev *= 1.2;
           if (oneV1) ev *= 0.55;
-          opts.push({ k: 'carry', x: tx, y: ty, ev, drib, blk: drib ? blk : null, label });
+          // §13 le dribble que le joueur aurait refusé sans sa compétence : compté au moment même
+          // (bascule_dribble, plus bas), là où compter les dribbles de deux séries de matchs ne
+          // voyait qu'un effet noyé dans le hasard (8,7 → 8,6 pour mille décisions sur 24 matchs)
+          const kD = drib ? 1 + TR(p, 'drib') * 0.42 : 1;
+          opts.push(kD !== 1 ? { k: 'carry', x: tx, y: ty, ev, drib, blk, label, sans: ev / kD } : { k: 'carry', x: tx, y: ty, ev, drib, blk: drib ? blk : null, label });
         };
         const fy = s === 'H' ? -1 : 1, gy = yOf(s, PL);
         carry(34 - p.x, gy - p.y, pr < 3 ? 5 : 9, 'goal');
@@ -1005,7 +1009,7 @@ export function makeEngine(cfg) {
         for (const x of opts) { const v = x.sans === null ? -Infinity : x.sans !== undefined ? x.sans : x.ev; if (v > sansEv) { sansEv = v; sansB = x; } }
         if (sansB !== best) {
           W.cnt = W.cnt || {};
-          const genre = best.k === 'shot' ? 'tir' : best.k === 'pass' && best.sans !== undefined ? 'passe' : 'autre';
+          const genre = best.k === 'shot' ? 'tir' : best.k === 'pass' && best.sans !== undefined ? 'passe' : best.k === 'carry' && best.sans !== undefined ? 'dribble' : 'autre';
           W.cnt['bascule_' + genre + '_' + s] = (W.cnt['bascule_' + genre + '_' + s] || 0) + 1;
         }
       }
@@ -1392,22 +1396,47 @@ export function makeEngine(cfg) {
       // surface : les défenseurs prennent les attaquants qui y sont ou y entrent, le milieu protège
       // le point de penalty. Ils les prenaient tard (ballon à 24 m, attaquant déjà dans la surface)
       // et visaient l'endroit où l'attaquant était : un attaquant sur trois n'avait personne à 2 m,
-      // son marqueur courait encore 4 m derrière (mesuré). Ils visent maintenant, côté but, là où il
-      // sera dans 0,3 s en courant avec lui (move : p.suit), à 1,4 m (au-delà du contact, 0,95 m :
-      // collé à son homme, il le heurtait sans cesse), et le même défenseur garde son homme d'une
-      // image à l'autre. Un attaquant hors-jeu, ballon encore loin, est laissé à la ligne.
+      // son marqueur courait encore 4 m derrière (mesuré). Ils se placent côté but, à 1,4 m
+      // (au-delà du contact, 0,95 m : collé à son homme, il le heurtait sans cesse), courent avec
+      // lui (move : p.suit), et le même défenseur garde son homme d'une image à l'autre. Un
+      // attaquant hors-jeu, ballon encore loin, est laissé à la ligne.
+      //
+      // ANTICIPATION. Le marqueur ne poursuit plus son homme : il vise l'endroit où il peut couper
+      // sa course (le premier instant où il y arrive, côté but), et c'est celui qui y arrive le
+      // premier qui le prend, pas le plus proche. Un appel qui entrera dans la surface dans 0,6 s
+      // est pris dès maintenant. Jusqu'où il lit la course dépend de sa lecture contre celle de
+      // l'attaquant et de son art de masquer l'appel (le duel du temps de réaction de la ligne).
+      // Mesuré sur 24 matchs (4 octobre 2026) : attaquants dans la surface sans défenseur côté but
+      // à 3 m, ballon à moins de 24 m, 44 → 37 % ; tirs dans la surface sans défenseur à 3 m
+      // 33 → 28 % ; tirs contrés 18 → 22 %. Buts sur 84 matchs : 313 → 297, xG par match sur 60
+      // matchs 3,63 → 3,35. Essayé et écarté : couper l'élan du marqueur loin de sa place (il ne
+      // court plus avec son homme au-delà de 1,5 m) laissait autant d'attaquants libres et plus
+      // de tirs cadrés (229 → 260).
       if (bA < 30) {
         const surLigne = Math.min(D - 0.5, bA);
-        const threats = LV[o].filter((r) => r.line !== 'GB' && r !== car && aOf(s, r.y) < 21 && Math.abs(r.x - 34) < 22 && (bA < 24 || aOf(s, r.y) >= surLigne)).sort((a2, b2) => aOf(s, a2.y) - aOf(s, b2.y));
+        const threats = LV[o].filter((r) => r.line !== 'GB' && r !== car && Math.abs(r.x - 34) < 22 && (bA < 24 || aOf(s, r.y) >= surLigne) && (aOf(s, r.y) < 21 || aOf(s, r.y + r.vy * 0.6) < 21)).sort((a2, b2) => aOf(s, a2.y) - aOf(s, b2.y));
         const avail = new Set(L2.DEF.concat(L2.MIL.filter((p) => p.kind === 'DM' || p.kind === 'CM')));
+        // où et quand le défenseur p coupe la course de r (côté but, à 1,4 m), dans la limite de ce qu'il lit
+        const coupe = (p, r) => {
+          const tl = cl(0.55 + (p.def + p.dec - 130) * 0.005 - (r.att + r.dec - 130) * 0.005 - TR(r, 'run') * 0.25, 0.2, 1.0);
+          const v = p.vmax * 0.85;
+          let qx = 0, qy = 0;
+          for (let t = 0; t <= tl + 1e-6; t += 0.1) {
+            const fx = r.x + r.vx * t, fy = r.y + r.vy * t, ux = gx0 - fx, uy = gy0 - fy, ud = hy(ux, uy) || 1;
+            qx = fx + ux / ud * 1.4; qy = fy + uy / ud * 1.4;
+            if (hy(qx - p.x, qy - p.y) <= v * t + 0.6) return { x: qx, y: qy, t };
+          }
+          return { x: qx, y: qy, t: tl + Math.max(0, hy(qx - p.x, qy - p.y) - v * tl - 0.6) / v };
+        };
         threats.forEach((r) => {
-          let bp = r.marque && avail.has(r.marque) && hy(r.marque.x - r.x, r.marque.y - r.y) < 8 ? r.marque : null, bdd = 12;
-          if (!bp) avail.forEach((p) => { const d = hy(p.x - r.x, p.y - r.y); if (d < bdd) { bdd = d; bp = p; } });
+          let bp = null, bc = null, bt = 99;
+          avail.forEach((p) => { if (hy(p.x - r.x, p.y - r.y) > 14) return; const c = coupe(p, r); if (c.t < bt) { bt = c.t; bp = p; bc = c; } });
+          // celui qui le marquait le garde, s'il n'arrive pas une demi-seconde après un autre
+          if (r.marque && avail.has(r.marque) && r.marque !== bp && hy(r.marque.x - r.x, r.marque.y - r.y) < 10) { const c = coupe(r.marque, r); if (c.t < bt + 0.5) { bp = r.marque; bc = c; } }
           r.marque = bp;
           if (!bp) return;
           avail.delete(bp);
-          const ux = gx0 - r.x, uy = gy0 - r.y, ud = hy(ux, uy) || 1;
-          setTW(bp, r.x + ux / ud * 1.4 + r.vx * 0.3, r.y + uy / ud * 1.4 + r.vy * 0.3, 1); bp.boxM = true; bp.intent = 'MARK'; bp.suit = r;
+          setTW(bp, bc.x, bc.y, 1); bp.boxM = true; bp.intent = 'MARK'; bp.suit = r;
         });
       }
       // couverture : un défenseur qui sort (marquage dans la surface / pressing) est couvert par son voisin de ligne

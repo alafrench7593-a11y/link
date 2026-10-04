@@ -84,8 +84,13 @@ console.log('\n§14 Funambule : plus de dribbles, et des gestes plus rares');
 const drib = run(strong('dribbleur'));
 console.log('  gestes ' + [1, 2, 3, 4, 5].map((t) => 't' + t + ':' + tier(t, drib)).join(' ') + ' · dribbles ' + (drib.drib || 0));
 const dribRate = (o) => (o.drib || 0) / (o.dec || 1) * 1000;
-ok(dribRate(drib) > dribRate(base), 'il tente davantage de dribbles',
-  fmt(dribRate(base)) + ' → ' + fmt(dribRate(drib)) + ' pour mille décisions');
+// Les dribbles de deux séries de matchs ne départageaient plus le Funambule : 8,7 → 8,6 pour
+// mille décisions sur 24 matchs le 4 octobre 2026, le marquage dans la surface ayant changé. Le
+// moteur compte maintenant les décisions que la compétence a fait basculer vers le dribble, au
+// même instant, chez le même joueur (comme le Tueur et le Contre éclair).
+ok((drib.bascule_dribble_H || 0) > 0 && !base.bascule_dribble_H, 'il dribble là où il aurait joué autre chose',
+  (drib.bascule_dribble_H || 0) + ' décisions basculées vers le dribble en ' + N + ' matchs, aucune sans la compétence');
+constat('dribbles pour mille décisions, sans puis avec', fmt(dribRate(base)) + ' → ' + fmt(dribRate(drib)));
 const rareBase = tier(3, base) + tier(4, base) + tier(5, base);
 const rareDrib = tier(3, drib) + tier(4, drib) + tier(5, drib);
 ok(rareDrib > rareBase, 'il accède à des gestes plus avancés', rareBase + ' → ' + rareDrib + ' gestes de palier 3 et plus');

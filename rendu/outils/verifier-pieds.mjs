@@ -28,13 +28,13 @@ for (const f of scenes) {
     L.aller(L.t1 - 0.7);
     return L.joueurs.map((j) => ({ code: j.code, glissements: j.A.detecteurs().reduce((a, d) => a + d.glissements, 0),
       suspendues: j.A.detecteurs().reduce((a, d) => a + (d.imagesSuspendues || 0), 0),
-      dansBallon: j.A.stats.piedDansBallon || 0, enfoncement: +(j.A.stats.enfoncementMax || 0).toFixed(3),
+      dansBallon: j.A.stats.piedDansBallon || 0, enfoncement: +(j.A.stats.enfoncementMax || 0).toFixed(3), tEnfoncement: j.A.stats.tEnfoncement != null ? +j.A.stats.tEnfoncement.toFixed(2) : null,
       evenements: j.A.detecteurs().flatMap((d) => d.evenements || []) }));
   });
   const n = r.reduce((a, x) => a + x.glissements, 0), nb = r.reduce((a, x) => a + x.dansBallon, 0);
   total += n; totalBallon += nb;
   const detail = n ? ' : ' + JSON.stringify(r.filter((x) => x.glissements).map(({ code, glissements, evenements }) => ({ code, glissements, evenements }))) : '';
-  const detailBallon = nb ? ' : ' + JSON.stringify(r.filter((x) => x.dansBallon).map(({ code, dansBallon, enfoncement }) => ({ code, dansBallon, enfoncement }))) : '';
+  const detailBallon = nb ? ' : ' + JSON.stringify(r.filter((x) => x.dansBallon).map(({ code, dansBallon, enfoncement, tEnfoncement }) => ({ code, dansBallon, enfoncement, t: tEnfoncement }))) : '';
   const susp = r.reduce((a, x) => a + x.suspendues, 0);
   console.log(`${f.padEnd(28)} ${r.length} joueurs, ${n} glissement(s)${susp ? `, ${susp} images de gestes au sol (tacle glissé, chute, relevé) non jugées` : ''}${detail}, ${nb} pas de pied dans le ballon${detailBallon}`);
   await p.close();

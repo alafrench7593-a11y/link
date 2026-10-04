@@ -1045,11 +1045,6 @@ export class Animateur {
       }
       this.ciblesFinales[iFrappeur].copy(cible);
     }
-    // le pied dans le ballon, tel qu'on le voit (après l'IK) : plus de 2 cm d'enfoncement est compté
-    if (centreBallon) for (const L of this.jambes) {
-      const d = this.distancePiedBallon(L, centreBallon);
-      if (d < CONTACT_PIED - 0.02) { this.stats.piedDansBallon++; this.stats.enfoncementMax = Math.max(this.stats.enfoncementMax, CONTACT_PIED - d); }
-    }
     // 5c. la fatigue (cahier qualité §24) et l'inclinaison de la course
     if (!this.gardien) this.fatigue(match, code, t, dt, vitesseMoteur);
     if (!plo && w < 0.1) this.inclinerCourse(match, code, t, dt, vitesseMoteur);
@@ -1057,6 +1052,42 @@ export class Animateur {
     if (this.plongeons.length || this.gardien) this.gardienEnAction(match, code, t, dt, plo);
     // 5d. la célébration d'un but
     if (this.celebrations && this.celebrations.length) this.celebrer(match, code, t, dt, vitesseMoteur);
+    // le pied dans le ballon, tel qu'on le voit : après l'IK, le plongeon du gardien (qui fait
+    // pivoter tout le corps) et la célébration. Mesuré avant le plongeon, on jugeait des jambes que
+    // personne ne voit : celles du gardien resté debout. Plus de 2 cm d'enfoncement est compté.
+    // Avant de compter, un pied libre (ou celui d'un gardien qui plonge) est écarté du ballon : le
+    // plongeon fait pivoter tout le corps après l'IK, et un ballon repoussé passait dans les jambes
+    // du gardien couché (8 cm, scène « Un contre un », 4 octobre 2026).
+    if (centreBallon) for (const L of this.jambes) {
+      if (L.verrou && !L.libere && !(plo && plo.poids > 0)) continue;
+      const d0 = this.distancePiedBallon(L, centreBallon);
+      if (d0 >= CONTACT_PIED - 0.005) continue;
+      // trois sens essayés, le meilleur gardé : loin du centre du ballon, vers la hanche (le pied
+      // se replie, toujours à portée), vers le haut. Un seul sens ne suffisait pas : jambe tendue
+      // (le dégagement d'un joueur qui se relève d'un tacle glissé), la cible hors d'atteinte était
+      // prise ailleurs, parfois plus près du ballon, et le repli vers la hanche, lui, traversait
+      // parfois le ballon.
+      const os = L.cuisse.concat(L.tibia), depart = os.map((o) => this.D[o].clone());
+      let meilleur = d0, pose = depart;
+      for (let sens = 0; sens < 3 && meilleur < CONTACT_PIED - 0.005; sens++) {
+        os.forEach((o, i) => this.D[o].copy(depart[i])); this.cinematique();
+        for (let k = 0; k < 4; k++) {
+          const d = this.distancePiedBallon(L, centreBallon);
+          if (d >= CONTACT_PIED - 0.005) break;
+          const A = this.P[L.pied];
+          if (sens === 0) _n.subVectors(A, centreBallon); else if (sens === 1) _n.subVectors(this.P[L.cuisse[0]], A); else _n.set(0, 1, 0);
+          if (_n.lengthSq() < 1e-6) _n.set(0, 1, 0);
+          this.ik(L, _allonge.copy(A).addScaledVector(_n.normalize(), CONTACT_PIED - d + 0.01)); this.cinematique();
+        }
+        const d = this.distancePiedBallon(L, centreBallon);
+        if (d > meilleur) { meilleur = d; pose = os.map((o) => this.D[o].clone()); }
+      }
+      os.forEach((o, i) => this.D[o].copy(pose[i])); this.cinematique();
+    }
+    if (centreBallon) for (const L of this.jambes) {
+      const d = this.distancePiedBallon(L, centreBallon);
+      if (d < CONTACT_PIED - 0.02) { this.stats.piedDansBallon++; if (CONTACT_PIED - d > this.stats.enfoncementMax) { this.stats.enfoncementMax = CONTACT_PIED - d; this.stats.tEnfoncement = t; } }
+    }
     // 6. la tête suit le ballon (ou la tribune, pendant une célébration)
     this.regarder(match, code, t, dt);
     // les gestes où le corps glisse ou se couche : le détecteur de glissement n'y juge pas les pieds

@@ -7,9 +7,9 @@
    "numero": 1,
    "id": "sprint_droit",
    "titre": "Sprint droit",
-   "raison": "pointe 8.1 m/s en ligne droite",
-   "focus": 16,
-   "instant": 191.3,
+   "raison": "pointe 7.75 m/s en ligne droite",
+   "focus": 21,
+   "instant": 155.3,
    "meteo": "soleil"
   },
   {
@@ -17,9 +17,9 @@
    "numero": 2,
    "id": "sprint_virage_90",
    "titre": "Sprint puis virage à 90°",
-   "raison": "virage de 86° lancé à 6.6 m/s",
-   "focus": 19,
-   "instant": 615.9,
+   "raison": "virage de 90° lancé à 6.5 m/s",
+   "focus": 9,
+   "instant": 569.2,
    "meteo": "soleil"
   },
   {
@@ -27,9 +27,9 @@
    "numero": 3,
    "id": "sprint_arret",
    "titre": "Sprint puis arrêt",
-   "raison": "de 7.7 m/s à l'arrêt en 1.8 s",
+   "raison": "de 7.6 m/s à l'arrêt en 1.5 s",
    "focus": 21,
-   "instant": 42,
+   "instant": 631.7,
    "meteo": "soleil"
   },
   {
@@ -39,7 +39,7 @@
    "titre": "Réception en course",
    "raison": "contrôle « correct » en pleine course",
    "focus": 18,
-   "instant": 2910.2,
+   "instant": 41,
    "meteo": "soleil"
   },
   {
@@ -48,8 +48,8 @@
    "id": "reception_pression",
    "titre": "Réception sous pression",
    "raison": "contrôle « correct » avec un adversaire à moins de 2 m",
-   "focus": 16,
-   "instant": 3226.8,
+   "focus": 15,
+   "instant": 1878.5,
    "meteo": "soleil"
   },
   {
@@ -58,8 +58,8 @@
    "id": "dribble_changement",
    "titre": "Dribble et changement de direction",
    "raison": "feinte réussi (palier 2)",
-   "focus": 8,
-   "instant": 627.7,
+   "focus": 7,
+   "instant": 267.7,
    "meteo": "soleil"
   },
   {
@@ -67,9 +67,9 @@
    "numero": 7,
    "id": "duel_epaule",
    "titre": "Duel d'épaule",
-   "raison": "protection de balle au contact du défenseur n°12",
-   "focus": 10,
-   "instant": 2775.3,
+   "raison": "protection de balle au contact du défenseur n°8",
+   "focus": 15,
+   "instant": 2089.7,
    "meteo": "soleil"
   },
   {
@@ -78,8 +78,8 @@
    "id": "tacle_glisse",
    "titre": "Tacle glissé",
    "raison": "tacle glissé réussi",
-   "focus": 2,
-   "instant": 3016.5,
+   "focus": 1,
+   "instant": 2909.2,
    "meteo": "soleil"
   },
   {
@@ -87,9 +87,9 @@
    "numero": 9,
    "id": "centre_tete",
    "titre": "Centre et tête",
-   "raison": "tête « save » sur centre",
-   "focus": 17,
-   "instant": 1362.1,
+   "raison": "tête « block » sur centre",
+   "focus": 16,
+   "instant": 133.4,
    "meteo": "soleil"
   },
   {
@@ -98,8 +98,8 @@
    "id": "un_contre_un",
    "titre": "Un contre un face au gardien",
    "raison": "tir « save » face au gardien",
-   "focus": 10,
-   "instant": 1681.1,
+   "focus": 16,
+   "instant": 2866.3,
    "meteo": "soleil"
   },
   {
@@ -108,8 +108,8 @@
    "id": "pressing_haut",
    "titre": "Pressing haut",
    "raison": "3 joueurs pressent le porteur en moyenne (pressing réglé à fond)",
-   "focus": 5,
-   "instant": 1242.2,
+   "focus": 7,
+   "instant": 354.3,
    "meteo": "soleil"
   },
   {
@@ -118,8 +118,8 @@
    "id": "bloc_bas",
    "titre": "Bloc bas",
    "raison": "100 % du temps à huit dans ses 35 derniers mètres (ligne basse, pas de pressing)",
-   "focus": 1,
-   "instant": 866.3,
+   "focus": 4,
+   "instant": 3199.5,
    "meteo": "soleil"
   },
   {
@@ -127,9 +127,9 @@
    "numero": 13,
    "id": "contre_attaque",
    "titre": "Contre-attaque",
-   "raison": "récupération (tacle) puis tir 13.9 s plus tard",
-   "focus": 21,
-   "instant": 382.6,
+   "raison": "récupération (interception) puis tir 9.2 s plus tard",
+   "focus": 20,
+   "instant": 1128.2,
    "meteo": "soleil"
   },
   {
@@ -137,9 +137,9 @@
    "numero": 14,
    "id": "joueur_epuise",
    "titre": "Joueur épuisé",
-   "raison": "énergie 24 : sa pointe tombe à 6.19 m/s (6.6 frais)",
+   "raison": "énergie 25 : sa pointe tombe à 6.17 m/s (6.58 frais)",
    "focus": 8,
-   "instant": 3505.9,
+   "instant": 3483.7,
    "meteo": "soleil"
   },
   {
@@ -158,8 +158,8 @@
    "id": "nuit",
    "titre": "Match de nuit",
    "raison": "tir « goal » sous les projecteurs",
-   "focus": 16,
-   "instant": 106.8,
+   "focus": 12,
+   "instant": 1577.3,
    "meteo": "nuit"
   }
  ]

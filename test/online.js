@@ -86,6 +86,10 @@ const clubs = {};
   ok(verifyResult(ta, tb, v.body.replay.seed, [9, 0]).ok === false, 'la même vérification marche hors serveur');
 
   console.log('\n§29 anti-farming');
+  // « coup sur coup » se pose ici : le match d'avant date de la vérification d'au-dessus, qui
+  // rejoue deux fois la rencontre. Sous charge, ces rejeux dépassaient les 20 s du délai et le
+  // second match passait (échec vu le 4 octobre 2026 avec les suites longues en parallèle).
+  const c1 = await storage.get('caps_alice'); c1.lastMatch = Date.now(); await storage.put('caps_alice', c1);
   const trop = await call('alice', 'POST', '/versus/chloe');
   ok(trop.status === 429, 'deux matchs coup sur coup sont refusés', trop.body && trop.body.error);
   // on avance l'horloge du serveur en remettant la dernière minute à zéro
@@ -117,7 +121,10 @@ const clubs = {};
   const pk = await call('alice', 'POST', '/pack', { free: true });
   ok(pk.status === 200 && pk.body.got.length === 3, 'le serveur rend le contenu du pack', pk.body.got.map((g) => g.kind).join(', '));
   ok(pk.body.odds && Math.abs(pk.body.odds.reduce((a2, x) => a2 + x.pct, 0) - 100) < 1e-6, 'avec les probabilités qu’il a appliquées');
-  ok(pk.body.got.every((g) => ['player', 'skill', 'shards'].indexOf(g.kind) >= 0), 'chaque lot est un joueur, une compétence ou des fragments');
+  // le pack tire aussi des objets (part « Objet », 15 %, src/cards.js). L'ancienne liste les
+  // oubliait : quand le match « coup sur coup » passait, la graine avançait d'un cran, le pack
+  // tirait un objet et ce test échouait à son tour
+  ok(pk.body.got.every((g) => ['player', 'skill', 'objet', 'shards'].indexOf(g.kind) >= 0), 'chaque lot est un joueur, une compétence, un objet ou des fragments', pk.body.got.map((g) => g.kind).join(', '));
   const capsP = await storage.get('caps_alice'); capsP.packs = LIMITS.packsPerDay; await storage.put('caps_alice', capsP);
   const tropPk = await call('alice', 'POST', '/pack', { free: true });
   ok(tropPk.status === 429, '§29 : le nombre de packs par jour est plafonné côté serveur', tropPk.body && tropPk.body.error);
