@@ -7,9 +7,9 @@
    "numero": 1,
    "id": "sprint_droit",
    "titre": "Sprint droit",
-   "raison": "pointe 7.77 m/s en ligne droite",
+   "raison": "pointe 7.78 m/s en ligne droite",
    "focus": 21,
-   "instant": 64.1,
+   "instant": 353.7,
    "meteo": "soleil"
   },
   {
@@ -17,9 +17,9 @@
    "numero": 2,
    "id": "sprint_virage_90",
    "titre": "Sprint puis virage à 90°",
-   "raison": "virage de 94° lancé à 5.5 m/s",
-   "focus": 20,
-   "instant": 1783,
+   "raison": "virage de 83° lancé à 5.9 m/s",
+   "focus": 17,
+   "instant": 616.1,
    "meteo": "soleil"
   },
   {
@@ -27,9 +27,9 @@
    "numero": 3,
    "id": "sprint_arret",
    "titre": "Sprint puis arrêt",
-   "raison": "de 7.7 m/s à l'arrêt en 1.7 s",
+   "raison": "de 7.7 m/s à l'arrêt en 2 s",
    "focus": 21,
-   "instant": 303.1,
+   "instant": 145.7,
    "meteo": "soleil"
   },
   {
@@ -37,9 +37,9 @@
    "numero": 4,
    "id": "reception_course",
    "titre": "Réception en course",
-   "raison": "contrôle « correct » en pleine course",
-   "focus": 16,
-   "instant": 1145.5,
+   "raison": "contrôle « long » en pleine course",
+   "focus": 10,
+   "instant": 1628.6,
    "meteo": "soleil"
   },
   {
@@ -48,8 +48,8 @@
    "id": "reception_pression",
    "titre": "Réception sous pression",
    "raison": "contrôle « correct » avec un adversaire à moins de 2 m",
-   "focus": 20,
-   "instant": 679,
+   "focus": 16,
+   "instant": 1113,
    "meteo": "soleil"
   },
   {
@@ -58,8 +58,8 @@
    "id": "dribble_changement",
    "titre": "Dribble et changement de direction",
    "raison": "crochet réussi (palier 1)",
-   "focus": 12,
-   "instant": 3669.9,
+   "focus": 21,
+   "instant": 957.4,
    "meteo": "soleil"
   },
   {
@@ -67,9 +67,9 @@
    "numero": 7,
    "id": "duel_epaule",
    "titre": "Duel d'épaule",
-   "raison": "protection de balle au contact du défenseur n°9",
-   "focus": 21,
-   "instant": 1089.4,
+   "raison": "protection de balle au contact du défenseur n°10",
+   "focus": 12,
+   "instant": 1953,
    "meteo": "soleil"
   },
   {
@@ -78,8 +78,8 @@
    "id": "tacle_glisse",
    "titre": "Tacle glissé",
    "raison": "tacle glissé réussi",
-   "focus": 4,
-   "instant": 3214.4,
+   "focus": 3,
+   "instant": 3738.2,
    "meteo": "soleil"
   },
   {
@@ -87,9 +87,9 @@
    "numero": 9,
    "id": "centre_tete",
    "titre": "Centre et tête",
-   "raison": "tête « save » sur centre",
-   "focus": 10,
-   "instant": 3758.1,
+   "raison": "tête « goal » sur centre",
+   "focus": 21,
+   "instant": 3474.7,
    "meteo": "soleil"
   },
   {
@@ -98,8 +98,8 @@
    "id": "un_contre_un",
    "titre": "Un contre un face au gardien",
    "raison": "tir « save » face au gardien",
-   "focus": 21,
-   "instant": 142.6,
+   "focus": 18,
+   "instant": 3439.9,
    "meteo": "soleil"
   },
   {
@@ -108,8 +108,8 @@
    "id": "pressing_haut",
    "titre": "Pressing haut",
    "raison": "3 joueurs pressent le porteur en moyenne (pressing réglé à fond)",
-   "focus": 9,
-   "instant": 424.2,
+   "focus": 8,
+   "instant": 313.1,
    "meteo": "soleil"
   },
   {
@@ -118,8 +118,8 @@
    "id": "bloc_bas",
    "titre": "Bloc bas",
    "raison": "100 % du temps à huit dans ses 35 derniers mètres (ligne basse, pas de pressing)",
-   "focus": 1,
-   "instant": 1991.1,
+   "focus": 3,
+   "instant": 969.2,
    "meteo": "soleil"
   },
   {
@@ -127,9 +127,9 @@
    "numero": 13,
    "id": "contre_attaque",
    "titre": "Contre-attaque",
-   "raison": "récupération (tacle) puis tir 12.1 s plus tard",
-   "focus": 20,
-   "instant": 2541.1,
+   "raison": "récupération (tacle) puis tir 13 s plus tard",
+   "focus": 5,
+   "instant": 154.7,
    "meteo": "soleil"
   },
   {
@@ -137,9 +137,9 @@
    "numero": 14,
    "id": "joueur_epuise",
    "titre": "Joueur épuisé",
-   "raison": "énergie 24 : sa pointe tombe à 6.19 m/s (6.6 frais)",
+   "raison": "énergie 24 : sa pointe tombe à 6.18 m/s (6.59 frais)",
    "focus": 8,
-   "instant": 3439.8,
+   "instant": 3494.1,
    "meteo": "soleil"
   },
   {
@@ -147,9 +147,9 @@
    "numero": 15,
    "id": "pluie",
    "titre": "Sous la pluie",
-   "raison": "passe au sol de 48 m sur terrain mouillé (le ballon glisse plus, les contrôles sont plus durs)",
-   "focus": 1,
-   "instant": 1169.6,
+   "raison": "passe au sol de 49 m sur terrain mouillé (le ballon glisse plus, les contrôles sont plus durs)",
+   "focus": 7,
+   "instant": 2194.4,
    "meteo": "pluie"
   },
   {
@@ -158,8 +158,8 @@
    "id": "nuit",
    "titre": "Match de nuit",
    "raison": "tir « goal » sous les projecteurs",
-   "focus": 20,
-   "instant": 189.9,
+   "focus": 16,
+   "instant": 577.1,
    "meteo": "nuit"
   }
  ]

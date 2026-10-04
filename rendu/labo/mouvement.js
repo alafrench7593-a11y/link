@@ -90,7 +90,21 @@ const POIDS = new Float32Array([
   1, 1, 1]);
 
 const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _m = new THREE.Matrix4();
+const _b = new THREE.Vector3(), _vb = new THREE.Vector3();
 const Y = new THREE.Vector3(0, 1, 0);
+// le ballon (labo.js : sphère de 0,11 m) et le pied, vu comme un segment de la cheville au bout de
+// la chaussure (1,25 fois la cheville-orteil : 0,20 m sur le corps MakeHuman) épais de 4 cm
+const RAYON_BALLON = 0.11, EPAISSEUR_PIED = 0.04, BOUT_PIED = 1.25;
+const CONTACT_PIED = RAYON_BALLON + EPAISSEUR_PIED;
+const _n = new THREE.Vector3(), _nf = new THREE.Vector3(), _allonge = new THREE.Vector3(), _bf = new THREE.Vector3();
+// la distance du point C au pied : le segment [A, A + v x BOUT_PIED] décalé de s x n (n horizontal)
+function distancePied(A, v, C, s, n) {
+  const ax = A.x + (n ? n.x * s : 0), ay = A.y, az = A.z + (n ? n.z * s : 0);
+  const bx = v.x * BOUT_PIED, by = v.y * BOUT_PIED, bz = v.z * BOUT_PIED;
+  const l2 = bx * bx + by * by + bz * bz;
+  const u = l2 > 0 ? Math.max(0, Math.min(1, ((C.x - ax) * bx + (C.y - ay) * by + (C.z - az) * bz) / l2)) : 0;
+  return Math.hypot(ax + bx * u - C.x, ay + by * u - C.y, az + bz * u - C.z);
+}
 
 // les articulations de la base CMU, par groupe (ordre de mouvements.json)
 const JAMBE = [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]];   // gauche, droite
@@ -173,7 +187,8 @@ export class Animateur {
     this.P = os.map(() => new THREE.Vector3());
     this.hanches = new THREE.Vector3();
     this.lacetLisse = null;
-    this.stats = { recherches: 0, changements: 0, manqueMax: 0, appuisImages: 0, piedRapide: 0, vitessePiedMax: 0, abaissementMax: 0 };
+    this.stats = { recherches: 0, changements: 0, manqueMax: 0, appuisImages: 0, piedRapide: 0, vitessePiedMax: 0, abaissementMax: 0,
+      piedDansBallon: 0, enfoncementMax: 0 };
   }
 
   // la pose de la base à l'image (fractionnaire) f, dans l'espace du personnage
@@ -627,6 +642,43 @@ export class Animateur {
     this.cinematique();
   }
 
+  // Le pied ne traverse pas le ballon : seul le moteur déplace le ballon, c'est donc le pied qui
+  // s'écarte, à l'horizontale, dans le sens n (sensEcart). Le plus petit déplacement qui met le
+  // segment cheville-bout à CONTACT_PIED du centre C : les déplacements le long de n où le pied
+  // touche le ballon forment un intervalle (une capsule est convexe), une dichotomie le borne.
+  // Rend le déplacement appliqué.
+  ecarterDuBallon(cheville, pointeVec, C, n) {
+    if (distancePied(cheville, pointeVec, C, 0, n) >= CONTACT_PIED) return 0;
+    let lo = 0, hi = 0.7;
+    for (let k = 0; k < 16; k++) { const m = (lo + hi) / 2; if (distancePied(cheville, pointeVec, C, m, n) < CONTACT_PIED) lo = m; else hi = m; }
+    cheville.x += n.x * hi; cheville.z += n.z * hi;
+    return hi;
+  }
+
+  // Le sens où le pied s'écarte : celui qui touche le ballon recule derrière lui (à l'opposé du
+  // sens de la touche), les autres passent à côté, chacun du côté de sa hanche (toujours le même
+  // d'une image à l'autre : un sens tiré de la position exacte du pied sauterait d'un côté à
+  // l'autre quand le pied passe par le centre du ballon).
+  sensEcart(L, g, C, psi, n) {
+    if (g && g.dir) {
+      n.set(-g.dir.x, 0, -g.dir.z);
+      const l = Math.hypot(n.x, n.z);
+      if (l > 1e-6) return n.multiplyScalar(1 / l);
+    }
+    const lx = Math.cos(psi), lz = -Math.sin(psi);   // perpendiculaire au cap du corps
+    const H = this.P[L.cuisse[0]];
+    let s = (H.x - C.x) * lx + (H.z - C.z) * lz;
+    if (Math.abs(s) < 0.03) s = (H.x - this.hanches.x) * lx + (H.z - this.hanches.z) * lz;
+    const k = s >= 0 ? 1 : -1;
+    return n.set(k * lx, 0, k * lz);
+  }
+
+  // la distance du centre du ballon au segment cheville-bout du pied, dans la pose courante
+  distancePiedBallon(L, C) {
+    const a = this.P[L.pied], o = this.P[L.orteil];
+    return distancePied(a, _v.set(o.x - a.x, o.y - a.y, o.z - a.z), C, 0, null);
+  }
+
   // la position des mains (le ballon d'un gardien qui le tient)
   mains() {
     const a = this.P[this.mainsOs[0]], b = this.P[this.mainsOs[1]];
@@ -796,6 +848,10 @@ export class Animateur {
     // ce que le bassin descendra plus loin dans cette image (bassin abaissé pour la foulée, garde
     // du gardien, arrêt bas, mains sur les genoux) : un appui qu'il pourra tenir n'est pas relâché
     const abaissement = 0.08 + (this.gardien ? 0.12 * (this.poidsGarde || 0) : 0) + (plo && plo.pl.genre === 'bas' ? 0.3 * plo.poids : 0) + 0.1 * (this.poidsGenoux || 0);
+    // le ballon tel qu'il est dessiné, s'il est au sol ou presque (pas dans les mains d'un gardien)
+    const bv = match.ballonVisuel(t);
+    const centreBallon = !bv.mains && bv.p[1] < 0.45 ? _b.set(bv.p[0], bv.p[1] + RAYON_BALLON, bv.p[2]) : null;
+    let iFrappeur = -1;
     this.jambes.forEach((L, iL) => {
       // le pied qui frappe (ou touche) ne s'appuie pas autour du contact
       const fenetre = g && g.pied === iL ? (g.type === 'frappe' ? [g.tc - 0.32 / g.cadence, g.tc + 0.15] : [g.tc - 0.2, g.tc + 0.1]) : null;
@@ -834,23 +890,71 @@ export class Animateur {
       const solMin = L.cheville0 * 0.92;
       if (cheville.y < solMin) cheville.y = solMin;
       if (cheville.y + pointeVec.y < L.pointe0) cheville.y = L.pointe0 - pointeVec.y;
+      // un appui sur le chemin du ballon (le moteur ne dévie pas un ballon sur un pied posé) : le
+      // pied se lève et le laisse passer plutôt que de rester dedans. Pas le pied d'appui d'une
+      // frappe, ni un ballon frappé (il passe en moins de 2 pas de 1/60 s) : seulement un ballon
+      // qui roule (moins de 8 m/s) et qui entrera dans le pied dans les 0,1 s.
+      if (pose && L.verrou && !L.libere && centreBallon && !(g && g.type === 'frappe' && w > 0.2)) {
+        const bf = match.ballonVisuel(t + 0.1);
+        const vb = Math.hypot(bf.p[0] - bv.p[0], bf.p[2] - bv.p[2]) / 0.1;
+        if (!bf.mains && bf.p[1] < 0.45 && vb < 8) {
+          for (let k = 0; k <= 4; k++) {
+            const u = k / 4;
+            _bf.set(bv.p[0] + (bf.p[0] - bv.p[0]) * u, bv.p[1] + (bf.p[1] - bv.p[1]) * u + RAYON_BALLON, bv.p[2] + (bf.p[2] - bv.p[2]) * u);
+            if (distancePied(L.verrou.cible, pointeVec, _bf, 0, null) < CONTACT_PIED - 0.01) {
+              L.libere = true; this.stats.evitements = (this.stats.evitements || 0) + 1; break;
+            }
+          }
+        }
+      }
+      // un pied qui n'est pas tenu au sol passe à côté du ballon (celui qui va se poser aussi : il
+      // se pose hors du ballon) ; un appui verrouillé ne bouge pas, il glisserait
+      const tenu = pose && L.verrou && !L.libere;
+      const sens = centreBallon && !tenu ? this.sensEcart(L, frappeur ? g : null, centreBallon, psi, _n) : null;
+      if (sens) {
+        this.ecarterDuBallon(cheville, pointeVec, centreBallon, sens);
+        // le pied d'appui d'une frappe se pose à côté du chemin du ballon (celui qui arrive, et
+        // celui qui part jusqu'à 0,12 s après la frappe) : posé, il ne bougera plus, et le ballon
+        // frappé ne le traverse pas
+        if (g && g.type === 'frappe' && !frappeur && w > 0) {
+          // le chemin est suivi tous les 8 cm au plus (un ballon frappé fait 40 cm en 0,025 s)
+          const pas = Math.min(40, Math.ceil(Math.max(0.3, g.tc + 0.12 - t) / 0.025));
+          let prec = bv.p;
+          for (let k = 1; k <= pas; k++) {
+            const bf = match.ballonVisuel(t + k * 0.025), q = bf.p;
+            if (!bf.mains && q[1] <= 0.45) {
+              const m = Math.max(1, Math.min(8, Math.ceil(Math.hypot(q[0] - prec[0], q[2] - prec[2]) / 0.08)));
+              for (let i = 1; i <= m; i++) {
+                const u = i / m;
+                this.ecarterDuBallon(cheville, pointeVec, _bf.set(prec[0] + (q[0] - prec[0]) * u, prec[1] + (q[1] - prec[1]) * u + RAYON_BALLON, prec[2] + (q[2] - prec[2]) * u), sens);
+              }
+            }
+            prec = q;
+          }
+        }
+      }
       let cible = cheville;
       // un appui que la jambe ne peut plus tenir (le corps est passé) : le pied décolle, il ne glisse pas
       if (pose && L.verrou && !L.libere) {
         const H = this.P[L.cuisse[0]], a = H.distanceTo(this.P[L.tibia[0]]), b = this.P[L.tibia[0]].distanceTo(this.P[L.pied]);
         const Hb = H.clone(); Hb.y -= abaissement;
-        if (Hb.distanceTo(L.verrou.cible) > (a + b) * 0.995 + 0.005) { L.libere = true; this.stats.decollages = (this.stats.decollages || 0) + 1; }
+        // (ou que la jambe n'a déjà pas pu tenir à l'image d'avant : le bassin ne descend pas
+        // aussi vite que le corps passe, et un appui que l'IK n'atteint plus est traîné)
+        if (Hb.distanceTo(L.verrou.cible) > (a + b) * 0.995 + 0.005 || (L.manque || 0) > 0.02) { L.libere = true; this.stats.decollages = (this.stats.decollages || 0) + 1; }
       }
       if (!pose) L.libere = false;
       if (pose && !L.libere) {
         // l'appui : la cheville tient tant que le talon est au sol ; quand le talon se lève, c'est
         // la pointe qui tient et la cheville monte autour d'elle (le déroulé du pied)
         const pointeAnim = cheville.clone().add(pointeVec);
-        // dès que l'avant du pied touche le sol, c'est lui qui tient (le pied pivote autour de lui)
-        const pointeAuSol = pointeAnim.y - L.pointe0 < 0.02;
+        // dès que l'avant du pied touche le sol, c'est lui qui tient (le pied pivote autour de lui) ;
+        // « touche » au sens du détecteur de glissement (3 cm) : un pied dont la pointe est bien plus
+        // basse que la cheville (Gameplay Football) la balaierait sinon au ras de l'herbe en roulant
+        // du talon à la plante autour d'une cheville tenue
+        const pointeAuSol = pointeAnim.y - L.pointe0 < 0.03;
         if (!L.verrou) L.verrou = { mode: pointeAuSol ? 'pointe' : 'cheville', cheville: cheville.clone(), pointe: pointeAnim.clone(), cible: cheville.clone() };
         if (L.verrou.mode === 'pointe' && !L.verrou.pointePosee) { L.verrou.pointe.y = Math.max(L.pointe0, Math.min(L.verrou.pointe.y, L.pointe0 + 0.01)); L.verrou.pointePosee = true; }
-        const pointeVerrou = L.verrou.mode === 'cheville' ? L.verrou.cheville.y + pointeVec.y - L.pointe0 < 0.02 : false;
+        const pointeVerrou = L.verrou.mode === 'cheville' ? L.verrou.cheville.y + pointeVec.y - L.pointe0 < 0.03 : false;
         if (L.verrou.mode === 'cheville' && (pointeAuSol || pointeVerrou)) {
           L.verrou.mode = 'pointe';
           L.verrou.pointe = L.verrou.cheville.clone().add(pointeVec);
@@ -877,15 +981,39 @@ export class Animateur {
         cible = cheville.clone(); cible.y = L.pointe0 + 0.045 - pointeVec.y;
       }
       if (frappeur) {
-        // au contact, la pointe du pied est derrière le ballon
+        // au contact, la pointe du pied est derrière le ballon. En conduite, avant la touche, le
+        // ballon roule encore vers le point de la touche : le pied vise derrière le ballon tel qu'il
+        // est maintenant (viser le point de la touche lui ferait traverser le ballon pour l'attendre)
         const cloche = Math.exp(-Math.pow((t - g.tc) / (g.type === 'frappe' ? 0.08 : 0.1), 2));
-        const pointe = cible.clone().add(pointeVec).lerp(g.visee, cloche);
+        const visee = g.conduite && t < g.tc && centreBallon ? _vb.copy(centreBallon).addScaledVector(g.dir, -0.15).setY(g.visee.y) : g.visee;
+        const pointe = cible.clone().add(pointeVec).lerp(visee, cloche);
         if (pointe.y < L.pointe0) pointe.y = L.pointe0;
         cible = pointe.sub(pointeVec);
       }
+      // et la cible finale (décollage, frappe) ne rentre pas dans le ballon non plus
+      if (sens) this.ecarterDuBallon(cible, pointeVec, centreBallon, sens);
+      if (frappeur) iFrappeur = iL;
       cibles.push({ L, cible, pose });
     });
     this.ciblesFinales = cibles.map((c) => c.cible.clone());
+    // le corps va chercher le ballon : si le pied qui touche ne peut pas atteindre sa cible (le
+    // ballon est plus loin que la foulée ne porte), le bassin s'avance vers elle, au plus de
+    // 0,5 m, comme le joueur qui allonge le pas ou se fend ; il revient quand le geste finit
+    _allonge.set(0, 0, 0);
+    if (iFrappeur >= 0) {
+      const { L, cible } = cibles[iFrappeur];
+      const H = this.P[L.cuisse[0]], a = H.distanceTo(this.P[L.tibia[0]]), b = this.P[L.tibia[0]].distanceTo(this.P[L.pied]);
+      const portee = (a + b) * 0.98, dy = H.y - 0.04 - cible.y;
+      const dx = cible.x - H.x, dz = cible.z - H.z, hz = Math.hypot(dx, dz);
+      const hMax = Math.sqrt(Math.max(0, portee * portee - dy * dy));
+      if (hz > hMax) _allonge.set(dx / hz, 0, dz / hz).multiplyScalar(Math.min(0.5, hz - hMax));
+    }
+    if (!this.allonge) this.allonge = new THREE.Vector3();
+    this.allonge.lerp(_allonge, 1 - Math.exp(-dt / 0.03));
+    if (this.allonge.lengthSq() > 1e-6) {
+      this.hanches.add(this.allonge); this.cinematique();
+      this.stats.allongeMax = Math.max(this.stats.allongeMax || 0, this.allonge.length());
+    }
     // le bassin descend un peu si une jambe ne peut pas atteindre son appui (foulée allongée)
     let baisse = 0;
     for (const { L, cible } of cibles) {
@@ -898,10 +1026,29 @@ export class Animateur {
     if (this.baisse > 1e-4) { this.hanches.y -= this.baisse; this.cinematique(); this.stats.abaissementMax = Math.max(this.stats.abaissementMax, this.baisse); }
     for (const { L, cible, pose } of cibles) {
       const manque = this.ik(L, cible);
+      L.manque = pose ? manque : 0;
       if (pose) { this.stats.appuisImages++; this.stats.manqueMax = Math.max(this.stats.manqueMax, manque); }
       // le pied garde le déroulé de la capture (talon, plante, pointe) autour de la cheville verrouillée
     }
     this.cinematique();
+    // le pied qui touche, si la jambe ne l'a pas mené tout à fait à sa cible : il s'arrête derrière
+    // le ballon (la jambe trop courte le laisserait sinon piquer le dessus du ballon)
+    if (iFrappeur >= 0 && centreBallon) {
+      const { L, cible } = cibles[iFrappeur];
+      const n = this.sensEcart(L, g, centreBallon, psi, _nf);
+      for (let k = 0; k < 4; k++) {
+        const d = this.distancePiedBallon(L, centreBallon);
+        if (d >= CONTACT_PIED - 0.005) break;
+        cible.addScaledVector(n, CONTACT_PIED - d + 0.01);
+        this.ik(L, cible); this.cinematique();
+      }
+      this.ciblesFinales[iFrappeur].copy(cible);
+    }
+    // le pied dans le ballon, tel qu'on le voit (après l'IK) : plus de 2 cm d'enfoncement est compté
+    if (centreBallon) for (const L of this.jambes) {
+      const d = this.distancePiedBallon(L, centreBallon);
+      if (d < CONTACT_PIED - 0.02) { this.stats.piedDansBallon++; this.stats.enfoncementMax = Math.max(this.stats.enfoncementMax, CONTACT_PIED - d); }
+    }
     // 5c. la fatigue (cahier qualité §24) et l'inclinaison de la course
     if (!this.gardien) this.fatigue(match, code, t, dt, vitesseMoteur);
     if (!plo && w < 0.1) this.inclinerCourse(match, code, t, dt, vitesseMoteur);

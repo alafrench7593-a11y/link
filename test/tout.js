@@ -23,6 +23,7 @@ const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..');
 const RAPIDES = [
   ['canvas', ['tools/sync-canvas.mjs', '--check'], 'l’écran Mon Club et le moteur disent la même chose'],
   ['paquet', ['build.mjs', '--check'], 'le fichier unique dist/linkfoot.js se charge, joue, suit src/'],
+  ['scènes', ['tools/scenes-ue5.mjs', '--check'], 'les seize scènes d’Unreal et du cœur C++ sont celles que le moteur joue aujourd’hui'],
   ['progression', ['test/progression.js'], 'les systèmes du club sont reliés entre eux'],
   ['impact', ['test/impact.js'], 'le rapport de match ne dit que des choses vraies'],
   ['directeur', ['test/directeur.js'], 'le parcours du directeur sportif, de la création au match'],
