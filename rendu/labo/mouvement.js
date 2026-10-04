@@ -345,7 +345,7 @@ export class Animateur {
       if (a.c === code) this.celebrations.push({ genre: a.genre, t0: a.t, fin: a.fin, buteur: true, c: a.c });
       else if (buteur.camp === moi.camp && moi.poste !== 'GB') this.celebrations.push({ genre: a.genre, t0: a.t, fin: a.fin, buteur: false, c: a.c });
     }
-    // les touches de la conduite de balle (match.js) : le pied qui est en l'air va au ballon
+    // les touches de la conduite de balle (celles du moteur, match.js) : le pied qui est en l'air va au ballon
     match.preparerConduite();
     for (const p of match.possessions) {
       if (p.c !== code || !p.touches) continue;
@@ -354,8 +354,10 @@ export class Animateur {
         if (tc <= p.debutConduite + 0.2) continue;
         const b = match.ballonVisuel(tc);
         if (b.regime !== 'porte') continue;
+        // le sens du pied : celui où la touche du moteur envoie le ballon, sinon celui de la course
+        const sv = p.sens && p.sens[k], ss = sv ? Math.hypot(sv[0], sv[1]) : 0;
         const v = match.vitesse(code, tc), sp = Math.hypot(v[0], v[1]);
-        const dir = sp > 0.4 ? new THREE.Vector3(v[0] / sp, 0, v[1] / sp) : new THREE.Vector3(Math.sin(match.lacet(code, tc)), 0, Math.cos(match.lacet(code, tc)));
+        const dir = ss > 0.3 ? new THREE.Vector3(sv[0] / ss, 0, sv[1] / ss) : sp > 0.4 ? new THREE.Vector3(v[0] / sp, 0, v[1] / sp) : new THREE.Vector3(Math.sin(match.lacet(code, tc)), 0, Math.cos(match.lacet(code, tc)));
         const B = new THREE.Vector3(b.p[0], b.p[1], b.p[2]);
         this.gestes.push({ type: 'touche', conduite: true, tc, B, dir, pied: -1, avant: 0.2, apres: 0.15, cadence: 1, decalage: new THREE.Vector3(),
           visee: B.clone().addScaledVector(dir, -0.15).setY(0.1) });

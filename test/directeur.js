@@ -214,7 +214,12 @@ tete('§15 les statistiques changent les décisions');
   t('Vitesse 95 en attaque : on le cherche dans la profondeur bien plus qu’à 40', rapides > lents * 2, lents + ' passes en profondeur contre ' + rapides);
   const fine = total({ PAS: 40 }, ['MIL'], prof), laser = total({ PAS: 95 }, ['MIL'], prof);
   t('Passe 95 au milieu : il tente les passes qui cassent une ligne', laser > fine * 1.2, fine + ' contre ' + laser);
-  const cad = (champs) => { let sh = 0, on = 0; S6.forEach((sd) => { const r = jouerAvec(champs, ['ATT'], sd); sh += r.stats.H.sh; on += r.stats.H.on; }); return { sh, on, taux: on / Math.max(1, sh) }; };
+  // La finition sur seize graines : depuis que le ballon est poussé par touches (4 octobre
+  // 2026), une équipe tire un peu moins, et six matchs ne suffisaient plus à départager le
+  // nombre de tirs (48 contre 43 au hasard d'une série). Sur quarante graines : 25 % de tirs
+  // cadrés à 40 contre 36 % à 95, et 29 % de tirs en plus à 95 (avant : 30 % contre 45 %, 33 %).
+  const S16 = Array.from({ length: 16 }, (_, i) => 41 + i);
+  const cad = (champs) => { let sh = 0, on = 0; S16.forEach((sd) => { const r = jouerAvec(champs, ['ATT'], sd); sh += r.stats.H.sh; on += r.stats.H.on; }); return { sh, on, taux: on / Math.max(1, sh) }; };
   const maladroit = cad({ TIR: 40, ATQ: 40 }), buteur = cad({ TIR: 95, ATQ: 95 });
   t('Tir 95 en attaque : il frappe plus souvent, et cadre bien mieux', buteur.sh >= maladroit.sh && buteur.taux > maladroit.taux + 0.08,
     Math.round(maladroit.taux * 100) + ' % cadrés sur ' + maladroit.sh + ' tirs contre ' + Math.round(buteur.taux * 100) + ' % sur ' + buteur.sh);

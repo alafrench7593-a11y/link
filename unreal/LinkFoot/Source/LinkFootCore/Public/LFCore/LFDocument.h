@@ -119,7 +119,8 @@ namespace lf
 		Dribble,
 		Tacle,
 		SortiePieds,
-		Remplacement
+		Remplacement,
+		Conduite	// une touche de balle en conduite : le ballon repart de x, y à vx, vy (m/s)
 	};
 
 	LFCORE_API TypeAction typeAction(std::string_view nom);

@@ -81,8 +81,8 @@ de jeu). Tirée au sort par une graine : même graine, même configuration, mêm
 | Le coup d'envoi des matchs officiels partait avec les 22 joueurs sur le rond central | mêlée visible et duels dès la première seconde | **trouvé par la passerelle, corrigé** |
 | Un tireur de corner ou de touche trop loin était téléporté au ballon (jusqu'à 38 m) | téléportation visible | **trouvé par la passerelle, corrigé** |
 | Une touche sans partenaire libre : le lanceur partait balle au pied | geste impossible | **trouvé par la passerelle, corrigé** |
-| Les contacts se règlent en déplaçant les joueurs (jusqu'à 25 cm en un pas) | à-coups, pieds qui glissent : à lisser côté rendu, puis côté moteur | phase 2 et 6 |
-| Le ballon suit son porteur à 0,5 à 1,4 m, sans touches distinctes | §31 « le ballon ne doit jamais être collé au pied » | phase 3 (rendu), phase 6 (moteur) |
+| Les contacts se réglaient en déplaçant les joueurs (jusqu'à 25 cm en un pas) | à-coups, pieds qui glissent | **fait (moteur, 4 octobre 2026)** : l'écartement passe par la vitesse voulue ; au contact, la vitesse d'approche s'annule et la séparation entre adversaires est bornée à 15 cm par pas ; à-coups divisés par deux |
+| Le ballon suivait son porteur à 0,5 à 1,4 m, sans touches distinctes | §31 « le ballon ne doit jamais être collé au pied » | **fait (moteur, 4 octobre 2026)** : ballon indépendant, poussé par touches (action `conduite`, 3.7) |
 | Le placement du gardien ne dépend pas de son attribut PLA (seulement ses arrêts) | §28 un gardien faible doit être mal placé | phase 6 |
 | Pas de blessure pendant le match | §43 un blessé ne court plus normalement | phase 6 |
 | La taille ne pèse pas dans les duels aériens | §8, « lorsque cela est prévu » | phase 6, mesuré |
@@ -140,7 +140,8 @@ Un objet JSON (gzip pour le transport), produit par `club.matchPont(adversaire, 
 
 ```
 format, version                     "linkfoot-match", 1
-moteur { hz, pas, graine }          10, 0,1, la graine du match
+moteur { hz, pas, graine,          10, 0,1, la graine du match,
+         ballon, roulement }        "touches" (3.7, conduite), ce que perd par seconde un ballon qui roule
 repere, codes                       la conversion Unreal ; intentions, états, coups de pied arrêtés
 match { competition, meteo, domicile, debut, fin }
 equipes { H, A }                    club, maillot, formation, mentalité, tactique, entraîneur, style
@@ -240,7 +241,8 @@ suivante (révision du 2 octobre 2026, même version 1 du format).
 | `passe` | `genre` (pass, long, through, cross, corner, fkc, gkl), `cpa`, `x0 y0 z0 x1 y1`, `dur`, `apex`, `aerien`, `vers`, `t0` si la formule part avant `t` | geste de passe, pied et surface selon l'angle et la hauteur (`z0` au-dessus de 1,2 m : une tête) ; contact à `t` |
 | `tir` | les mêmes, plus `variante` (puissant, place, enroule, rasSol, seche, lob, talon, apresDrib, ferme, faible, volee, demi, reprise, retourne), `issue` (goal, save, miss, block), `tete`, `cf`, `penalty`, `poteau`, `xg` | la frappe exacte, le pied faible si `faible` |
 | `degagement`, `touche` | comme une passe | dégagement long ou de la tête ; touche aux deux mains |
-| `controle` | `niveau` (rate, long, correct, oriente, elite), `une_touche`, `haut`, `presse` | contrôle, contrôle orienté, poitrine ou cuisse si `haut` |
+| `controle` | `niveau` (rate, long, correct, oriente, elite), `une_touche`, `haut`, `presse` | contrôle, contrôle orienté, poitrine ou cuisse si `haut` ; la touche du contrôle envoie le ballon où le niveau le dit (amorti devant lui, orienté vers le but, un mètre trop loin si `long`) |
+| `conduite` | `x`, `y` (le ballon au pied), `vx`, `vy` (sa vitesse après la touche, m/s) | une touche de balle en conduite : le pied va au ballon à `t`, dans le sens de `vx`, `vy` |
 | `dribble` | `geste` (crochet, protect, feinte, double, passement, roulette, pont, sombrero), `palier` 1 à 5, `contre`, `reussi` | le geste exact face au défenseur `contre` |
 | `tacle` | `genre` (tacle, glisse, interception), `cible`, `reussi` | tacle debout, glissé, pied tendu |
 | `interception` | `de` | coupe une passe |
@@ -254,6 +256,20 @@ suivante (révision du 2 octobre 2026, même version 1 du format).
 | `celebration` | `genre`, `fin` | §50 la célébration choisie par le moteur, jusqu'à `fin` |
 | `remplacement` | `sortant`, `entrant` | le code change de personne |
 | `hors_jeu` | | le drapeau |
+
+**Le ballon du porteur** (révision du 4 octobre 2026, même version 1 du format ; `moteur.ballon`
+vaut `"touches"`). Le moteur ne colle plus le ballon devant le porteur : il roule comme un ballon
+libre (sa vitesse perd `moteur.roulement` par seconde, en e^(−k t) : 1,3 au sec, moins sous la
+pluie, plus sur la neige), et le porteur le pousse d'une touche (action `conduite`) vers où il veut
+aller, assez fort pour le retrouver à son pied à la touche suivante (0,3 à 0,65 s plus tard selon
+sa vitesse, plus tôt sous pression). Entre deux touches, le ballon garde sa direction : un joueur
+qui tourne va d'abord le chercher. Les images donnent donc le ballon tel quel, porté ou non ; un
+lecteur qui le recalculait devant le porteur doit le lire dans les images (le cœur C++ le fait
+déjà). Le porteur décide (passe, frappe) quand le ballon est à moins de 1,15 m de lui. Un gardien
+qui a le ballon dans les mains le garde contre lui, comme avant. Un joueur fatigué pousse le
+ballon plus loin, un dribbleur le garde plus près. Mesuré : ballon à 0,55 m du porteur en
+médiane, 1 m au 95e centile ; au-delà de 1,6 m dans 0,3 % des images (`test/passerelle.js`,
+seuil 1 %).
 
 ### 3.8 Les événements
 
@@ -390,9 +406,13 @@ points sont corrigés, et `test/passerelle.js` vérifie qu'ils ne reviennent pas
   court au ballon, et le temps passe ; zéro téléportation mesurée.
 - **Une touche sans partenaire à portée** laissait le lanceur partir balle au pied. Corrigé : il la
   donne au plus proche à 25 m, sinon il la lance le long de la ligne.
-- **Les contacts** se règlent en déplaçant les joueurs, pas en les freinant : plus de 2 000 à-coups
-  au-dessus de 14 m/s² par match, presque tous au contact d'un autre joueur. À lisser côté rendu
-  (tolérance de 30 cm), puis à reprendre dans le moteur.
+- **Les contacts** se réglaient en déplaçant les joueurs, pas en les freinant : plus de 2 000
+  à-coups au-dessus de 14 m/s² par match, presque tous au contact d'un autre joueur. Repris dans
+  le moteur le 4 octobre 2026 : l'écartement (1,5 m entre coéquipiers, 0,95 m entre adversaires)
+  passe par la vitesse voulue, sous les limites du corps ; au contact (60 cm entre coéquipiers,
+  95 cm entre adversaires, la distance du duel), ce qui les rapprochait s'annule et la séparation
+  entre adversaires est bornée à 15 cm par pas. 1 221 à-coups sur le match de test (2 258 avant),
+  presque tous au corps à corps.
 - **Le gardien** est hors de l'angle de tir dans 13 à 22 % des images où un adversaire a le ballon
   à moins de 30 m, surtout quand il revient d'une sortie.
 - **La ligne défensive** s'étire sur plus de 12 m dans 17 à 33 % des images où l'équipe défend,

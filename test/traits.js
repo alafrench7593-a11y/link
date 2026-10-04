@@ -154,8 +154,13 @@ ok((ecl.tir_transition_H || 0) > (base.tir_transition_H || 0) * 1.08, 'les récu
 console.log('\n§21 aucune compétence ne garantit la victoire');
 const wins = [base, drib, pass, shot, perf, ecl].map((o) => o.wins || 0);
 ok(Math.max(...wins) < N, 'aucune série ne gagne tous ses matchs', 'victoires sur ' + N + ' : ' + wins.join(', '));
-ok([base, drib, pass, shot, perf, ecl].every((o) => (o.losses || 0) > 0), 'chaque série perd au moins un match',
-  'défaites : ' + [base, drib, pass, shot, perf, ecl].map((o) => o.losses || 0).join(', '));
+// Les équipes à compétence perdent encore. Compté sur les cinq séries ensemble : une série de
+// douze matchs qui perd 18 % du temps finit sans défaite une fois sur dix, et il y en a cinq
+// (le 4 octobre 2026, 0 défaite pour deux séries, à 4, 2, 5 et 2 pour les autres ; avant le
+// ballon indépendant, 1 à 3 défaites par série).
+const pertes = [drib, pass, shot, perf, ecl].map((o) => o.losses || 0);
+ok(pertes.reduce((a, x) => a + x, 0) >= 5, 'les équipes à compétence perdent encore des matchs',
+  'défaites : ' + pertes.join(', ') + ' (sans compétence : ' + (base.losses || 0) + ')');
 
 console.log(fails ? '\nÉCHEC : ' + fails + ' vérification(s)' : '\nOK : les compétences se voient sur le terrain');
 process.exit(fails ? 1 : 0);

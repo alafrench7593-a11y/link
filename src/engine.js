@@ -236,8 +236,20 @@ export function makeEngine(cfg) {
       pairs.forEach(([d, p, q]) => { if (usedP.has(p) || usedQ.has(q)) return; usedP.add(p); usedQ.add(q); p.markT = q; });
     };
     const gain = (p, how) => {
-      const prev = W.poss; W.owner = p; W.fl = null; W.dirty = true; const b = W.ball; b.z = 0; b.vx = b.vy = b.vz = 0;
+      const prev = W.poss; W.owner = p; W.fl = null; W.dirty = true; W.gkHold = null; const b = W.ball; b.z = 0; b.vx = b.vy = b.vz = 0;
       p.ctrlT = W.t + (how === 'set' ? 0 : ctrlDelay(p)); p.nextDec = p.ctrlT; p.rcvT = W.t; p.carry = null; p.run = null; p.prep = null; p.oneTouch = false; W.last = p.s;
+      p.touchT = W.t + 0.2; p.pousse = false;
+      // la première touche d'un ballon gagné (tacle, interception, ballon libre) : il l'emmène
+      // avec lui au lieu de le laisser sur place et de courir plus loin (le contrôle d'une passe
+      // a sa propre touche, dans receive)
+      if (how !== 'set' && how !== 'gk') {
+        // vers l'avant (le but adverse), dans le sens de sa course quand il court : un ballon
+        // récupéré se prend vers où le jeu va repartir
+        const sq = hy(p.vx, p.vy), gx = 34 - p.x, gy = yOf(p.s, PL) - p.y, gd = hy(gx, gy) || 1;
+        let ux = gx / gd + (sq > 1 ? p.vx / sq * 0.6 : 0), uy = gy / gd + (sq > 1 ? p.vy / sq * 0.6 : 0); const ud = hy(ux, uy) || 1; ux /= ud; uy /= ud;
+        const [px, py] = ouSera(p, ux, uy, Math.max(0, p.vx * ux + p.vy * uy), 0.3);
+        pousser(b, cl(px + ux * 0.45, 0.4, PW - 0.4), cl(py + uy * 0.45, 0.4, PL - 0.4), 0.3);
+      }
       if (prev !== p.s) {
         // Compteurs de récupération : comment et où le ballon change de camp. Ils ne
         // changent rien au match ; ils servent à mesurer ce que le pressing et les
@@ -362,6 +374,9 @@ export function makeEngine(cfg) {
         const pOT = cl(0.37 + skill * 0.35 + (a > 94 ? 0.12 : a > 88 ? 0.05 : 0) - (head ? 0.05 : 0) - (fk ? 0.05 : 0) + (V2 ? V2.ot : 0) - (head || fk ? 0 : weakFoot(p) * 0.12), 0.18, 0.8);
         const pG = cl(xg * vg * Math.max(0.3, 0.92 + skill * 0.6 - gks * 1.2) / (pOT * (1 - est.pBlock)), 0.01, 0.9);
         res = R() < pOT ? (R() < pG ? 'goal' : 'save') : 'miss';
+        // un gardien expulsé n'arrête rien : il captait encore, le ballon restait collé à sa
+        // place hors du terrain et il relançait de là (le cœur C++ ne trouvait pas son corps)
+        if (res === 'save' && gk.red) res = 'goal';
       }
       if (res === 'goal' || res === 'save') W.st[s].on++;
       if (xg > 0.3 && res !== 'goal') mark({ k: 'roar', v: 0.55 });   // §53 le stade retient son souffle sur une grosse occasion
@@ -387,6 +402,9 @@ export function makeEngine(cfg) {
       let dur, apex = (opt && opt.apex) || 0;
       if (aerial) { dur = 0.45 + d / (kind === 'cross' || kind === 'corner' || kind === 'fkc' ? 19 : 21); if (!(opt && opt.apex)) apex = cl(d / 4.2, 2.2, 13); }
       else { const v = opt && opt.v ? opt.v : cl(10.5 + d * 0.3, 11, 22); dur = Math.max(0.15, d / v); }
+      // la pesanteur borne la hauteur d'un vol court : au plus 3 g (8 × sommet / durée²). Un lob
+      // tiré à 1,6 m de la ligne montait à 2,8 m en 0,15 s (le cœur C++ voyait le ballon sauter)
+      apex = Math.min(apex, 3.7 * dur * dur);
       W.dirty = true;
       W.fl = { x0: b.x, y0: b.y, z0: b.z, x1: tx, y1: ty, t0: W.t, dur, kind, from: p, to, aerial, apex, v: d / Math.max(0.1, dur), u: 0, offside: null, cpa: W.cpaEnCours || null };
       act(p, 'ballon', { fl: W.fl });
@@ -440,6 +458,21 @@ export function makeEngine(cfg) {
       const tech1 = q.pas * 0.6 + q.dri * 0.2 + q.dec * 0.2;
       const pOne = cl((tech1 - 62) * 0.009, 0, 0.2) * (no.d < 3 ? 1.8 : 1) * (lvl === 'long' ? 0 : 1) * (q.line === 'GB' ? 0 : 1);
       if (R() < pOne) { q.oneTouch = true; q.ctrlT = W.t; q.nextDec = W.t; }
+      // Le contrôle se voit (le ballon est indépendant) : amorti, il s'arrête devant lui ; orienté,
+      // il part vers le but adverse et le joueur court dessus ; trop long, la touche l'envoie un
+      // mètre plus loin que voulu, devant lui (le défenseur peut revenir). En une touche, il ne le
+      // contrôle pas : il le joue.
+      if (!q.oneTouch) {
+        let ux, uy, plus = 0, T = 0.3, vise;
+        const sq = hy(q.vx, q.vy);
+        if (lvl === 'long') { const gy = yOf(q.s, PL) - q.y, gx = 34 - q.x, gd = hy(gx, gy) || 1, dx = sq > 1 ? q.vx / sq + gx / gd : gx / gd, dy = sq > 1 ? q.vy / sq + gy / gd : gy / gd, dd = hy(dx, dy) || 1; ux = dx / dd; uy = dy / dd; plus = 0.6; T = 0.5; vise = Math.max(0, q.vx * ux + q.vy * uy); }
+        else if (lvl !== 'correct') { const dd = hy(q.fx, q.fy) || 1; ux = q.fx / dd; uy = q.fy / dd; plus = lvl === 'elite' ? 0.45 : 0.3; T = 0.4; vise = Math.max(3, sq); }
+        else if (sq > 1) { ux = q.vx / sq; uy = q.vy / sq; vise = sq * 0.5; }
+        else { const ox = q.ox != null ? q.ox : q.fx, oy = q.oy != null ? q.oy : q.fy, o = hy(ox, oy) || 1; ux = ox / o; uy = oy / o; vise = 0; }
+        const [px, py] = ouSera(q, ux, uy, vise, T);
+        pousser(W.ball, cl(px + ux * (0.45 + plus), 0.4, PW - 0.4), cl(py + uy * (0.45 + plus), 0.4, PL - 0.4), T);
+        q.touchT = W.t + T;
+      }
       act(q, 'controle', { niveau: lvl, une_touche: !!q.oneTouch, haut: !!(f && f.aerial), presse: no.d < 2 });
       if (inBox(aOf(q.s, q.y), q.x)) { key(14, q.s, 'box'); W.cnt.boxRcv = (W.cnt.boxRcv || 0) + 1; W.cnt['boxRcv_' + q.s] = (W.cnt['boxRcv_' + q.s] || 0) + 1; }
     };
@@ -562,7 +595,9 @@ export function makeEngine(cfg) {
       b.x = bl.x; b.y = bl.y; b.vx = (R() - 0.5) * 11; b.vy = (s === 'H' ? 1 : -1) * (2 + R() * 7) * (R() < 0.35 ? -1 : 1); b.z = 0; W.owner = null; W.last = o;
     };
     const ownGoal = (bl, shooter) => {
-      const s = shooter.s, o = bl.s; W.score[s]++; rt(bl, -0.9); const b = W.ball; b.x = 34; b.y = yOf(s, PL + 1.3); b.z = 0.3;
+      // le ballon dévié file au fond pendant que la fête commence (il était posé d'un coup au
+      // milieu du but, jusqu'à 13 m plus loin : le cœur C++ le voyait sauter)
+      const s = shooter.s, o = bl.s; W.score[s]++; rt(bl, -0.9); W.versBut = { x: cl(bl.x, 31, 37), y: yOf(s, PL + 1.3), z: 0.3 };
       mark({ k: 'goal', s, c: bl.code, name: bl.short }); banner('CSC !', bl.short + ' · ' + W.score.H + ' - ' + W.score.A, s === 'H' ? '#2ECC71' : '#FF4757', 2.8);
       com('Malheureux ' + bl.short + ' : la frappe de ' + shooter.short + ' est déviée dans son propre but !');
       logE('BUT ! ' + bl.name + ' contre son camp, frappe déviée de ' + shooter.name + ' (' + W.score.H + '-' + W.score.A + ')', s === 'H' ? '#48E08B' : '#FF4757', 'G', s, { by: null, as: null, csc: bl.name });
@@ -640,7 +675,7 @@ export function makeEngine(cfg) {
       const dead = { throw: 18, gk: 26, corner: 32, fk: 26, fkd: 48, fkc: 34, pen: 60, ko: 0 }[sub] * (TM[s].tac.timewaste && W.score[s] > W.score[OT[s]] ? 1.6 : 1);
       W.set = { kind: sub, s, x: bx, y: by, t0: W.t, ready: W.t + setup, taker, wall: [] };
       W.clk += dead;
-      if (sub === 'corner') { W.st[s].cor++; banner('CORNER', club(s), s === 'H' ? '#2ECC71' : '#F2F4F7', 1.3); com('Corner pour ' + club(s)); logE('Corner pour ' + club(s), '#9AA3B0', 'C', s); key(18, s, 'corner'); }
+      if (sub === 'corner') { banner('CORNER', club(s), s === 'H' ? '#2ECC71' : '#F2F4F7', 1.3); com('Corner pour ' + club(s)); logE('Corner pour ' + club(s), '#9AA3B0', 'C', s); key(18, s, 'corner'); }
       if (sub === 'fkd') { com('Coup franc bien placé pour ' + club(s) + '. ' + taker.short + ' s’en charge'); key(34, s, 'fkd'); }
       if (sub === 'fkc') { com('Coup franc à centrer pour ' + club(s)); key(22, s, 'fkc'); }
       if (sub === 'throw') com('Touche pour ' + club(s));
@@ -657,14 +692,17 @@ export function makeEngine(cfg) {
     // La place du tireur d'un coup de pied arrêté : là où la mise en place l'envoie (setTargets)
     // et là d'où il frappe (execSet). Une seule définition, pour qu'il n'ait plus à bondir au
     // ballon au moment de frapper (la passerelle le voyait sauter de 2 m en un pas).
+    // (dans les bornes où un joueur peut avoir sa cible, cf. targets : au-delà, un tireur de corner
+    // n'arrivait jamais à sa place, attendait 15 s puis y sautait de 60 cm)
     const placeTireur = (S) => {
       const s = S.s, k = S.kind, dy = s === 'H' ? 0.6 : -0.6;
-      if (k === 'throw') return [S.x, S.y];
-      if (k === 'ko') return [S.x + (s === 'H' ? 0.4 : -0.4), S.y + dy];
-      if (k === 'pen') return [34, yOf(s, PL - 12.2)];
-      if (k === 'gk') return [S.x, S.y + dy];
+      const borne = (x, y) => [cl(x, 0.5, PW - 0.5), cl(y, -0.5, PL + 0.5)];
+      if (k === 'throw') return borne(S.x, S.y);
+      if (k === 'ko') return borne(S.x + (s === 'H' ? 0.4 : -0.4), S.y + dy);
+      if (k === 'pen') return borne(34, yOf(s, PL - 12.2));
+      if (k === 'gk') return borne(S.x, S.y + dy);
       const ecart = k === 'corner' || k === 'fkc' ? 0.6 : 0.5;
-      return [S.x + (S.x < 34 ? -ecart : ecart), S.y + dy];
+      return borne(S.x + (S.x < 34 ? -ecart : ecart), S.y + dy);
     };
     const execSet = () => {
       const S = W.set, s = S.s, T = TM[s], p = S.taker, o = OT[s];
@@ -673,7 +711,8 @@ export function makeEngine(cfg) {
       // d'un coup, puis encore 2 m une fois arrivé à 1,6 m) : il court, le temps passe, et seul
       // un cas sans issue (15 s plus tard) le replace encore.
       const [px, py] = placeTireur(S);
-      if (hy(p.x - px, p.y - py) > 0.35 && W.t < S.ready + 15) return;
+      // (à 15 cm près : le dernier pas se finit en marchant, il ne saute plus de 35 cm)
+      if (hy(p.x - px, p.y - py) > 0.15 && W.t < S.ready + 15) return;
       p.x = px; p.y = py;
       W.set = null; W.owner = p; p.ctrlT = W.t; p.rcvT = W.t; W.last = s;
       if (W.poss !== s) { W.poss = s; W.possT = W.t; TM[s].counterUntil = 0; TM[o].cpressUntil = 0; if (TM[o].tac.mark >= 1) assignMarks(TM[o]); }
@@ -696,6 +735,9 @@ export function makeEngine(cfg) {
         const d = hy(34 - S.x, yOf(s, PL) - S.y), base = d < 19 ? 0.1 : d < 23 ? 0.075 : d < 27 ? 0.052 : d < 32 ? 0.032 : 0.018;
         shoot(p, false, { xg: base * cl(0.55 + (p.sht - 62) / 22, 0.45, 2) }); return;
       }
+      // un corner compte quand il est tiré (le sifflet de la mi-temps peut couper sa mise en
+      // place) : c'est aussi ce que relit le cœur C++ dans les actions
+      if (k === 'corner') W.st[s].cor++;
       if (k === 'corner' || k === 'fkc') {
         const nl = S.x < 34 ? -1 : 1, pref = s === 'H' ? T.tac.corners : -1;
         let zone;
@@ -1072,7 +1114,9 @@ export function makeEngine(cfg) {
             // §23 un geste de haut palier mérite sa ligne dans le rapport : il reste rare,
             // donc il ne noie pas le fil des événements.
             if (g.tier >= 4) logE(c.name + ' : ' + g.lab + ' sur ' + bl.name, s === 'H' ? '#BDEBC9' : '#F2B6B6', 'skill', s);
-            if (aOf(s, c.y) > 66) key(12 + g.tier * 2, s, 'drib'); c.vx *= 1.1 + g.gain * 0.08; c.vy *= 1.1 + g.gain * 0.08; }
+            if (aOf(s, c.y) > 66) key(12 + g.tier * 2, s, 'drib'); c.vx *= 1.1 + g.gain * 0.08; c.vy *= 1.1 + g.gain * 0.08;
+            // le geste emmène le ballon : une touche plus longue, dans le dos du défenseur battu
+            c.pousse = true; c.touchT = W.t; }
           else { const pf = (inBox(aOf(s, c.y), c.x) ? 0.15 : 1) * 0.17 * [0.65, 1, 1.45][TM[o].tac.tackle] * (TM[o].shout === 'calme' ? 0.75 : 1) * (bl.yc >= 1 ? 0.14 : 1);
             act(c, 'dribble', { geste: g.n, palier: g.tier, contre: bl.code, reussi: false });
             if (R() < pf) { foul(bl, c, 'drib'); return; }
@@ -1393,7 +1437,9 @@ export function makeEngine(cfg) {
         if (S.taker && k !== 'gk') { const [tx, ty] = placeTireur(S); setTW(S.taker, tx, ty, 0.9); }
         if (k === 'throw') { const mates = LV[s].filter((p) => p !== S.taker && p.line !== 'GB').sort((a2, b2) => hy(a2.x - S.x, a2.y - S.y) - hy(b2.x - S.x, b2.y - S.y)).slice(0, 2); mates.forEach((p, j) => setTW(p, cl(S.x + (S.x < 34 ? 6 + j * 5 : -6 - j * 5), 2, 66), S.y + (j ? -6 : 5), 0.8)); }
       }
-      ['H', 'A'].forEach((side) => { const g = TM[side].ps[0]; if (!g.red && !(k === 'pen' && side === o) && !(k === 'gk' && side === s)) gkTarget(TM[side], side === s); });
+      // un gardien qui tire le coup franc (un hors-jeu sifflé près de sa surface) va au ballon :
+      // sa place de gardien l'en empêchait, il attendait 15 s puis bondissait de 18 m
+      ['H', 'A'].forEach((side) => { const g = TM[side].ps[0]; if (!g.red && g !== S.taker && !(k === 'pen' && side === o) && !(k === 'gk' && side === s)) gkTarget(TM[side], side === s); });
       if (k === 'gk') { const g = TM[s].ps[0], [tx, ty] = placeTireur(S); setTW(g, tx, ty, 0.9); }
     };
     // ---------- célébrations ----------
@@ -1520,23 +1566,73 @@ export function makeEngine(cfg) {
     };
     const move = () => {
       const A2 = all();
+      // L'écartement : un coéquipier à moins de 1,5 m, un adversaire à moins de 0,95 m. Il passe
+      // par la vitesse voulue, donc sous les limites du corps (plus bas) : on s'écarte en
+      // quelques pas. Avant, on déplaçait les joueurs d'un coup à chaque pas, et la passerelle
+      // comptait 2 258 à-coups de plus de 14 m/s² par match. Le contact (plus bas) ne corrige
+      // plus en position que ce qui reste, après le déplacement. Le porteur tient sa ligne.
+      // (Laisser les adversaires s'approcher sous 0,95 m, essayé : 7 % de fautes en plus pour
+      // l'Équilibré, et le Gegenpressing ne se distinguait plus par ses fautes.)
+      for (const p of A2) { p.sx = 0; p.sy = 0; }
+      for (let i = 0; i < A2.length; i++) for (let j = i + 1; j < A2.length; j++) {
+        const p = A2[i], q = A2[j], dx = q.x - p.x, dy = q.y - p.y; if (dx > 1.5 || dx < -1.5 || dy > 1.5 || dy < -1.5) continue; const d = hy(dx, dy), mn = p.s === q.s ? 1.5 : 0.95;
+        if (d < mn && d > 0.001) {
+          const bp = (p.bal0 != null ? p.bal0 : 0.7), bq = (q.bal0 != null ? q.bal0 : 0.7), tot = bp + bq, k = (mn - d) * 2.6, ux = dx / d, uy = dy / d;
+          if (p !== W.owner) { const w = q === W.owner ? 2 : 2 * bq / tot; p.sx -= ux * k * w; p.sy -= uy * k * w; }
+          if (q !== W.owner) { const w = p === W.owner ? 2 : 2 * bp / tot; q.sx += ux * k * w; q.sy += uy * k * w; }
+        }
+      }
       for (const p of A2) {
         const sp = p.vmax * (0.78 + 0.22 * p.energy / 100) * (p.beat > 0 ? 0.4 : 1) * (p.fall > 0 ? 0 : 1) * (p === W.owner ? 0.88 : 1);
         const dx = p.tx - p.x, dy = p.ty - p.y, d = hy(dx, dy);
-        const want = Math.min(sp * p.urg, d * 1.7), wx = d > 0.05 ? dx / d * want : 0, wy = d > 0.05 ? dy / d * want : 0;
-        let ax = wx - p.vx, ay = wy - p.vy; const am = hy(ax, ay);
-        const vv = hy(p.vx, p.vy), turn = vv > 0.6 && want > 0.3 ? Math.max(0, (p.vx * wx + p.vy * wy) / (vv * Math.max(0.01, want))) : 1;   // 1 = tout droit, -1 = demi-tour
+        let want = Math.min(sp * p.urg, d * 1.7), ux0 = d > 0.05 ? dx / d : 0, uy0 = d > 0.05 ? dy / d : 0;
+        // Le porteur court là où va le ballon (ses touches l'envoient vers sa cible) : le ballon
+        // mène, il suit. Un ballon qui n'est pas à son pied, il va le chercher, même arrêté.
+        let urg = p.urg;
+        if (p === W.owner && W.gkHold !== p && !W.set) {
+          const b = W.ball, lx = b.x + b.vx * 0.3 - p.x, ly = b.y + b.vy * 0.3 - p.y, ld = hy(lx, ly), bd = hy(b.x - p.x, b.y - p.y);
+          if (ld > 0.25) { ux0 = lx / ld; uy0 = ly / ld; }
+          want = Math.max(want, Math.min(sp * Math.max(p.urg, 0.75), (bd - 0.45) * 3.5));
+          if (bd > 1) urg = Math.max(urg, 0.95);   // un ballon qui s'éloigne : il y va vite
+        }
+        let wx = ux0 * want, wy = uy0 * want;
+        if (p.fall <= 0) { wx += p.sx; wy += p.sy; }
+        let ax = wx - p.vx, ay = wy - p.vy;
+        const vv = hy(p.vx, p.vy), wm = hy(wx, wy), turn = vv > 0.6 && wm > 0.3 ? Math.max(0, (p.vx * wx + p.vy * wy) / (vv * wm)) : 1;   // 1 = tout droit, -1 = demi-tour
         // §14 un Sprinter accélère plus fort : il prend deux mètres au démarrage.
-        const lim = (p.acc0 != null ? p.acc0 : 0.45) * (1 + TR(p, 'sprint') * 0.26) * (p.urg > 0.9 ? 1.18 : 1) * (0.55 + 0.45 * (p.agi0 != null ? p.agi0 : 0.7)) * (turn < 0.2 ? 0.55 + 0.45 * (p.agi0 != null ? p.agi0 : 0.7) : 1) * (0.8 + 0.2 * p.energy / 100);
-        if (am > lim) { ax *= lim / am; ay *= lim / am; }
+        const lim = (p.acc0 != null ? p.acc0 : 0.45) * (1 + TR(p, 'sprint') * 0.26) * (urg > 0.9 ? 1.18 : 1) * (0.55 + 0.45 * (p.agi0 != null ? p.agi0 : 0.7)) * (turn < 0.2 ? 0.55 + 0.45 * (p.agi0 != null ? p.agi0 : 0.7) : 1) * (0.8 + 0.2 * p.energy / 100);
+        // L'accélération reste celle que l'équilibre du jeu a réglée (lim, la même dans tous les
+        // sens), sous un plafond humain : 9,5 m/s² par pas de 0,1 s, même pour un sprinteur
+        // d'élite lancé à fond (avant, jusqu'à 12). Essayé le 4 octobre 2026, mesuré, écarté :
+        //  - un départ explosif (profil force-vitesse, 1,4 à 1,6 × lim à l'arrêt) rend les
+        //    défenseurs si prompts que le 4-2-4 ne met plus de ballons dans la surface (37 → 37
+        //    réceptions sur 18 matchs, contre 33 → 61) ;
+        //  - un freinage et un virage plus forts (1,25 × lim) coûtaient 10 % des tirs ;
+        //  - une pointe atteinte en douceur (poussée réduite au-delà de 85 % de la vitesse du
+        //    jour) affaiblissait la fraîcheur physique (tirs : +4 % au lieu de +10 %).
+        // Ils demandent de revoir d'abord ce que l'IA attend des courses (passEval, l'arrivée du
+        // receveur, les appels).
+        const lm = Math.min(0.95, lim), am = hy(ax, ay);
+        if (am > lm) { ax *= lm / am; ay *= lm / am; }
         p.vx += ax; p.vy += ay;
       }
+      for (const p of A2) { p.x = cl(p.x + p.vx * DT, -1, PW + 1); p.y = cl(p.y + p.vy * DT, -1.5, PL + 1.5); }
+      // le contact : deux coéquipiers à moins de 60 cm, deux adversaires à bout de bras (95 cm,
+      // la distance du duel, que tout l'équilibre des tacles et des fautes suppose) sont
+      // séparés, et ce qui les rapprochait s'annule : on ne les repousse plus à chaque pas
+      // (le plus solide garde sa course ; le porteur tient sa ligne)
       for (let i = 0; i < A2.length; i++) for (let j = i + 1; j < A2.length; j++) {
-        const p = A2[i], q = A2[j], dx = q.x - p.x, dy = q.y - p.y; if (dx > 1.5 || dx < -1.5 || dy > 1.5 || dy < -1.5) continue; const d = hy(dx, dy), mn = p.s === q.s ? 1.5 : 0.95;
-        if (d < mn && d > 0.001) { const bp = (p.bal0 != null ? p.bal0 : 0.7), bq = (q.bal0 != null ? q.bal0 : 0.7), tot = bp + bq; const push = (mn - d) * 0.5, ux = dx / d, uy = dy / d; if (p !== W.owner) { p.x -= ux * push * (2 * bq / tot); p.y -= uy * push * (2 * bq / tot); } if (q !== W.owner) { q.x += ux * push * (2 * bp / tot); q.y += uy * push * (2 * bp / tot); } }
+        const p = A2[i], q = A2[j], dx = q.x - p.x, dy = q.y - p.y; if (dx > 0.95 || dx < -0.95 || dy > 0.95 || dy < -0.95) continue; const d = hy(dx, dy), mn = p.s !== q.s ? 0.95 : 0.6;
+        if (d < mn && d > 0.001) {
+          const bp = (p.bal0 != null ? p.bal0 : 0.7), bq = (q.bal0 != null ? q.bal0 : 0.7), tot = bp + bq, ux = dx / d, uy = dy / d;
+          // (entre adversaires, au plus 15 cm par pas : le reste au pas suivant, sans à-coup)
+          const fp = p === W.owner ? 0 : q === W.owner ? 1 : bq / tot, fq = q === W.owner ? 0 : p === W.owner ? 1 : bp / tot, push = p.s !== q.s ? Math.min(0.15, (mn - d) * 0.5) : mn - d;
+          p.x -= ux * push * fp; p.y -= uy * push * fp; q.x += ux * push * fq; q.y += uy * push * fq;
+          const vn = (q.vx - p.vx) * ux + (q.vy - p.vy) * uy;
+          if (vn < 0) { p.vx += ux * vn * fp; p.vy += uy * vn * fp; q.vx -= ux * vn * fq; q.vy -= uy * vn * fq; }
+        }
       }
       for (const p of A2) {
-        p.x = cl(p.x + p.vx * DT, -1, PW + 1); p.y = cl(p.y + p.vy * DT, -1.5, PL + 1.5);
         const v = hy(p.vx, p.vy); if (v > 0.5) { p.fx = p.vx / v; p.fy = p.vy / v; } else { const bx = W.ball.x - p.x, by = W.ball.y - p.y, bd = hy(bx, by); if (bd > 0.5) { p.fx += (bx / bd - p.fx) * 0.2; p.fy += (by / bd - p.fy) * 0.2; } }
         corps(p, v);
         if (p.beat > 0) p.beat -= DT; if (p.fall > 0) p.fall -= DT;
@@ -1554,12 +1650,95 @@ export function makeEngine(cfg) {
     const wq = R();
     W.wx = wq < 0.52 ? 'soleil' : wq < 0.78 ? 'nuit' : wq < 0.94 ? 'pluie' : 'neige';
     const WX = WEATHER[W.wx];
+    // ---------- la conduite de balle : un ballon indépendant, poussé par touches ----------
+    // Le ballon n'est plus collé devant le porteur. Il roule comme un ballon libre (même herbe,
+    // même météo) ; le porteur le pousse d'une touche vers où il veut aller, court après, le
+    // rattrape, le repousse. Entre deux touches le ballon garde sa direction : un joueur qui
+    // tourne doit d'abord aller le chercher. Chaque touche est écrite dans le document
+    // (action « conduite ») : le rendu pose le pied au ballon à cet instant, sans rien inventer.
+    // Le gardien qui a le ballon dans les mains le garde contre lui.
+    const FROT = () => Math.exp(-1.3 * WX.fric * DT);
+    // la vitesse qui amène le ballon en (x, y) en T secondes sur cette herbe (pas de 0,1 s)
+    const pousser = (b, x, y, T) => {
+      const f = FROT(), n = Math.max(1, Math.round(T / DT)), k = (1 - f) / (DT * (1 - Math.pow(f, n)));
+      let vx = (x - b.x) * k, vy = (y - b.y) * k; const v = hy(vx, vy);
+      if (v > 14) { vx *= 14 / v; vy *= 14 / v; }
+      b.vx = vx; b.vy = vy; b.vz = 0; b.z = 0;
+    };
+    // où le porteur veut aller : sa cible, sinon sa course, sinon son regard
+    const sensConduite = (p) => {
+      const gx = p.tx - p.x, gy = p.ty - p.y, gd = hy(gx, gy), sp = hy(p.vx, p.vy);
+      if (gd > 0.4) return [gx / gd, gy / gd, gd];
+      if (sp > 0.5) return [p.vx / sp, p.vy / sp, gd];
+      const ox = p.ox != null ? p.ox : p.fx, oy = p.oy != null ? p.oy : p.fy, o = hy(ox, oy) || 1; return [ox / o, oy / o, gd];
+    };
+    // le ballon est au pied : assez près pour une passe, une frappe, une décision
+    const auPied = (p) => W.gkHold === p || hy(W.ball.x - p.x, W.ball.y - p.y) <= 1.15;
+    // Où sera le joueur dans T secondes s'il passe de sa vitesse à vise dans la direction u, avec
+    // l'accélération prudente d'un corps (3 m/s²) : un demi-tour ne se fait pas en un pas, et la
+    // touche doit attendre son pied là où il sera vraiment (s'il va plus vite, il le rattrape plus tôt).
+    const ouSera = (p, ux, uy, vise, T, borne) => {
+      const a = 3, gx = ux * vise - p.vx, gy = uy * vise - p.vy, g = hy(gx, gy);
+      let dx, dy;
+      if (g < 1e-6) { dx = p.vx * T; dy = p.vy * T; }
+      else {
+        const t1 = Math.min(T, g / a), k = a * t1 / g;   // part du changement faite à t1
+        const v1x = p.vx + gx * k, v1y = p.vy + gy * k;
+        dx = (p.vx + v1x) * 0.5 * t1 + v1x * (T - t1); dy = (p.vy + v1y) * 0.5 * t1 + v1y * (T - t1);
+      }
+      // il s'arrête à sa cible : on ne l'attend pas plus loin
+      const l = dx * ux + dy * uy; if (borne != null && l > borne) { dx -= ux * (l - borne); dy -= uy * (l - borne); }
+      return [p.x + dx, p.y + dy];
+    };
+    // la vitesse du porteur, comme move() la lui donne
+    const vitPorteur = (p) => p.vmax * (0.78 + 0.22 * p.energy / 100) * 0.88 * (p.beat > 0 ? 0.4 : 1);
+    const touche = (p, b, ux, uy, gd, force) => {
+      const sp = hy(p.vx, p.vy), no = nearestOpp(p).d;
+      // la vitesse qu'il cherche, et le temps jusqu'à la touche suivante : plus long lancé,
+      // plus court au contact (contrôle serré), plus long encore après un dribble réussi
+      const vise = Math.min(vitPorteur(p) * (p.urg || 0.5), gd * 1.7), s = Math.max(0, sp + (vise - sp) * 0.5);
+      // la fatigue et le dribble règlent la touche : un joueur cuit la pousse plus loin et la
+      // rattrape plus tard, un bon dribbleur la garde plus près (§15, les statistiques font le
+      // comportement)
+      const fatigue = 1 - p.energy / 100, adresse = 1.15 - 0.3 * (p.dri != null ? p.dri : 60) / 100;
+      const T = DT * Math.max(2, Math.round(cl(0.3 + 0.045 * s, 0.3, 0.65) * (no < 3 ? 0.75 : 1) * (force ? 1.25 : 1) * (1 + 0.35 * fatigue) * adresse / DT));
+      // le ballon attend son pied à 45 cm devant lui (plus loin s'il est cuit), là où il sera à
+      // la touche suivante
+      const avance = 0.45 + 0.35 * fatigue, [px, py] = ouSera(p, ux, uy, vise, T, Math.max(0, gd - 0.2));
+      pousser(b, cl(px + ux * avance, 0.4, PW - 0.4), cl(py + uy * avance, 0.4, PL - 0.4), T);
+      p.touchT = W.t + Math.max(0.25, T * 0.6); p.pousse = false;
+      act(p, 'conduite', { x: b.x, y: b.y, vx: b.vx, vy: b.vy });
+    };
+    const conduite = (p, b) => {
+      const f = FROT();
+      b.x += b.vx * DT; b.y += b.vy * DT; b.vx *= f; b.vy *= f; b.z = 0; b.vz = 0;
+      if (b.vx * b.vx + b.vy * b.vy < 0.0025) b.vx = b.vy = 0;
+      // on ne sort pas le ballon en le conduisant
+      if (b.x < 0.3) { b.x = 0.3; b.vx = Math.max(0, b.vx); } else if (b.x > PW - 0.3) { b.x = PW - 0.3; b.vx = Math.min(0, b.vx); }
+      if (b.y < 0.3) { b.y = 0.3; b.vy = Math.max(0, b.vy); } else if (b.y > PL - 0.3) { b.y = PL - 0.3; b.vy = Math.min(0, b.vy); }
+      if (W.t < (p.touchT || 0)) return;
+      const rx = b.x - p.x, ry = b.y - p.y, d = hy(rx, ry);
+      if (d > (p.pousse ? 1.1 : 0.85)) return;   // hors de portée de pied : il court après
+      const [ux, uy, gd] = sensConduite(p), sp = hy(p.vx, p.vy), bv = hy(b.vx, b.vy);
+      const devant = rx * ux + ry * uy, rvx = b.vx - p.vx, rvy = b.vy - p.vy;
+      const rattrape = -(rx * rvx + ry * rvy) / Math.max(0.05, d);   // > 0 : il revient sur le ballon
+      const autreSens = bv > 0.3 && (b.vx * ux + b.vy * uy) / bv < 0.94;   // il veut aller ailleurs (plus de 20°)
+      const besoin = p.pousse
+        || (rattrape > 0.2 && d < 0.6)                 // il l'a rattrapé
+        || devant < 0.25                               // ballon à côté de lui ou derrière
+        || (autreSens && d < 0.75)                     // il change de direction : la touche oriente
+        || (sp < 0.6 && bv < 0.3 && (d > 0.7 || d < 0.3));   // arrêté : il le remet devant lui
+      if (besoin) touche(p, b, ux, uy, gd, p.pousse);
+    };
     const ballStep = () => {
       const b = W.ball;
       if (W.owner) {
-        const p = W.owner, sp = hy(p.vx, p.vy), fx = sp > 0.4 ? p.vx / sp : p.fx, fy = sp > 0.4 ? p.vy / sp : p.fy;
-        const off = 0.5 + Math.min(0.5, sp * 0.07) + (p.carry && p.carry.drib ? Math.abs(Math.sin(W.t * 9)) * 0.35 : 0);
-        b.x = cl(p.x + fx * off, 0.1, PW - 0.1); b.y = cl(p.y + fy * off, 0.1, PL - 0.1); b.z = 0; return;
+        const p = W.owner;
+        if (W.gkHold === p) {
+          const sp = hy(p.vx, p.vy), fx = sp > 0.4 ? p.vx / sp : p.fx, fy = sp > 0.4 ? p.vy / sp : p.fy, off = 0.5 + Math.min(0.5, sp * 0.07);
+          b.x = cl(p.x + fx * off, 0.1, PW - 0.1); b.y = cl(p.y + fy * off, 0.1, PL - 0.1); b.z = 0; b.vx = b.vy = 0; return;
+        }
+        conduite(p, b); return;
       }
       if (W.fl) { flightStep(); return; }
       b.x += b.vx * DT; b.y += b.vy * DT;
@@ -1572,7 +1751,7 @@ export function makeEngine(cfg) {
     const kickoffReset = (s) => {
       refreshLV();
       ['H', 'A'].forEach((side) => { TM[side].D = TM[side].lineH; LV[side].forEach((p) => { const a = p.line === 'GB' ? 3 : cl(10 + (p.ba - 12) * 0.78, 5, 50.5); const w = toW(side, a, p.line === 'GB' ? 34 : 34 + (p.bx - 34) * 0.95); p.x = w.x; p.y = w.y; p.vx = p.vy = 0; p.run = p.prep = p.carry = null; p.fall = p.beat = 0; }); });
-      const b = W.ball; b.x = 34; b.y = 52.5; b.z = 0; b.vx = b.vy = 0; W.owner = null; W.fl = null; W.cel = 0; W.dive = null; W.lastTele = W.t + DT;
+      const b = W.ball; b.x = 34; b.y = 52.5; b.z = 0; b.vx = b.vy = 0; W.owner = null; W.fl = null; W.cel = 0; W.dive = null; W.lastTele = W.t + DT; W.versBut = null;
       setPiece('ko', s, 34, 52.5);
       const tk = W.set.taker; if (tk) { tk.x = 34 + (s === 'H' ? 0.4 : -0.4); tk.y = 52.5 + (s === 'H' ? 0.6 : -0.6); }
     };
@@ -1599,7 +1778,9 @@ export function makeEngine(cfg) {
       offA.H = calcOff('H'); offA.A = calcOff('A');
       if (W.set && W.t >= W.set.ready) execSet();
       else if (!W.set && W.cel <= 0) {
-        if (W.owner && W.t >= W.owner.ctrlT && (W.t >= W.owner.nextDec || (nearestOpp(W.owner).d < 1.6 && W.t - W.owner.rcvT > 0.25 && W.t >= W.owner.nextDec - 0.2))) decide(W.owner);
+        // il décide (passe, frappe, conduite) quand le ballon est à son pied, pas quand il roule
+        // encore devant lui après une touche
+        if (W.owner && W.t >= W.owner.ctrlT && (W.t >= W.owner.nextDec || (nearestOpp(W.owner).d < 1.6 && W.t - W.owner.rcvT > 0.25 && W.t >= W.owner.nextDec - 0.2)) && auPied(W.owner)) decide(W.owner);
         if (W.owner) duels();
       }
       W.tn = (W.tn || 0) + 1; if (W.tn % 2 === 0 || W.dirty || W.set) { W.dirty = false; targets(); }
@@ -1619,7 +1800,10 @@ export function makeEngine(cfg) {
       }
       move();
       if (!W.set && W.cel <= 0) { phaseBallon = true; ballStep(); phaseBallon = false; }
-      else if (W.cel > 0) { const b = W.ball; b.vx = b.vy = 0; }
+      else if (W.cel > 0) {
+        const b = W.ball; b.vx = b.vy = 0;
+        if (W.versBut) { const vb = W.versBut, d = hy(vb.x - b.x, vb.y - b.y), k = d > 2 ? 2 / d : 1; b.x += (vb.x - b.x) * k; b.y += (vb.y - b.y) * k; b.z += (vb.z - b.z) * k; if (k === 1) W.versBut = null; }
+      }
       else { const b = W.ball; b.x = W.set.x; b.y = W.set.y; b.z = 0; }
       // La possession se compte en temps de ballon. Le temps de VOL était crédité au
       // camp du passeur, y compris sur un long dégagement : une équipe qui balançait
@@ -1818,7 +2002,7 @@ export function makeEngine(cfg) {
       },
       tactique(side) { const T = TM[side]; return { tac: Object.assign({}, T.tac), ment: T.ment }; },
       clockLabel,
-      weather() { return { id: W.wx, label: WX.l }; },
+      weather() { return { id: W.wx, label: WX.l, roulement: 1.3 * WX.fric }; },
       // §51 séance de tirs au but : 5 tireurs chacun, puis mort subite.
       // Chaque frappe compare le tir et le sang-froid du tireur aux réflexes du gardien,
       // et la pression monte quand la série peut se terminer.

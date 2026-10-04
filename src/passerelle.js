@@ -20,6 +20,9 @@ export const Passerelle = {
   PASSERELLE() {
     return {
       format: 'linkfoot-match', version: 1, hz: 10, pas: 0.1,
+      // le ballon du porteur : poussé par touches (actions « conduite »), il est indépendant et
+      // les images le donnent tel quel (révision du 4 octobre 2026 ; avant, collé devant lui)
+      ballon: 'touches',
       // l'ordre des intentions de l'IA (code 1 à 9 ; 0 : aucune)
       intentions: ['HOLD', 'SUPPORT', 'BUILD_UP', 'ATTACK_SPACE', 'DROP', 'OVERLAP', 'RECOVER', 'MARK', 'COVER'],
       // les bits d'état d'un joueur, dans chaque image
@@ -273,7 +276,8 @@ export const Passerelle = {
     const feuille = ctx.feuille || this.feuillePont(ctx);
     const doc = {
       format: P.format, version: P.version,
-      moteur: { hz: P.hz, pas: P.pas, graine: ctx.seed != null ? ctx.seed : null },
+      moteur: { hz: P.hz, pas: P.pas, graine: ctx.seed != null ? ctx.seed : null, ballon: P.ballon,
+        roulement: E.weather ? Math.round(E.weather().roulement * 1000) / 1000 : 1.3 },
       repere: { unite: 'm', terrain: [68, 105], images_en: 'cm', angles_en: 'mrad',
         unreal: 'X = (52,5 − y) × 100 ; Y = (x − 34) × 100 ; Z = z × 100 (cm) ; lacet = atan2(cos a, −sin a)' },
       codes: { intentions: P.intentions, etats: P.etats, cpa: P.cpa },
@@ -400,10 +404,11 @@ export const Passerelle = {
         if (Math.abs(xp - xq) < 0.4 && Math.abs(yp - yq) < 0.4 && Math.hypot(xp - xq, yp - yq) < 0.4) { const v2 = (chev.get(key) || 0) + 1; chev.set(key, v2); if (v2 === 6) note('chevauchement', { t: b[0] / 10, codes: [p, q] }); }
         else chev.delete(key);
       }
-      // le ballon colle à son porteur : 1,4 m au plus (la touche de balle en conduite, 0,5 à 1 m
-      // devant lui, plus le rebond du dribble)
+      // le ballon reste au pied de son porteur : 1,6 m au plus. Depuis le 4 octobre 2026 le moteur
+      // le pousse par touches : lancé, une touche le mène jusqu'à 1,2 à 1,4 m devant lui, un
+      // peu plus loin quand il est cuit (avant, collé à 0,5 à 1,35 m, le seuil était 1,4 m)
       const pr = b[7];
-      if (pr >= 0 && present(b, pr) && enJeu) { const [xp, yp] = pos(b, pr); const d = Math.hypot(b[4] / 100 - xp, b[5] / 100 - yp); if (d > 1.4) note('ballon_loin', { t: b[0] / 10, code: pr, d: Math.round(d * 100) / 100 }); }
+      if (pr >= 0 && present(b, pr) && enJeu) { const [xp, yp] = pos(b, pr); const d = Math.hypot(b[4] / 100 - xp, b[5] / 100 - yp); if (d > 1.6) note('ballon_loin', { t: b[0] / 10, code: pr, d: Math.round(d * 100) / 100 }); }
       // le gardien dans l'angle : quand un adversaire a le ballon à moins de 30 m du but, le
       // gardien doit être entre le ballon et sa cage (dans le triangle ballon / poteaux élargi)
       ['H', 'A'].forEach((side) => {

@@ -81,7 +81,7 @@ export function creerReel(R, scene, o = {}) {
   };
   const repartir = (imgs, tm) => {
     // le document repart 1,5 s avant l'instant montré (un saut d'une action à l'autre, ou le début)
-    doc = { images: { champs, donnees: [] }, actions: [], joueurs: fiches, equipes: (o.feuille && o.feuille.equipes) || {}, match: {} };
+    doc = { images: { champs, donnees: [] }, actions: [], joueurs: fiches, equipes: (o.feuille && o.feuille.equipes) || {}, match: {}, moteur: { ballon: Passerelle.PASSERELLE().ballon } };
     dernierT = -Infinity; porteurPrec = -1;
     completer(imgs, tm - 0.1 - 1.5);
     if (doc.images.donnees.length < 2) { match = null; return false; }

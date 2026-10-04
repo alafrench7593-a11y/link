@@ -15,6 +15,13 @@ export class Match {
     this.t1 = this.lignes[this.n - 1][this.col.t] / 10;
     this.joueurs = new Map(doc.joueurs.filter((j) => j.code != null && j.code >= 0).map((j) => [j.code, j]));
     this.actions = (doc.actions || []).slice().sort((a, b) => a.t - b.t);
+    // Le ballon du porteur : depuis le 4 octobre 2026, le moteur le pousse par touches (il est
+    // indépendant, chaque touche est une action « conduite ») et les images le donnent tel quel.
+    // Avant, il le collait devant le porteur, et le rendu refaisait cette règle (ballonPorte).
+    const m = doc.moteur || {};
+    this.touchesMoteur = m.ballon === 'touches' || this.actions.some((a) => a.a === 'conduite');
+    // ce que perd par seconde un ballon qui roule (le moteur : e^(−k t), k selon la météo)
+    this.roulement = m.roulement > 0 ? m.roulement : 1.3;
   }
 
   // Le match en direct (reel.js) : le document grandit pendant qu'on le regarde, de nouvelles
@@ -80,8 +87,9 @@ export class Match {
   // Trois régimes, ceux du moteur (src/engine.js, ballStep et flightStep) :
   // - en vol (passe, tir, dégagement) : la formule du moteur, u = (t − t0) / durée ; les images à
   //   10 par seconde la suivent à 2 cm près, la formule donne les instants entre deux images ;
-  // - porté : devant le porteur, à 0,5 m + 0,07 m par m/s (au plus 1 m), plus l'oscillation du
-  //   dribble ; calculé depuis la position rendue du porteur, il reste collé à ses pieds ;
+  // - porté : le ballon du moteur, poussé par les touches du porteur, qui roule entre deux
+  //   (ballonMoteur) ; dans un document plus ancien, devant le porteur à 0,5 m + 0,07 m par m/s
+  //   (au plus 1 m), plus l'oscillation du dribble, calculé depuis sa position rendue ;
   // - libre : les images du moteur, en courbe de Catmull-Rom.
   // Le moteur pose le ballon d'un coup chez le nouveau porteur (une réception, un tacle) : le rendu
   // fait ce transfert en 0,35 s, depuis le régime d'avant (le vol qui arrive, l'ancien porteur).
@@ -176,6 +184,15 @@ export class Match {
     return [p[0] + 34 + fx * off, p[1] + 52.5 + fy * off, 0];
   }
 
+  // Le ballon du moteur entre deux images : il roule comme dans le moteur (sa vitesse décroît en
+  // e^(−k t)) ; les images sont exactes, l'entre-deux suit la même loi. Une touche change sa
+  // vitesse d'une image à l'autre : la courbe repart de là, sans l'arrondir avant le pied.
+  ballonMoteur(t) {
+    const [i, u] = this.index(t), L = this.lignes, c = this.col, a = L[i], b = L[Math.min(this.n - 1, i + 1)];
+    const k = this.roulement * 0.1, f = Math.exp(-k), s = (1 - Math.pow(f, u)) / (1 - f);
+    return [(a[c.bx] + (b[c.bx] - a[c.bx]) * s) / 100, (a[c.by] + (b[c.by] - a[c.by]) * s) / 100, Math.max(0, a[c.bz] + (b[c.bz] - a[c.bz]) * u) / 100];
+  }
+
   ballonImages(t) {
     const [i, u] = this.index(t);
     const g = (k, c) => this.lignes[Math.max(0, Math.min(this.n - 1, k))][this.col[c]] / 100;
@@ -198,9 +215,12 @@ export class Match {
     }
     const pos = this.possessions.find((p) => t >= p.tb - 1e-9 && t <= p.te + 1e-9);
     if (pos) {
-      let q = this.ballonPorte(pos.c, t);
+      const moteur = this.touchesMoteur && !pos.mains;
+      let q = moteur ? this.ballonMoteur(t) : this.ballonPorte(pos.c, t);
       const k = (t - pos.tTransfert) / 0.35;
-      if (k < 1) {
+      // avec les touches du moteur, seul un ballon qui arrive (vol, ballon haut amorti) se fond
+      // dans la conduite ; repris à un autre porteur, il est déjà là où le moteur le dit
+      if (k < 1 && !(moteur && !pos.avant.vol && !pos.avant.point)) {
         const a = pos.avant;
         const avant = a.point ? a.point : a.vol ? this.volEn(a.vol, Math.min(t, a.tFin)) : a.c != null ? this.ballonPorte(a.c, t) : this.ballonImages(pos.tb);
         const s = k <= 0 ? 0 : k * k * (3 - 2 * k);
@@ -213,17 +233,27 @@ export class Match {
     return { p: scene(this.ballonImages(t)), porteur: -1, regime: 'libre' };
   }
 
-  // ---- la conduite de balle (rendu seulement) ----
-  // Le moteur garde le ballon à une distance fixe devant le porteur. Un joueur qui court balle au
-  // pied la pousse et la rattrape : le rendu ajoute cette respiration autour de la position du
-  // moteur (au plus 0,35 m le long de la course), avec une touche du pied au début de chaque
-  // cycle ; elle s'éteint avant une frappe, pour que le ballon parte d'où le moteur le fait partir.
+  // ---- la conduite de balle ----
+  // Les touches du moteur (actions « conduite ») : le pied va au ballon à l'instant de chaque
+  // touche, dans le sens où elle l'envoie. Rien n'est ajouté au ballon : il est où le moteur le dit.
+  // Dans un document plus ancien, le moteur gardait le ballon à une distance fixe devant le
+  // porteur, et le rendu ajoutait une respiration (au plus 0,35 m le long de la course) avec une
+  // touche au début de chaque cycle, éteinte avant une frappe.
   preparerConduite() {
     if (this.conduitePrete) return;
     this.preparerBallon();
     for (const p of this.possessions) {
       p.touches = [];
       if (p.mains) continue;
+      if (this.touchesMoteur) {
+        p.debutConduite = p.tTransfert; p.finConduite = p.te; p.sens = [];
+        for (const a of this.actions) {
+          if (a.a !== 'conduite' || a.c !== p.c || a.t < p.tb - 1e-6 || a.t > p.te + 0.05) continue;
+          p.touches.push(a.t); p.sens.push([a.vx, a.vy]);
+        }
+        p.touches.push(p.te + 1);   // la borne de fin (comme le cycle d'après, dans l'ancien régime)
+        continue;
+      }
       p.debutConduite = p.tTransfert + 0.35;
       p.finConduite = p.te - 0.15;
       const der = p.te - 0.45;
@@ -242,6 +272,7 @@ export class Match {
 
   // l'écart (m) le long de la course, au temps t, pour la possession p
   ecartConduite(p, t) {
+    if (this.touchesMoteur) return 0;
     const T = p.touches;
     if (!T || T.length < 2 || t <= T[0] || t >= p.finConduite) return 0;
     let k = 0;

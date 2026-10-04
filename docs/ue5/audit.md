@@ -84,11 +84,11 @@ le moteur, puisque c'est lui qui fait autorité.
 
 | # | Constat | Mesure | Pourquoi ça se voit | Où |
 | --- | --- | --- | --- | --- |
-| 1 | Les contacts se règlent en poussant les joueurs | 20 346 à-coups au-delà de 14 m/s² sur 1 463 minutes-joueur rendues à 60 images/s, 3 886 après lissage | pieds qui glissent, corps qui sautent | `move()`, collisions |
-| 2 | Le ballon suit son porteur à 0,5 à 1,4 m, sans touches | aucune touche dans le document | §25 « jamais collé au pied » | `ballStep()` |
+| 1 | Les contacts se réglaient en poussant les joueurs | 20 346 à-coups au-delà de 14 m/s² sur 1 463 minutes-joueur rendues à 60 images/s, 3 886 après lissage. **Corrigé le 4 octobre 2026** : l'écartement passe par la vitesse voulue ; au contact la vitesse d'approche s'annule, la séparation entre adversaires est bornée à 15 cm par pas ; 9 944 à-coups, 2 727 après lissage (2,0 par minute-joueur, 2,7 avant) | pieds qui glissent, corps qui sautent | `move()`, collisions |
+| 2 | Le ballon suivait son porteur à 0,5 à 1,4 m, sans touches | **Corrigé le 4 octobre 2026** : ballon indépendant, poussé par touches (action `conduite`, lue par le cœur : `TypeAction::Conduite`) | §25 « jamais collé au pied » | `ballStep()`, `conduite()`, `touche()` |
 | 3 | Un contrôle raté ne coûte presque rien | le receveur reprend le ballon au pas suivant 350 fois sur 390 (protégé 0,35 s, ramassage permis sous 0,3 s) | §23 le résultat du contrôle doit changer la suite | `receive()`, `pickup()` |
 | 4 | Le pied faible dépend du côté du terrain, pas du corps | 44 % des frappes du pied faible | trop de droitiers frappent du gauche | `weakFoot()` |
-| 5 | Un vol aérien n'obéit pas à la pesanteur | 78 vols sur 168 au-delà de 1,5 g, jusqu'à 9,4 g (déviations de la tête) | ballon qui monte et retombe trop vite | `kick()` (sommet et durée indépendants) |
+| 5 | Un vol aérien n'obéit pas à la pesanteur | 78 vols sur 168 au-delà de 1,5 g, jusqu'à 9,4 g (déviations de la tête). Borné à 3 g le 4 octobre 2026 (un lob tiré à 1,6 m de la ligne montait à 2,8 m en 0,15 s) | ballon qui monte et retombe trop vite | `kick()` (sommet et durée indépendants) |
 | 6 | Une passe en une touche part jusqu'à 1,7 m du joueur | 6 frappes au sol sur 2 961 au-delà de 1,2 m | le pied n'atteint pas le ballon | `arrive()` accepte la réception à 1,7 m |
 | 7 | Le placement du gardien ignore son attribut PLA | hors de l'angle 13 à 22 % du temps (passerelle, §9) | §28 un mauvais gardien doit être mal placé | `gkTarget()` |
 | 8 | Pas de blessure pendant le match ; la taille ne pèse pas dans les duels aériens | | §64, §44 | moteur, phase 6 |

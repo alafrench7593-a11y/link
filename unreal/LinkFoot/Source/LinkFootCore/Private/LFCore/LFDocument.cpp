@@ -33,7 +33,8 @@ namespace lf
 			{ "dribble", TypeAction::Dribble },
 			{ "tacle", TypeAction::Tacle },
 			{ "sortie_pieds", TypeAction::SortiePieds },
-			{ "remplacement", TypeAction::Remplacement } };
+			{ "remplacement", TypeAction::Remplacement },
+			{ "conduite", TypeAction::Conduite } };
 
 		constexpr std::string_view kTete[kChampsTete] = {
 			"t", "horloge", "mi_temps", "coupe", "bx", "by", "bz", "porteur", "score_d", "score_e", "cpa", "tireur" };

@@ -27,12 +27,16 @@ const P = new Club().PASSERELLE(), N = P.tete.length, J = P.joueur.length;
 const col = (k, champ) => N + k * J + P.joueur.indexOf(champ);
 
 // ---------------------------------------------------------------- le match ne change pas
+// les documents des graines 101 à 103 (joués ci-dessous), relus au §55 : un taux mesuré sur un
+// seul match bascule au hasard de ce match
+const autresDocs = [];
 tete('§59 Enregistrer pour la passerelle ne change pas le match');
 {
   let memes = 0;
   const graines = [101, 102, 103];
   for (const g of graines) {
-    const a = club().playMatch(ADV, { seed: g }), b = club().matchPont(ADV, { seed: g }).resultat;
+    const a = club().playMatch(ADV, { seed: g }), mp = club().matchPont(ADV, { seed: g }), b = mp.resultat;
+    autresDocs.push(mp.document);
     const pareil = JSON.stringify([a.score, a.stats, a.poss, a.log]) === JSON.stringify([b.score, b.stats, b.poss, b.log]);
     if (pareil) memes++;
   }
@@ -83,7 +87,7 @@ tete('Le format décrit dans docs/passerelle-ue5.md');
   t('un saut dans le temps est toujours une coupe annoncée', trous <= 2, trous + ' saut(s) sans coupe (la célébration d’un but saute un pas)');
   let trie = true; for (let i = 1; i < D1.actions.length; i++) if (D1.actions[i].t < D1.actions[i - 1].t) trie = false;
   const TYPES = ['passe', 'tir', 'degagement', 'touche', 'controle', 'dribble', 'tacle', 'interception', 'faute', 'duel_aerien', 'prise_aerienne',
-    'plongeon', 'arret', 'sortie_pieds', 'contre', 'poteau', 'but', 'celebration', 'remplacement', 'hors_jeu'];
+    'plongeon', 'arret', 'sortie_pieds', 'contre', 'poteau', 'but', 'celebration', 'remplacement', 'hors_jeu', 'conduite'];
   const inconnus = [...new Set(D1.actions.map((a) => a.a).filter((a) => !TYPES.includes(a)))];
   t('les actions sont datées, dans l’ordre, d’un type connu', trie && !inconnus.length, D1.actions.length + ' actions' + (inconnus.length ? ', inconnues : ' + inconnus.join(', ') : ''));
   t('chaque action désigne un joueur du match', D1.actions.every((a) => a.c >= -1 && a.c < 22));
@@ -263,10 +267,14 @@ tete('§55 ce que le rendu ne doit jamais avoir à cacher');
   t('personne ne sort du terrain', C.hors_terrain === 0, C.hors_terrain + ' fois');
   t('jamais deux joueurs l’un dans l’autre plus d’une demi-seconde', C.chevauchement <= 3, C.chevauchement + ' fois');
   t('le ballon reste au pied de son porteur', C.ballon_loin / C.images < 0.01, C.ballon_loin + ' images sur ' + C.images);
-  t('le gardien se tient dans l’angle de tir la plupart du temps', v.taux.gardien_hors_angle < 25, v.taux.gardien_hors_angle + ' % des images où un adversaire a le ballon à moins de 30 m');
+  // sur quatre matchs (77, 101, 102, 103) : d'un match à l'autre ce taux va de 14 à 29 %,
+  // avant comme depuis le ballon indépendant
+  const angles = [v].concat(autresDocs.map((d) => c.verifierPont(d))), horsAngle = angles.reduce((a, x) => a + x.compte.gardien_hors_angle, 0), mesuresGb = angles.reduce((a, x) => a + x.compte.gardien_mesures, 0);
+  const tauxGb = Math.round(horsAngle / Math.max(1, mesuresGb) * 1000) / 10;
+  t('le gardien se tient dans l’angle de tir la plupart du temps', tauxGb < 25, tauxGb + ' % des images où un adversaire a le ballon à moins de 30 m (quatre matchs ; ' + angles.map((x) => x.taux.gardien_hors_angle).join(', ') + ')');
   t('aucun joueur immobile alors que sa place est ailleurs', C.immobile === 0, C.immobile + ' fois');
   constat('vitesses au-dessus de la pointe du joueur (contacts, replacements)', C.vitesse + ' fois sur ' + C.images + ' images');
-  constat('à-coups au-dessus de 14 m/s² (les contacts se règlent en déplaçant les joueurs)', C.acceleration + ' fois');
+  constat('à-coups au-dessus de 14 m/s² (corps à corps, gestes explosifs)', C.acceleration + ' fois');
   // un tireur de corner ou de touche y était téléporté (jusqu'à 38 m) : il court au ballon
   t('aucune téléportation hors des coupes annoncées', C.teleportation === 0, C.teleportation + ' fois' + (v.exemples.find((e) => e.k === 'teleportation') ? ', par exemple ' + JSON.stringify(v.exemples.find((e) => e.k === 'teleportation')) : ''));
   // les matchs officiels partaient avec les vingt-deux joueurs sur le rond central
@@ -274,7 +282,8 @@ tete('§55 ce que le rendu ne doit jamais avoir à cacher');
   t('le coup d’envoi : chacun à sa place dès la première image, annoncée comme une coupe', premiere.coupe && auCentre <= 2, auCentre + ' joueur(s) dans le rond au départ');
   // chaque touche accordée finit par un lancer (et pas par un lanceur qui repart balle au pied)
   const iTouche = P.cpa.indexOf('throw'), Dm = D1.images.donnees;
-  let accordees = 0; for (let i = 1; i < Dm.length; i++) if (Dm[i - 1][10] === iTouche && Dm[i][10] !== iTouche) accordees++;
+  // (une touche accordée à la dernière seconde d'une mi-temps ne se lance pas : le sifflet coupe)
+  let accordees = 0; for (let i = 1; i < Dm.length; i++) if (Dm[i - 1][10] === iTouche && Dm[i][10] !== iTouche && !Dm[i][3]) accordees++;
   const touches = D1.actions.filter((a) => a.a === 'touche');
   t('une touche se lance toujours : le lanceur ne repart jamais balle au pied', accordees > 0 && touches.length === accordees && touches.every((a) => a.aerien),
     accordees + ' touches accordées, ' + touches.length + ' lancées, dont ' + touches.filter((a) => a.vers < 0).length + ' le long de la ligne');
@@ -288,7 +297,9 @@ tete('§55 ce que le rendu ne doit jamais avoir à cacher');
   // une tête ou une volée part de la hauteur du ballon, au lieu de retomber d'un coup au sol
   // (un tir contré dure 0,15 s : le ballon rabattu au sol par le contreur, c'est voulu). L'image
   // de l'instant de l'action montre le ballon au point de frappe ; la suivante, le premier pas du vol.
-  const enLAir = D1.actions.filter((a) => (a.a === 'passe' || a.a === 'tir' || a.a === 'degagement') && a.z0 > 0.5 && a.dur >= 0.3);
+  // (une tête qui sort tout de suite du terrain : l'image suivante pose déjà le ballon de la remise en jeu)
+  const enLAir = D1.actions.filter((a) => (a.a === 'passe' || a.a === 'tir' || a.a === 'degagement') && a.z0 > 0.5 && a.dur >= 0.3)
+    .filter((a) => { const r0 = ligne.get(Math.round(a.t * 10)), r1 = ligne.get(Math.round(a.t * 10) + 1); return !(r0 && r1 && !r0[10] && (r1[10] || r1[3])); });
   const chutes = enLAir.map((a) => { const r0 = ligne.get(Math.round(a.t * 10)), r1 = ligne.get(Math.round(a.t * 10) + 1); return r0 && r1 ? (r0[6] - r1[6]) / 100 : 0; });
   const auPoint = enLAir.filter((a) => { const r0 = ligne.get(Math.round(a.t * 10)); return r0 && Math.abs(r0[6] / 100 - a.z0) <= 0.15; }).length;
   t('une tête ou une volée part de la hauteur du ballon (il ne perd plus 1,8 m en un pas)', enLAir.length > 10 && chutes.every((d) => d < 0.6) && auPoint === enLAir.length,

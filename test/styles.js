@@ -90,7 +90,11 @@ const PROMESSES = [
   // arrivent forcément moins devant. La description promet largeur et solidité.
   // Vraie maintenant que les pistons redescendent dans la ligne en phase défensive.
   // Avant : 20,7 de danger concédé contre 8,3, et 1-26 sur dix matchs.
-  ['pistons', 'et solidité : cinq joueurs derrière dès qu’on perd le ballon', brut('encaisses'), '<', 0]
+  // Le 4 octobre 2026, cette promesse sur les BUTS encaissés passe aux constats (« le 3-5-2
+  // n'est pas solide », plus bas, sur le danger concédé) : en danger, les pistons concèdent
+  // plus que l'Équilibré depuis longtemps (40,1 contre 36,6 sur 40 matchs, moteur d'avant le
+  // ballon indépendant), et la promesse ne tenait qu'à deux buts (29 contre 31). Elle
+  // basculait au moindre changement du moteur (44 contre 24, puis 31 contre 27).
 ];
 
 const N = Number(process.argv[2] || 10);

@@ -188,16 +188,24 @@ const LEVIERS = [
   ['§5 Le moral de l’effectif change le rendement', 'moralBas', 'moralHaut', [
     ['une équipe au moral haut crée plus', brut('xg'), '>']]],
 
+  // Le choix de frapper, rapporté aux décisions, est dans le bruit depuis le ballon
+  // indépendant (4 octobre 2026, 48 matchs : de +6 % à −3 % d'un réglage du moteur à l'autre,
+  // +10 % avant) ; la fraîcheur se voit toujours dans les frappes elles-mêmes (311 → 460) et le
+  // danger créé (xG 27 → 37). Affiché en constat, il casse la vérification s'il s'inverse.
   ['§5 La fraîcheur physique change le match', 'epuisee', 'fraiche', [
-    ['une équipe fraîche frappe davantage', pm('act_shot'), '>'],
+    ['une équipe fraîche frappe davantage', pm('act_shot'), '>', null, 'dans le bruit depuis le ballon indépendant (48 matchs : +6 % à −3 %)'],
     ['elle garde plus le ballon, donc elle court moins après', brut('tk'), '<', null, 'trop faible depuis les correctifs du moteur (48 matchs : −2,4 %)']]],
 
   ['§6 L’entraînement de l’effectif se voit sur le terrain', 'base', 'entrainee', [
     ['un effectif plus fort crée plus', brut('xg'), '>'],
     ['et prend plus de points', brut('pts'), '>', 0]]],
 
+  // L'adjoint ajoute son bonus tactique (+2,4 au niveau 3) à la passe : un écart de précision
+  // de quelques dixièmes de point, au niveau du bruit de 48 matchs (écart-type de la différence :
+  // 0,35 point environ). Mesuré le 4 octobre 2026 : +0,77 avant le ballon indépendant, −0,06
+  // depuis, le mécanisme n'ayant pas changé. Affiché en constat, il casse s'il s'inverse.
   ['§25 Le niveau de l’adjoint compte', 'sansAdjoint', 'avecAdjoint', [
-    ['un meilleur adjoint, des passes plus justes', brut('precision'), '>', 0.2]]],
+    ['un meilleur adjoint, des passes plus justes', brut('precision'), '>', 0.2, 'au niveau du bruit de 48 matchs (+0,77 avant, −0,06 depuis le ballon indépendant)']]],
 
   // Les frappes pour mille décisions de deux séries ne départageaient pas le Tueur en
   // permanence (quatre ou cinq décisions basculées en douze matchs) : le levier basculait
