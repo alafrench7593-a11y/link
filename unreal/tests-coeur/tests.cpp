@@ -1475,7 +1475,11 @@ namespace
 		constat("cible du regard hors de vue (derrière lui : il faudra tourner le buste ou jeter un coup d'œil)", nombre(100.0 * horsVue / std::max(1, n), 1) + " % des regards");
 	}
 
-	void testsVisage(const std::vector<const lf::DocumentMatch*>& docs)
+	// fatigueEnPlus : des matchs qui ne servent qu'à la fatigue du visage (les trois matchs de
+	// pressing haut, où l'on court davantage). Sur les trois matchs ordinaires, l'énergie la plus
+	// basse tombait juste autour de 62, la fatigue juste autour de 0,3 (0,31 puis 0,29 au moindre
+	// changement du moteur) : le seuil se jouait sur le volume de course, pas sur le visage.
+	void testsVisage(const std::vector<const lf::DocumentMatch*>& docs, const std::vector<const lf::DocumentMatch*>& fatigueEnPlus = {})
 	{
 		titre("Qualité visuelle §25 à §27 : le visage et le geste suivent le match, la personnalité règle l'amplitude");
 		int buts = 0, buteursJoie = 0, encaisseursFrustres = 0, decrues = 0, sansAutreBut = 0;
@@ -1560,6 +1564,24 @@ namespace
 					}
 				}
 			}
+			for (double t = d->images.front().temps(); t < d->images.back().temps(); t += 30.0)
+			{
+				for (int k = 0; k < lf::kJoueurs; ++k)
+				{
+					const lf::EtatVisage v = V.etat(k, t);
+					const lf::EtatCinematique e = c.etat(k, t);
+					if (v.valide && e.valide)
+					{
+						energies.push_back(e.energie);
+						fatigues.push_back(v.poids[static_cast<std::size_t>(lf::Expression::Fatigue)]);
+					}
+				}
+			}
+		}
+		for (const lf::DocumentMatch* d : fatigueEnPlus)
+		{
+			const lf::Cinematique c(*d);
+			const lf::ChroniqueVisages V(c);
 			for (double t = d->images.front().temps(); t < d->images.back().temps(); t += 30.0)
 			{
 				for (int k = 0; k < lf::kJoueurs; ++k)
@@ -1925,7 +1947,7 @@ int main(int argc, char** argv)
 		testsCorps(trois);
 		testsQualiteFiche(trois);
 		testsRegardTete(trois);
-		testsVisage(trois);
+		testsVisage(trois, erreursPressing.empty() ? haut : std::vector<const lf::DocumentMatch*>{});
 		// la physiologie lit aussi les deux matchs de pressing : la récupération après un gros
 		// effort (30 s sans courir) est rare, trois matchs ne la montrent pas toujours
 		std::vector<const lf::DocumentMatch*> cinq = trois;
