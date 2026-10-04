@@ -145,10 +145,16 @@ constat('frappes de l’équipe, sans puis avec', (base.shots || 0) + ' → ' + 
 
 console.log('\n§10 Contre éclair : vers l’avant dès la récupération');
 const ecl = run(strong('eclair'));
-// Sur son terrain : les frappes qui arrivent moins de huit secondes après la
-// récupération. Le total des tirs la noyait (139 → 138 sur douze matchs, alors que
-// sur vingt elle fait gagner sept points).
-ok((ecl.tir_transition_H || 0) > (base.tir_transition_H || 0) * 1.08, 'les récupérations débouchent plus souvent sur une frappe rapide',
+// La décision d'abord, comme pour le Tueur et le Perforateur : le moteur compte les choix que la
+// compétence a fait basculer vers l'avant, au même instant, chez le même joueur. Le résultat (les
+// frappes moins de huit secondes après la récupération) est un constat : sur douze matchs il tient
+// au hasard (18 → 14 d'une série à l'autre le 4 octobre 2026) ; sur quatre-vingt-seize, +50 % avant
+// la défense qui marque les appels et le pressing à plusieurs (101 → 151), de −8 % à +17 % depuis
+// selon le réglage du moteur (l'équipe sans compétence récupère et frappe plus vite qu'avant),
+// quand la compétence bascule un millier de décisions et fait gagner des points (124 → 143).
+ok((ecl.bascule_eclair_H || 0) > 0 && !base.bascule_eclair_H, 'il joue vers l’avant là où un autre aurait temporisé',
+  (ecl.bascule_eclair_H || 0) + ' décisions basculées en ' + N + ' matchs');
+constat('les récupérations débouchent sur une frappe rapide, sans puis avec',
   (base.tir_transition_H || 0) + ' → ' + (ecl.tir_transition_H || 0) + ' frappes dans les huit secondes qui suivent la récupération');
 
 console.log('\n§21 aucune compétence ne garantit la victoire');

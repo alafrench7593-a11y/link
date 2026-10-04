@@ -188,6 +188,8 @@ export function makeEngine(cfg) {
       return { p: b, d: b ? Math.sqrt(bd) : 1e9 };
     };
     const nearestOpp = (p) => nearestOf(OT[p.s], p.x, p.y);
+    // les adversaires debout à moins de r mètres de p (ceux qui le pressent)
+    const presseurs = (p, r) => { let n = 0; for (const q of LV[OT[p.s]]) if (q.fall <= 0 && Math.abs(q.x - p.x) < r && Math.abs(q.y - p.y) < r && hy(q.x - p.x, q.y - p.y) < r) n++; return n; };
     const rt = (p, d) => { if (p) p.rat = cl(p.rat + d, 3, 10); };
     const clockLabel = (c, h) => { const m = Math.floor(c / 60), hh = h || W.half; if (hh === 1 && m >= 45) return "45+" + (m - 44) + "'"; if (hh === 2 && m >= 90) return "90+" + (m - 89) + "'"; return Math.max(1, m + 1) + "'"; };
     const mark = (e) => curEv.push(e);
@@ -293,6 +295,17 @@ export function makeEngine(cfg) {
       xg *= Math.pow(0.76, nb);
       return { xg: cl(xg * 0.68, 0.003, 0.7), blocker, pBlock: blocker ? Math.min(0.6, 0.18 + nb * 0.13 + (bd < 3 ? 0.1 : 0)) : 0 };
     };
+    // Le placement du gardien face au tireur p : l'écart entre le gardien et la bissectrice de l'angle
+    // que le but fait vu du tireur, rapporté au demi-angle. 0 : au centre de l'angle ; 1 : sur la
+    // ligne d'un poteau ; au-delà : hors de l'angle (derrière le tireur après une sortie perdue).
+    const placementGardien = (gk, p) => {
+      const gy = yOf(p.s, PL), v1x = 34 - 3.66 - p.x, v2x = 34 + 3.66 - p.x, vy = gy - p.y;
+      const n1 = hy(v1x, vy) || 1, n2 = hy(v2x, vy) || 1, bx = v1x / n1 + v2x / n2, by = vy / n1 + vy / n2;
+      const demi = Math.acos(cl((v1x * v2x + vy * vy) / (n1 * n2), -1, 1)) / 2;
+      const kx = gk.x - p.x, ky = gk.y - p.y;
+      const e = Math.acos(cl((kx * bx + ky * by) / ((hy(kx, ky) || 1) * (hy(bx, by) || 1)), -1, 1));
+      return e / Math.max(0.05, demi);
+    };
     // ---------- §23 variantes de frappes ----------
     // chaque variante change la précision (ot), la conversion (g), la vitesse et la cloche du ballon.
     // le choix dépend de la hauteur du ballon, de la distance, de la technique, de la puissance et du gardien.
@@ -366,7 +379,10 @@ export function makeEngine(cfg) {
       const V2 = sv ? SHOTS[sv] : null;
       let vg = V2 ? V2.g : 1; if (sv === 'lob') vg = gkOutNow ? 1.32 : 0.45;
       if (sv) { W.sv = W.sv || {}; const sc = W.sv[sv] || (W.sv[sv] = { n: 0, g: 0 }); sc.n++; }
-      const gks = (gk.red ? -0.18 : (gk.ref * 0.6 + gk.div * 0.2 + gk.gpos * 0.2 + TM[o].bonus - 65) / 60) - (V2 && V2.surprise ? V2.surprise : 0);
+      // le placement du gardien au moment du tir compte : bien dans l'angle, il arrête plus ; pris
+      // hors de sa cage (une sortie perdue), il n'arrête presque rien (placementGardien)
+      const pg = gk.red ? 1.6 : placementGardien(gk, p);
+      const gks = (gk.red ? -0.18 : (gk.ref * 0.6 + gk.div * 0.2 + gk.gpos * 0.2 + TM[o].bonus - 65) / 60 + 0.2 * (0.3 - Math.min(1.6, pg))) - (V2 && V2.surprise ? V2.surprise : 0);
       let res;
       const blocked = est.blocker && R() < est.pBlock;
       if (blocked) res = 'block';
@@ -383,7 +399,14 @@ export function makeEngine(cfg) {
       if (res === 'goal') oo.g++;
       const gy = yOf(s, PL), sgn = s === 'H' ? -1 : 1;
       let tx, ty, post = false;
-      if (res === 'goal') { tx = 34 + (R() < 0.5 ? -1 : 1) * (0.8 + R() * 2.6); ty = gy + sgn * 1.3; }
+      if (res === 'goal') {
+        // le but part du côté que le gardien ne couvre pas, loin de lui : un but sur cinq passait à
+        // moins d'un mètre de l'endroit où il se tenait (le gardien plongeait et le ballon entrait)
+        const cote = !gk.red && Math.abs(gk.x - 34) > 0.4 ? (gk.x < 34 ? 1 : -1) : (R() < 0.5 ? -1 : 1);
+        tx = 34 + cote * (0.8 + R() * 2.6);
+        if (!gk.red && Math.abs(tx - gk.x) < 1.3) tx = cl(gk.x + cote * 1.3, 34 - 3.4, 34 + 3.4);
+        ty = gy + sgn * 1.3;
+      }
       else if (res === 'save') { tx = gk.x + (R() - 0.5) * 2.2; ty = gk.y; }
       else if (res === 'miss') { post = R() < 0.07; tx = post ? 34 + (R() < 0.5 ? -3.66 : 3.66) : 34 + (R() < 0.5 ? -1 : 1) * (4 + R() * 5); ty = post ? gy : gy + sgn * 3; }
       else { tx = est.blocker.x; ty = est.blocker.y; }
@@ -391,7 +414,10 @@ export function makeEngine(cfg) {
       const f = kick(p, tx, ty, 'shot', null, { v, apex: head ? 0.6 : res === 'miss' && !post ? 1.6 : V2 ? V2.apex : 0.7 });
       Object.assign(f, { res, shooter: p, blocker: est.blocker, post, head, xg, fk: !!fk, orig, sv, dist: 105 - a, gkOut: gkOutNow, held: W.t - p.rcvT, nd: nearestOpp(p).d });
       if (res === 'goal' && sv) W.sv[sv].g++;
-      if (res !== 'block' && !gk.red) { W.dive = { c: gk.code, dir: Math.sign((tx - gk.x) * (s === 'H' ? 1 : -1)) || 1, t0: W.t, dur: f.dur + 0.2 }; act(gk, 'plongeon', { dir: W.dive.dir, dur: W.dive.dur, x: tx, y: ty, issue: res }); }
+      // il plonge sur ce qui est cadré, et sur ce qui frôle le poteau ; un tir largement à côté,
+      // il le regarde passer (il plongeait sur un tir sur trois à plus d'un mètre et demi du cadre)
+      const plonge = res === 'goal' || res === 'save' || post || (res === 'miss' && Math.abs(tx - 34) < 3.66 + 1);
+      if (res !== 'block' && !gk.red && plonge) { W.dive = { c: gk.code, dir: Math.sign((tx - gk.x) * (s === 'H' ? 1 : -1)) || 1, t0: W.t, dur: f.dur + 0.2 }; act(gk, 'plongeon', { dir: W.dive.dir, dur: W.dive.dur, x: tx, y: ty, issue: res }); }
       com((head ? 'Tête de ' : fk ? 'Coup franc direct de ' : (V2 ? V2.l.charAt(0).toUpperCase() + V2.l.slice(1) : 'Frappe') + ' de ') + p.short + ' !');
       key(res === 'goal' ? 100 : 30 + xg * 170 + (res === 'save' ? 10 : 0), s, 'shot');
       rt(p, res === 'save' ? 0.05 : res === 'miss' ? (xg > 0.3 ? -0.2 : -0.02) : 0);
@@ -854,9 +880,10 @@ export function makeEngine(cfg) {
         // joue donc vers l'avant dans les quatre secondes qui suivent CHAQUE
         // récupération de son équipe : c'est sa compétence, pas la consigne du coach.
         const eclair = TR(p, 'trans');
+        let ktE = 1;
         if (eclair && (counter || (W.poss === s && W.t - W.possT < 4))) {
           const kt = prog > 5 ? 1 + eclair * 0.6 : prog < -3 ? 1 / (1 + eclair * 0.6) : 1;
-          ev = ev > 0 ? ev * kt : ev / kt;
+          ev = ev > 0 ? ev * kt : ev / kt; ktE = kt;
         }
         if (T.tac.pass === 0 && e.d > 26) ev *= 0.85; if (T.tac.pass === 2 && prog > 12) ev *= 1.15;
         // §42 Jeu court ou jeu long. Les deux lignes au-dessus ne jugeaient que la
@@ -894,8 +921,8 @@ export function makeEngine(cfg) {
         if (e.off) { if (R() < 0.62) return; }
         // la suite ne fait que des produits par des nombres positifs : diviser par krRun rend
         // exactement l'espérance sans la compétence du receveur (sans : voir la frappe)
-        if (krRun !== 1) opts.push({ k: 'pass', q, x: tx, y: ty, kind, aerial: !!aerial, ev, off: e.off, sans: ev > 0 ? ev / krRun : ev * krRun });
-        else opts.push({ k: 'pass', q, x: tx, y: ty, kind, aerial: !!aerial, ev, off: e.off });
+        if (krRun !== 1) opts.push({ k: 'pass', q, x: tx, y: ty, kind, aerial: !!aerial, ev, off: e.off, sans: ev > 0 ? ev / krRun : ev * krRun, ecl: ktE });
+        else opts.push({ k: 'pass', q, x: tx, y: ty, kind, aerial: !!aerial, ev, off: e.off, ecl: ktE });
       };
       for (const q of LV[s]) {
         if (q === p || q.fall > 0) continue;
@@ -982,7 +1009,15 @@ export function makeEngine(cfg) {
           W.cnt['bascule_' + genre + '_' + s] = (W.cnt['bascule_' + genre + '_' + s] || 0) + 1;
         }
       }
-      const qd = cl(0.35 + (p.dec + T.bonus - 45) / 55, 0.4, 0.96) * (pr < 1.8 ? (T.shout === 'calme' ? 0.96 : 0.88) : 1);
+      // §10 le Contre éclair : le choix qu'aurait fait le même joueur, au même instant, sans son
+      // coup de pouce vers l'avant (les espérances suivantes ne font que des produits positifs :
+      // diviser par le facteur rend celle d'avant). Un compteur, comme au-dessus (test/traits.js).
+      if (opts.some((x) => x.ecl && x.ecl !== 1)) {
+        let bE = null, vE = -Infinity;
+        for (const x of opts) { const v = x.ecl && x.ecl !== 1 ? (x.ev > 0 ? x.ev / x.ecl : x.ev * x.ecl) : x.ev; if (v > vE) { vE = v; bE = x; } }
+        if (bE !== best) { W.cnt = W.cnt || {}; W.cnt['bascule_eclair_' + s] = (W.cnt['bascule_eclair_' + s] || 0) + 1; }
+      }
+      const qd = cl(0.35 + (p.dec + T.bonus - 45) / 55, 0.4, 0.96) * (pr < 1.8 ? (T.shout === 'calme' ? 0.96 : 0.88) : 1) * Math.pow(0.94, Math.max(0, presseurs(p, 3) - 1));
       let ch = best;
       if (R() > qd) { const alt = opts.slice(1, 4).filter((x) => x.ev > best.ev - 0.012); if (alt.length) ch = alt[Math.floor(R() * alt.length)]; }
       if (cfg.dbg) cfg.dbg(W, p, ch, opts);
@@ -1027,7 +1062,12 @@ export function makeEngine(cfg) {
       const q = ch.q, d = hy(ch.x - p.x, ch.y - p.y), pr = nearestOpp(p).d;
       const skill = p.pas + T.bonus;
       const one = !!p.oneTouch; p.oneTouch = false;
-      const sd = d * (0.012 + 0.09 * Math.max(0, 1 - skill / 100)) * (pr < 2 ? 1.6 : pr < 4 ? 1.2 : 1) * (ch.aerial ? 1.7 : 1) * (1.2 - 0.2 * p.energy / 100) * (T.shout === 'calme' ? 0.9 : 1) * (one ? 1.3 : 1) * (1 + weakFoot(p) * 0.35) * WX.pass;
+      // §42 le pressing à plusieurs : chaque adversaire de plus à moins de 3 m presse la passe
+      // (seul le plus proche comptait : deux ou trois presseurs ne gênaient pas plus qu'un)
+      const transE = TR(p, 'trans') && W.poss === s && W.t - W.possT < 4 ? Math.min(1, TR(p, 'trans')) : 0;
+      // (le Contre éclair, lui, sait jouer vers l'avant pressé, juste après la récupération)
+      const enserre = 1 + 0.3 * Math.max(0, presseurs(p, 3) - 1) * (1 - 0.6 * transE);
+      const sd = d * (0.012 + 0.09 * Math.max(0, 1 - skill / 100)) * (pr < 2 ? 1.6 : pr < 4 ? 1.2 : 1) * enserre * (ch.aerial ? 1.7 : 1) * (1.2 - 0.2 * p.energy / 100) * (T.shout === 'calme' ? 0.9 : 1) * (one ? 1.3 : 1) * (1 + weakFoot(p) * 0.35) * WX.pass;
       const tx = ch.x + gauss() * sd, ty = ch.y + gauss() * sd;
       const f = kick(p, tx, ty, ch.kind === 'through' ? 'through' : ch.aerial ? 'long' : 'pass', q, { aerial: ch.aerial });
       W.st[s].pa++;
@@ -1138,9 +1178,10 @@ export function makeEngine(cfg) {
       }
       for (const d of LV[o]) {
         if (d.line === 'GB' || d.beat > 0 || d.fall > 0 || W.t < d.tkT) continue;
-        const dist = hy(d.x - c.x, d.y - c.y); if (dist > 1.3) continue;
+        // §42 le presseur arrive lancé pour prendre le ballon : il tente de plus loin et plus souvent
+        const dist = hy(d.x - c.x, d.y - c.y); if (dist > (d.press ? 1.6 : 1.3)) continue;
         const fresh = W.t - c.rcvT < 0.8, ownBox = inBox(aOf(s, c.y), c.x);
-        const pa = (ownBox ? 0.5 : 1) * 0.34 * [0.7, 1, 1.35][TM[o].tac.tackle] * (fresh ? 1.6 : 1) * (d.press ? 1.3 : 1) * (d.stopper ? 1.2 : 1) * (d.yc >= 1 ? 0.45 : 1);
+        const pa = (ownBox ? 0.5 : 1) * 0.34 * [0.7, 1, 1.35][TM[o].tac.tackle] * (fresh ? 1.6 : 1) * (d.press ? 1.6 : 1) * (d.stopper ? 1.2 : 1) * (d.yc >= 1 ? 0.45 : 1);
         d.tkT = W.t + 0.5; if (R() > pa) continue;
         const backToGoal = (c.fy * (s === 'H' ? -1 : 1)) < -0.2;
         // §23 le Mur intervient mieux dans sa surface ; le Funambule résiste mieux au retour
@@ -1269,6 +1310,11 @@ export function makeEngine(cfg) {
       const carFree = car && nearestOpp(car).d > 4.5 && W.t > car.ctrlT;
       Dt = Math.min(Dt, bA - (carFree ? 15 : 9));
       if (T.tac.trap && W.lastPass && W.lastPass.to.s === o && W.lastPass.back && W.t - W.lastPass.t < 1.4) Dt = Math.min(T.lineH + 3, bA - 6);
+      // §42 le pressing haut fait monter la ligne avec lui : un pressing devant une défense restée à
+      // sa place laissait trente-cinq à quarante mètres entre les presseurs et la ligne, que
+      // l'adversaire traversait dès qu'il sortait du pressing (deux fois plus de buts encaissés
+      // en pressant fort, mesuré sur 24 matchs). Le bloc reste court, la profondeur se paie.
+      if (T.tac.press >= 2 && T.tac.engage >= 1 && car && bA > 55 && nearestOpp(car).d < 3) Dt = Math.max(Dt, Math.min(T.lineH + 10, bA - 32));
       if (W.t < T.regroupUntil) Dt = Math.min(Dt, T.lineH - 4);
       Dt = Math.max(Dt, bA < 20 ? 5.5 : 8);
       const rate = Dt < T.D ? 3.4 : 2.2; T.D += cl(Dt - T.D, -rate * DT, rate * DT);
@@ -1343,11 +1389,26 @@ export function makeEngine(cfg) {
         p.intent = 'MARK';
         setTL(p, na, cl(nx, 3, 65), p.tl.urg);
       }
-      // surface : les défenseurs prennent les attaquants dans la boîte, le milieu protège le point de penalty
-      if (bA < 24) {
-        const threats = LV[o].filter((r) => r.line !== 'GB' && aOf(s, r.y) < 17 && Math.abs(r.x - 34) < 21 && r !== car).sort((a2, b2) => aOf(s, a2.y) - aOf(s, b2.y));
+      // surface : les défenseurs prennent les attaquants qui y sont ou y entrent, le milieu protège
+      // le point de penalty. Ils les prenaient tard (ballon à 24 m, attaquant déjà dans la surface)
+      // et visaient l'endroit où l'attaquant était : un attaquant sur trois n'avait personne à 2 m,
+      // son marqueur courait encore 4 m derrière (mesuré). Ils visent maintenant, côté but, là où il
+      // sera dans 0,3 s en courant avec lui (move : p.suit), à 1,4 m (au-delà du contact, 0,95 m :
+      // collé à son homme, il le heurtait sans cesse), et le même défenseur garde son homme d'une
+      // image à l'autre. Un attaquant hors-jeu, ballon encore loin, est laissé à la ligne.
+      if (bA < 30) {
+        const surLigne = Math.min(D - 0.5, bA);
+        const threats = LV[o].filter((r) => r.line !== 'GB' && r !== car && aOf(s, r.y) < 21 && Math.abs(r.x - 34) < 22 && (bA < 24 || aOf(s, r.y) >= surLigne)).sort((a2, b2) => aOf(s, a2.y) - aOf(s, b2.y));
         const avail = new Set(L2.DEF.concat(L2.MIL.filter((p) => p.kind === 'DM' || p.kind === 'CM')));
-        threats.forEach((r) => { let bp = null, bdd = 1e9; avail.forEach((p) => { const d = hy(p.x - r.x, p.y - r.y); if (d < bdd) { bdd = d; bp = p; } }); if (bp && bdd < 12) { avail.delete(bp); const ux = gx0 - r.x, uy = gy0 - r.y, ud = hy(ux, uy) || 1; setTW(bp, r.x + ux / ud * 1.1 + r.vx * 0.25, r.y + uy / ud * 1.1 + r.vy * 0.25, 1); bp.boxM = true; bp.intent = 'MARK'; } });
+        threats.forEach((r) => {
+          let bp = r.marque && avail.has(r.marque) && hy(r.marque.x - r.x, r.marque.y - r.y) < 8 ? r.marque : null, bdd = 12;
+          if (!bp) avail.forEach((p) => { const d = hy(p.x - r.x, p.y - r.y); if (d < bdd) { bdd = d; bp = p; } });
+          r.marque = bp;
+          if (!bp) return;
+          avail.delete(bp);
+          const ux = gx0 - r.x, uy = gy0 - r.y, ud = hy(ux, uy) || 1;
+          setTW(bp, r.x + ux / ud * 1.4 + r.vx * 0.3, r.y + uy / ud * 1.4 + r.vy * 0.3, 1); bp.boxM = true; bp.intent = 'MARK'; bp.suit = r;
+        });
       }
       // couverture : un défenseur qui sort (marquage dans la surface / pressing) est couvert par son voisin de ligne
       L2.DEF.forEach((p, k) => { if (!p.boxM) return; const nb = L2.DEF[k + 1] || L2.DEF[k - 1]; if (nb && !nb.boxM) { const zw = toW(s, nb.tl ? nb.tl.a : D, (nb.tl ? nb.tl.x : 34) + (p.tl && nb.tl ? (p.tl.x - nb.tl.x) * 0.45 : 0)); setTW(nb, zw.x, zw.y, 0.9); nb.intent = 'COVER'; } });
@@ -1372,7 +1433,9 @@ export function makeEngine(cfg) {
         const mate = nearestOf(o, tgt.x, tgt.y, tgt).p; let ox = 0, oy = 0;
         if (mate) { const mx = mate.x - tgt.x, my = mate.y - tgt.y, md = hy(mx, my) || 1; ox = mx / md * 0.9; oy = my / md * 0.9; }
         setTW(p1, tgt.x + ux / ud * 0.9 + ox, tgt.y + uy / ud * 0.9 + oy, 1); p1.press = true;
-        if (tA < 40) { const cv = cand.slice(1).find((c2) => c2.p.kind === 'DM' || (c2.p.line === 'DEF' && tA < 30)); if (cv) { setTW(cv.p, tgt.x + ux / ud * 4.5, tgt.y + uy / ud * 4.5, 1); cand.splice(cand.indexOf(cv), 1); } }
+        // la couverture se met dans l'axe du tir : à 4,5 m, et à 2,4 m près de la surface, là où
+        // elle contre une frappe (14 % de tirs contrés, quand le football en voit un sur quatre)
+        if (tA < 40) { const cv = cand.slice(1).find((c2) => c2.p.kind === 'DM' || (c2.p.line === 'DEF' && tA < 30)); if (cv) { const dc = tA < 26 ? 2.4 : 4.5; setTW(cv.p, tgt.x + ux / ud * dc, tgt.y + uy / ud * dc, 1); cand.splice(cand.indexOf(cv), 1); } }
         const n2 = T.pressN + (cpress ? 1 : 0) + (trig || trapZone ? 1 : 0);
         const mates = LV[o].filter((q) => q !== tgt && q.line !== 'GB').sort((a2, b2) => hy(a2.x - tgt.x, a2.y - tgt.y) - hy(b2.x - tgt.x, b2.y - tgt.y));
         let mi = 0;
@@ -1386,19 +1449,62 @@ export function makeEngine(cfg) {
         const p2 = cand[1] && cand[1].p; if (p2 && tA < 40) setTW(p2, tgt.x + ux / ud * 7, tgt.y + uy / ud * 7, 0.8);
       }
     };
+    // La place du gardien face à un ballon en (bA, bX) (repère de son équipe : bA depuis sa ligne de
+    // but) : sur la bissectrice de l'angle que les deux poteaux font vers le ballon, à la profondeur
+    // dep. Ballon excentré, la bissectrice l'amène au premier poteau ; ballon près de la ligne de
+    // but, il reste collé à son poteau. (Il se mettait sur la droite qui va au centre du but : un
+    // ballon sur le côté lui laissait le premier poteau ouvert.) Le placement du gardien (gpos)
+    // règle sa justesse : un gardien moyen se décale de quelques dizaines de centimètres, qui
+    // dérivent lentement, et les tirs le punissent (shoot, placementGardien).
+    const placeGardien = (g, bA, bX, dep) => {
+      dep = Math.min(dep, Math.max(0.6, bA * 0.7));
+      const p1 = 34 - 3.66 - bX, p2 = 34 + 3.66 - bX, n1 = hy(p1, bA) || 1, n2 = hy(p2, bA) || 1;
+      let ux = p1 / n1 + p2 / n2, ua = -bA / n1 - bA / n2; const nu = hy(ux, ua) || 1; ux /= nu; ua /= nu;
+      let x = ua < -0.02 ? bX + ux * (dep - bA) / ua : 34 + Math.sign(bX - 34) * 3.2;
+      x += (1 - (g.gpos != null ? g.gpos : 60) / 100) * 0.6 * Math.sin(W.t * 0.35 + g.code * 1.7);
+      return [dep, cl(x, 34 - 3.9, 34 + 3.9)];
+    };
+    // Le gardien arrive-t-il à temps en (wx, wy) : lui (temps de réaction compris) contre le plus
+    // rapide des adversaires. Il sortait à chaque ballon en profondeur et à chaque ballon libre dans
+    // sa surface, gagné ou perdu, et un tir sur cinq le trouvait hors de sa cage, loin de l'angle du
+    // tireur. Il sort maintenant s'il y est le premier, ou juste derrière l'attaquant (au plus
+    // 0,2 s) : assez tôt pour lui plonger dans les pieds ; trop tard, il reste dans sa cage.
+    const gardienPremier = (g, wx, wy, delai) => {
+      const tG = hy(g.x - wx, g.y - wy) / (g.vmax || 6) + 0.2;
+      let tA = 99;
+      for (const r of LV[OT[g.s]]) { if (r.line === 'GB' || r.fall > 0) continue; tA = Math.min(tA, Math.max(0, hy(r.x - wx, r.y - wy) - 0.8) / (r.vmax || 7)); }
+      return tG < Math.max(tA, delai || 0) + 0.2;
+    };
     const gkTarget = (T, att) => {
       const g = T.ps[0]; if (g.red || g === W.owner) return;
-      const s = T.s, b = W.ball, bA = aOf(s, b.y), bX = xl(s, b.x), dB = hy(bA, bX - 34) || 1;
-      let a, x;
-      if (att) { a = cl(bA * 0.22, 4, 18); x = 34 + (bX - 34) * 0.15; }
-      else {
-        let dep = cl(1 + dB * 0.045, 1, 5); if ((g.sweep || T.tac.line === 2) && bA > 45) dep = Math.max(dep, Math.min(T.D - 8, 15));
-        a = bA / dB * dep; x = 34 + (bX - 34) / dB * dep;
-        // sortie sur une passe en profondeur
-        if (W.fl && W.fl.from && W.fl.from.s === OT[s] && (W.fl.kind === 'through' || W.fl.kind === 'long')) { const la = aOf(s, W.fl.y1); if (la < 22 && Math.abs(W.fl.x1 - 34) < 20) { setTL(g, la, xl(s, W.fl.x1), 1); return; } }
-        if (!W.owner && !W.fl && bA < 16 && Math.abs(bX - 34) < 18) { setTL(g, bA, bX, 1); return; }
+      const s = T.s, o = OT[s], b = W.ball, bA = aOf(s, b.y), bX = xl(s, b.x);
+      if (att) { setTL(g, cl(bA * 0.22, 4, 18), 34 + (bX - 34) * 0.15, 0.7); return; }
+      // sortie sur une passe en profondeur : s'il arrive le premier au point de chute ; sinon il se
+      // place déjà face à ce point
+      let fa = bA, fx = bX;
+      if (W.fl && W.fl.from && W.fl.from.s === o && (W.fl.kind === 'through' || W.fl.kind === 'long')) {
+        const la = aOf(s, W.fl.y1), lx = xl(s, W.fl.x1);
+        if (la < 22 && Math.abs(lx - 34) < 20) {
+          // le gardien libéro (ligne haute réglée ou montée avec le pressing, ou gardien qui sort) va
+          // au-devant de chaque ballon dans son dos : sa défense joue haut parce qu'il couvre la profondeur
+          if (g.sweep || T.tac.line === 2 || T.D > 38 || gardienPremier(g, W.fl.x1, W.fl.y1, W.fl.t0 + W.fl.dur - W.t)) { setTL(g, la, lx, 1); return; }
+          fa = la; fx = lx;
+        }
       }
-      setTL(g, a, x, 0.7);
+      // un ballon libre dans sa surface : il y va s'il l'a avant tout le monde
+      if (!W.owner && !W.fl && bA < 16 && Math.abs(bX - 34) < 18 && gardienPremier(g, b.x, b.y, 0)) { setTL(g, bA, bX, 1); return; }
+      // la profondeur grandit avec la distance du ballon, et fond quand le ballon est sur le côté :
+      // ballon près de la ligne de but, le gardien reste sur sa ligne, collé au premier poteau
+      const dF = hy(fa, fx - 34) || 1;
+      let dep = cl(0.8 + dF * 0.075, 0.8, 4.5) * (0.35 + 0.65 * fa / dF);
+      // un attaquant seul face à lui : il avance pour fermer l'angle, sans s'offrir au lob
+      const car = W.owner && W.owner.s === o ? W.owner : null;
+      if (car && fa < 22 && Math.abs(fx - 34) < 14 && nearestOpp(car).d > 3.5) dep = Math.max(dep, cl(dF * 0.3, 2, 5));
+      if ((g.sweep || T.tac.line === 2) && fa > 45) dep = Math.max(dep, Math.min(T.D - 8, 15));
+      const [a, x] = placeGardien(g, fa, fx, dep);
+      // loin de sa place (une sortie perdue), il y retourne en courant
+      const loin = hy(aOf(s, g.y) - a, xl(s, g.x) - x) > 3;
+      setTL(g, a, x, loin ? 1 : 0.7);
     };
     const setTargets = () => {
       const S = W.set, s = S.s, o = OT[s], k = S.kind;
@@ -1481,6 +1587,7 @@ export function makeEngine(cfg) {
       LV[OT[s]].forEach((p) => { if (p.line === 'GB') { setTL(p, 2, 34, 0.3); return; } setTL(p, cl(p.ba * 0.7, 8, 45), p.bx, 0.35); });
     };
     const targets = () => {
+      for (const p of ALL) p.suit = null;
       if (W.cel > 0) { celebrate(); }
       else if (W.set) setTargets();
       else {
@@ -1496,7 +1603,7 @@ export function makeEngine(cfg) {
         // ballon libre : les plus proches vont le chercher
         if (!W.owner && !W.fl) {
           const b = W.ball, px = b.x + b.vx * 0.7, py = b.y + b.vy * 0.7;
-          ['H', 'A'].forEach((s) => { const c = LV[s].filter((p) => p.fall <= 0 && (p.line !== 'GB' || (aOf(s, py) < 16 && Math.abs(px - 34) < 20))).sort((a2, b2) => hy(a2.x - px, a2.y - py) / a2.vmax - hy(b2.x - px, b2.y - py) / b2.vmax); if (c[0]) setTW(c[0], px, py, 1); if (c[1] && hy(c[1].x - px, c[1].y - py) < 10) setTW(c[1], px + 1.5, py, 0.9); });
+          ['H', 'A'].forEach((s) => { const c = LV[s].filter((p) => p.fall <= 0 && (p.line !== 'GB' || (aOf(s, py) < 16 && Math.abs(px - 34) < 20 && gardienPremier(p, px, py, 0)))).sort((a2, b2) => hy(a2.x - px, a2.y - py) / a2.vmax - hy(b2.x - px, b2.y - py) / b2.vmax); if (c[0]) setTW(c[0], px, py, 1); if (c[1] && hy(c[1].x - px, c[1].y - py) < 10) setTW(c[1], px + 1.5, py, 0.9); });
         }
       }
       // porteur
@@ -1561,7 +1668,9 @@ export function makeEngine(cfg) {
       if (p.cx == null) { p.cx = Math.cos(a); p.cy = Math.sin(a); }
       p.cx += (Math.cos(a) - p.cx) * lisse; p.cy += (Math.sin(a) - p.cy) * lisse;
       if (hy(p.cx, p.cy) > 0.05) a = Math.atan2(p.cy, p.cx);
-      const r = ang(a - c0), mx = (p === W.owner ? 6 : 3) * Math.PI * DT;
+      // le porteur tourne vite pour voir où il conduit (1 080 °/s), mais pas lancé : au-delà de
+      // 4 m/s, 700 °/s au plus (le contrat de la passerelle juge impossible plus de 720 °/s)
+      const r = ang(a - c0), mx = (p === W.owner ? (v > 4 ? 3.9 : 6) : 3) * Math.PI * DT;
       const c1 = c0 + cl(r, -mx, mx); p.ox = Math.cos(c1); p.oy = Math.sin(c1);
     };
     const move = () => {
@@ -1596,6 +1705,10 @@ export function makeEngine(cfg) {
           if (bd > 1) urg = Math.max(urg, 0.95);   // un ballon qui s'éloigne : il y va vite
         }
         let wx = ux0 * want, wy = uy0 * want;
+        // le marqueur court AVEC son homme (sa vitesse, plus ce qui lui manque pour être à sa place) :
+        // une cible qui bouge, suivie à la seule distance, laissait le défenseur trois à quatre
+        // mètres derrière un attaquant lancé
+        if (p.suit && p.suit.fall <= 0 && p.fall <= 0) { wx += p.suit.vx * 0.85; wy += p.suit.vy * 0.85; const wm = hy(wx, wy); if (wm > sp) { wx *= sp / wm; wy *= sp / wm; } }
         if (p.fall <= 0) { wx += p.sx; wy += p.sy; }
         let ax = wx - p.vx, ay = wy - p.vy;
         const vv = hy(p.vx, p.vy), wm = hy(wx, wy), turn = vv > 0.6 && wm > 0.3 ? Math.max(0, (p.vx * wx + p.vy * wy) / (vv * wm)) : 1;   // 1 = tout droit, -1 = demi-tour

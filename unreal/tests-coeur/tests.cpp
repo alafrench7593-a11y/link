@@ -410,7 +410,7 @@ namespace
 		double vitesseMax = 0, acceleration = 0;
 	};
 
-	void testsVerite(const lf::DocumentMatch& doc, const lf::Cinematique& c, const lf::DocumentMatch& bas, const lf::DocumentMatch& haut)
+	void testsVerite(const lf::DocumentMatch& doc, const lf::Cinematique& c, const std::vector<const lf::DocumentMatch*>& bas, const std::vector<const lf::DocumentMatch*>& haut)
 	{
 		titre("§92 La règle de vérité : ce que disent les cartes se voit dans le mouvement");
 		std::vector<VitessesJoueur> J(static_cast<std::size_t>(lf::kJoueurs));
@@ -553,13 +553,16 @@ namespace
 		verifier("§14 lancé à pleine vitesse, un joueur tourne plus large", centile(rapide, 0.5) > centile(lent, 0.5) * 1.5,
 			"rayon médian " + nombre(centile(lent, 0.5), 1) + " m entre 2 et 4 m/s, " + nombre(centile(rapide, 0.5), 1) + " m au-delà de 6 m/s");
 
-		// §33 le pressing se voit dans les courses
-		const auto mesurePressing = [](const lf::DocumentMatch& d, double& presseurs, double& distance)
+		// §33 le pressing se voit dans les courses. Sur trois matchs (graines 77, 78, 79) : la distance
+		// du plus proche défenseur, sur un seul match, tient au hasard d'une série (le 4 octobre 2026,
+		// 6,93 → 6,95 m à la graine 77, 6,83 → 5,86 m et 6,52 → 6,21 m aux deux autres)
+		const auto mesurePressing = [](const std::vector<const lf::DocumentMatch*>& docs, double& presseurs, double& distance)
 		{
 			int images = 0;
 			presseurs = 0.0;
 			distance = 0.0;
-			for (const lf::Image& im : d.images)
+			for (const lf::DocumentMatch* dp : docs)
+			for (const lf::Image& im : dp->images)
 			{
 				if (im.porteur < 11 || im.cpa != lf::Cpa::Aucun)
 				{
@@ -1876,15 +1879,31 @@ int main(int argc, char** argv)
 	const lf::Cinematique lissee(match->doc, pl);
 	testsCinematique(match->doc, brute, attendu);
 
-	auto bas = charger(fixtures / "press-bas.json");
-	auto haut = charger(fixtures / "press-haut.json");
-	if (!bas->ok || !haut->ok)
+	std::vector<std::unique_ptr<Charge>> pressings;
+	std::vector<const lf::DocumentMatch*> bas, haut;
+	std::string erreursPressing;
+	for (const char* suffixe : { "", "-78", "-79" })
 	{
-		verifier("les deux matchs de pressing se lisent", false, bas->erreur + " " + haut->erreur);
+		for (const char* reglage : { "bas", "haut" })
+		{
+			pressings.push_back(charger(fixtures / (std::string("press-") + reglage + suffixe + ".json")));
+			if (!pressings.back()->ok)
+			{
+				erreursPressing += pressings.back()->erreur + " ";
+			}
+			else
+			{
+				(std::string(reglage) == "bas" ? bas : haut).push_back(&pressings.back()->doc);
+			}
+		}
+	}
+	if (!erreursPressing.empty())
+	{
+		verifier("les six matchs de pressing se lisent", false, erreursPressing);
 	}
 	else
 	{
-		testsVerite(match->doc, brute, bas->doc, haut->doc);
+		testsVerite(match->doc, brute, bas, haut);
 	}
 	testsTrajectoire(match->doc, brute);
 	testsRegard(match->doc, brute);
@@ -1910,10 +1929,10 @@ int main(int argc, char** argv)
 		// la physiologie lit aussi les deux matchs de pressing : la récupération après un gros
 		// effort (30 s sans courir) est rare, trois matchs ne la montrent pas toujours
 		std::vector<const lf::DocumentMatch*> cinq = trois;
-		if (bas->ok && haut->ok)
+		if (erreursPressing.empty())
 		{
-			cinq.push_back(&bas->doc);
-			cinq.push_back(&haut->doc);
+			cinq.push_back(bas.front());	// les deux matchs de pressing de la graine 77
+			cinq.push_back(haut.front());
 		}
 		testsPhysiologie(cinq, argc >= 3 ? std::filesystem::path(argv[2]) : std::filesystem::path());
 		testsTypesCourse(trois);

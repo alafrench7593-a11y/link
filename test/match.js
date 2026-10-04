@@ -118,9 +118,9 @@ tete('§6 le coaching en direct : la tactique change pendant le match');
   // que font les joueurs dans la dernière demi-heure, pas le score.
   const EGAL = { club: 'Égaux', ovr: 60, style: 'blocmed' };
   // les compteurs de la dernière demi-heure, additionnés sur six matchs
-  const apres = (changements) => {
+  const apres = (changements, graines = [31, 32, 33, 34, 35, 36]) => {
     const n = {};
-    for (const seed of [31, 32, 33, 34, 35, 36]) {
+    for (const seed of graines) {
       const e = club(), dd = e.matchEnDirect(EGAL, { seed, friendly: true });
       jusqua(dd, 60);
       const c0 = dd.compteurs();
@@ -132,8 +132,12 @@ tete('§6 le coaching en direct : la tactique change pendant le match');
     return n;
   };
   const sans = apres([]);
-  const surface1 = apres([['formation', '4-2-4']]);
-  t('en 4-2-4, plus de ballons reçus dans la surface', (surface1.boxRcv_H || 0) > (sans.boxRcv_H || 0), (sans.boxRcv_H || 0) + ' sans changement contre ' + (surface1.boxRcv_H || 0));
+  // Les ballons reçus dans la surface sur dix-huit matchs : sur six, une demi-heure de jeu en donne
+  // une quinzaine et le hasard d'une série décide (le 4 octobre 2026, 17 contre 12 ; sur dix-huit,
+  // 33 contre 36, comme avant la défense qui marque les appels : 36 contre 40)
+  const G18 = Array.from({ length: 18 }, (_, i) => 31 + i);
+  const sans18 = apres([], G18), surface1 = apres([['formation', '4-2-4']], G18);
+  t('en 4-2-4, plus de ballons reçus dans la surface', (surface1.boxRcv_H || 0) > (sans18.boxRcv_H || 0), (sans18.boxRcv_H || 0) + ' sans changement contre ' + (surface1.boxRcv_H || 0) + ', sur dix-huit matchs');
   // comme au §5 : ce que font les joueurs se vérifie, les ballons récupérés s'affichent
   const tres = apres([['pressing', 3]]);
   t('pressing très intense : bien plus de joueurs pressent dans la dernière demi-heure', presseurs(tres) > presseurs(sans) * 1.5,

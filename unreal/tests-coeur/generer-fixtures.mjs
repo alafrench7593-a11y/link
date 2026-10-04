@@ -9,8 +9,8 @@
 //   match-77-attendu.json ce que le décodeur JavaScript lit dans chaque image (une empreinte
 //                         par image), le repère d'Unreal calculé par la passerelle JS, les
 //                         comptes de verifierPont : le cœur C++ doit trouver la même chose
-//   press-bas.json        le même match, sans pressing (press 0)
-//   press-haut.json       le même match, pressing à fond (press 2)
+//   press-bas.json        le même match, sans pressing (press 0) ; -78, -79 : deux autres graines
+//   press-haut.json       le même match, pressing à fond (press 2) ; -78, -79 : deux autres graines
 //   match-78.json, match-79.json  deux autres matchs (autres adversaires) : les statistiques
 //                         recalculées par le cœur doivent être celles du moteur sur chacun
 //   match-77-debug.json   le match 77 en mode débogage : cibles de l'IA et délibérations (§71)
@@ -68,9 +68,13 @@ const attendu = {
 };
 writeFileSync(join(dossier, 'match-77-attendu.json'), JSON.stringify(attendu));
 
-// Le pressing : le même match, la même graine, seul le réglage change.
-writeFileSync(join(dossier, 'press-bas.json'), JSON.stringify(club(tac({ press: 0, engage: 0, ptrap: 0 })).matchPont(ADV, { seed: 77 }).document));
-writeFileSync(join(dossier, 'press-haut.json'), JSON.stringify(club(tac({ press: 2, engage: 2, ptrap: 2 })).matchPont(ADV, { seed: 77 }).document));
+// Le pressing : les mêmes matchs, les mêmes graines, seul le réglage change. Trois graines : sur un
+// seul match, la distance du plus proche défenseur tient au hasard d'une série (tests.cpp, §33).
+for (const g of [77, 78, 79]) {
+  const suffixe = g === 77 ? '' : '-' + g;
+  writeFileSync(join(dossier, 'press-bas' + suffixe + '.json'), JSON.stringify(club(tac({ press: 0, engage: 0, ptrap: 0 })).matchPont(ADV, { seed: g }).document));
+  writeFileSync(join(dossier, 'press-haut' + suffixe + '.json'), JSON.stringify(club(tac({ press: 2, engage: 2, ptrap: 2 })).matchPont(ADV, { seed: g }).document));
+}
 
 writeFileSync(join(dossier, 'match-78.json'), JSON.stringify(club().matchPont({ club: 'Rival', ovr: 70, style: 'pressing' }, { seed: 78 }).document));
 writeFileSync(join(dossier, 'match-79.json'), JSON.stringify(club().matchPont({ club: 'Costauds', ovr: 75, style: 'direct' }, { seed: 79 }).document));

@@ -212,7 +212,13 @@ tete('§15 les statistiques changent les décisions');
   const prof = (r) => r.cnt.act_pass_through_H || 0;
   const lents = total({ VIT: 40 }, ['ATT'], prof), rapides = total({ VIT: 95 }, ['ATT'], prof);
   t('Vitesse 95 en attaque : on le cherche dans la profondeur bien plus qu’à 40', rapides > lents * 2, lents + ' passes en profondeur contre ' + rapides);
-  const fine = total({ PAS: 40 }, ['MIL'], prof), laser = total({ PAS: 95 }, ['MIL'], prof);
+  // La passe sur seize graines : depuis que la défense marque les appels avant la surface et que
+  // le gardien ne sort plus pour rien (4 octobre 2026), il y a moins de ballons à jouer dans la
+  // profondeur, et six matchs ne départageaient plus (44 contre 48 au hasard d'une série). Sur
+  // trente graines l'écart est le même qu'avant : +44 % de passes en profondeur à 95 (avant +48 %).
+  const S16p = Array.from({ length: 16 }, (_, i) => 41 + i);
+  const total16 = (champs, postes, f) => S16p.reduce((a, sd) => a + f(jouerAvec(champs, postes, sd)), 0);
+  const fine = total16({ PAS: 40 }, ['MIL'], prof), laser = total16({ PAS: 95 }, ['MIL'], prof);
   t('Passe 95 au milieu : il tente les passes qui cassent une ligne', laser > fine * 1.2, fine + ' contre ' + laser);
   // La finition sur seize graines : depuis que le ballon est poussé par touches (4 octobre
   // 2026), une équipe tire un peu moins, et six matchs ne suffisaient plus à départager le

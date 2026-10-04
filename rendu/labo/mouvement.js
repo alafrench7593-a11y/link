@@ -647,10 +647,11 @@ export class Animateur {
   // segment cheville-bout à CONTACT_PIED du centre C : les déplacements le long de n où le pied
   // touche le ballon forment un intervalle (une capsule est convexe), une dichotomie le borne.
   // Rend le déplacement appliqué.
-  ecarterDuBallon(cheville, pointeVec, C, n) {
-    if (distancePied(cheville, pointeVec, C, 0, n) >= CONTACT_PIED) return 0;
+  ecarterDuBallon(cheville, pointeVec, C, n, marge = 0) {
+    const R = CONTACT_PIED + marge;
+    if (distancePied(cheville, pointeVec, C, 0, n) >= R) return 0;
     let lo = 0, hi = 0.7;
-    for (let k = 0; k < 16; k++) { const m = (lo + hi) / 2; if (distancePied(cheville, pointeVec, C, m, n) < CONTACT_PIED) lo = m; else hi = m; }
+    for (let k = 0; k < 16; k++) { const m = (lo + hi) / 2; if (distancePied(cheville, pointeVec, C, m, n) < R) lo = m; else hi = m; }
     cheville.x += n.x * hi; cheville.z += n.z * hi;
     return hi;
   }
@@ -914,8 +915,8 @@ export class Animateur {
       if (sens) {
         this.ecarterDuBallon(cheville, pointeVec, centreBallon, sens);
         // le pied d'appui d'une frappe se pose à côté du chemin du ballon (celui qui arrive, et
-        // celui qui part jusqu'à 0,12 s après la frappe) : posé, il ne bougera plus, et le ballon
-        // frappé ne le traverse pas
+        // celui qui part jusqu'à 0,12 s après la frappe), 3 cm plus loin que le contact : posé, il
+        // ne bougera plus que pour dérouler (la pointe tourne), et le ballon frappé ne le traverse pas
         if (g && g.type === 'frappe' && !frappeur && w > 0) {
           // le chemin est suivi tous les 8 cm au plus (un ballon frappé fait 40 cm en 0,025 s)
           const pas = Math.min(40, Math.ceil(Math.max(0.3, g.tc + 0.12 - t) / 0.025));
@@ -926,7 +927,7 @@ export class Animateur {
               const m = Math.max(1, Math.min(8, Math.ceil(Math.hypot(q[0] - prec[0], q[2] - prec[2]) / 0.08)));
               for (let i = 1; i <= m; i++) {
                 const u = i / m;
-                this.ecarterDuBallon(cheville, pointeVec, _bf.set(prec[0] + (q[0] - prec[0]) * u, prec[1] + (q[1] - prec[1]) * u + RAYON_BALLON, prec[2] + (q[2] - prec[2]) * u), sens);
+                this.ecarterDuBallon(cheville, pointeVec, _bf.set(prec[0] + (q[0] - prec[0]) * u, prec[1] + (q[1] - prec[1]) * u + RAYON_BALLON, prec[2] + (q[2] - prec[2]) * u), sens, 0.03);
               }
             }
             prec = q;
