@@ -14,9 +14,9 @@ import { whatsappUrl, telUrl } from "@/lib/whatsapp";
 import { localBusinessJsonLd } from "@/lib/seo";
 import { libelleDevis } from "@/components/Buttons";
 
-const archivo = localFont({
-  src: "../../node_modules/@fontsource-variable/archivo/files/archivo-latin-wght-normal.woff2",
-  variable: "--font-archivo",
+const display = localFont({
+  src: "../../node_modules/@fontsource-variable/inter-tight/files/inter-tight-latin-wght-normal.woff2",
+  variable: "--font-display-face",
   weight: "100 900",
   display: "swap",
   preload: true,
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#111312",
+  themeColor: "#f4f3ef",
   width: "device-width",
   initialScale: 1,
 };
@@ -50,7 +50,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const services = servicesAvecPage().map(({ slug, nomMenu, carte }) => ({ slug, nomMenu, carte }));
   return (
-    <html lang="fr" className={`${archivo.variable} ${inter.variable}`}>
+    <html lang="fr" className={`${display.variable} ${inter.variable}`}>
       <body className="min-h-dvh pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
         <MotionProviders>
           <Header services={services} whatsapp={whatsappUrl()} devisLabel={libelleDevis()} banner={<ConfigBanner />} />

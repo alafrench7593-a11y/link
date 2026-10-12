@@ -1,6 +1,7 @@
 import { site } from "./site";
 import { departements, communesConfirmees } from "./zones";
 import { realisationsPubliees } from "./realisations";
+import { photos } from "./photos";
 
 export type Point = { id: string; libelle: string; ok: boolean; bloquant: boolean; aide: string };
 
@@ -21,6 +22,7 @@ export function checklist(): Point[] {
     { id: "gbp", libelle: "[LIEN_GOOGLE_BUSINESS]", ok: !!site.lienGoogleBusiness, bloquant: false, aide: "src/config/site.ts → lienGoogleBusiness" },
     { id: "avisgoogle", libelle: "[LIEN_AVIS_GOOGLE]", ok: !!site.lienAvisGoogle, bloquant: false, aide: "src/config/site.ts → lienAvisGoogle" },
     { id: "logo", libelle: "[LOGO]", ok: !!site.logo, bloquant: false, aide: "Déposer le fichier dans /public et renseigner site.logo" },
+    { id: "images", libelle: "Photos du site (hero, prestations, équipe)", ok: Object.values(photos).every((p) => p.src), bloquant: false, aide: `${Object.values(photos).filter((p) => !p.src).length} emplacement(s) sans photo — src/config/photos.ts + npm run photos` },
     { id: "photos", libelle: "[PHOTOS_REALISATIONS]", ok: realisationsPubliees().length > 0, bloquant: false, aide: "src/config/realisations.ts + /public/photos/realisations" },
     { id: "avis", libelle: "[AVIS_CLIENTS]", ok: site.avis.length > 0, bloquant: false, aide: "src/config/site.ts → avis (authentiques et autorisés)" },
     { id: "devisgratuit", libelle: "Gratuité du devis confirmée (ou non)", ok: site.confirmations.devisGratuit, bloquant: false, aide: "site.confirmations.devisGratuit — tant que false, le mot « gratuit » n'apparaît pas" },

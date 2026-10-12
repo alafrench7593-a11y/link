@@ -205,7 +205,7 @@ export function QuoteForm({ prestationInitiale, whatsappNumero, telephone }: { p
         {err[k]}
       </p>
     ) : null;
-  const input = "mt-2 block min-h-12 w-full rounded-xl border border-line bg-white px-4 text-[1rem] text-ink transition-[border-color,box-shadow] placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/15 aria-[invalid]:border-danger";
+  const input = "mt-2 block min-h-12 w-full rounded-xl border border-line bg-white px-4 text-[1rem] text-ink transition-[border-color,box-shadow] placeholder:text-muted/70 focus:border-ink focus:outline-none focus:ring-4 focus:ring-ink/8 aria-[invalid]:border-danger";
   const label = "block text-[0.92rem] font-semibold text-ink";
 
   if (envoi.etat === "ok") {
@@ -219,10 +219,10 @@ export function QuoteForm({ prestationInitiale, whatsappNumero, telephone }: { p
         className="rounded-[1.5rem] border border-line bg-white p-8 text-center outline-none md:p-12"
         role="status"
       >
-        <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.1 }} className="mx-auto grid size-16 place-items-center rounded-full bg-accent text-white">
+        <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.1 }} className="mx-auto grid size-16 place-items-center rounded-full bg-ink text-white">
           <IconCheck className="size-8" />
         </motion.span>
-        <h2 className="mt-6 text-3xl font-extrabold">Demande transmise</h2>
+        <h2 className="mt-6 text-3xl font-semibold tracking-[-0.03em] font-display">Demande transmise</h2>
         <p className="mx-auto mt-3 max-w-md leading-relaxed text-muted">
           Votre demande a bien été reçue par BTS DÉBARRAT{photos.length ? `, avec ${photos.length} photo${photos.length > 1 ? "s" : ""}` : ""}. Référence : <strong className="text-ink">{envoi.reference}</strong>.
           Nous revenons vers vous par {d.contact.toLowerCase()}.
@@ -242,7 +242,7 @@ export function QuoteForm({ prestationInitiale, whatsappNumero, telephone }: { p
   const progression = ((etape + 1) / ETAPES.length) * 100;
 
   return (
-    <form id="formulaire-devis" noValidate onSubmit={envoyer} className="relative scroll-mt-28 overflow-hidden rounded-[1.5rem] border border-line bg-white shadow-[0_40px_80px_-50px_rgba(17,19,18,0.45)]">
+    <form id="formulaire-devis" noValidate onSubmit={envoyer} className="relative scroll-mt-28 overflow-hidden rounded-[1.5rem] border border-line bg-white ring-1 ring-ink/6">
       {/* progression */}
       <div className="border-b border-line p-5 md:px-8">
         <ol className="flex items-center justify-between gap-2" aria-label="Étapes du formulaire">
@@ -250,7 +250,7 @@ export function QuoteForm({ prestationInitiale, whatsappNumero, telephone }: { p
             <li key={nom} className="flex items-center gap-2 text-[0.8rem] font-semibold" aria-current={i === etape ? "step" : undefined}>
               <motion.span
                 className="grid size-7 place-items-center rounded-full text-xs"
-                animate={{ backgroundColor: i <= etape ? "#1d5a42" : "#f3f2ef", color: i <= etape ? "#ffffff" : "#555b58", scale: i === etape ? 1.1 : 1 }}
+                animate={{ backgroundColor: i <= etape ? "#17181a" : "#e9e7e1", color: i <= etape ? "#ffffff" : "#5d6063", scale: i === etape ? 1.1 : 1 }}
               >
                 {i < etape ? <IconCheck className="size-3.5" /> : i + 1}
               </motion.span>
@@ -259,7 +259,7 @@ export function QuoteForm({ prestationInitiale, whatsappNumero, telephone }: { p
           ))}
         </ol>
         <div className="mt-4 h-1 overflow-hidden rounded-full bg-mist" role="progressbar" aria-label="Progression" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progression)}>
-          <motion.div className="h-full origin-left rounded-full bg-accent" initial={false} animate={{ scaleX: progression / 100 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} />
+          <motion.div className="h-full origin-left rounded-full bg-ink" initial={false} animate={{ scaleX: progression / 100 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} />
         </div>
       </div>
 
@@ -283,7 +283,7 @@ export function QuoteForm({ prestationInitiale, whatsappNumero, telephone }: { p
             className="min-w-0"
           >
             <legend className="sr-only">{ETAPES[etape]}</legend>
-            <h2 ref={titre} tabIndex={-1} className="text-[1.6rem] font-extrabold leading-tight outline-none">
+            <h2 ref={titre} tabIndex={-1} className="text-[1.6rem] font-semibold tracking-[-0.03em] font-display leading-tight outline-none">
               {["Quel lieu faut-il débarrasser ?", "Parlez-nous du chantier", "Ajoutez des photos (facultatif)", "Comment vous recontacter ?"][etape]}
             </h2>
             <p className="mt-1 text-sm text-muted">Étape {etape + 1} sur {ETAPES.length}</p>
@@ -295,9 +295,9 @@ export function QuoteForm({ prestationInitiale, whatsappNumero, telephone }: { p
                   {TYPES_PRESTATION.map((p) => {
                     const sel = d.prestation === p.id;
                     return (
-                      <label key={p.id} className={`relative flex min-h-16 cursor-pointer items-center justify-center rounded-xl border px-3 text-center text-[0.95rem] font-semibold transition-all duration-300 has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-accent/30 ${sel ? "border-accent bg-accent-soft text-accent-strong" : "border-line hover:border-ink/30"}`}>
+                      <label key={p.id} className={`relative flex min-h-16 cursor-pointer items-center justify-center rounded-xl border px-3 text-center text-[0.95rem] font-semibold transition-all duration-300 has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-accent/30 ${sel ? "border-ink bg-white text-ink" : "border-line hover:border-ink/30"}`}>
                         <input type="radio" name="prestation" value={p.id} checked={sel} onChange={() => maj("prestation", p.id)} className="sr-only" />
-                        {sel && <motion.span layoutId="choix-prestation" className="absolute inset-0 rounded-xl ring-2 ring-accent" transition={{ type: "spring", stiffness: 400, damping: 32 }} />}
+                        {sel && <motion.span layoutId="choix-prestation" className="absolute inset-0 rounded-xl ring-[1.5px] ring-ink" transition={{ type: "spring", stiffness: 400, damping: 32 }} />}
                         <span className="relative">{p.label}</span>
                       </label>
                     );
@@ -370,7 +370,7 @@ export function QuoteForm({ prestationInitiale, whatsappNumero, telephone }: { p
 
             {etape === 2 && (
               <div className="mt-6">
-                <label htmlFor={`${uid}-photos`} className="group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-line bg-mist/60 px-6 py-10 text-center transition-colors hover:border-accent hover:bg-accent-soft/50 has-[:focus-visible]:border-accent">
+                <label htmlFor={`${uid}-photos`} className="group flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-line bg-mist/60 px-6 py-10 text-center transition-colors hover:border-ink/40 has-[:focus-visible]:border-ink">
                   <span className="grid size-14 place-items-center rounded-full bg-white text-accent shadow-sm transition-transform duration-500 group-hover:-translate-y-1"><IconCamera className="size-7" /></span>
                   <span className="font-semibold">Ajouter des photos</span>
                   <span className="text-sm text-muted">Jusqu&apos;à {LIMITES.photos} photos · JPEG, PNG, WebP ou HEIC · réduites automatiquement avant envoi</span>
@@ -436,7 +436,7 @@ export function QuoteForm({ prestationInitiale, whatsappNumero, telephone }: { p
                       type="checkbox"
                       checked={d.consentement}
                       onChange={(e) => maj("consentement", e.target.checked)}
-                      className="mt-1 size-5 shrink-0 accent-[#1d5a42]"
+                      className="mt-1 size-5 shrink-0 accent-[#17181a]"
                     />
                     <span>
                       J&apos;accepte que BTS DÉBARRAT utilise ces informations pour me recontacter au sujet de ma demande de devis. Elles ne sont ni revendues ni utilisées à d&apos;autres fins.{" "}
@@ -474,7 +474,7 @@ export function QuoteForm({ prestationInitiale, whatsappNumero, telephone }: { p
             <button
               type="submit"
               disabled={envoi.etat === "envoi" || traitement}
-              className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-accent px-7 font-semibold text-white transition-[background-color,transform] hover:bg-accent-strong active:scale-[0.97] disabled:cursor-wait disabled:opacity-70"
+              className="group inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-ink px-7 font-medium text-white transition-[background-color,transform] hover:bg-ink-3 active:scale-[0.97] disabled:cursor-wait disabled:opacity-70"
             >
               {envoi.etat === "envoi" ? (
                 <>

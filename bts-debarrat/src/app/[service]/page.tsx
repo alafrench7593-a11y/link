@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHero } from "@/components/PageHero";
-import { Visual } from "@/components/Visual";
+import { Photo } from "@/components/Photo";
+import { Parallax } from "@/components/motion/ScrollScale";
+import { photoService } from "@/config/photos";
 import { Faq } from "@/components/Faq";
 import { CtaFinal } from "@/components/CtaFinal";
 import { SectionHeading } from "@/components/Section";
@@ -40,65 +42,77 @@ export default async function PageService({ params }: { params: Promise<{ servic
         intro={s.intro[0]}
         crumbs={[{ name: s.nomMenu, path: `/${s.slug}/` }]}
         aside={
-          <div className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-mist-2 shadow-[0_40px_80px_-40px_rgba(17,19,18,0.45)]">
-            <Visual photo={s.photo} alt={s.photoAlt} kind={s.illustration} priority sizes="(min-width:1024px) 45vw, 100vw" />
+          <div className="relative aspect-[4/5] overflow-hidden rounded-[1.25rem] bg-mist-2">
+            <Photo id={photoService[s.slug]} priority sizes="(min-width:1024px) 40vw, 100vw" />
           </div>
         }
       >
-        <WhatsAppButton message={s.whatsapp} emplacement={`service-${s.slug}-hero`} />
-        <ButtonLink href={`/devis/?prestation=${s.typeBien}`} variant="dark">{libelleDevis()}</ButtonLink>
+        <ButtonLink href={`/devis/?prestation=${s.typeBien}`} variant="primary" arrow={false}>{libelleDevis()}</ButtonLink>
+        <WhatsAppButton message={s.whatsapp} emplacement={`service-${s.slug}-hero`}>Photos sur WhatsApp</WhatsAppButton>
       </PageHero>
 
-      <section className="py-20 md:py-28">
-        <div className="container-x grid gap-14 lg:grid-cols-[1.2fr_0.8fr]">
-          <div>
+      <section className="bg-white py-24 md:py-32">
+        <div className="container-x grid gap-16 lg:grid-cols-12">
+          <div className="lg:col-span-7">
             {s.intro.slice(1).map((p) => (
-              <p key={p} data-reveal className="text-[1.15rem] leading-relaxed text-ink/85">{p}</p>
+              <p key={p} data-reveal className="font-display text-[clamp(1.35rem,2.2vw,1.8rem)] font-medium leading-[1.35] tracking-[-0.02em] text-ink">{p}</p>
             ))}
-            <h2 data-reveal className="mt-14 text-[clamp(1.7rem,3vw,2.3rem)] font-extrabold">Ce que nous prenons en charge</h2>
-            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+
+            <h2 data-reveal className="mt-20 font-display text-[clamp(1.8rem,3vw,2.5rem)] font-semibold tracking-[-0.035em]">Ce que nous prenons en charge</h2>
+            <ul className="mt-6 border-t border-line">
               {s.priseEnCharge.map((x, i) => (
-                <li key={x} data-reveal style={{ "--d": i * 60 } as React.CSSProperties} className="flex gap-3 rounded-xl border border-line p-4">
-                  <IconCheck className="mt-0.5 size-5 shrink-0 text-accent" />
-                  <span className="text-[0.98rem]">{x}</span>
+                <li key={x} data-reveal style={{ "--d": i * 50 } as React.CSSProperties} className="flex gap-4 border-b border-line py-4 text-[1.02rem]">
+                  <IconCheck className="mt-1 size-4 shrink-0 text-accent" />
+                  {x}
                 </li>
               ))}
             </ul>
-            <p data-reveal className="mt-4 text-sm text-muted">Le périmètre exact est défini dans le devis, en fonction de votre situation.</p>
+            <p data-reveal className="mt-4 text-[0.9rem] text-muted">Le périmètre exact est défini dans le devis, selon votre situation.</p>
 
-            <h2 data-reveal className="mt-16 text-[clamp(1.7rem,3vw,2.3rem)] font-extrabold">Les points à anticiper</h2>
-            <div className="mt-6 space-y-4">
+            <h2 data-reveal className="mt-20 font-display text-[clamp(1.8rem,3vw,2.5rem)] font-semibold tracking-[-0.035em]">Ce qu&apos;il faut anticiper</h2>
+            <div className="mt-8 space-y-10">
               {s.pointsAttention.map((p, i) => (
-                <div key={p.titre} data-reveal style={{ "--d": i * 80 } as React.CSSProperties} className="rounded-2xl bg-mist p-6">
-                  <h3 className="text-[1.15rem] font-bold">{p.titre}</h3>
-                  <p className="mt-2 leading-relaxed text-muted">{p.texte}</p>
+                <div key={p.titre} data-reveal style={{ "--d": i * 80 } as React.CSSProperties} className="grid gap-2 md:grid-cols-[3rem_1fr]">
+                  <span className="font-display text-[0.95rem] tabular-nums text-accent">{String(i + 1).padStart(2, "0")}</span>
+                  <div>
+                    <h3 className="font-display text-[1.3rem] font-semibold tracking-[-0.02em]">{p.titre}</h3>
+                    <p className="mt-2 max-w-xl leading-relaxed text-muted">{p.texte}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <aside className="lg:sticky lg:top-28 lg:self-start">
-            <div data-reveal className="on-dark rounded-[1.5rem] bg-ink p-7 text-white">
-              <span className="grid size-11 place-items-center rounded-xl bg-wa text-ink"><IconCamera className="size-5" /></span>
-              <h2 className="mt-5 text-[1.5rem] font-extrabold leading-tight">Préparer votre demande</h2>
+          <aside className="lg:col-span-4 lg:col-start-9 lg:sticky lg:top-24 lg:self-start">
+            <div data-reveal className="rounded-[1.25rem] bg-mist p-7">
+              <IconCamera className="size-6 text-accent" />
+              <h2 className="mt-4 font-display text-[1.45rem] font-semibold leading-tight tracking-[-0.025em]">Préparer votre demande</h2>
               <ol className="mt-5 space-y-3">
                 {s.preparation.map((x, i) => (
-                  <li key={x} className="flex gap-3 text-[0.95rem] text-white/80">
-                    <span className="font-display font-extrabold text-accent-bright">{i + 1}.</span>
+                  <li key={x} className="flex gap-3 text-[0.95rem] leading-relaxed text-ink/80">
+                    <span className="tabular-nums text-stone">{i + 1}.</span>
                     {x}
                   </li>
                 ))}
               </ol>
               <div className="mt-7 flex flex-col gap-3">
                 <WhatsAppButton message={s.whatsapp} emplacement={`service-${s.slug}-encart`}>Envoyer mes photos</WhatsAppButton>
-                <ButtonLink href={`/devis/?prestation=${s.typeBien}`} variant="light">Formulaire de devis</ButtonLink>
-                <PhoneButton emplacement={`service-${s.slug}`} variant="outline-light" />
+                <ButtonLink href={`/devis/?prestation=${s.typeBien}`} variant="primary" arrow={false}>Formulaire de devis</ButtonLink>
+                <PhoneButton emplacement={`service-${s.slug}`} variant="outline" />
               </div>
-              <p className="mt-5 text-xs leading-relaxed text-white/50">
+              <p className="mt-5 text-[0.78rem] leading-relaxed text-muted">
                 WhatsApp s&apos;ouvre avec un message prérempli ; vous y joignez vous-même vos photos avant d&apos;envoyer.
               </p>
             </div>
           </aside>
+        </div>
+      </section>
+
+      <section className="bg-white pb-8">
+        <div className="mx-auto max-w-[96rem] px-3 md:px-6">
+          <Parallax className="aspect-[16/9] rounded-[1.25rem] bg-mist-2 md:aspect-[21/9]" distance={80}>
+            <Photo id="vide" sizes="100vw" />
+          </Parallax>
         </div>
       </section>
 
@@ -117,25 +131,23 @@ export default async function PageService({ params }: { params: Promise<{ servic
         </section>
       )}
 
-      <section className="bg-mist py-20 md:py-28">
-        <div className="container-x grid gap-12 lg:grid-cols-[0.75fr_1.25fr]">
-          <SectionHeading eyebrow="FAQ" title={`Questions fréquentes — ${s.nomCourt.toLowerCase()}`} />
-          <Faq items={s.faq} />
+      <section className="bg-white py-24 md:py-32">
+        <div className="container-x grid gap-12 md:grid-cols-12">
+          <div className="md:col-span-4"><SectionHeading title="Questions fréquentes" /></div>
+          <div className="md:col-span-8"><Faq items={s.faq} /></div>
         </div>
       </section>
 
-      <section className="py-20">
+      <section className="bg-mist py-20 md:py-24">
         <div className="container-x">
-          <h2 data-reveal className="text-2xl font-extrabold">Prestations proches</h2>
-          <ul className="mt-6 grid gap-4 md:grid-cols-3">
+          <h2 data-reveal className="text-[0.92rem] text-muted">Prestations proches</h2>
+          <ul className="mt-4 border-t border-line">
             {lies.map((l, i) => (
-              <li key={l.slug} data-reveal style={{ "--d": i * 80 } as React.CSSProperties}>
-                <Link href={`/${l.slug}/`} className="group flex h-full items-center justify-between gap-4 rounded-2xl border border-line p-5 transition-colors hover:border-ink hover:bg-ink hover:text-white">
-                  <span>
-                    <span className="block font-semibold">{l.nomMenu}</span>
-                    <span className="mt-1 block text-sm text-muted group-hover:text-white/70">{l.carte}</span>
-                  </span>
-                  <IconArrow className="btn-arrow size-5 shrink-0" />
+              <li key={l.slug} data-reveal style={{ "--d": i * 70 } as React.CSSProperties}>
+                <Link href={`/${l.slug}/`} className="group flex items-center justify-between gap-6 border-b border-line py-6">
+                  <span className="font-display text-[1.4rem] font-semibold tracking-[-0.025em] transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:translate-x-1.5 md:text-[1.8rem]">{l.nomMenu}</span>
+                  <span className="hidden max-w-sm text-[0.92rem] text-muted md:block">{l.carte}</span>
+                  <IconArrow className="size-5 shrink-0 text-ink/40 group-hover:text-ink" />
                 </Link>
               </li>
             ))}

@@ -151,6 +151,8 @@ try {
   verifier(!(await page.locator("#menu-prestations").isVisible().catch(() => false)), "Menu Prestations se ferme avec Échap");
 
   const slider = page.locator('input[type="range"]').first();
+  await slider.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(900);
   const avant = await slider.inputValue();
   await slider.focus();
   await page.keyboard.press("ArrowRight");
@@ -165,9 +167,10 @@ try {
   verifier(Number(await slider.inputValue()) < 25, "Comparateur avant/après pilotable à la souris");
 
   // Galerie : changement d'onglet
-  await page.getByRole("tab", { name: "Caves" }).click();
-  await page.waitForTimeout(700);
-  verifier((await page.getByRole("tab", { name: "Caves" }).getAttribute("aria-selected")) === "true", "Galerie avant/après : onglet Caves sélectionné");
+  await page.getByRole("tab", { name: "Cave" }).click();
+  await page.waitForTimeout(900);
+  verifier((await page.getByRole("tab", { name: "Cave" }).getAttribute("aria-selected")) === "true", "Galerie avant/après : onglet Cave sélectionné");
+  verifier(await page.getByText("Dessin d'illustration — en attente des photos de chantier").isVisible(), "Galerie avant/après : dessin explicitement légendé (aucun faux chantier)");
 
   // FAQ
   const q = page.getByRole("button", { name: "Le débarras peut-il être gratuit ?" });

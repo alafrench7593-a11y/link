@@ -32,7 +32,7 @@ function secteur({ r0, r1, a0, a1 }: (typeof SECTEURS)[string]) {
   return `M${x1},${y1}A${r1},${r1} 0 ${large} 1 ${x2},${y2}L${x3},${y3}A${r0},${r0} 0 ${large} 0 ${x4},${y4}Z`;
 }
 
-const couleur = { confirmee: "#1d5a42", "sur-demande": "#8fd6b0", "a-confirmer": "#dedbd4" } as const;
+const couleur = { confirmee: "#17181a", "sur-demande": "#b0823e", "a-confirmer": "#e2e0da" } as const;
 
 export function ZoneMap({ departements }: { departements: Departement[] }) {
   const [actif, setActif] = useState<string | null>(null);
@@ -78,7 +78,7 @@ export function ZoneMap({ departements }: { departements: Departement[] }) {
               className={`flex items-center justify-between gap-4 py-3.5 transition-colors ${actif === d.code ? "bg-mist" : ""}`}
             >
               <span className="flex items-center gap-3">
-                <span className="grid h-8 w-11 place-items-center rounded-lg font-display text-sm font-extrabold" style={{ background: couleur[d.couverture], color: d.couverture === "confirmee" ? "#fff" : "#111312" }}>
+                <span className="grid h-8 w-11 place-items-center rounded-lg font-display text-sm font-semibold tracking-[-0.03em] font-display" style={{ background: couleur[d.couverture], color: d.couverture === "confirmee" ? "#fff" : "#111312" }}>
                   {d.code}
                 </span>
                 <span className="font-semibold">{d.nom}</span>

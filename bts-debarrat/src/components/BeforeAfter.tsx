@@ -35,7 +35,7 @@ export function BeforeAfter({
   return (
     <div
       ref={ref}
-      className={`relative isolate aspect-[3/2] select-none overflow-hidden rounded-[1.25rem] bg-mist-2 ${drag ? "cursor-grabbing" : "cursor-ew-resize"} ${className}`}
+      className={`relative isolate select-none overflow-hidden rounded-[1.25rem] bg-mist-2 ${className.includes("aspect-") ? "" : "aspect-[3/2]"} ${drag ? "cursor-grabbing" : "cursor-ew-resize"} ${className}`}
       style={{ touchAction: "pan-y" }}
       onPointerDown={(e) => {
         (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
@@ -51,15 +51,15 @@ export function BeforeAfter({
         {avant}
       </div>
 
-      <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-ink/80 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white">Avant</span>
-      <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-ink">Après</span>
+      <span className="pointer-events-none absolute left-4 top-4 rounded-full bg-white/92 px-3 py-1 text-[0.75rem] font-medium text-ink">Avant</span>
+      <span className="pointer-events-none absolute right-4 top-4 rounded-full bg-white/92 px-3 py-1 text-[0.75rem] font-medium text-ink">Après</span>
 
       {tag && <span className="placeholder-tag pointer-events-none">{tag}</span>}
 
       <div className="pointer-events-none absolute inset-y-0 z-10 w-0.5 -translate-x-1/2 bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.08)]" style={{ left: `${pos}%` }}>
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <motion.div
-          className="grid size-12 place-items-center rounded-full bg-white text-ink shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]"
+          className="grid size-11 place-items-center rounded-full bg-white text-ink shadow-[0_4px_16px_-6px_rgba(0,0,0,0.35)]"
           animate={{ scale: drag ? 1.12 : 1 }}
           transition={{ type: "spring", stiffness: 400, damping: 25 }}
         >

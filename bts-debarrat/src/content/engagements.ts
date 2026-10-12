@@ -27,8 +27,7 @@ export const arguments_: Argument[] = [
 ];
 
 export const etapes = [
-  { titre: "Vous nous présentez votre besoin", texte: "Par WhatsApp, téléphone ou formulaire : type de bien, ville, volume approximatif, photos si possible." },
-  { titre: "Nous étudions le chantier", texte: "Volume, accès, étage, stationnement, objets particuliers. Nous posons les questions utiles et, si nécessaire, proposons une visite." },
-  { titre: "Nous vous proposons des modalités adaptées", texte: "Un devis détaillé précise le périmètre, l'organisation et le prix." },
-  { titre: "L'intervention est organisée", texte: "Après validation du devis, l'intervention a lieu selon les conditions et la date convenues ensemble." },
+  { titre: "Présentez votre besoin", texte: "Un message WhatsApp avec quelques photos, un appel ou le formulaire : type de bien, ville, volume approximatif, contraintes d'accès." },
+  { titre: "Recevez une proposition adaptée", texte: "Nous étudions le lieu et revenons vers vous avec un devis détaillé : périmètre, organisation, prix. Rien n'est engagé avant votre accord." },
+  { titre: "L'intervention est organisée", texte: "Après validation, nous fixons la date et les modalités ensemble, puis nous prenons en charge le tri, la manutention et l'évacuation." },
 ];

@@ -6,16 +6,16 @@ import { site } from "@/config/site";
 type Variant = "primary" | "dark" | "light" | "outline" | "outline-light" | "whatsapp";
 
 const styles: Record<Variant, string> = {
-  primary: "bg-accent text-white hover:bg-accent-strong",
+  primary: "bg-ink text-white hover:bg-ink-3",
   dark: "bg-ink text-white hover:bg-ink-3",
   light: "bg-white text-ink hover:bg-mist",
-  outline: "border border-ink/20 text-ink hover:border-ink hover:bg-ink hover:text-white",
-  "outline-light": "border border-white/30 text-white hover:bg-white hover:text-ink",
-  whatsapp: "bg-wa text-ink hover:bg-wa-strong",
+  outline: "text-ink ring-1 ring-inset ring-ink/15 hover:ring-ink/40",
+  "outline-light": "text-white ring-1 ring-inset ring-white/30 hover:ring-white/70",
+  whatsapp: "bg-white text-ink ring-1 ring-inset ring-ink/12 hover:ring-ink/35",
 };
 
 export const btnBase =
-  "group relative inline-flex min-h-12 items-center justify-center gap-2.5 rounded-full px-6 py-3 text-[0.95rem] font-semibold tracking-[-0.01em] transition-[background-color,color,border-color,transform,box-shadow] duration-300 ease-[var(--ease-out-expo)] active:scale-[0.97] will-change-transform";
+  "group relative inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 py-3 text-[0.95rem] font-medium tracking-[-0.01em] transition-[background-color,color,box-shadow,transform] duration-300 ease-[var(--ease-out-expo)] active:scale-[0.98]";
 
 export function ButtonLink({
   href,
@@ -64,15 +64,15 @@ export function WhatsAppButton({
   if (!url) {
     return (
       <Link href="/espace-pro/#whatsapp" className={cls} title="Numéro WhatsApp à renseigner dans la configuration">
-        <IconWhatsApp className="size-5" />
+        <IconWhatsApp className="size-5 text-[#1fa855]" />
         <span>{children}</span>
-        <span className="whitespace-nowrap rounded-full bg-ink/15 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide">à configurer</span>
+        <span className="whitespace-nowrap rounded-full bg-mist-2 px-2 py-0.5 text-[0.62rem] font-medium text-muted">à configurer</span>
       </Link>
     );
   }
   return (
     <a href={url} target="_blank" rel="noopener noreferrer" className={cls} data-track="whatsapp_clic" data-track-label={emplacement}>
-      <IconWhatsApp className="size-5" />
+      <IconWhatsApp className="size-5 text-[#1fa855]" />
       <span>{children}</span>
       <span className="sr-only">(ouvre WhatsApp dans un nouvel onglet)</span>
     </a>
@@ -86,15 +86,15 @@ export function PhoneButton({ emplacement, variant = "outline", className = "" }
     return (
       <Link href="/espace-pro/#telephone" className={cls} title="Numéro de téléphone à renseigner dans la configuration">
         <IconPhone className="size-5" />
-        <span>Appeler BTS DÉBARRAT</span>
-        <span className="whitespace-nowrap rounded-full border border-current/30 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-wide opacity-80">à configurer</span>
+        <span>Appeler</span>
+        <span className="whitespace-nowrap rounded-full px-1 text-[0.62rem] font-medium opacity-60">à configurer</span>
       </Link>
     );
   }
   return (
     <a href={url} className={cls} data-track="telephone_clic" data-track-label={emplacement}>
       <IconPhone className="size-5" />
-      <span>Appeler le {site.telephone}</span>
+      <span>{site.telephone}</span>
     </a>
   );
 }

@@ -2,6 +2,12 @@
 
 Site multipage de BTS DÉBARRAT (débarras à Paris et en Île-de-France) : Next.js 16, React 19, TypeScript, Tailwind CSS 4, Motion.
 
+## Identité
+
+- **Logo** : le premier « A » de DÉBARRAT devient un toit, une porte ouverte dessous (l'espace libéré). Fichiers SVG dans `public/brand/` (horizontal clair/sombre, compact, symbole, favicon, monochromes noir/blanc), régénérables avec `npm run logo` (`scripts/logo.mjs`, texte vectorisé depuis Jost). Planche complète et pistes explorées : `/marque/` (non indexée).
+- **Couleurs** : anthracite `#17181A`, blanc cassé `#F4F3EF`, gris minéral `#8C8F91`, une seule couleur d'accent : l'ocre (`#B0823E` logo, `#8A6428` texte).
+- **Typographie** : Inter Tight (titres), Inter (texte), hébergées sur le site.
+
 > **État : prêt techniquement, pas publiable en l'état.** 8 informations obligatoires manquent (numéros, adresse, SIRET, zones, envoi des e-mails…). Un bandeau jaune les signale sur chaque page et `npm run check:config` les liste. Rien n'a été déployé.
 
 ## Démarrer
@@ -74,9 +80,17 @@ Ce dossier vit dans le dépôt `link`, à côté d'un autre projet. Sur Vercel :
 - Aucun balisage `AggregateRating` n'est publié : Google n'affiche pas les étoiles pour des avis qu'une entreprise publie sur son propre site.
 - Message de demande d'avis prêt à copier (WhatsApp / e-mail) sur `/espace-pro/`. L'envoyer à tous les clients, sans contrepartie ni tri.
 
-## Remplacer les illustrations par de vraies photos
+## Photographies
 
-Les visuels actuels sont des **illustrations vectorielles**, toutes étiquetées « Illustration ». Ce ne sont pas des photos de chantiers.
+Toutes les images passent par `src/config/photos.ts` : un emplacement par sujet (hero, équipe, pièce vide, une par prestation, contact). Tant qu'un emplacement n'a pas de fichier, le site affiche un dessin monochrome légendé « Photo à venir · sujet » : rien n'est simulé.
+
+- **Photo de banque d'images** (Unsplash, Pexels — usage commercial gratuit) : renseigner `credit` (auteur, page, licence, URL du fichier), lancer `npm run photos` (télécharge, redimensionne à 2 000 px, convertit en WebP dans `public/photos/`), puis `src: "/photos/<id>.webp"`. Elle s'affiche avec la légende « Photo d'illustration ».
+- **Photo de BTS DÉBARRAT** : déposer le fichier dans `public/photos/`, `src` renseigné, `demonstration: false`.
+- Les comparaisons avant/après n'utilisent **jamais** de photos de banque : uniquement deux photos réelles du même lieu, même angle (voir ci-dessous).
+
+## Remplacer les dessins avant/après par de vraies photos
+
+Les comparaisons actuelles sont des **dessins**, étiquetés « Dessin d'illustration — en attente des photos de chantier ». Ce ne sont pas des photos de chantiers.
 
 1. Photos en 3:2, 1 600 × 1 067 px, WebP ou JPEG, sans visage, plaque, nom, courrier ni objet identifiant. Accord écrit du client.
 2. Réalisations : `public/photos/realisations/<slug>/avant.webp` et `apres.webp`, puis une entrée dans `realisations.ts` (modèle en commentaire). La galerie de l'accueil, la page `/realisations/` et la page individuelle se mettent à jour seules.

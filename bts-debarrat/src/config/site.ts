@@ -69,7 +69,7 @@ export const site = {
   releveGoogle: null as null | { note: number; nombre: number; dateReleve: string },
 
   /** [LOGO] chemin dans /public, ex. "/logo.svg". null = logotype typographique. */
-  logo: null as string | null,
+  logo: "/brand/logo-horizontal.svg" as string | null,
 
   /** [AVIS_CLIENTS] témoignages authentiques et autorisés uniquement. */
   avis: [] as Avis[],

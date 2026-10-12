@@ -24,17 +24,17 @@ export function Faq({ items, dark = false }: { items: FaqItem[]; dark?: boolean 
                 onClick={() => setOpen(ouvert ? null : i)}
                 className="group flex w-full items-center justify-between gap-6 py-5 text-left"
               >
-                <span className={`font-sans text-[1.06rem] font-semibold tracking-[-0.01em] transition-colors md:text-[1.15rem] ${dark ? "text-white" : "text-ink"} group-hover:text-accent`}>
+                <span className={`font-sans text-[1.05rem] font-medium tracking-[-0.01em] md:text-[1.15rem] ${dark ? "text-white" : "text-ink"}`}>
                   {f.q}
                 </span>
                 <span
-                  className={`relative grid size-9 shrink-0 place-items-center rounded-full border transition-colors duration-300 ${
-                    ouvert ? "border-accent bg-accent text-white" : dark ? "border-white/20 text-white" : "border-line text-ink"
+                  className={`relative grid size-8 shrink-0 place-items-center rounded-full transition-colors duration-300 ${
+                    ouvert ? "bg-ink text-white" : dark ? "text-white ring-1 ring-white/20" : "text-ink ring-1 ring-ink/15 group-hover:ring-ink/40"
                   }`}
                   aria-hidden
                 >
-                  <span className="absolute h-0.5 w-3.5 rounded bg-current" />
-                  <motion.span className="absolute h-3.5 w-0.5 rounded bg-current" animate={{ scaleY: ouvert ? 0 : 1 }} transition={{ duration: 0.3 }} />
+                  <span className="absolute h-[1.5px] w-3 bg-current" />
+                  <motion.span className="absolute h-3 w-[1.5px] bg-current" animate={{ scaleY: ouvert ? 0 : 1 }} transition={{ duration: 0.3 }} />
                 </span>
               </button>
             </h3>

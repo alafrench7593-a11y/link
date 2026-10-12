@@ -1,22 +1,18 @@
 import Link from "next/link";
 import { Hero } from "@/components/home/Hero";
-import { Reassurance } from "@/components/home/Reassurance";
+import { Statement } from "@/components/home/Statement";
+import { Prestations } from "@/components/home/Prestations";
 import { BeforeAfterGallery } from "@/components/home/BeforeAfterGallery";
-import { Process } from "@/components/home/Process";
-import { Why } from "@/components/home/Why";
-import { ServiceCards } from "@/components/ServiceCards";
-import { SectionHeading } from "@/components/Section";
-import { ZoneMap } from "@/components/ZoneMap";
+import { Methode } from "@/components/home/Methode";
+import { Engagements } from "@/components/home/Engagements";
+import { AvisSection } from "@/components/home/AvisSection";
+import { ContactFinal } from "@/components/home/ContactFinal";
 import { Faq } from "@/components/Faq";
-import { CtaFinal } from "@/components/CtaFinal";
-import { Testimonials } from "@/components/Testimonials";
-import { ButtonLink, WhatsAppButton, libelleDevis } from "@/components/Buttons";
 import { JsonLd } from "@/components/JsonLd";
 import { IconArrow } from "@/components/Icons";
 import { servicesAvecPage, servicesSecondaires } from "@/config/services";
 import { realisationsPubliees } from "@/config/realisations";
 import { departements } from "@/config/zones";
-import { site } from "@/config/site";
 import { faqAccueil } from "@/content/faq";
 import { faqJsonLd, pageMetadata } from "@/lib/seo";
 import { whatsappUrl } from "@/lib/whatsapp";
@@ -29,106 +25,69 @@ export const metadata = pageMetadata({
 });
 
 export default function Accueil() {
-  const secondaires = servicesSecondaires();
   return (
     <>
       <Hero />
-      <Reassurance />
+      <Statement />
+      <Prestations items={servicesAvecPage()} />
 
-      <section className="py-24 md:py-32" aria-labelledby="titre-services">
+      <section className="bg-white pb-24 md:pb-36" aria-labelledby="titre-avant-apres">
         <div className="container-x">
-          <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
-            <SectionHeading
-              id="titre-services"
-              eyebrow="Nos prestations"
-              title="Chaque lieu a ses contraintes. Chaque débarras, sa méthode."
-              intro="Particuliers et professionnels : choisissez votre situation pour découvrir comment nous l'abordons, ce qu'il faut préparer et les questions fréquentes."
-            />
-            <ButtonLink href="/devis/" variant="outline" className="shrink-0">{libelleDevis()}</ButtonLink>
+          <div className="grid gap-6 border-t border-line pt-16 md:grid-cols-12 md:items-end md:pt-24">
+            <h2 id="titre-avant-apres" data-split="" className="font-display text-[clamp(2.4rem,5.5vw,4.6rem)] font-semibold leading-[0.98] tracking-[-0.045em] md:col-span-7">
+              {["Avant, après.", "Une pièce à la fois."].map((l, i) => (
+                <span key={l} className="split-word block" style={{ "--i": i * 3 } as React.CSSProperties}><span>{l} </span></span>
+              ))}
+            </h2>
+            <p data-reveal className="max-w-md text-[1.05rem] leading-relaxed text-muted md:col-span-5 md:justify-self-end">
+              Faites glisser le curseur. Les réalisations de BTS DÉBARRAT seront présentées ici avec leurs vraies photos, prises au même endroit avant et après l&apos;intervention.
+            </p>
           </div>
-          <div className="mt-14">
-            <ServiceCards items={servicesAvecPage()} />
-          </div>
-          {secondaires.length > 0 && (
-            <div data-reveal className="mt-10 rounded-[1.25rem] bg-mist p-6 md:p-8">
-              <h3 className="text-lg font-bold">Autres prestations</h3>
-              <ul className="mt-4 grid gap-4 md:grid-cols-2">
-                {secondaires.map((s) => (
-                  <li key={s.slug} className="flex gap-3">
-                    <IconArrow className="mt-1 size-4 shrink-0 text-accent" />
-                    <span><strong className="font-semibold">{s.nomMenu}.</strong> <span className="text-muted">{s.carte}</span></span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="on-dark relative overflow-hidden bg-ink py-24 text-white md:py-32" aria-labelledby="titre-avant-apres">
-        <div className="pointer-events-none absolute -left-40 bottom-0 size-[36rem] rounded-full bg-accent/25 blur-[140px]" aria-hidden />
-        <div className="container-x relative">
-          <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
-            <SectionHeading id="titre-avant-apres" dark eyebrow="Avant / après" title="Faites glisser. Voyez l'espace revenir." />
-            <ButtonLink href="/realisations/" variant="outline-light" className="shrink-0">Toutes les réalisations</ButtonLink>
-          </div>
-          <div className="mt-14">
+          <div className="mt-12 md:mt-16">
             <BeforeAfterGallery realisations={realisationsPubliees()} whatsappBase={whatsappUrl()} />
           </div>
         </div>
       </section>
 
-      <Process />
-      <Why />
-
-      {site.avis.length > 0 && (
-        <section className="py-24 md:py-32" aria-labelledby="titre-avis">
-          <div className="container-x">
-            <SectionHeading id="titre-avis" eyebrow="Avis clients" title="Ils nous ont fait confiance" intro="Découvrez les retours de nos clients après leur débarras." />
-            <div className="mt-12">
-              <Testimonials avis={site.avis.slice(0, 6)} />
-            </div>
-            <div className="mt-10 flex flex-wrap gap-3">
-              <ButtonLink href="/avis-clients/" variant="dark">Tous nos avis</ButtonLink>
-              <ButtonLink href="/devis/" variant="outline">Demander un devis</ButtonLink>
-              <WhatsAppButton emplacement="temoignages" />
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section className="py-24 md:py-32" aria-labelledby="titre-zone">
-        <div className="container-x">
-          <SectionHeading
-            id="titre-zone"
-            eyebrow="Zone d'intervention"
-            title="Paris et l'Île-de-France, adresse par adresse"
-            intro="Nous étudions les demandes dans les huit départements franciliens. La faisabilité dépend de l'adresse exacte et des contraintes du chantier."
-          />
-          <div className="mt-14">
-            <ZoneMap departements={departements} />
-          </div>
-          <Link href="/zone-intervention/" className="group mt-10 inline-flex items-center gap-2 font-semibold text-accent">
-            En savoir plus sur notre zone d&apos;intervention <IconArrow className="btn-arrow size-4" />
-          </Link>
-        </div>
-      </section>
+      <Methode />
+      <Engagements />
+      <AvisSection />
 
       <section className="bg-mist py-24 md:py-32" aria-labelledby="titre-faq">
-        <div className="container-x grid gap-12 lg:grid-cols-[0.75fr_1.25fr]">
-          <div className="lg:sticky lg:top-32 lg:self-start">
-            <SectionHeading id="titre-faq" eyebrow="Questions fréquentes" title="Prix, délais, photos : les réponses franches" />
-            <div data-reveal className="mt-8">
-              <WhatsAppButton emplacement="faq">Poser ma question</WhatsAppButton>
-            </div>
+        <div className="container-x grid gap-12 md:grid-cols-12">
+          <div className="md:col-span-4">
+            <h2 id="titre-faq" data-reveal className="font-display text-[clamp(2rem,3.6vw,3rem)] font-semibold leading-[1.02] tracking-[-0.04em]">Questions fréquentes</h2>
+            <p data-reveal className="mt-5 max-w-xs text-[0.98rem] leading-relaxed text-muted">Prix, délais, photos, succession : des réponses franches, sans promesse que nous ne pourrions pas tenir.</p>
           </div>
-          <Faq items={faqAccueil} />
+          <div className="md:col-span-8"><Faq items={faqAccueil} /></div>
         </div>
       </section>
 
-      <div className="pt-24 md:pt-32">
-        <CtaFinal />
-      </div>
+      <section className="bg-mist pb-24 md:pb-32" aria-labelledby="titre-zone">
+        <div className="container-x grid gap-10 border-t border-line pt-14 md:grid-cols-12">
+          <h2 id="titre-zone" data-reveal className="font-display text-[clamp(1.8rem,3vw,2.5rem)] font-semibold leading-[1.05] tracking-[-0.035em] md:col-span-4">Paris et l&apos;Île-de-France</h2>
+          <div className="md:col-span-8">
+            <ul data-reveal className="flex flex-wrap gap-x-6 gap-y-2 text-[1.05rem]">
+              {departements.map((d) => (
+                <li key={d.code}>{d.nom} <span className="text-stone">{d.code}</span></li>
+              ))}
+            </ul>
+            <p data-reveal className="mt-5 max-w-xl text-[0.95rem] leading-relaxed text-muted">
+              La faisabilité dépend de l&apos;adresse exacte : indiquez votre commune, nous vous répondons clairement.
+            </p>
+            <Link href="/zone-intervention/" className="group mt-3 inline-flex min-h-11 items-center gap-1.5 font-medium">
+              Zone d&apos;intervention <IconArrow className="btn-arrow size-4" />
+            </Link>
+            {servicesSecondaires().length > 0 && (
+              <p className="mt-10 text-[0.9rem] leading-relaxed text-muted">
+                Également : {servicesSecondaires().map((s) => s.nomMenu.toLowerCase()).join(" · ")}.
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <ContactFinal />
       <JsonLd data={faqJsonLd(faqAccueil)} />
     </>
   );

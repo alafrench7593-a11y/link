@@ -9,7 +9,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 const dir = mkdtempSync(path.join(tmpdir(), "bts-config-"));
-for (const f of ["site", "zones", "realisations", "services", "checklist"]) {
+for (const f of ["site", "zones", "realisations", "services", "photos", "checklist"]) {
   const src = readFileSync(`src/config/${f}.ts`, "utf8");
   // Node ≥ 22.18 exécute le TypeScript directement (suppression des types).
   writeFileSync(path.join(dir, `${f}.ts`), src.replace(/from "\.\/(\w+)"/g, 'from "./$1.ts"'));

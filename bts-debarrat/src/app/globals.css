@@ -1,25 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink: #111312;
-  --color-ink-2: #1a1d1c;
-  --color-ink-3: #262a28;
+  /* Anthracite, blancs cassés, gris minéral et une seule couleur d'accent : l'ocre. */
+  --color-ink: #17181a;
+  --color-ink-2: #222326;
+  --color-ink-3: #2e3033;
   --color-paper: #ffffff;
-  --color-mist: #f3f2ef;
-  --color-mist-2: #e9e7e2;
-  --color-line: #dedbd4;
-  --color-muted: #555b58;
-  --color-muted-dark: #a9b0ac;
-  --color-accent: #1d5a42;
-  --color-accent-strong: #154532;
-  --color-accent-soft: #e3efe8;
-  --color-accent-bright: #8fd6b0;
+  --color-mist: #f4f3ef;
+  --color-mist-2: #e9e7e1;
+  --color-line: #e2e0da;
+  --color-muted: #5d6063;
+  --color-muted-dark: #a3a6a9;
+  --color-stone: #8c8f91;
+  --color-accent: #8a6428;
+  --color-accent-strong: #6f4f1e;
+  --color-accent-soft: #f2ebdf;
+  --color-accent-bright: #c99a55;
   --color-wa: #25d366;
   --color-wa-strong: #1fb457;
   --color-danger: #a8261b;
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: var(--font-archivo), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-face), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
@@ -55,16 +57,18 @@
   }
   h1, h2, h3, .font-display {
     font-family: var(--font-display);
-    letter-spacing: -0.025em;
+    letter-spacing: -0.032em;
+    font-weight: 600;
     text-wrap: balance;
   }
   p { text-wrap: pretty; }
 }
 
 @layer components {
+  .split-word { display: inline-block; overflow: hidden; vertical-align: top; padding: 0.06em 0.02em 0.14em; margin: -0.06em -0.02em -0.14em; }
   .container-x {
     width: 100%;
-    max-width: 82rem;
+    max-width: 80rem;
     margin-inline: auto;
     padding-inline: 1rem;
   }
@@ -74,18 +78,10 @@
   .eyebrow {
     display: inline-flex;
     align-items: center;
-    gap: 0.6rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
-  .eyebrow::before {
-    content: "";
-    width: 1.75rem;
-    height: 1px;
-    background: currentColor;
-    opacity: 0.6;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
   }
 
   .prose-site p { margin-block: 0 1.1em; line-height: 1.7; }
@@ -103,12 +99,11 @@
     max-width: calc(100% - 1.5rem);
     padding: 0.3rem 0.6rem;
     border-radius: 999px;
-    background: rgb(17 19 18 / 0.78);
-    color: #fff;
+    background: rgb(255 255 255 / 0.92);
+    color: var(--color-ink);
     font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    backdrop-filter: blur(6px);
+    font-weight: 500;
+    letter-spacing: 0.01em;
   }
 }
 
@@ -118,14 +113,14 @@
    --------------------------------------------------------------- */
 [data-motion] [data-reveal] {
   opacity: 0;
-  transform: translate3d(0, 28px, 0);
+  transform: translate3d(0, 18px, 0);
   transition:
-    opacity 0.9s var(--ease-out-expo),
-    transform 0.9s var(--ease-out-expo);
+    opacity 1s var(--ease-out-expo),
+    transform 1.1s var(--ease-out-expo);
   transition-delay: calc(var(--d, 0) * 1ms);
 }
 [data-motion] [data-reveal="left"] { transform: translate3d(-28px, 0, 0); }
-[data-motion] [data-reveal="scale"] { transform: scale(0.96); }
+[data-motion] [data-reveal="scale"] { transform: scale(0.98); }
 [data-motion] [data-reveal].is-in { opacity: 1; transform: none; }
 
 /* Révélation d'image : rideau qui se retire */
@@ -135,7 +130,6 @@
 [data-motion] [data-reveal-img].is-in > * { transform: scale(1); }
 
 /* Titres : mots qui montent dans un masque */
-.split-word { display: inline-block; overflow: hidden; vertical-align: top; padding: 0.06em 0.02em 0.14em; margin: -0.06em -0.02em -0.14em; }
 .split-word > span { display: inline-block; }
 [data-motion] [data-split] .split-word > span {
   transform: translate3d(0, 105%, 0);
@@ -147,17 +141,9 @@
 /* Hero : animation au chargement, sans attendre le JavaScript */
 @keyframes rise { from { transform: translate3d(0, 105%, 0); } to { transform: none; } }
 @keyframes fadeUp { from { opacity: 0; transform: translate3d(0, 18px, 0); } to { opacity: 1; transform: none; } }
-@keyframes drawLine { from { stroke-dashoffset: var(--len, 1200); } to { stroke-dashoffset: 0; } }
-@keyframes floatY { 0%, 100% { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(0, -8px, 0); } }
-@keyframes marquee { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
-@keyframes pulseRing { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(1.6); opacity: 0; } }
 
 .hero-word > span { animation: rise 1.05s var(--ease-out-expo) both; animation-delay: calc(120ms + var(--i, 0) * 70ms); }
 .hero-fade { animation: fadeUp 0.9s var(--ease-out-expo) both; animation-delay: var(--delay, 500ms); }
-.draw { stroke-dasharray: var(--len, 1200); animation: drawLine 1.8s var(--ease-in-out-quart) both; animation-delay: var(--delay, 200ms); }
-.float-slow { animation: floatY 6s ease-in-out infinite; }
-.marquee-track { animation: marquee 38s linear infinite; }
-.pulse-ring::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--color-wa); animation: pulseRing 2.4s var(--ease-out-expo) infinite; z-index: -1; }
 
 /* Micro-interactions boutons */
 .btn-arrow { transition: transform 0.45s var(--ease-out-expo); }
@@ -168,8 +154,6 @@
   [data-motion] [data-reveal], [data-motion] [data-reveal-img], [data-motion] [data-reveal-img] > *, [data-motion] [data-split] .split-word > span {
     opacity: 1 !important; transform: none !important; clip-path: none !important; transition: none !important;
   }
-  .hero-word > span, .hero-fade, .draw, .float-slow, .marquee-track { animation: none !important; }
-  .draw { stroke-dasharray: none; }
-  .pulse-ring::after { display: none; }
+  .hero-word > span, .hero-fade { animation: none !important; }
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }

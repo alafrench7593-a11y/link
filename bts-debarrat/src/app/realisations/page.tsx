@@ -34,7 +34,7 @@ export default function Realisations() {
           ) : (
             <div className="grid items-center gap-10 lg:grid-cols-2">
               <div data-reveal>
-                <h2 className="text-[clamp(1.7rem,3vw,2.4rem)] font-extrabold leading-tight">Les premières réalisations arrivent</h2>
+                <h2 className="text-[clamp(1.7rem,3vw,2.4rem)] font-semibold tracking-[-0.03em] font-display leading-tight">Les premières réalisations arrivent</h2>
                 <p className="mt-4 max-w-lg leading-relaxed text-muted">
                   Nous publions uniquement des chantiers authentiques, avec des photos prises par nos équipes et l&apos;autorisation des clients. Cette page s&apos;enrichira au fil des interventions.
                 </p>

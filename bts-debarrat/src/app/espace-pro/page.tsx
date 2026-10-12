@@ -17,7 +17,7 @@ export default function EspacePro() {
     <div className="bg-mist pb-24 pt-32">
       <div className="container-x max-w-4xl">
         <p className="eyebrow text-accent">Page interne · non indexée</p>
-        <h1 className="mt-4 text-4xl font-extrabold">Préparation de la mise en ligne</h1>
+        <h1 className="mt-4 text-4xl font-semibold tracking-[-0.03em] font-display">Préparation de la mise en ligne</h1>
         <p className="mt-3 text-muted">
           {bloquants ? `${bloquants} point(s) bloquant(s) restent à compléter avant publication.` : "Tous les points bloquants sont renseignés."} Les valeurs se modifient dans <code>src/config/</code> et dans les variables d&apos;environnement.
         </p>
@@ -39,13 +39,13 @@ export default function EspacePro() {
           ))}
         </ul>
 
-        <h2 className="mt-16 text-2xl font-extrabold">Message de demande d&apos;avis</h2>
+        <h2 className="mt-16 text-2xl font-semibold tracking-[-0.03em] font-display">Message de demande d&apos;avis</h2>
         <p className="mt-2 text-sm text-muted">
           À envoyer à chaque client après l&apos;intervention, quel que soit son niveau de satisfaction. Ne jamais proposer de contrepartie ni solliciter uniquement les clients satisfaits.
         </p>
         <div className="mt-5"><CopyMessage texte={messageAvis(site.lienAvisGoogle)} /></div>
 
-        <h2 className="mt-16 text-2xl font-extrabold">Aperçu du bloc « avis » (données fictives)</h2>
+        <h2 className="mt-16 text-2xl font-semibold tracking-[-0.03em] font-display">Aperçu du bloc « avis » (données fictives)</h2>
         <p className="mt-2 text-sm text-muted">Visible uniquement ici, pour juger de la mise en page. Ce contenu n&apos;apparaît sur aucune page publique.</p>
         <div className="mt-6">
           <Testimonials

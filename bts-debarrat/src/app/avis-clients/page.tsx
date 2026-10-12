@@ -25,9 +25,9 @@ export default function AvisClients() {
         crumbs={[{ name: "Avis clients", path: "/avis-clients/" }]}
         aside={
           g && site.lienGoogleBusiness ? (
-            <div className="rounded-[1.5rem] bg-white p-8 shadow-[0_30px_60px_-40px_rgba(17,19,18,0.4)]">
+            <div className="rounded-[1.5rem] bg-white p-8 ">
               <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted">Note Google</p>
-              <p className="mt-3 flex items-center gap-3 font-display text-5xl font-extrabold">
+              <p className="mt-3 flex items-center gap-3 font-display text-5xl font-semibold tracking-[-0.03em] font-display">
                 {g.note.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                 <span className="flex text-[#e2a93b]">{Array.from({ length: 5 }).map((_, i) => <IconStar key={i} filled={i < Math.round(g.note)} className="size-6" />)}</span>
               </p>
@@ -58,7 +58,7 @@ export default function AvisClients() {
             </>
           ) : (
             <div data-reveal className="mx-auto max-w-2xl text-center">
-              <h2 className="text-[clamp(1.7rem,3vw,2.4rem)] font-extrabold">Les premiers avis seront publiés ici</h2>
+              <h2 className="text-[clamp(1.7rem,3vw,2.4rem)] font-semibold tracking-[-0.03em] font-display">Les premiers avis seront publiés ici</h2>
               <p className="mt-4 leading-relaxed text-muted">
                 Nous ne publions que des avis réels, avec l&apos;accord de leurs auteurs et en indiquant leur source. Aucun avis n&apos;est rédigé, sélectionné contre rémunération ou modifié par nos soins.
               </p>
