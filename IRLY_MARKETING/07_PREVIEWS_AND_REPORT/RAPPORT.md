@@ -80,7 +80,18 @@ Aperçus : `07_PREVIEWS_AND_REPORT/preview_*.jpg`. Contrôle : `qa_images.md`.
 
 ## 8. Vidéos
 
-VIDEOS_TABLE
+Toutes en 1080 × 1920, 30 i/s, H.264 (CRF 16) et AAC stéréo 48 kHz, sonie environ −14 LUFS, crête vraie ≤ −1,2 dBTP. Pour chacune : aucun noir de 0,3 s ou plus, aucune image figée de 1,5 s ou plus (`ffmpeg blackdetect` et `freezedetect`).
+
+| Fichier | Durée | Contenu |
+| --- | --- | --- |
+| `05_SHORT_VIDEOS/irly_presentation_30s.mp4` | 30,0 s | Storyboard « présentation générale » : fontaines de Dubaï, histoire réelle de l'app, activités, communautés, Network, écran partagé Mixte / Girl, logo |
+| `05_SHORT_VIDEOS/irly_girl_30s.mp4` | 30,0 s | Storyboard IRLY Girl : nouvelle ville, accueil Girl, communautés Girl, montage activités, sorties et voyages, Girl Network (violet), « IRLY Girl — Find your people. » |
+| `05_SHORT_VIDEOS/irly_mixte_30s.mp4` | 30,0 s | Storyboard Mixte : Dubai Marina de nuit, accueil, activités puis détail (transition carte → page), communautés, Network, vraie vie, « Make Friends IRL. » |
+| `06_FULL_APP_PRESENTATION/irly_full_motion_77s.mp4` | 77,0 s | 12 chapitres avec barre de progression façon story : accueil, découverte, exploration, activités, une activité (« J'y vais »), communautés, une communauté (Girl Trip), Network, Girl et Girl Network, live, discussion de groupe, logo |
+
+Les clips d'écran sont de **vrais enregistrements de défilement** de la démo, à 30 i/s et 780 × 1688. Les zooms, fondus, caméra et textes animés sont faits au montage, sans déformer l'interface : mise à l'échelle uniforme, au plus +4 %.
+
+Planches de contrôle (une image par seconde, toutes les 2 s pour le film complet) : `07_PREVIEWS_AND_REPORT/*_contact_sheet.jpg`.
 
 ## 9. Fichiers sources
 
@@ -105,7 +116,7 @@ VIDEOS_TABLE
 - Les dossiers d'images des clips et des films (environ 370 Mo) ne sont pas versionnés. `prepare-sources.sh` les régénère.
 
 Refaire une image : `node _source/tools/render-png.mjs _source images/<nom>.html=<sortie>.png` (depuis `IRLY_MARKETING/`).
-Refaire une vidéo : `_source/tools/build-video.sh <nom> <secondes> <dossier>`.
+Refaire une vidéo : `_source/tools/build-video.sh <nom> <secondes> <dossier>` (`SUFFIX=_77s` pour le film complet).
 
 ## 10. Contrôles qualité effectués
 
@@ -131,6 +142,8 @@ Refaire une vidéo : `_source/tools/build-video.sh <nom> <secondes> <dossier>`.
     - carte d'activité qui doublait l'écran ;
     - fondus d'entrée et de sortie en conflit ;
     - image figée de 2 s, d'où une dérive de caméra lente ajoutée partout ;
+    - trou sombre entre les chapitres du film complet, corrigé par de vrais fondus enchaînés ;
+    - crête vraie à +0,2 dBTP, corrigée par un limiteur (≤ −1,2 dBTP) ;
   - sur chaque fichier final : durée, résolution, cadence, présence du son, sonie, noirs, images figées, planche d'une image par seconde (`*_contact_sheet.jpg`).
 - **Son** : vérifié par mesures (sonie, crête, spectre). **Il n'a pas été écouté** : aucune sortie audio dans cet environnement.
 
@@ -160,6 +173,6 @@ Refaire une vidéo : `_source/tools/build-video.sh <nom> <secondes> <dossier>`.
 | --- | --- |
 | Design system IRLY (canvas) | Terminé et vérifié |
 | 20 images | Terminées et vérifiées (dimensions, textes, doublons, relecture visuelle) |
-| 4 vidéos | STATUS_VIDEOS |
+| 4 vidéos | Rendues et vérifiées techniquement (durée, résolution, son mesuré, noirs, images figées, planches relues). Son non écouté. |
 | Analyse du tweet | Non réalisée (inaccessible) |
 | Installation des skills tiers | Non réalisée, par choix (voir § 4-5) |
