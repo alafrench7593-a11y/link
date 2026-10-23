@@ -1,0 +1,1 @@
+{"out": "_source/assets/clips/m_events", "fps": 30, "dpr": 2, "settle": 40, "setup": [{"goto": "/discover", "wait": 4000}, {"tap": "Événements"}, {"wait": 2000}], "steps": [{"frames": 75, "wheel": 520}]}

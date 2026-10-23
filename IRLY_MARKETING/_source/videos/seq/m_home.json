@@ -1,0 +1,1 @@
+{"out": "_source/assets/clips/m_home", "fps": 30, "dpr": 2, "settle": 40, "setup": [{"goto": "/", "wait": 2500}, {"tap": "Passer"}, {"wait": 1500}, {"goto": "/", "wait": 6000}], "steps": [{"frames": 120, "wheel": 1500}]}

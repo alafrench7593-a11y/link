@@ -1,0 +1,1 @@
+{"out": "_source/assets/clips/g_home", "fps": 30, "dpr": 2, "settle": 40, "setup": [{"goto": "/girl", "wait": 5000}], "steps": [{"frames": 120, "wheel": 1500}]}

@@ -1,0 +1,1 @@
+{"out": "_source/assets/clips/m_detail", "fps": 30, "dpr": 2, "settle": 40, "setup": [{"goto": "/activities/padel", "wait": 4000}, {"tap": "Padel entre amis"}, {"wait": 2500}], "steps": [{"frames": 75, "wheel": 450}]}

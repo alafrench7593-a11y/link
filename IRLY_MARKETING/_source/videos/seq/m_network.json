@@ -1,0 +1,1 @@
+{"out": "_source/assets/clips/m_network", "fps": 30, "dpr": 2, "settle": 40, "setup": [{"goto": "/network", "wait": 4000}], "steps": [{"frames": 90, "wheel": 900}]}

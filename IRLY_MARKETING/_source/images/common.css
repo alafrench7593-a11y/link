@@ -1,0 +1,52 @@
+/* IRLY campaign kit: tokens taken from the app (src/theme/tokens.ts, features/girl/theme.ts). */
+@font-face { font-family: Manrope; font-weight: 400; src: url(../assets/fonts/Manrope_400Regular.ttf); }
+@font-face { font-family: Manrope; font-weight: 500; src: url(../assets/fonts/Manrope_500Medium.ttf); }
+@font-face { font-family: Manrope; font-weight: 600; src: url(../assets/fonts/Manrope_600SemiBold.ttf); }
+@font-face { font-family: Manrope; font-weight: 700; src: url(../assets/fonts/Manrope_700Bold.ttf); }
+@font-face { font-family: Manrope; font-weight: 800; src: url(../assets/fonts/Manrope_800ExtraBold.ttf); }
+@font-face { font-family: 'Instrument Serif'; font-style: normal; src: url(../assets/fonts/InstrumentSerif_400Regular.ttf); }
+@font-face { font-family: 'Instrument Serif'; font-style: italic; src: url(../assets/fonts/InstrumentSerif_400Regular_Italic.ttf); }
+
+:root {
+  --bg: #050506; --surface: #0E0F12; --raised: #16181C; --text: #FFFFFF;
+  --text2: rgba(236,239,244,0.72); --steel: #8EA5BF; --live: #FF453A;
+  --g-bg: #FBF2F4; --g-ink: #2F1B29; --g-ink2: #6F5A67; --g-rose: #B92B69; --g-brand: #E83E87; --g-plum: #4A2440; --g-nude: #F2E3DB;
+  --n-bg: #F6F2FF; --n-ink: #211634; --n-ink2: #5B5072; --n-brand: #6A3BEE; --n-plum: #2D1D54;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; }
+body { font-family: Manrope, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+.frame { position: relative; width: 1080px; height: 1920px; overflow: hidden; }
+.abs { position: absolute; }
+.fill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+/* Type, sized for a 1080 px wide vertical canvas */
+.over { font-size: 30px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+.hook { font-size: 100px; line-height: 0.98; font-weight: 800; letter-spacing: -0.035em; margin: 0; }
+.hook.m { font-size: 84px; }
+.hook.s { font-size: 72px; }
+.body { font-size: 40px; line-height: 1.32; font-weight: 600; margin: 0; }
+.serif { font-family: 'Instrument Serif', serif; font-weight: 400; letter-spacing: -0.01em; }
+.serif-hook { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 128px; line-height: 0.95; letter-spacing: -0.015em; margin: 0; }
+.serif-hook.m { font-size: 108px; }
+.it { font-style: italic; }
+
+/* Device: a real screenshot in a quiet phone body */
+.phone { position: absolute; padding: 12px; border-radius: 74px; background: #0B0C0F;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.10), 0 50px 120px rgba(0,0,0,0.55), 0 10px 30px rgba(0,0,0,0.35); }
+.phone img { display: block; width: 100%; border-radius: 62px; }
+.phone.light { background: #FFFFFF; box-shadow: 0 0 0 2px rgba(74,36,64,0.10), 0 40px 100px rgba(74,36,64,0.22), 0 8px 24px rgba(74,36,64,0.10); }
+.phone.violet { background: #FFFFFF; box-shadow: 0 0 0 2px rgba(106,59,238,0.12), 0 40px 100px rgba(45,29,84,0.24), 0 8px 24px rgba(45,29,84,0.10); }
+
+/* A crop of a real screenshot (coordinates in the 390 × 844 phone points of the capture) */
+.crop { position: absolute; overflow: hidden; }
+.crop img { position: absolute; max-width: none; }
+
+.pill { display: inline-flex; align-items: center; gap: 14px; height: 84px; padding: 0 40px; border-radius: 999px; font-size: 34px; font-weight: 800; }
+.scrim-b { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,5,6,0) 35%, rgba(5,5,6,0.78) 70%, rgba(5,5,6,0.94) 100%); }
+.scrim-t { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,5,6,0.82) 0%, rgba(5,5,6,0.35) 30%, rgba(5,5,6,0) 50%); }
+.glow { position: absolute; border-radius: 50%; pointer-events: none; }
+
+/* IRLY Girl lockup: the dot wordmark in plum, "Girl" in the editorial serif */
+.girl-lockup { position: absolute; display: flex; align-items: flex-end; gap: 14px; }
+.girl-lockup .g { font-family: 'Instrument Serif', serif; font-style: italic; color: var(--g-brand); line-height: 0.8; }

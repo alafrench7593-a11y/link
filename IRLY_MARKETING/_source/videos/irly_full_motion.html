@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>IRLY Full Motion</title><link rel="stylesheet" href="video.css">
+<style>
+.over2 { position: absolute; left: 74px; top: 200px; font-size: 30px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+.title { position: absolute; left: 72px; top: 252px; width: 900px; margin: 0; font-size: 74px; line-height: 1.02; font-weight: 800; letter-spacing: -0.035em; }
+.title.serif { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 96px; letter-spacing: -0.015em; }
+#bars { position: absolute; left: 72px; right: 72px; top: 140px; display: flex; gap: 8px; z-index: 50; }
+#bars i { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.22); overflow: hidden; position: relative; }
+#bars i b { position: absolute; inset: 0; background: #FFFFFF; transform-origin: 0 50%; }
+#bars.light i { background: rgba(74,36,64,0.16); }
+#bars.light i b { background: #B92B69; }
+.ring { position: absolute; border-radius: 999px; border: 4px solid #FFFFFF; pointer-events: none; }
+</style></head>
+<body><div class="frame" id="root" style="background:#050506">
+  <div id="bars"></div>
+
+  <!-- 01 · Accueil: the logo lights up, then the app's own story plays -->
+  <section class="scene" id="c1">
+    <div class="glow" style="left:-200px; top:300px; width:1500px; height:1500px; background: radial-gradient(circle, rgba(142,165,191,0.26), rgba(142,165,191,0) 60%)"></div>
+    <div class="abs" id="c1logo" style="left:0; width:1080px; top:760px; display:flex; justify-content:center" data-logo="170" data-ink="#FFFFFF" data-accent="#FF453A"></div>
+    <div class="over2" id="c1o" style="color: var(--text2)">01 · Accueil</div>
+    <h1 class="title" id="c1t">Bienvenue dans IRLY.</h1>
+    <div class="vphone" id="c1phone" style="left:260px; top:560px; width:560px"><div class="screen"><img id="c1img" alt=""></div></div>
+  </section>
+</div>
+<script src="../images/common.js"></script>
+<script src="engine.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const root = $('root');
+
+// Real screen recordings of the demo build (example people and plans, no server).
+[['home', 'm_home', 120], ['events', 'm_events', 75], ['places', 'm_places', 60], ['acts', 'm_activities', 75],
+ ['cats', 'm_categories', 60], ['padel', 'm_padel', 75], ['detail', 'm_detail', 75], ['network', 'm_network', 90],
+ ['live', 'm_live', 60], ['ghome', 'g_home', 120], ['gcomm', 'g_comm', 120], ['gnet', 'g_network', 90], ['gperson', 'g_person', 60]]
+  .forEach(([k, d, n]) => seq(k, `../assets/clips/${d}`, n));
+
+const DARK = { bg: '#050506', glow: 'rgba(110,142,180,0.38)', glow2: 'rgba(88,86,214,0.22)', ink: '#FFFFFF', sub: 'rgba(236,239,244,0.72)', phone: '' };
+const PEARL = { bg: '#FBF2F4', glow: 'rgba(232,76,140,0.30)', glow2: 'rgba(240,206,188,0.80)', ink: '#2F1B29', sub: '#6F5A67', phone: 'light', light: true };
+const VIOLET = { bg: '#F6F2FF', glow: 'rgba(124,77,255,0.28)', glow2: 'rgba(190,212,255,0.80)', ink: '#211634', sub: '#5B5072', phone: 'violet', light: true };
+
+// Chapters 02–11: one phone playing real recordings, a title, and optional real UI crops or chips.
+const CH = [
+  { n: '02', label: 'Découverte', start: 7.5, end: 14, theme: DARK, title: 'Ce qui se passe autour de toi, en un coup d’œil.',
+    plays: [{ at: 0, until: 0.9, still: '../assets/clips/m_home/00000.jpg' }, { at: 0.9, seq: 'home', speed: 0.95 }] },
+  { n: '03', label: 'Explorer', start: 14, end: 21, theme: DARK, title: 'Personnes, activités, lieux, événements.',
+    plays: [{ at: 0, until: 3.1, seq: 'events', speed: 1.0 }, { at: 3.1, seq: 'places', speed: 0.9 }] },
+  { n: '04', label: 'Activités', start: 21, end: 27.5, theme: DARK, title: 'Trouve ta tribu grâce à ce que tu aimes faire.',
+    plays: [{ at: 0, until: 3.0, seq: 'acts', speed: 1.0 }, { at: 3.0, seq: 'cats', speed: 0.9 }] },
+  { n: '05', label: 'Une activité', start: 27.5, end: 35, theme: DARK, title: 'Le lieu, l’heure, les places. Il ne reste qu’à venir.',
+    plays: [{ at: 0, until: 2.4, seq: 'padel', speed: 1.1 }, { at: 2.4, seq: 'detail', speed: 1.0 }],
+    card: { src: '../assets/shots/mixte/activity_detail.png', x: 21, y: 716, w: 348, h: 60, width: 940, left: 70, top: 1380, at: 4.6, radius: 90, ring: { x: 0.06, w: 0.30 } } },
+  { n: '06', label: 'Communautés', start: 35, end: 41, theme: DARK, title: 'Les communautés IRLY et celles lancées par les membres.', photo: '../assets/photos/wadiMix.jpg',
+    chips: ['🏋️ IRLY Gym', '🏅 IRLY Sport', '✈️ IRLY Trip', '🤝 IRLY Network', '👋 IRLY Newcomers'] },
+  { n: '07', label: 'Une communauté', start: 41, end: 46.5, theme: PEARL, title: 'Rejoins-la en un geste.', serif: true,
+    plays: [{ at: 0, seq: 'gcomm', speed: 1.0 }],
+    card: { src: '../assets/shots/girl/girl_comm_s1.png', x: 20, y: 298, w: 350, h: 147, width: 860, left: 110, top: 1180, at: 2.2, radius: 70, ring: { x: 0.745, w: 0.24 } } },
+  { n: '08', label: 'IRLY Network', start: 46.5, end: 54, theme: DARK, title: 'Rencontre celles et ceux qui construisent quelque chose.',
+    plays: [{ at: 0, seq: 'network', speed: 1.0 }],
+    card: { src: '../assets/shots/mixte/network_person.png', x: 16, y: 487, w: 351, h: 335, width: 760, left: 160, top: 1010, at: 3.4, radius: 64 } },
+  { n: '09', label: 'IRLY Girl', start: 54, end: 61.5, theme: PEARL, title: 'Un espace entre femmes. Et son réseau.', serif: true,
+    plays: [{ at: 0, until: 3.7, seq: 'ghome', speed: 1.1 }, { at: 3.7, seq: 'gperson', speed: 0.9 }], violetAt: 3.5 },
+  { n: '10', label: 'En live', start: 61.5, end: 66.5, theme: DARK, title: 'Ce que font les gens autour de toi, maintenant.',
+    plays: [{ at: 0, seq: 'live', speed: 0.9 }] },
+  { n: '11', label: 'Se retrouver', start: 66.5, end: 72, theme: DARK, title: 'Un groupe pour s’organiser. Puis on se voit, en vrai.',
+    plays: [{ at: 0, until: 2.6, still: '../assets/shots/legacy/app_fr_chat.jpg' }, { at: 2.6, still: '../assets/shots/legacy/app_fr_messages.jpg' }] },
+];
+
+// Story-like progress bars: 12 chapters, as in the app's "C'est quoi IRLY" story.
+const CHAPTERS = [0, 7.5, 14, 21, 27.5, 35, 41, 46.5, 54, 61.5, 66.5, 72, 77];
+const bars = $('bars');
+for (let i = 0; i < 12; i += 1) bars.insertAdjacentHTML('beforeend', '<i><b></b></i>');
+
+function build(c, i) {
+  const th = c.theme;
+  const sec = document.createElement('section');
+  sec.className = 'scene';
+  sec.id = `ch${c.n}`;
+  sec.style.background = th.bg;
+  sec.style.color = th.ink;
+  sec.innerHTML = `
+    ${c.photo ? `<img class="cover layer" data-r="photo" src="${c.photo}" alt=""><div class="abs" style="inset:0; background: linear-gradient(180deg, rgba(5,5,6,0.92) 0%, rgba(5,5,6,0.62) 34%, rgba(5,5,6,0.72) 100%)"></div>` : ''}
+    <div class="abs" data-r="violet" style="inset:0; opacity:0; background:${VIOLET.bg}"></div>
+    <div class="glow" style="left:-300px; top:-200px; width:1200px; height:1200px; background: radial-gradient(circle, ${th.glow}, rgba(0,0,0,0) 64%)"></div>
+    <div class="glow" style="right:-400px; top:900px; width:1200px; height:1200px; background: radial-gradient(circle, ${th.glow2}, rgba(0,0,0,0) 64%)"></div>
+    <div class="over2" data-r="over" style="color:${th.sub}">${c.n} · ${c.label}</div>
+    <h1 class="title ${c.serif ? 'serif' : ''}" data-r="title">${c.title}</h1>
+    ${c.plays ? `<div class="vphone ${th.phone}" data-r="phone" style="left:${c.card ? 250 : 240}px; top:580px; width:${c.card ? 580 : 600}px"><div class="screen"><img data-r="img" alt=""></div></div>` : ''}
+    ${c.card ? `<div class="card" data-r="card" style="left:${c.card.left}px; top:${c.card.top}px; width:${c.card.width}px; border-radius:${c.card.radius}px; box-shadow: 0 40px 100px rgba(0,0,0,${th.light ? 0.25 : 0.6}), 0 0 0 2px rgba(255,255,255,0.18)"><img src="${c.card.src}" alt=""></div>
+      ${c.card.ring ? '<div class="ring" data-r="ring"></div>' : ''}` : ''}
+    ${(c.chips || []).map((t, k) => `<div class="chip" data-r="chip" style="left:${72 + [0, 120, 40, 200, 90][k]}px; top:${640 + k * 136}px; ${k === 3 ? 'background:#FFFFFF; color:#050506; border-color:#FFFFFF' : ''}">${t}</div>`).join('')}
+  `;
+  root.insertBefore(sec, $('c1').nextSibling);
+  const r = (k) => sec.querySelector(`[data-r="${k}"]`);
+  if (c.card) {
+    const img = r('card').querySelector('img');
+    const s = c.card.width / c.card.w;
+    img.style.width = `${390 * s}px`;
+    img.style.left = `${-c.card.x * s}px`;
+    img.style.top = `${-c.card.y * s}px`;
+    r('card').style.height = `${c.card.h * s}px`;
+    if (c.card.ring) {
+      const ring = r('ring');
+      const h = c.card.h * s;
+      ring.style.left = `${c.card.left + c.card.ring.x * c.card.width}px`;
+      ring.style.width = `${c.card.ring.w * c.card.width}px`;
+      ring.style.top = `${c.card.top + h * 0.12}px`;
+      ring.style.height = `${h * 0.76}px`;
+      ring.style.borderColor = th.light ? '#B92B69' : '#FFFFFF';
+    }
+  }
+  const dur = c.end - c.start;
+  scene(sec.id, c.start - 0.35, c.end + 0.0, async (lt0) => {
+    const lt = lt0 - 0.35;
+    const k = prog(lt0, 0, 0.45, ease.out);
+    const o = 1 - prog(lt, dur - 0.35, dur, ease.in);
+    style(sec, { o: k * o, s: (1.04 - 0.04 * k) * (1 + 0.025 * clamp(lt / dur)) });
+    words(r('over'), lt, 0.05, { stagger: 0.05, dur: 0.4 });
+    words(r('title'), lt, 0.25, { stagger: 0.06 });
+    if (c.photo) style(r('photo'), { s: 1.1 - 0.06 * prog(lt, 0, dur, ease.inOut) });
+    if (c.violetAt !== undefined) {
+      const v = prog(lt, c.violetAt, c.violetAt + 0.6, ease.inOut);
+      r('violet').style.opacity = String(v);
+      r('phone').className = `vphone ${v > 0.5 ? 'violet' : th.phone}`;
+    }
+    (sec.querySelectorAll('[data-r="chip"]') || []).forEach((el, k2) => {
+      const q = prog(lt, 1.2 + k2 * 0.22, 1.9 + k2 * 0.22, ease.spring);
+      style(el, { o: clamp(q * 2), y: (1 - q) * 60, s: 0.9 + 0.1 * q });
+    });
+    if (c.card) {
+      const q = prog(lt, c.card.at, c.card.at + 0.7, ease.spring);
+      style(r('card'), { y: (1 - q) * 280, o: clamp(q * 2), s: 0.94 + 0.06 * q });
+      if (c.card.ring) {
+        // A tap on the action: the ring blooms once, the way the app confirms a press.
+        const p = prog(lt, c.card.at + 0.9, c.card.at + 1.6, ease.out);
+        style(r('ring'), { o: p > 0 && p < 1 ? (1 - p) : 0, s: 0.9 + 0.25 * p });
+      }
+    }
+    if (c.plays) {
+      const q = prog(lt, 0.0, 0.9, ease.out);
+      style(r('phone'), { y: (1 - q) * 220, o: q });
+      await phonePlay(r('img'), lt, c.plays);
+    }
+  });
+}
+CH.forEach(build);
+
+// 01: logo, then the story.
+scene('c1', 0, 7.85, async (lt, t, dur) => {
+  const o = 1 - prog(lt, dur - 0.35, dur, ease.in);
+  style($('c1'), { o, s: 1 + 0.02 * clamp(lt / dur) });
+  logoReveal($('c1logo'), lt, 0.3, { sweep: 0.9, accentAt: 1.1 });
+  const up = prog(lt, 2.2, 2.9, ease.inOut);
+  style($('c1logo'), { o: 1 - up, y: -up * 220, s: 1 - 0.3 * up });
+  words($('c1o'), lt, 2.7, { stagger: 0.05, dur: 0.4 });
+  words($('c1t'), lt, 2.85);
+  $('c1o').style.visibility = lt < 2.6 ? 'hidden' : 'visible';
+  $('c1t').style.visibility = lt < 2.6 ? 'hidden' : 'visible';
+  const k = prog(lt, 2.7, 3.7, ease.spring);
+  style($('c1phone'), { y: (1 - k) * 1500 });
+  $('c1phone').style.visibility = lt < 2.6 ? 'hidden' : 'visible';
+  const i = clamp(Math.floor((lt - 3.2) / 0.92), 0, 4);
+  await showStill($('c1img'), `../assets/shots/mixte/story${i + 1}.png`);
+});
+
+// 12: signature.
+const fin = document.createElement('section');
+fin.className = 'scene';
+fin.id = 'c12';
+fin.innerHTML = `
+  <div class="glow" style="left:-200px; top:300px; width:1500px; height:1500px; background: radial-gradient(circle, rgba(142,165,191,0.30), rgba(142,165,191,0) 60%)"></div>
+  <div class="abs" id="c12logo" style="left:0; width:1080px; top:640px; display:flex; justify-content:center">${wordmark(180, '#FFFFFF', '#FF453A')}</div>
+  <p class="abs" id="c12tag" style="left:0; width:1080px; top:990px; margin:0; text-align:center; font-size:62px; font-weight:800; letter-spacing:-0.02em; color:#fff">IRLY — Make Friends IRL.</p>
+  <p class="abs" id="c12sub" style="left:0; width:1080px; top:1080px; margin:0; text-align:center; font-size:40px; font-weight:600; color: rgba(236,239,244,0.72)">Mixte · Girl · Network</p>
+  <div class="abs" id="c12soon" style="left:0; width:1080px; top:1190px; display:flex; justify-content:center"><div class="pill" style="background:#FFFFFF; color:#050506">Bientôt disponible à Dubaï</div></div>`;
+root.appendChild(fin);
+scene('c12', 71.65, 77.1, async (lt, t, dur) => {
+  const k0 = prog(lt, 0, 0.45, ease.out);
+  style(fin, { o: k0, s: (1.04 - 0.04 * k0) * (1 + 0.02 * clamp(lt / dur)) });
+  logoReveal($('c12logo'), lt, 0.4, { sweep: 0.7, accentAt: 0.9 });
+  const k = prog(lt, 1.3, 1.8, ease.out);
+  style($('c12tag'), { o: k, y: (1 - k) * 30 });
+  const k2 = prog(lt, 1.7, 2.2, ease.out);
+  style($('c12sub'), { o: k2, y: (1 - k2) * 20 });
+  const p = prog(lt, 2.1, 2.6, ease.spring);
+  style($('c12soon'), { o: clamp(p * 2), s: 0.9 + 0.1 * p });
+});
+
+// Bars follow the timeline; they take the pearl style inside IRLY Girl chapters.
+const baseSeek = window.seek;
+window.seek = async (t) => {
+  await baseSeek(t);
+  [...bars.children].forEach((el, i) => {
+    el.firstChild.style.transform = `scaleX(${clamp((t - CHAPTERS[i]) / (CHAPTERS[i + 1] - CHAPTERS[i]))})`;
+  });
+  const light = (t >= 41 && t < 46.5) || (t >= 54 && t < 61.5);
+  bars.className = light ? 'light' : '';
+  bars.style.opacity = String(prog(t, 2.7, 3.2, ease.out) * (1 - prog(t, 71.6, 72, ease.in)));
+};
+</script></body></html>

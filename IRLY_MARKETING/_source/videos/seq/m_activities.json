@@ -1,0 +1,1 @@
+{"out": "_source/assets/clips/m_activities", "fps": 30, "dpr": 2, "settle": 40, "setup": [{"goto": "/activities", "wait": 4000}], "steps": [{"frames": 75, "wheel": 620}]}

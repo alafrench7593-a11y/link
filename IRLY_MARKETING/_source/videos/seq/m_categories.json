@@ -1,0 +1,1 @@
+{"out": "_source/assets/clips/m_categories", "fps": 30, "dpr": 2, "settle": 40, "setup": [{"goto": "/categories", "wait": 4000}], "steps": [{"frames": 60, "wheel": 520}]}

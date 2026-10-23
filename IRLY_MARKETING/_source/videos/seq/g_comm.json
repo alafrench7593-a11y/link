@@ -1,0 +1,1 @@
+{"out": "_source/assets/clips/g_comm", "fps": 30, "dpr": 2, "settle": 40, "setup": [{"goto": "/girl", "wait": 5000}, {"tap": "Communautés"}, {"wait": 2000}, {"tap": "Communautés"}, {"wait": 2000}], "steps": [{"frames": 120, "wheel": 900}]}
