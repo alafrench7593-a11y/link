@@ -69,7 +69,7 @@ function splitWords(el) {
   };
   walk(el);
 }
-function words(el, t, start, { stagger = 0.075, dur = 0.55, out = Infinity, outDur = 0.3, rise = 0.9 } = {}) {
+function words(el, t, start, { stagger = 0.075, dur = 0.55, out = Infinity, outDur = 0.3, rise = 1.15 } = {}) {
   splitWords(el);
   const ws = el.querySelectorAll('.w > span');
   ws.forEach((w, i) => {

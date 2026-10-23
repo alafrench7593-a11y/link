@@ -76,7 +76,8 @@ function build(c, i) {
   const sec = document.createElement('section');
   sec.className = 'scene';
   sec.id = `ch${c.n}`;
-  sec.style.background = th.bg;
+  // Dark chapters stay transparent over the dark root, so chapter changes are true crossfades.
+  sec.style.background = th.light ? th.bg : 'transparent';
   sec.style.color = th.ink;
   sec.innerHTML = `
     ${c.photo ? `<img class="cover layer" data-r="photo" src="${c.photo}" alt=""><div class="abs" style="inset:0; background: linear-gradient(180deg, rgba(5,5,6,0.92) 0%, rgba(5,5,6,0.62) 34%, rgba(5,5,6,0.72) 100%)"></div>` : ''}

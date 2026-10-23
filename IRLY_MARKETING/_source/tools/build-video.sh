@@ -6,4 +6,5 @@ N="$1"; S="$2"; O="$3"
 python3 _source/tools/music.py "_source/videos/audio/$N.json" "_source/videos/audio/$N.wav"
 node _source/tools/render-video.mjs _source "videos/$N.html" "$S" "_source/videos/renders/${N}_silent.mp4" 30 1
 _source/tools/mux.sh "_source/videos/renders/${N}_silent.mp4" "_source/videos/audio/$N.wav" "$O/$N.mp4"
-_source/tools/qa-video.sh "$O/$N.mp4" "07_PREVIEWS_AND_REPORT/${N}_contact_sheet.jpg" 1
+STEP=1; [ "$S" -gt 40 ] && STEP=2
+_source/tools/qa-video.sh "$O/$N.mp4" "07_PREVIEWS_AND_REPORT/${N}_contact_sheet.jpg" $STEP
