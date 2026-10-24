@@ -167,6 +167,17 @@ Refaire une vidéo : `_source/tools/build-video.sh <nom> <secondes> <dossier>` (
 - Si le lancement a lieu : remplacer « Bientôt disponible » par les liens des stores.
 - Versions anglaises : la démo existe en anglais (`LOCALE=en-US` dans les scripts de capture).
 
+
+## Mise à jour du 24 octobre 2026 : format Instagram et animation du texte
+
+**Animation du texte corrigée.** Les mots montaient derrière un masque. Pendant l'écriture, on voyait des moitiés de lettres (« IRLY », « qui ») et des accents isolés (« ` », « ^ ») au-dessus de mots encore cachés. Désormais, chaque mot apparaît entier : fondu, montée de 0,35 em et flou qui se résorbe (`_source/videos/engine.js`, `words()`). Les 4 vidéos 9:16 ont été rendues à nouveau avec cette correction.
+
+**Format Instagram feed 4:5 (1080 × 1350)**, dans `08_INSTAGRAM_FEED_4x5/` :
+- `images/` : les 20 images recomposées pour le cadre 4:5, avec le même contenu et les mêmes vraies captures. Les éléments sont repositionnés, et non recadrés. Sources : `_source/images45/`, générées par `_source/tools/make45.py`.
+- `videos/` : les 4 films en 4:5. Même montage, même son ; les scènes sont replacées pour le cadre 4:5 (`?f=45`, règles dans `video.css` et dans chaque film).
+
+Les versions 9:16 restent celles à utiliser pour les Reels, les Stories et TikTok.
+
 ## Statut
 
 | Élément | Statut |
@@ -174,5 +185,6 @@ Refaire une vidéo : `_source/tools/build-video.sh <nom> <secondes> <dossier>` (
 | Design system IRLY (canvas) | Terminé et vérifié |
 | 20 images | Terminées et vérifiées (dimensions, textes, doublons, relecture visuelle) |
 | 4 vidéos | Rendues et vérifiées techniquement (durée, résolution, son mesuré, noirs, images figées, planches relues). Son non écouté. |
+| Format Instagram 4:5 (20 images + 4 vidéos) | Voir la mise à jour du 24 octobre |
 | Analyse du tweet | Non réalisée (inaccessible) |
 | Installation des skills tiers | Non réalisée, par choix (voir § 4-5) |

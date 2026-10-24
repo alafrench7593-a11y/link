@@ -10,6 +10,7 @@ Images et vidéos 9:16 (1080 × 1920) construites à partir des **vraies capture
 | `04_TIKTOK_SLIDESHOW/` | 5 slides TikTok |
 | `05_SHORT_VIDEOS/` | Présentation, Girl et Mixte, 30 s chacune |
 | `06_FULL_APP_PRESENTATION/` | Vidéo complète en full motion design |
+| `08_INSTAGRAM_FEED_4x5/` | Les 20 images et les 4 vidéos au format feed Instagram 4:5 (1080 × 1350) |
 | `07_PREVIEWS_AND_REPORT/` | Planches d'aperçu, contrôles qualité, **RAPPORT.md** |
 | `_source/` | Compositions HTML, moteur d'animation, bande-son, captures, outils |
 

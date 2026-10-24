@@ -1,6 +1,6 @@
 @import url(../images/common.css);
 .scene { position: absolute; inset: 0; overflow: hidden; }
-.w { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.08em; margin-bottom: -0.08em; }
+.w { display: inline-block; vertical-align: top; }
 .w > span { display: inline-block; will-change: transform, opacity; }
 .layer { position: absolute; will-change: transform, opacity; transform-origin: 50% 50%; }
 .cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -18,3 +18,12 @@
   background: rgba(20,22,26,0.66); border: 2px solid rgba(255,255,255,0.16); color: #fff; white-space: nowrap; will-change: transform, opacity; }
 .card { position: absolute; overflow: hidden; will-change: transform, opacity; }
 .card img { position: absolute; max-width: none; }
+
+/* Instagram feed 4:5 (1080 x 1350): the same scenes, moved up and phones slightly smaller.
+   Independent translate/scale properties add to the transforms the timeline animates. */
+.f45, .f45 body, .f45 .frame { height: 1350px; }
+.f45 .vcap, .f45 .gcap, .f45 .title, .f45 .over2 { translate: 0 -110px; }
+.f45 .vphone { scale: 0.8; transform-origin: 50% 0; translate: 0 -140px; }
+.f45 .chip { translate: 0 -150px; }
+.f45 .card, .f45 .ring { translate: 0 -330px; }
+.f45 #bars { translate: 0 -80px; }

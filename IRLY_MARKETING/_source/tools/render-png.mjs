@@ -11,7 +11,8 @@ const [root, ...jobs] = process.argv.slice(2);
 const server = spawn('node', [path.join(path.dirname(new URL(import.meta.url).pathname), 'serve.mjs'), root, '8091'], { stdio: 'ignore' });
 await new Promise((r) => setTimeout(r, 600));
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1080, height: 1920 }, deviceScaleFactor: 1 });
+// H=1350 renders the Instagram feed (4:5) frame.
+const page = await browser.newPage({ viewport: { width: 1080, height: Number(process.env.H || 1920) }, deviceScaleFactor: 1 });
 page.on('pageerror', (e) => console.error('pageerror', e.message));
 page.on('requestfailed', (r) => console.error('missing', r.url()));
 

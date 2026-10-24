@@ -69,14 +69,17 @@ function splitWords(el) {
   };
   walk(el);
 }
-function words(el, t, start, { stagger = 0.075, dur = 0.55, out = Infinity, outDur = 0.3, rise = 1.15 } = {}) {
+// Each word fades up whole (opacity, a short rise, a blur that clears): no mask, so a letter,
+// an accent or a descender is never cut while the line writes itself.
+function words(el, t, start, { stagger = 0.075, dur = 0.55, out = Infinity, outDur = 0.3, rise = 0.35 } = {}) {
   splitWords(el);
   const ws = el.querySelectorAll('.w > span');
   ws.forEach((w, i) => {
     const k = prog(t, start + i * stagger, start + i * stagger + dur, ease.out);
     const o = 1 - prog(t, out, out + outDur, ease.in);
     w.style.transform = `translateY(${(1 - k) * rise}em)`;
-    w.style.opacity = String(Math.min(k * 1.4, 1) * o);
+    w.style.opacity = String(clamp(k * 1.25) * o);
+    w.style.filter = k < 0.999 ? `blur(${(1 - k) * 10}px)` : 'none';
   });
 }
 
@@ -102,6 +105,8 @@ window.seek = async (t) => {
   await Promise.all(jobs);
 };
 window.__ready = document.fonts.ready;
+// ?f=45 lays the film out for the Instagram feed (4:5, 1080 x 1350); see video.css.
+if (/[?&]f=45/.test(location.search)) document.documentElement.classList.add('f45');
 
 // ---- The IRLY wordmark lighting up dot by dot (as in features/intro/AppIntro), accent last ----
 function logoReveal(el, t, start, { sweep = 0.7, accentAt = 0.85 } = {}) {

@@ -15,14 +15,16 @@ const port = String(8100 + Math.floor(Math.random() * 800));
 const server = spawn('node', [path.join(path.dirname(new URL(import.meta.url).pathname), 'serve.mjs'), root, port], { stdio: 'ignore' });
 await new Promise((r) => setTimeout(r, 600));
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1080, height: 1920 }, deviceScaleFactor: scale });
+// H=1350 renders the Instagram feed (4:5) layout of the same film (?f=45).
+const FH = Number(process.env.H || 1920);
+const page = await browser.newPage({ viewport: { width: 1080, height: FH }, deviceScaleFactor: scale });
 page.on('pageerror', (e) => console.error('pageerror', e.message));
 page.on('requestfailed', (r) => console.error('missing', r.url()));
-await page.goto(`http://localhost:${port}/${rel}`, { waitUntil: 'networkidle' });
+await page.goto(`http://localhost:${port}/${rel}${FH === 1350 ? '?f=45' : ''}`, { waitUntil: 'networkidle' });
 await page.evaluate(() => window.__ready);
 
 const W = Math.round(1080 * scale);
-const H = Math.round(1920 * scale);
+const H = Math.round(FH * scale);
 const ff = spawn('ffmpeg', ['-v', 'error', '-y', '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-',
   '-vf', `scale=${W}:${H}:flags=lanczos,format=yuv420p`, '-c:v', 'libx264', '-preset', 'medium', '-crf', scale < 1 ? '23' : '16',
   '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-movflags', '+faststart', '-r', String(fps), out], { stdio: ['pipe', 'inherit', 'inherit'] });
