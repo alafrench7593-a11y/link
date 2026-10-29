@@ -1,0 +1,13 @@
+IRLY · 5 publicités TikTok (1080 x 1920, 30 i/s, H.264, 21 à 23 s)
+
+Chaque dossier contient : la vidéo finale, sa miniature et sa légende.
+Les vidéos ont une piste audio muette : ajoute la musique dans TikTok (Commercial Music Library pour les publicités). Tout se comprend sans le son.
+
+Écrans : tous viennent de la dernière version d'IRLY (dépôt irly, commit 22fb8ae), lancée en version web avec son mode démo (EXPO_PUBLIC_DEMO=1), en français.
+Rien n'a été retouché dans les écrans. Les profils, communautés et activités sont les contenus de démonstration de l'app ; la fin de chaque vidéo l'indique (« Profils et contenus de démonstration »).
+
+01 Communautés   : Activités > Padel > communautés Marina Runners et Padel Social Club (Mixte)
+02 IRLY Mixte    : Accueil, Social, IRL, Événements > Founders' Table
+03 IRLY Girl     : Accueil Girl, communautés officielles (Girl Trip, Expat, Activité, Sport), Girls Brunch Club, Social
+04 IRLY Network  : IRLY Network (filtres, profils pro), Networking, Founders' Table
+05 Fonctionnalités : activité Padel, création d'une activité, communauté, passer en live
