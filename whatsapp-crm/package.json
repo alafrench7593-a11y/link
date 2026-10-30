@@ -8,7 +8,7 @@
     "node": ">=22.5"
   },
   "scripts": {
-    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "start": "node --disable-warning=ExperimentalWarning src/start.js",
     "cli": "node --disable-warning=ExperimentalWarning src/cli.js",
     "test": "node --disable-warning=ExperimentalWarning --test \"test/*.test.js\"",
     "skill:install": "npx --yes skills@1.7.4 add gokapso/agent-skills --skill integrate-whatsapp --skill observe-whatsapp --agent claude-code --copy -y"

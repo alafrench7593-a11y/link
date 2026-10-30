@@ -14,9 +14,35 @@ Tout message sortant laisse une fiche et une ligne d'historique. Il n'existe qu'
 
 Un contact = un numéro E.164 (`06 12 34 56 78`, `+33612345678`, `0033…` donnent la même fiche ; contrainte `UNIQUE` en base). Rien n'est jamais supprimé : changer de statut n'efface ni la fiche ni son historique.
 
-## Démarrer (Mac)
+## Démarrer
 
-Node 22.5 ou plus (`node -v`).
+Node 22.5 ou plus (`node -v`). Testé sous Windows, macOS et Linux (workflow `Assistant WhatsApp`).
+
+### Windows
+
+1. Installer Node.js LTS (22 ou plus) depuis nodejs.org, et Git depuis git-scm.com.
+2. Ouvrir PowerShell, puis :
+   ```powershell
+   git clone -b claude/great-bohr-98ryld https://github.com/alafrench7593-a11y/link.git
+   ```
+   ```powershell
+   cd link\whatsapp-crm
+   ```
+   ```powershell
+   npm install
+   ```
+   ```powershell
+   copy .env.example .env
+   ```
+   ```powershell
+   notepad .env
+   ```
+   ```powershell
+   npm start
+   ```
+3. Ouvrir http://127.0.0.1:3020/. Pour les webhooks : `winget install Cloudflare.cloudflared`, puis `cloudflared tunnel --url http://127.0.0.1:3020` dans une seconde fenêtre.
+
+### Mac / Linux
 
 ```bash
 cd whatsapp-crm
@@ -130,5 +156,6 @@ npm run cli -- aide
 - `src/personalize.js` — rédaction des messages
 - `src/webhooks.js` — Kapso et Meta, signatures, idempotence
 - `src/transport.js` — SDK Kapso (proxy Kapso ou Meta direct) ou simulation
+- `src/start.js` — lancement (`npm start`)
 - `src/server.js`, `public/index.html` — API et tableau de bord
 - `data/crm.sqlite` — vos données (non versionnées)

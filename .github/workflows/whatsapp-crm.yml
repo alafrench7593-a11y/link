@@ -1,0 +1,34 @@
+# Assistant WhatsApp (whatsapp-crm/) : tests sur Windows, macOS et Linux.
+# Indépendant des vérifications de LinkFoot ; ne tourne que si ce dossier change.
+name: Assistant WhatsApp
+
+on:
+  push:
+    paths: ['whatsapp-crm/**', '.github/workflows/whatsapp-crm.yml']
+  pull_request:
+    paths: ['whatsapp-crm/**', '.github/workflows/whatsapp-crm.yml']
+  workflow_dispatch:
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: whatsapp-crm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+      - name: Le serveur démarre et répond
+        shell: bash
+        run: |
+          node --disable-warning=ExperimentalWarning src/start.js &
+          for i in $(seq 1 20); do curl -sf http://127.0.0.1:3020/health && exit 0; sleep 1; done
+          exit 1

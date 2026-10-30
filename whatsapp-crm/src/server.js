@@ -1,9 +1,7 @@
 // Serveur HTTP : tableau de bord, API JSON, webhooks. Aucune dépendance web.
-import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { timingSafeEqual } from 'node:crypto';
-import { pathToFileURL } from 'node:url';
 import { ROOT } from './config.js';
 import { createApp } from './app.js';
 import { getSetting, setSetting } from './db.js';
@@ -126,16 +124,4 @@ export function startScheduler({ cfg, crm }) {
   };
   tick(); quality();
   return [setInterval(tick, 15 * 60_000), setInterval(quality, 6 * 3_600_000)];
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const app = createApp();
-  const server = createServer(createHandler(app));
-  server.listen(app.cfg.port, app.cfg.host, () => {
-    const t = app.crm.transport;
-    console.log(`Tableau de bord : http://${app.cfg.host}:${app.cfg.port}/`);
-    console.log(`Transport : ${t.name}${t.simulated ? ' — SIMULATION : aucun message ne part réellement' : ''}`);
-    console.log(`Webhooks : POST /webhooks/kapso   GET+POST /webhooks/meta`);
-  });
-  startScheduler(app);
 }
