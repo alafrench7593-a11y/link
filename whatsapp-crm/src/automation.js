@@ -12,8 +12,9 @@ export function getMode(db) {
   return getSetting(db, 'mode', 'validation');
 }
 
-export function setMode(db, mode) {
+export function setMode(db, mode, transport) {
   if (!['validation', 'automatique'].includes(mode)) throw new Error('Mode : validation ou automatique');
+  if (mode === 'automatique' && transport?.manual) throw new Error('Mode lien : chaque message part de votre WhatsApp, l’envoi automatique est impossible.');
   setSetting(db, 'mode', mode);
   if (mode === 'automatique') { setSetting(db, 'auto_paused', false); setSetting(db, 'auto_paused_reason', null); }
 }
@@ -101,6 +102,11 @@ export async function approveCampaign(crm, campaignId) {
   const camp = db.prepare('SELECT * FROM campaigns WHERE id = ?').get(campaignId);
   if (!camp) throw new Error('Campagne introuvable');
   db.prepare("UPDATE campaigns SET status = 'validee', approved_at = ? WHERE id = ?").run(iso(crm.now()), campaignId);
+  if (crm.transport.manual) {
+    // Mode lien : la campagne est validée, chaque message s'envoie d'un clic dans « À valider ».
+    const n = db.prepare("SELECT COUNT(*) AS n FROM drafts WHERE campaign_id = ? AND status = 'a_valider'").get(campaignId).n;
+    return { sent: 0, blocked: 0, reasons: {}, manual: n };
+  }
   const drafts = db.prepare("SELECT id FROM drafts WHERE campaign_id = ? AND status = 'a_valider'").all(campaignId);
   const report = { sent: 0, blocked: 0, reasons: {} };
   for (const d of drafts) {
@@ -115,7 +121,7 @@ export async function approveCampaign(crm, campaignId) {
 /** Relève la qualité du numéro et met l'automatique en pause si elle se dégrade. */
 export async function checkQuality(crm) {
   const q = await crm.transport.quality();
-  if (q?.simulated) return { simulated: true };
+  if (q?.simulated || q?.manual) return q;
   const quality = { rating: q.quality_rating || q.qualityRating, tier: q.messaging_limit_tier || q.messagingLimitTier, name: q.verified_name || q.verifiedName, number: q.display_phone_number || q.displayPhoneNumber, at: new Date(crm.now()).toISOString() };
   setSetting(crm.db, 'quality', quality);
   if (quality.rating === 'RED') crm.pauseAuto('qualité du numéro passée au ROUGE');

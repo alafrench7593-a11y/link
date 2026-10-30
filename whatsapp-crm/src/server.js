@@ -41,7 +41,7 @@ export function createHandler({ cfg, db, crm }) {
   const routes = [];
   const on = (method, pattern, fn) => routes.push({ method, re: new RegExp(`^${pattern.replace(/:(\w+)/g, '(?<$1>[^/]+)')}$`), fn });
 
-  on('GET', '/api/meta', () => ({ statuses: STATUSES, categories: CATEGORIES, sections: Object.fromEntries(Object.entries(SECTIONS).map(([k, v]) => [k, v.label])), mode: getMode(db), pitch: getSetting(db, 'pitch', ''), transport: crm.transport.name, simulated: !!crm.transport.simulated }));
+  on('GET', '/api/meta', () => ({ statuses: STATUSES, categories: CATEGORIES, sections: Object.fromEntries(Object.entries(SECTIONS).map(([k, v]) => [k, v.label])), mode: getMode(db), pitch: getSetting(db, 'pitch', ''), transport: crm.transport.name, simulated: !!crm.transport.simulated, manual: !!crm.transport.manual }));
   on('GET', '/api/stats', () => crm.stats());
   on('GET', '/api/contacts', ({ url }) => crm.listContacts(Object.fromEntries(url.searchParams)));
   on('POST', '/api/contacts', ({ json }) => crm.upsertContact(json, { origin: 'manuel' }));
@@ -50,6 +50,11 @@ export function createHandler({ cfg, db, crm }) {
   on('POST', '/api/contacts/:id/consent', ({ params, json }) => { crm.setConsent(Number(params.id), json.consent, json); return crm.getContact(Number(params.id)); });
   on('POST', '/api/contacts/:id/notes', ({ params, json }) => { const c = crm.getContact(Number(params.id)); return crm.upsertContact({ phone: c.phone, notes: json.notes, category: json.category }); });
   on('POST', '/api/contacts/:id/send', ({ params, json }) => crm.sendMessage({ contact: Number(params.id), body: json.body, template: json.template, kind: json.kind || 'manuel', origin: 'manuel' }));
+  on('POST', '/api/contacts/:id/link', ({ params, json }) => crm.prepareLink(Number(params.id), json.body));
+  on('POST', '/api/contacts/:id/link-sent', ({ params, json }) => crm.confirmLinkSend(Number(params.id), json.body, { kind: json.kind || 'manuel' }));
+  on('POST', '/api/contacts/:id/inbound', ({ params, json }) => crm.recordManualInbound(Number(params.id), json.text));
+  on('POST', '/api/drafts/:id/link', ({ params, json }) => { const d = db.prepare('SELECT * FROM drafts WHERE id = ?').get(Number(params.id)); return crm.prepareLink(d.contact_id, json.body ?? d.body); });
+  on('POST', '/api/drafts/:id/link-sent', ({ params, json }) => { const d = db.prepare('SELECT * FROM drafts WHERE id = ?').get(Number(params.id)); return crm.confirmLinkSend(d.contact_id, json.body ?? d.body, { kind: d.kind, draftId: d.id }); });
   on('POST', '/api/contacts/:id/suggest', async ({ params, json }) => {
     const sheet = crm.contactSheet(Number(params.id));
     return generateVariants({ contact: sheet.contact, kind: json.kind || 'premier_contact', cfg, history: sheet.messages, pitch: getSetting(db, 'pitch', '') });
@@ -61,7 +66,7 @@ export function createHandler({ cfg, db, crm }) {
   on('POST', '/api/drafts/:id/reject', ({ params, json }) => { crm.rejectDraft(Number(params.id), json.reason); return { ok: true }; });
   on('POST', '/api/import', ({ json }) => importContacts(crm, String(json.csv || '')));
   on('POST', '/api/settings', ({ json }) => {
-    if (json.mode) setMode(db, json.mode);
+    if (json.mode) setMode(db, json.mode, crm.transport);
     if (typeof json.pitch === 'string') setSetting(db, 'pitch', json.pitch);
     return { mode: getMode(db), pitch: getSetting(db, 'pitch', '') };
   });
@@ -119,7 +124,7 @@ export function startScheduler({ cfg, crm }) {
     try { await runFollowups(crm); } catch (err) { crm.error('relances', err.message); }
   };
   const quality = async () => {
-    if (crm.transport.simulated) return;
+    if (crm.transport.simulated || crm.transport.manual) return;
     try { await checkQuality(crm); } catch (err) { crm.error('qualite', err.message); }
   };
   tick(); quality();

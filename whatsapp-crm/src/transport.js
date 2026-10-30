@@ -5,6 +5,7 @@ import { WhatsAppClient } from '@kapso/whatsapp-cloud-api';
 
 export function createTransport(cfg, { fetchImpl } = {}) {
   if (cfg.provider === 'simulation') return simulationTransport();
+  if (cfg.provider === 'lien') return linkTransport();
   const client = cfg.provider === 'kapso'
     ? new WhatsAppClient({ baseUrl: `${cfg.kapsoBaseUrl.replace(/\/$/, '')}/meta/whatsapp`, kapsoApiKey: cfg.kapsoApiKey, graphVersion: cfg.graphVersion, fetch: fetchImpl })
     : new WhatsAppClient({ accessToken: cfg.metaAccessToken, graphVersion: cfg.graphVersion, fetch: fetchImpl });
@@ -55,4 +56,23 @@ function simulationTransport() {
     async quality() { return { simulated: true }; },
     async listTemplates() { return { data: [], simulated: true }; },
   };
+}
+
+// Envoi par vous-même : le système prépare un lien wa.me, WhatsApp s'ouvre avec le
+// texte, vous appuyez sur Envoyer. Aucun envoi automatique possible dans ce mode.
+function linkTransport() {
+  const refuse = async () => { throw new Error('Mode lien : ouvrez le message dans WhatsApp depuis le tableau de bord.'); };
+  return {
+    name: 'lien',
+    simulated: false,
+    manual: true,
+    sendText: refuse,
+    sendTemplate: refuse,
+    async quality() { return { manual: true }; },
+    async listTemplates() { return { data: [], manual: true }; },
+  };
+}
+
+export function whatsappLink(phone, text) {
+  return `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
 }

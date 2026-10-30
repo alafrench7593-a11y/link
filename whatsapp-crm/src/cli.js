@@ -45,6 +45,9 @@ async function main() {
   if (!cmd || cmd === 'aide') return print(HELP);
   const { crm, db } = createApp();
   const t = crm.transport;
+  if (t.manual && ['envoyer', 'valider', 'test-reel', 'connexion'].includes(cmd)) {
+    return print('Mode lien (sans API) : les envois se font depuis le tableau de bord, bouton « Ouvrir dans WhatsApp ».');
+  }
   if (t.simulated && ['envoyer', 'valider', 'lancer-campagne', 'relances'].includes(cmd)) {
     console.warn('⚠ SIMULATION : aucune clé Kapso/Meta configurée, rien ne partira réellement.');
   }
@@ -100,7 +103,7 @@ async function main() {
       if (!opt.confirmer) return print('Ajoutez --confirmer : une campagne n’est jamais lancée sans validation explicite.');
       return print(await approveCampaign(crm, Number(pos[0])));
     case 'mode':
-      setMode(db, pos[0]);
+      setMode(db, pos[0], t);
       return print(`mode : ${pos[0]}`);
     case 'offre':
       setSetting(db, 'pitch', pos.join(' '));

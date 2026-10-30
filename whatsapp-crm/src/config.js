@@ -10,9 +10,9 @@ export function loadConfig(overrides = {}) {
   const e = process.env;
   const num = (v, d) => (v === undefined || v === '' ? d : Number(v));
   const cfg = {
-    // Transport : kapso | meta | simulation. Sans clé, on reste en simulation :
-    // aucun message ne part et chaque envoi est marqué « simule » dans l'historique.
-    provider: e.WA_PROVIDER || (e.KAPSO_API_KEY ? 'kapso' : e.META_ACCESS_TOKEN ? 'meta' : 'simulation'),
+    // Transport : lien | kapso | meta | simulation. Sans clé : « lien », vous envoyez
+    // vous-même depuis votre WhatsApp (lien wa.me) et le système enregistre tout.
+    provider: e.WA_PROVIDER || (e.KAPSO_API_KEY ? 'kapso' : e.META_ACCESS_TOKEN ? 'meta' : 'lien'),
     kapsoApiKey: e.KAPSO_API_KEY || '',
     kapsoBaseUrl: e.KAPSO_API_BASE_URL || 'https://api.kapso.ai',
     kapsoWebhookSecret: e.KAPSO_WEBHOOK_SECRET || '',

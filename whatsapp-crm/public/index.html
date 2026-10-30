@@ -112,6 +112,7 @@ async function render() {
   await renderMenu(stats);
   const m = $('#main');
   const banners = [];
+  if (META.manual) banners.push('<div class="banner">Mode sans API : chaque message s’ouvre dans votre WhatsApp, vous appuyez sur Envoyer, puis vous confirmez ici. Collez les réponses reçues dans la fiche.</div>');
   if (META.simulated) banners.push('<div class="banner">Mode SIMULATION : aucune clé Kapso ou Meta n’est configurée. Les envois sont enregistrés comme « simulé » et ne partent pas.</div>');
   if (stats.auto_paused) banners.push(`<div class="banner bad">Envois automatiques en pause : ${esc(stats.auto_paused_reason)}</div>`);
   if (stats.quality?.rating && stats.quality.rating !== 'GREEN') banners.push(`<div class="banner bad">Qualité du numéro : ${esc(stats.quality.rating)}</div>`);
@@ -186,10 +187,11 @@ async function sheet(id) {
       <div class="card"><h2>Écrire</h2>
         <div class="row"><select id="kind"><option value="premier_contact">Premier contact</option><option value="relance">Relance</option><option value="reprise">Reprise de contact</option><option value="reponse">Réponse</option></select><button class="b" id="suggest">Proposer des formulations</button></div>
         <div id="variants"></div>
-        <textarea id="body" placeholder="Texte libre : seulement si la personne vous a écrit il y a moins de 24 h."></textarea>
-        <div class="row"><input id="tpl" placeholder="ou modèle Meta approuvé (nom)"><input id="tplp" placeholder="paramètres séparés par des virgules" style="flex:1"></div>
-        <div class="row" style="margin-top:8px"><button class="b p" id="sendnow">Envoyer</button><button class="b" id="savedraft">Mettre en brouillon</button><span id="sendres" class="muted"></span></div>
+        <textarea id="body" placeholder="${META.manual ? 'Votre message' : 'Texte libre : seulement si la personne vous a écrit il y a moins de 24 h.'}"></textarea>
+        ${META.manual ? '' : '<div class="row"><input id="tpl" placeholder="ou modèle Meta approuvé (nom)"><input id="tplp" placeholder="paramètres séparés par des virgules" style="flex:1"></div>'}
+        <div class="row" style="margin-top:8px"><button class="b p" id="sendnow">${META.manual ? 'Ouvrir dans WhatsApp' : 'Envoyer'}</button><button class="b" id="savedraft">Mettre en brouillon</button><span id="sendres" class="muted"></span></div>
       </div>
+      ${META.manual ? `<div class="card"><h2>Réponse reçue sur WhatsApp</h2><textarea id="inbound" placeholder="Collez ici ce que la personne vous a répondu"></textarea><button class="b" id="saveinbound">Enregistrer la réponse</button> <span class="muted">« STOP » ou équivalent la place en « Ne plus contacter ».</span></div>` : ''}
       ${s.drafts.length ? `<div class="card"><h2>Brouillons</h2>${s.drafts.map((d) => `<div class="variant">${esc(d.body || '')}<small class="muted"> ${esc(d.kind)} · ${esc(d.status)} ${esc(d.block_reason || '')}</small></div>`).join('')}</div>` : ''}
     </div>
   </div>`;
@@ -246,7 +248,9 @@ function bind() {
     document.querySelectorAll('#variants .variant').forEach((el) => el.onclick = () => { $('#body').value = el.textContent; });
   });
   const tplInput = () => $('#tpl').value ? { name: $('#tpl').value, params: $('#tplp').value ? $('#tplp').value.split(',').map((s) => s.trim()) : [] } : undefined;
+  on('saveinbound', async () => { await api(`/api/contacts/${id}/inbound`, { text: $('#inbound').value }); render(); });
   on('sendnow', async () => {
+    if (META.manual) return linkFlow(`/api/contacts/${id}`, $('#body').value, $('#sendres'), $('#kind').value);
     const r = await api(`/api/contacts/${id}/send`, { body: $('#body').value || undefined, template: tplInput(), kind: $('#kind').value });
     if (!r.ok) { $('#sendres').textContent = 'Bloqué : ' + r.reason; return; }
     render();
@@ -255,6 +259,7 @@ function bind() {
   document.querySelectorAll('[data-pick]').forEach((el) => el.onclick = () => { $(`textarea[data-d="${el.dataset.pick}"]`).value = el.textContent; });
   document.querySelectorAll('[data-approve]').forEach((el) => el.onclick = async () => {
     const d = el.dataset.approve;
+    if (META.manual) return linkFlow(`/api/drafts/${d}`, $(`textarea[data-d="${d}"]`).value, $('#r' + d));
     try { const r = await api(`/api/drafts/${d}/approve`, { body: $(`textarea[data-d="${d}"]`).value }); if (r.ok) render(); else $('#r' + d).textContent = 'Bloqué : ' + r.reason; } catch (e) { $('#r' + d).textContent = e.message; }
   });
   document.querySelectorAll('[data-reject]').forEach((el) => el.onclick = () => api(`/api/drafts/${el.dataset.reject}/reject`, { reason: 'rejeté depuis le tableau de bord' }).then(render));
@@ -265,6 +270,7 @@ function bind() {
   document.querySelectorAll('[data-launch]').forEach((el) => el.onclick = async () => {
     if (!confirm(`Lancer l’envoi à ${el.dataset.n} destinataires ? Les règles de conformité restent appliquées à chacun.`)) return;
     const r = await api(`/api/campaigns/${el.dataset.launch}/approve`, { confirm: true });
+    if (r.manual !== undefined) { alert(`Campagne validée : ${r.manual} messages à envoyer d’un clic dans « À valider ».`); return go('brouillons'); }
     alert(`Envoyés : ${r.sent} · Bloqués : ${r.blocked}\n${Object.entries(r.reasons).map(([k, v]) => `${v} × ${k}`).join('\n')}`); render();
   });
   on('savemode', async () => { await api('/api/settings', { mode: $('#mode').value }); await loadMeta(); render(); });
@@ -275,7 +281,23 @@ function bind() {
   on('qual', async () => { $('#actres').textContent = JSON.stringify(await api('/api/quality', {})); });
 }
 
-async function loadMeta() { META = await api('/api/meta'); $('#transport').textContent = META.simulated ? 'Simulation (aucun envoi réel)' : `Connecté via ${META.transport}`; }
+async function loadMeta() { META = await api('/api/meta'); $('#transport').textContent = META.manual ? 'Envoi depuis votre WhatsApp' : META.simulated ? 'Simulation (aucun envoi réel)' : `Connecté via ${META.transport}`; }
+
+// Mode sans API : on ouvre WhatsApp avec le texte, puis vous confirmez l'envoi.
+// La fenêtre est ouverte pendant le clic, sinon le navigateur la bloquerait.
+async function linkFlow(base, body, out, kind) {
+  const win = window.open('', '_blank');
+  const r = await api(base + '/link', { body }).catch((e) => ({ ok: false, reason: e.message }));
+  if (!r.ok) { if (win) win.close(); out.textContent = 'Bloqué : ' + r.reason; return; }
+  if (win) win.location = r.url; else window.open(r.url, '_blank');
+  out.innerHTML = 'WhatsApp est ouvert. Après avoir appuyé sur Envoyer : <button class="b p" data-sent>J’ai envoyé</button> <button class="b" data-cancel>Annuler</button>';
+  out.querySelector('[data-cancel]').onclick = () => { out.textContent = 'Non enregistré.'; };
+  out.querySelector('[data-sent]').onclick = async () => {
+    const c = await api(base + '/link-sent', { body, kind });
+    if (!c.ok) { out.textContent = 'Bloqué : ' + c.reason; return; }
+    render();
+  };
+}
 window.onhashchange = () => { const [v, id] = location.hash.slice(1).split('/'); if (v && (v !== state.view || id !== state.id)) { if (v !== state.view && v !== 'fiche') Object.assign(state, FILTERS); state.view = v; state.id = id; render(); } };
 (async () => { await loadMeta(); const [v, id] = location.hash.slice(1).split('/'); if (v) { state.view = v; state.id = id; } render(); setInterval(() => { if (!document.querySelector('textarea:focus,input:focus')) render(); }, 30000); })();
 </script>

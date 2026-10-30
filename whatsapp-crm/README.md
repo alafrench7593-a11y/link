@@ -70,7 +70,17 @@ npm run cli -- importer ~/contacts.csv
 
 Colonnes reconnues : `telephone, prenom, nom, entreprise, categorie, source, notes, consentement (oui/non), preuve_consentement`. Un « oui » sans preuve est ignoré.
 
-## Brancher Kapso (ce qui vous reste à faire)
+## Sans API (par défaut, sans aucune clé)
+
+Sans clé dans `.env`, le système est en **mode lien** : rien n'est simulé, c'est vous qui envoyez.
+
+1. Dans la fiche, rédigez ou choisissez une formulation, puis **Ouvrir dans WhatsApp** : WhatsApp (application ou web) s'ouvre avec le texte.
+2. Appuyez sur Envoyer dans WhatsApp, puis sur **J'ai envoyé** dans le tableau de bord : fiche, « Contacts contactés », historique et relance programmée sont mis à jour.
+3. Quand la personne répond, collez sa réponse dans **Réponse reçue** : relances coupées, intérêt détecté, « STOP » → « Ne plus contacter ».
+
+Limites : pas d'envoi automatique, pas de réception automatique des réponses. Les relances arrivent dans « À valider », à envoyer d'un clic.
+
+## Brancher Kapso
 
 1. Créer un compte sur app.kapso.ai (offre gratuite suffisante pour démarrer) et une clé API → `KAPSO_API_KEY`.
 2. Connecter votre numéro WhatsApp Business (`kapso setup` ou l'interface). Récupérer le `phone_number_id` → `WA_PHONE_NUMBER_ID`.

@@ -7,6 +7,7 @@ import { normalizePhone } from './phone.js';
 import { STATUSES, CATEGORIES, SECTIONS, statusAfterOutbound, statusAfterDelivery, statusAfterInbound } from './statuses.js';
 import { canSend, detectOptOut, detectInterest, isSuppressed } from './compliance.js';
 import { MISSING } from './personalize.js';
+import { whatsappLink } from './transport.js';
 
 const DAY = 86_400_000;
 const iso = (t = Date.now()) => new Date(t).toISOString();
@@ -187,10 +188,10 @@ export class Crm {
   }
 
   /** Enregistre un message sortant sur la fiche : la seule porte d'entrée. */
-  recordOutbound(c, { wamid, body, template, kind, simulated = false, external = false }) {
+  recordOutbound(c, { wamid, body, template, kind, simulated = false, external = false, manual = false }) {
     if (wamid && this.db.prepare('SELECT 1 FROM messages WHERE wamid = ?').get(wamid)) return; // déjà connu
     const now = this.now();
-    this.insertMessage(c.id, { direction: 'sortant', wamid, body, template, origin: external ? 'externe' : kind, status: simulated ? 'simule' : 'accepte' });
+    this.insertMessage(c.id, { direction: 'sortant', wamid, body, template, origin: external ? 'externe' : kind, status: simulated ? 'simule' : manual ? 'envoye_par_vous' : 'accepte' });
 
     const status = statusAfterOutbound(c.status);
     // Une relance fait avancer le compteur ; un nouveau premier contact repart de zéro.
@@ -216,6 +217,40 @@ export class Crm {
     this.log(c.id, 'message_envoye', { kind, origine: external ? 'externe' : kind, modele: template || undefined, wamid, simule: simulated || undefined, texte: body });
     if (status !== c.status) this.log(c.id, 'statut', { de: c.status, vers: status, raison: 'message envoyé' });
     if (next) this.log(c.id, 'relance_programmee', { le: next, etape: step + 1 });
+  }
+
+  // ---------- Mode lien : vous envoyez depuis votre WhatsApp ----------
+
+  /** Vérifie le message et renvoie le lien wa.me. Rien n'est enregistré à ce stade. */
+  prepareLink(contactId, body) {
+    const c = this.getContact(contactId);
+    if (!c) throw new Error('Contact introuvable');
+    if (isSuppressed(this.db, c.phone) || c.status === 'ne_plus_contacter' || c.consent === 'opt_out') {
+      return { ok: false, reason: 'Le contact a demandé à ne plus être contacté.' };
+    }
+    if (!body || !body.trim()) return { ok: false, reason: 'Message vide' };
+    if (body.includes(MISSING)) return { ok: false, reason: 'Le message contient encore un passage « [à compléter …] ».' };
+    return { ok: true, url: whatsappLink(c.phone, body) };
+  }
+
+  /** Vous confirmez avoir appuyé sur Envoyer : la fiche et l'historique sont mis à jour. */
+  confirmLinkSend(contactId, body, { kind = 'manuel', draftId } = {}) {
+    const check = this.prepareLink(contactId, body);
+    if (!check.ok) return check;
+    const c = this.getContact(contactId);
+    tx(this.db, () => {
+      this.recordOutbound(c, { wamid: null, body, template: null, kind, manual: true });
+      if (draftId) this.db.prepare("UPDATE drafts SET status = 'envoye', body = ?, updated_at = ? WHERE id = ?").run(body, iso(this.now()), draftId);
+    });
+    return { ok: true, contact: this.getContact(c.id) };
+  }
+
+  /** Réponse reçue sur votre WhatsApp, collée dans la fiche. */
+  recordManualInbound(contactId, text) {
+    const c = this.getContact(contactId);
+    if (!c) throw new Error('Contact introuvable');
+    if (!text || !text.trim()) throw new Error('Réponse vide');
+    return this.recordInbound({ phone: c.phone, wamid: null, text: text.trim() });
   }
 
   // ---------- Événements WhatsApp (webhooks) ----------

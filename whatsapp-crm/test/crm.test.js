@@ -251,3 +251,27 @@ test('personnalisation : aucun contexte inventé, pas de répétition, trou sign
   const blocked = await crm.sendMessage({ contact: c.id, body: variants[0], kind: 'reponse' });
   assert.equal(blocked.ok, false);
 });
+
+test('mode sans API : lien WhatsApp, envoi confirmé enregistré, réponse collée', async () => {
+  const { crm, db } = makeApp();
+  const { createTransport } = await import('../src/transport.js');
+  crm.transport = createTransport({ provider: 'lien' });
+  const c = crm.upsertContact({ phone: '0612345678', first_name: 'Léa' });
+  const l = crm.prepareLink(c.id, 'Bonjour Léa, êtes-vous dispo jeudi ?');
+  assert.equal(l.ok, true);
+  assert.equal(l.url, 'https://wa.me/33612345678?text=' + encodeURIComponent('Bonjour Léa, êtes-vous dispo jeudi ?'));
+  assert.equal(crm.getContact(c.id).messages_sent, 0, 'rien n’est enregistré avant votre confirmation');
+  crm.confirmLinkSend(c.id, 'Bonjour Léa, êtes-vous dispo jeudi ?', { kind: 'premier_contact' });
+  const after = crm.getContact(c.id);
+  assert.equal(after.messages_sent, 1);
+  assert.ok(after.first_contacted_at);
+  assert.ok(after.next_followup_at);
+  assert.equal(crm.listContacts({ section: 'contactes' }).length, 1);
+  assert.equal(crm.contactSheet(c.id).messages[0].status, 'envoye_par_vous');
+  crm.recordManualInbound(c.id, 'Stop merci');
+  assert.equal(crm.getContact(c.id).status, 'ne_plus_contacter');
+  assert.equal(crm.prepareLink(c.id, 'encore ?').ok, false);
+  const { setMode } = await import('../src/automation.js');
+  assert.throws(() => setMode(db, 'automatique', crm.transport));
+  assert.equal(crm.prepareLink(crm.upsertContact({ phone: '0699999999' }).id, 'Bonjour [à compléter : x]').ok, false);
+});
