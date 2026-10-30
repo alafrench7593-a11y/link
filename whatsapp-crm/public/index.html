@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assistant WhatsApp</title>
+<style>
+:root{--bg:#f6f7f5;--panel:#fff;--ink:#1b1f1d;--muted:#66706b;--line:#e2e5e2;--accent:#128c5e;--accent-ink:#fff;--warn:#b25b00;--bad:#b3261e;--chip:#eef2ef;--out:#dcf3e6;--in:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#121513;--panel:#1b1f1d;--ink:#e8ece9;--muted:#9aa49f;--line:#2c322f;--accent:#2fbf86;--accent-ink:#06120c;--warn:#f0a040;--bad:#f2766d;--chip:#252b28;--out:#163a28;--in:#222826}}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+.layout{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+nav{background:var(--panel);border-right:1px solid var(--line);padding:16px 10px;position:sticky;top:0;height:100vh;overflow:auto}
+nav h1{font-size:15px;margin:0 8px 4px}
+nav .sub{font-size:12px;color:var(--muted);margin:0 8px 14px}
+nav button{display:flex;justify-content:space-between;width:100%;border:0;background:none;color:inherit;padding:7px 8px;border-radius:7px;font:inherit;cursor:pointer;text-align:left}
+nav button:hover{background:var(--chip)}
+nav button.on{background:var(--accent);color:var(--accent-ink)}
+nav button.main{font-weight:600}
+nav .n{opacity:.75;font-variant-numeric:tabular-nums}
+main{padding:20px 24px;min-width:0}
+.banner{padding:10px 12px;border-radius:8px;margin-bottom:14px;border:1px solid var(--warn);color:var(--warn)}
+.banner.bad{border-color:var(--bad);color:var(--bad)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer}
+.kpi b{display:block;font-size:24px;font-variant-numeric:tabular-nums}
+.kpi span{color:var(--muted);font-size:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+.card h2{font-size:14px;margin:0 0 10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input,select,textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:7px 9px}
+textarea{width:100%;min-height:90px}
+button.b{font:inherit;border:1px solid var(--line);background:var(--panel);color:inherit;border-radius:7px;padding:7px 12px;cursor:pointer}
+button.p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.d{color:var(--bad)}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:500}
+tr.click{cursor:pointer}tr.click:hover{background:var(--chip)}
+.chip{display:inline-block;padding:2px 8px;border-radius:99px;background:var(--chip);font-size:12px;white-space:nowrap}
+.muted{color:var(--muted)}
+.trunc{max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet{display:grid;grid-template-columns:320px 1fr;gap:14px}
+.facts div{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--line)}
+.facts div span:first-child{color:var(--muted)}
+.facts div span:last-child{text-align:right;overflow-wrap:anywhere;min-width:0}
+.chat{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto;padding:4px}
+.msg{max-width:78%;padding:8px 10px;border-radius:10px;border:1px solid var(--line);white-space:pre-wrap}
+.msg.sortant{align-self:flex-end;background:var(--out)}
+.msg.entrant{align-self:flex-start;background:var(--in)}
+.msg small{display:block;color:var(--muted);font-size:11px;margin-top:4px}
+.hist{font-size:12px;max-height:300px;overflow:auto}
+.hist div{padding:4px 0;border-bottom:1px dashed var(--line);overflow-wrap:anywhere}
+.scroll{overflow-x:auto}
+.variant{border:1px dashed var(--line);border-radius:8px;padding:8px;margin:6px 0;white-space:pre-wrap;cursor:pointer}
+.variant:hover{border-color:var(--accent)}
+@media (max-width:820px){.layout{grid-template-columns:1fr}nav{position:static;height:auto}.sheet{grid-template-columns:1fr}main{padding:16px}}
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav>
+    <h1>Assistant WhatsApp</h1>
+    <p class="sub" id="transport"></p>
+    <div id="menu"></div>
+    <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
+    <button data-view="brouillons">À valider <span class="n" id="n-drafts"></span></button>
+    <button data-view="campagnes">Campagnes</button>
+    <button data-view="reglages">Réglages et import</button>
+  </nav>
+  <main id="main"></main>
+</div>
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (d) => d ? new Date(d).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+let META = {};
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+function name(c) { return esc([c.first_name, c.last_name].filter(Boolean).join(' ') || c.phone); }
+function detail(raw) {
+  if (!raw || raw === 'null') return '';
+  let d; try { d = JSON.parse(raw); } catch { return raw; }
+  if (typeof d !== 'object') return String(d);
+  if (d.de && d.vers) return `${META.statuses[d.de] || d.de} → ${META.statuses[d.vers] || d.vers}${d.raison ? ' (' + d.raison + ')' : ''}`;
+  return Object.entries(d).filter(([, v]) => v !== undefined && v !== null && v !== '').map(([k, v]) => `${k} : ${String(typeof v === 'object' ? JSON.stringify(v) : v).slice(0, 160)}`).join(' · ');
+}
+function statusChip(s) { return `<span class="chip">${esc(META.statuses?.[s] || s)}</span>`; }
+
+const MENU = ['vue', 'tous', 'contactes', 'a_contacter', 'en_attente', 'relances', 'reponses', 'interesses', 'clients', 'partenaires', 'ne_plus_contacter'];
+async function renderMenu(stats) {
+  $('#menu').innerHTML = MENU.map((k) => {
+    const label = k === 'vue' ? 'Vue d’ensemble' : META.sections[k];
+    const n = k === 'vue' ? '' : stats.sections[k];
+    return `<button data-view="${k}" class="${k === 'contactes' ? 'main' : ''}">${esc(label)} <span class="n">${n}</span></button>`;
+  }).join('');
+  $('#n-drafts').textContent = stats.brouillons_a_valider || '';
+  document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('on', b.dataset.view === state.view));
+}
+
+const state = { view: 'vue' };
+const FILTERS = { q: '', category: '', status: '' };
+function go(view, extra = {}) { if (view !== state.view && view !== 'fiche') Object.assign(state, FILTERS); Object.assign(state, { view }, extra); location.hash = view + (extra.id ? '/' + extra.id : ''); render(); }
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-view]'); if (b) go(b.dataset.view); });
+
+async function render() {
+  const stats = await api('/api/stats');
+  await renderMenu(stats);
+  const m = $('#main');
+  const banners = [];
+  if (META.simulated) banners.push('<div class="banner">Mode SIMULATION : aucune clé Kapso ou Meta n’est configurée. Les envois sont enregistrés comme « simulé » et ne partent pas.</div>');
+  if (stats.auto_paused) banners.push(`<div class="banner bad">Envois automatiques en pause : ${esc(stats.auto_paused_reason)}</div>`);
+  if (stats.quality?.rating && stats.quality.rating !== 'GREEN') banners.push(`<div class="banner bad">Qualité du numéro : ${esc(stats.quality.rating)}</div>`);
+  const head = banners.join('');
+  if (state.view === 'vue') m.innerHTML = head + overview(stats);
+  else if (state.view === 'fiche') m.innerHTML = head + await sheet(state.id);
+  else if (state.view === 'brouillons') m.innerHTML = head + await drafts();
+  else if (state.view === 'campagnes') m.innerHTML = head + await campaigns();
+  else if (state.view === 'reglages') m.innerHTML = head + settings();
+  else m.innerHTML = head + await list(state.view);
+  bind();
+}
+
+function overview(s) {
+  const k = (label, v, view) => `<div class="kpi" data-view="${view || ''}"><b>${v}</b><span>${label}</span></div>`;
+  return `<div class="kpis">
+    ${k('Contacts au total', s.total, 'tous')}
+    ${k('Personnes contactées', s.contactes, 'contactes')}
+    ${k('Messages envoyés' + (s.messages_simules ? ` (dont ${s.messages_simules} simulés)` : ''), s.messages_envoyes, 'contactes')}
+    ${k('Réponses reçues', s.reponses, 'reponses')}
+    ${k('Contacts intéressés', s.interesses, 'interesses')}
+    ${k('Relances en attente', s.relances_en_attente, 'relances')}
+    ${k('Messages à valider', s.brouillons_a_valider, 'brouillons')}
+  </div>
+  <div class="card"><h2>Dernières conversations</h2><div class="scroll"><table><tr><th>Date</th><th>Contact</th><th>Sens</th><th>Message</th><th>État</th></tr>
+  ${s.dernieres_conversations.map((x) => `<tr class="click" data-open="${x.contact_id}"><td>${fmt(x.created_at)}</td><td>${name(x)}</td><td>${x.direction === 'entrant' ? '← reçu' : '→ envoyé'}</td><td class="trunc">${esc(x.body)}</td><td><span class="chip">${esc(x.status)}</span></td></tr>`).join('') || '<tr><td colspan="5" class="muted">Aucun message pour l’instant.</td></tr>'}
+  </table></div></div>
+  <div class="card"><h2>Erreurs récentes</h2>${s.erreurs.length ? `<div class="scroll"><table>${s.erreurs.map((e) => `<tr><td>${fmt(e.at)}</td><td><span class="chip">${esc(e.scope)}</span></td><td>${esc(e.message)}</td></tr>`).join('')}</table></div>` : '<p class="muted">Aucune erreur.</p>'}</div>`;
+}
+
+async function list(section) {
+  const p = new URLSearchParams({ section, q: state.q || '', category: state.category || '', status: state.status || '' });
+  const rows = await api('/api/contacts?' + p);
+  return `<div class="card"><h2>${esc(META.sections[section])} <span class="muted">(${rows.length})</span></h2>
+  <div class="row" style="margin-bottom:10px">
+    <input id="q" placeholder="Nom, entreprise ou numéro" value="${esc(state.q || '')}" style="flex:1;min-width:180px">
+    <select id="cat"><option value="">Toutes catégories</option>${META.categories.map((c) => `<option ${state.category === c ? 'selected' : ''}>${c}</option>`).join('')}</select>
+    <select id="st"><option value="">Tous statuts</option>${Object.entries(META.statuses).map(([k, v]) => `<option value="${k}" ${state.status === k ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>
+    <button class="b" id="new">+ Contact</button>
+  </div>
+  <div class="scroll"><table><tr><th>Contact</th><th>Numéro</th><th>Catégorie</th><th>Statut</th><th>Dernier message</th><th>Envoyés / réponses</th><th>Prochaine relance</th><th>Consentement</th></tr>
+  ${rows.map((c) => `<tr class="click" data-open="${c.id}"><td>${name(c)}${c.company ? `<div class="muted">${esc(c.company)}</div>` : ''}</td><td>${esc(c.phone)}</td><td>${esc(c.category)}</td><td>${statusChip(c.status)}</td>
+    <td><div class="trunc">${esc(c.last_outbound_text || '')}</div><div class="muted">${fmt(c.last_outbound_at)}</div></td><td>${c.messages_sent} / ${c.replies_received}</td><td>${fmt(c.next_followup_at)}</td><td>${esc(c.consent)}</td></tr>`).join('') || '<tr><td colspan="8" class="muted">Aucun contact dans cette rubrique.</td></tr>'}
+  </table></div></div>`;
+}
+
+async function sheet(id) {
+  const s = await api('/api/contacts/' + id);
+  const c = s.contact;
+  const f = (k, v) => `<div><span>${k}</span><span>${v}</span></div>`;
+  return `<div class="row" style="margin-bottom:10px"><button class="b" onclick="history.back()">← Retour</button><h2 style="margin:0">${name(c)}</h2>${statusChip(c.status)}${s.suppressed ? '<span class="chip" style="color:var(--bad)">liste de suppression</span>' : ''}</div>
+  <div class="sheet">
+    <div>
+      <div class="card facts">
+        ${f('Numéro WhatsApp', esc(c.phone))}${f('Catégorie', esc(c.category))}${f('Entreprise', esc(c.company || '—'))}${f('Source', esc(c.source || '—'))}
+        ${f('Premier contact', fmt(c.first_contacted_at))}${f('Dernier envoi', fmt(c.last_outbound_at))}${f('Dernière réponse', fmt(c.last_inbound_at))}
+        ${f('Messages envoyés', c.messages_sent)}${f('Réponses reçues', c.replies_received)}${f('Prochaine relance', fmt(c.next_followup_at))}
+        ${f('Consentement', esc(c.consent) + (c.consent_source ? ` <span class="muted">(${esc(c.consent_source)})</span>` : ''))}
+      </div>
+      <div class="card"><h2>Statut et notes</h2>
+        <select id="setst">${Object.entries(META.statuses).map(([k, v]) => `<option value="${k}" ${c.status === k ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>
+        <p class="muted">Notes (seul contexte utilisé pour personnaliser : rien n’est inventé)</p>
+        <textarea id="notes">${esc(c.notes || '')}</textarea>
+        <div class="row"><select id="setcat">${META.categories.map((x) => `<option ${c.category === x ? 'selected' : ''}>${x}</option>`).join('')}</select><button class="b" id="savenotes">Enregistrer</button></div>
+        <p class="muted">Consentement</p>
+        <div class="row"><input id="cproof" placeholder="Preuve : formulaire du 12/03, contrat…" style="flex:1"><button class="b" id="optin">Enregistrer l’accord</button><button class="b d" id="optout">Ne plus contacter</button></div>
+      </div>
+      <div class="card hist"><h2>Journal</h2>${s.history.slice().reverse().map((h) => `<div><span class="muted">${fmt(h.at)}</span> · <b>${esc(h.type.replaceAll('_', ' '))}</b> ${esc(detail(h.detail))}</div>`).join('')}</div>
+    </div>
+    <div>
+      <div class="card"><h2>Conversation</h2><div class="chat">${s.messages.map((x) => `<div class="msg ${x.direction}">${esc(x.body || '')}<small>${fmt(x.created_at)} · ${esc(x.status)}${x.origin ? ' · ' + esc(x.origin) : ''}${x.error ? ' · ' + esc(x.error) : ''}</small></div>`).join('') || '<p class="muted">Aucun message.</p>'}</div></div>
+      <div class="card"><h2>Écrire</h2>
+        <div class="row"><select id="kind"><option value="premier_contact">Premier contact</option><option value="relance">Relance</option><option value="reprise">Reprise de contact</option><option value="reponse">Réponse</option></select><button class="b" id="suggest">Proposer des formulations</button></div>
+        <div id="variants"></div>
+        <textarea id="body" placeholder="Texte libre : seulement si la personne vous a écrit il y a moins de 24 h."></textarea>
+        <div class="row"><input id="tpl" placeholder="ou modèle Meta approuvé (nom)"><input id="tplp" placeholder="paramètres séparés par des virgules" style="flex:1"></div>
+        <div class="row" style="margin-top:8px"><button class="b p" id="sendnow">Envoyer</button><button class="b" id="savedraft">Mettre en brouillon</button><span id="sendres" class="muted"></span></div>
+      </div>
+      ${s.drafts.length ? `<div class="card"><h2>Brouillons</h2>${s.drafts.map((d) => `<div class="variant">${esc(d.body || '')}<small class="muted"> ${esc(d.kind)} · ${esc(d.status)} ${esc(d.block_reason || '')}</small></div>`).join('')}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+async function drafts() {
+  const rows = await api('/api/drafts');
+  return `<div class="card"><h2>Messages à valider (${rows.length})</h2><p class="muted">Mode actuel : <b>${esc(META.mode)}</b>. Rien ne part sans votre clic, sauf en mode automatique avec un modèle autorisé.</p>
+  ${rows.map((d) => `<div class="card" style="margin:8px 0"><div class="row"><b data-open="${d.contact_id}" style="cursor:pointer">${name(d)}</b><span class="chip">${esc(d.kind)}</span>${statusChip(d.contact_status)}${d.template_name ? `<span class="chip">modèle ${esc(d.template_name)}</span>` : ''}</div>
+    ${d.block_reason ? `<p class="muted">${esc(d.block_reason)}</p>` : ''}
+    <textarea data-d="${d.id}">${esc(d.body || '')}</textarea>
+    ${JSON.parse(d.variants || '[]').map((v) => `<div class="variant" data-pick="${d.id}">${esc(v)}</div>`).join('')}
+    <div class="row"><button class="b p" data-approve="${d.id}">Valider et envoyer</button><button class="b d" data-reject="${d.id}">Rejeter</button><span class="muted" id="r${d.id}"></span></div></div>`).join('') || '<p class="muted">Rien à valider.</p>'}</div>`;
+}
+
+async function campaigns() {
+  const rows = await api('/api/campaigns');
+  return `<div class="card"><h2>Nouvelle campagne</h2><p class="muted">Seuls les contacts avec un consentement enregistré sont inclus. Chaque message est préparé et personnalisé, puis la campagne attend votre validation.</p>
+    <div class="row"><input id="cname" placeholder="Nom"><select id="csec">${Object.entries(META.sections).map(([k, v]) => `<option value="${k}" ${k === 'a_contacter' ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>
+    <select id="ccat"><option value="">Toutes catégories</option>${META.categories.map((c) => `<option>${c}</option>`).join('')}</select><input id="ctpl" placeholder="Modèle Meta approuvé"><button class="b p" id="cmake">Préparer</button></div><p id="cres" class="muted"></p></div>
+  <div class="card"><h2>Campagnes</h2><div class="scroll"><table><tr><th>#</th><th>Nom</th><th>Destinataires</th><th>Statut</th><th></th></tr>
+  ${rows.map((c) => `<tr><td>${c.id}</td><td>${esc(c.name)}</td><td>${c.recipients}</td><td><span class="chip">${esc(c.status)}</span></td><td>${c.status === 'a_valider' ? `<button class="b p" data-launch="${c.id}" data-n="${c.recipients}">Valider et lancer</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Aucune campagne.</td></tr>'}</table></div></div>`;
+}
+
+function settings() {
+  return `<div class="card"><h2>Mode de fonctionnement</h2><div class="row"><select id="mode"><option value="validation" ${META.mode === 'validation' ? 'selected' : ''}>Validation : je relis tout avant envoi</option><option value="automatique" ${META.mode === 'automatique' ? 'selected' : ''}>Automatique : relances autorisées envoyées seules</option></select><button class="b" id="savemode">Enregistrer</button></div></div>
+  <div class="card"><h2>Votre offre</h2><p class="muted">Utilisée dans les messages. Sans elle, les brouillons contiennent « [à compléter] » et ne peuvent pas partir.</p><textarea id="pitch">${esc(META.pitch)}</textarea><button class="b" id="savepitch">Enregistrer</button></div>
+  <div class="card"><h2>Importer des contacts (CSV)</h2><p class="muted">Colonnes reconnues : telephone, prenom, nom, entreprise, categorie, source, notes, consentement (oui/non), preuve_consentement. Un numéro déjà connu complète la fiche existante.</p><input type="file" id="csv" accept=".csv,text/csv"><p id="impres" class="muted"></p></div>
+  <div class="card"><h2>Actions</h2><div class="row"><button class="b" id="runfu">Traiter les relances maintenant</button><button class="b" id="react">Préparer la reprise des anciens clients</button><button class="b" id="qual">Vérifier la qualité du numéro</button></div><p id="actres" class="muted"></p></div>`;
+}
+
+function bind() {
+  document.querySelectorAll('[data-open]').forEach((el) => el.onclick = () => go('fiche', { id: el.dataset.open }));
+  const on = (id, fn) => { const el = $('#' + id); if (el) el.onclick = () => fn().catch((e) => alert(e.message)); };
+  const q = $('#q');
+  if (q) {
+    let t; q.oninput = () => { clearTimeout(t); t = setTimeout(() => { state.q = q.value; render().then(() => { $('#q').focus(); $('#q').setSelectionRange(9e9, 9e9); }); }, 250); };
+    $('#cat').onchange = (e) => { state.category = e.target.value; render(); };
+    $('#st').onchange = (e) => { state.status = e.target.value; render(); };
+  }
+  on('new', async () => {
+    const phone = prompt('Numéro WhatsApp'); if (!phone) return;
+    const c = await api('/api/contacts', { phone, first_name: prompt('Prénom') || undefined, last_name: prompt('Nom') || undefined, source: 'saisie tableau de bord' });
+    go('fiche', { id: c.id });
+  });
+  const id = state.id;
+  if ($('#setst')) $('#setst').onchange = (e) => api(`/api/contacts/${id}/status`, { status: e.target.value }).then(render).catch((er) => alert(er.message));
+  on('savenotes', async () => { await api(`/api/contacts/${id}/notes`, { notes: $('#notes').value, category: $('#setcat').value }); render(); });
+  on('optin', async () => { await api(`/api/contacts/${id}/consent`, { consent: 'opt_in', source: $('#cproof').value }); render(); });
+  on('optout', async () => { if (confirm('Placer ce contact dans « Ne plus contacter » et la liste de suppression permanente ?')) { await api(`/api/contacts/${id}/status`, { status: 'ne_plus_contacter', reason: 'décision manuelle' }); render(); } });
+  on('suggest', async () => {
+    const r = await api(`/api/contacts/${id}/suggest`, { kind: $('#kind').value });
+    $('#variants').innerHTML = `<p class="muted">Propositions (${r.engine === 'claude' ? 'Claude' : 'règles'}${r.fallback ? ', repli : ' + esc(r.fallback) : ''}) — cliquez pour reprendre :</p>` + r.variants.map((v) => `<div class="variant">${esc(v)}</div>`).join('');
+    document.querySelectorAll('#variants .variant').forEach((el) => el.onclick = () => { $('#body').value = el.textContent; });
+  });
+  const tplInput = () => $('#tpl').value ? { name: $('#tpl').value, params: $('#tplp').value ? $('#tplp').value.split(',').map((s) => s.trim()) : [] } : undefined;
+  on('sendnow', async () => {
+    const r = await api(`/api/contacts/${id}/send`, { body: $('#body').value || undefined, template: tplInput(), kind: $('#kind').value });
+    if (!r.ok) { $('#sendres').textContent = 'Bloqué : ' + r.reason; return; }
+    render();
+  });
+  on('savedraft', async () => { await api(`/api/contacts/${id}/draft`, { kind: $('#kind').value, body: $('#body').value, template: tplInput() }); go('brouillons'); });
+  document.querySelectorAll('[data-pick]').forEach((el) => el.onclick = () => { $(`textarea[data-d="${el.dataset.pick}"]`).value = el.textContent; });
+  document.querySelectorAll('[data-approve]').forEach((el) => el.onclick = async () => {
+    const d = el.dataset.approve;
+    try { const r = await api(`/api/drafts/${d}/approve`, { body: $(`textarea[data-d="${d}"]`).value }); if (r.ok) render(); else $('#r' + d).textContent = 'Bloqué : ' + r.reason; } catch (e) { $('#r' + d).textContent = e.message; }
+  });
+  document.querySelectorAll('[data-reject]').forEach((el) => el.onclick = () => api(`/api/drafts/${el.dataset.reject}/reject`, { reason: 'rejeté depuis le tableau de bord' }).then(render));
+  on('cmake', async () => {
+    const r = await api('/api/campaigns', { name: $('#cname').value || 'Campagne', section: $('#csec').value, category: $('#ccat').value || undefined, template: $('#ctpl').value ? { name: $('#ctpl').value } : undefined });
+    $('#cres').textContent = `Préparée : ${r.recipients} destinataires, ${r.excludedNoConsent} écartés faute de consentement.`; setTimeout(render, 1500);
+  });
+  document.querySelectorAll('[data-launch]').forEach((el) => el.onclick = async () => {
+    if (!confirm(`Lancer l’envoi à ${el.dataset.n} destinataires ? Les règles de conformité restent appliquées à chacun.`)) return;
+    const r = await api(`/api/campaigns/${el.dataset.launch}/approve`, { confirm: true });
+    alert(`Envoyés : ${r.sent} · Bloqués : ${r.blocked}\n${Object.entries(r.reasons).map(([k, v]) => `${v} × ${k}`).join('\n')}`); render();
+  });
+  on('savemode', async () => { await api('/api/settings', { mode: $('#mode').value }); await loadMeta(); render(); });
+  on('savepitch', async () => { await api('/api/settings', { pitch: $('#pitch').value }); await loadMeta(); });
+  if ($('#csv')) $('#csv').onchange = async (e) => { const r = await api('/api/import', { csv: await e.target.files[0].text() }); $('#impres').textContent = `Créés : ${r.created} · Mis à jour : ${r.updated} · Accords sans preuve ignorés : ${r.consentWithoutProof} · Erreurs : ${r.errors.length}${r.errors.length ? ' — ' + r.errors.slice(0, 5).join(' ; ') : ''}`; };
+  on('runfu', async () => { $('#actres').textContent = JSON.stringify(await api('/api/followups/run', {})); });
+  on('react', async () => { const ids = await api('/api/reactivation', {}); $('#actres').textContent = `${ids.length} brouillon(s) de reprise préparé(s).`; });
+  on('qual', async () => { $('#actres').textContent = JSON.stringify(await api('/api/quality', {})); });
+}
+
+async function loadMeta() { META = await api('/api/meta'); $('#transport').textContent = META.simulated ? 'Simulation (aucun envoi réel)' : `Connecté via ${META.transport}`; }
+window.onhashchange = () => { const [v, id] = location.hash.slice(1).split('/'); if (v && (v !== state.view || id !== state.id)) { if (v !== state.view && v !== 'fiche') Object.assign(state, FILTERS); state.view = v; state.id = id; render(); } };
+(async () => { await loadMeta(); const [v, id] = location.hash.slice(1).split('/'); if (v) { state.view = v; state.id = id; } render(); setInterval(() => { if (!document.querySelector('textarea:focus,input:focus')) render(); }, 30000); })();
+</script>
+</body>
+</html>

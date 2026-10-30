@@ -1,0 +1,7 @@
+node_modules/
+.env
+data/
+*.sqlite*
+# Les skills Kapso ne sont pas redistribués ici (dépôt source sans licence) :
+# `npx skills experimental_install` les restaure depuis skills-lock.json.
+.claude/skills/

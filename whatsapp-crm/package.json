@@ -1,0 +1,19 @@
+{
+  "name": "whatsapp-crm",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Assistant commercial WhatsApp : fiches contacts, « Contacts contactés », relances, consentement, tableau de bord.",
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "cli": "node --disable-warning=ExperimentalWarning src/cli.js",
+    "test": "node --disable-warning=ExperimentalWarning --test \"test/*.test.js\"",
+    "skill:install": "npx --yes skills@1.7.4 add gokapso/agent-skills --skill integrate-whatsapp --skill observe-whatsapp --agent claude-code --copy -y"
+  },
+  "dependencies": {
+    "@kapso/whatsapp-cloud-api": "^0.4.0"
+  }
+}
