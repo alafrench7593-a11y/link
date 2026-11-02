@@ -1,0 +1,14 @@
+Voix off : générée avec ElevenLabs, voix « Julia – Warm French Narrator » (française, jeune adulte), modèle eleven_v4, 53,6 s.
+Flow ElevenLabs (prise A, celle sur laquelle la vidéo est calée) :
+https://elevenlabs.io/app/flows/zHkWe1DoKQySdj0qSkj3
+
+Calage : la voix démarre à 0,0 s de la vidéo. Les sous-titres de la vidéo suivent la voix mot à mot.
+
+Texte :
+Dubaï. Une ville où tout semble possible. Des milliers de personnes, des événements partout… et pourtant, parfois, on peut s'y sentir terriblement seul.
+Tu arrives avec des projets, des ambitions, l'envie de découvrir une nouvelle vie… mais créer de vraies relations n'est pas toujours aussi simple.
+Alors tu essaies WhatsApp… tu rejoins des groupes, tu discutes, mais les conversations ne deviennent pas toujours des rencontres.
+Tu essaies Facebook, TikTok, tu regardes les publications de ceux qui cherchent eux aussi à rencontrer du monde… mais tu ne sais toujours pas vraiment par où commencer.
+Et si rencontrer du monde devenait enfin aussi simple que de rejoindre une activité ? C'est exactement pour ça qu'IRLY existe.
+Découvre des activités, rejoins des communautés, rencontre des personnes qui te ressemblent, et transforme tes envies en vrais moments partagés.
+Parce qu'une nouvelle vie ne devrait jamais se vivre seul. IRLY. Trouve tes personnes. Vis tes rencontres.
