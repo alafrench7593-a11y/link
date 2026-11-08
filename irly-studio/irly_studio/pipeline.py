@@ -8,6 +8,7 @@ son résultat dans output/<id>/ ; rien n'est publié automatiquement.
 from __future__ import annotations
 
 import json
+import subprocess
 import os
 import shutil
 import time
@@ -209,3 +210,38 @@ class Project:
         self.meta["final"] = out
         self.step("export", file=os.path.basename(out), fps=fps)
         return out
+
+
+def ugc_finish(video: str, script_text: str, *, campaign: str = "girl", language: str = "fr",
+               cta: str | None = None, endcard_seconds: float = 3.0, pid: str | None = None,
+               fmt: str = "tiktok", fps: int = 30) -> str:
+    """Mode UGC : une vidéo d'avatar qui parle (HeyGen, Vidnoz, Kling, SadTalker…)
+    garde sa propre voix ; on ajoute sous-titres, musique discrète et carte de fin IRLY."""
+    p = Project(pid)
+    text_lines = [l.strip() for l in script_text.splitlines() if l.strip()]
+    cta = cta or catalog.SHORT_CTA[language]
+    voice_path = p.path("voice.mp3")
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", video, "-vn", "-ac", "1", "-ar", "44100",
+                    "-b:a", "192k", voice_path], check=True)
+    clip_len = subtitles.audio_duration(voice_path)
+    spans = subtitles.align_segments(text_lines, voice_path)
+    cues = subtitles.build_cues([("ugc", t) for t in text_lines], spans)
+    with open(p.path("subtitles.srt"), "w", encoding="utf-8") as f:
+        f.write(subtitles.to_srt(cues))
+    accent = motion.hex_rgb(catalog.UNIVERSES[catalog.CAMPAIGNS[campaign]["universe"]]["accent"])
+    duration = clip_len + endcard_seconds
+    plan = motion.Plan(shots=[motion.Shot("ugc", 0, clip_len, ""), motion.Shot("cta", clip_len, duration, cta)],
+                       cues=cues, duration=duration, accent=accent, language=language,
+                       cta_lines=[cta.split(". ")[0].rstrip(".") + "."])
+    music = p.path("music.wav")
+    render.synth_music(music, duration + 1, bpm=96, mood="bright")
+    mix = p.path("mix.m4a")
+    render.mix_audio(voice_path, music, mix, duration, music_db=-20)
+    size = catalog.FORMATS[fmt]["size"]
+    out = p.path(f"irly_ugc_{campaign}_{fmt}.mp4")
+    render.render(plan, size=size, base_video=video, audio=mix, out_path=out, fps=fps)
+    p.meta.update({"mode": "ugc", "source_video": video, "final": out,
+                   "script": {"campaign": campaign, "language": language, "duration": round(duration),
+                              "variant": "ugc", "text": script_text, "segments": []}})
+    p.step("export", file=os.path.basename(out))
+    return out

@@ -169,6 +169,7 @@ SCENE_OF = {
     "hook": "kinetic", "problem": "media", "situation": "media", "extra_situation": "media",
     "irly": "reveal", "feature": "phone", "extra_feature": "phone", "close": "kinetic",
     "cta": "endcard",
+    "ugc": "ugc",  # vidéo UGC importée : on la laisse telle quelle, sous-titres par-dessus
 }
 
 
@@ -507,7 +508,9 @@ def render_frame(plan: Plan, L: Layout, t: float, base: Image.Image | None, fps:
     else:
         canvas = base.convert("RGB").resize((L.w, L.h)) if base.size != (L.w, L.h) else base.convert("RGB")
 
-    if scene in ("media", "kinetic"):
+    if scene == "ugc":
+        pass  # image d'origine, sans assombrissement ni titre
+    elif scene in ("media", "kinetic"):
         canvas = darken(canvas, 0.55 if scene == "kinetic" else 0.25, 0.65)
         if scene == "kinetic":
             nxt = next((s for s in plan.shots if s.start > shot.start), None)
