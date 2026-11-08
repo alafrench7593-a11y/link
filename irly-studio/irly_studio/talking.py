@@ -54,7 +54,8 @@ def _run(cmd: list[str], cwd: str, log: str | None):
     with open(log or os.devnull, "a") as f:
         f.write("$ " + " ".join(cmd) + "\n")
         f.flush()
-        proc = subprocess.run(cmd, cwd=cwd, stdout=f, stderr=subprocess.STDOUT)
+        env = dict(os.environ, HF_HUB_DISABLE_XET="1")  # téléchargement HTTP classique depuis Hugging Face
+        proc = subprocess.run(cmd, cwd=cwd, stdout=f, stderr=subprocess.STDOUT, env=env)
     if proc.returncode != 0:
         raise RuntimeError(f"{os.path.basename(cwd)} a échoué (code {proc.returncode}), journal : {log}")
     return time.time() - t0

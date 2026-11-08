@@ -1,0 +1,70 @@
+{
+  "source": "IRLY web DEMO build (EXPO_PUBLIC_DEMO=1)",
+  "captured": "2026-11-08T22:03:27.009Z",
+  "lang": "fr",
+  "shots": [
+    {
+      "name": "02_inscription",
+      "route": "/onboarding/you",
+      "space": "mixte",
+      "url": "/onboarding/you",
+      "errors": 0
+    },
+    {
+      "name": "03_accueil",
+      "route": "/",
+      "space": "mixte",
+      "url": "/",
+      "errors": 0
+    },
+    {
+      "name": "04_decouvrir",
+      "route": "/discover",
+      "space": "mixte",
+      "url": "/discover",
+      "errors": 0
+    },
+    {
+      "name": "05_activites",
+      "route": "/activities",
+      "space": "mixte",
+      "url": "/activities",
+      "errors": 0
+    },
+    {
+      "name": "06_communautes",
+      "route": "/communities",
+      "space": "mixte",
+      "url": "/communities",
+      "errors": 0
+    },
+    {
+      "name": "08_girl_accueil",
+      "route": "/girl",
+      "space": "girl",
+      "url": "/",
+      "errors": 0
+    },
+    {
+      "name": "09_girl_communautes",
+      "route": "/communities",
+      "space": "girl",
+      "url": "/communities",
+      "errors": 0
+    },
+    {
+      "name": "10_network",
+      "route": "/network",
+      "space": "mixte",
+      "url": "/network",
+      "errors": 0
+    },
+    {
+      "name": "11_creer",
+      "route": "/girl/new-community",
+      "space": "girl",
+      "url": "/girl/new-community",
+      "errors": 0
+    }
+  ]
+}

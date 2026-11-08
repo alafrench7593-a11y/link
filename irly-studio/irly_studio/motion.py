@@ -23,16 +23,17 @@ from functools import lru_cache
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
+from . import brand
 from . import subtitles as subs
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONTS = os.path.join(os.path.dirname(HERE), "assets", "fonts")
-DISPLAY_FONT = os.path.join(FONTS, "InterDisplay-Bold.otf")
-DISPLAY_MED = os.path.join(FONTS, "InterDisplay-SemiBold.otf")
-SUB_FONT = os.path.join(FONTS, "TikTokSans-Bold.ttf")
+DISPLAY_FONT = brand.manrope("ExtraBold")  # la police unique de l'app
+DISPLAY_MED = brand.manrope("SemiBold")
+SUB_FONT = brand.manrope("ExtraBold")
 
-INK = (14, 14, 18)
-PAPER = (246, 243, 238)
+INK = brand.rgb(brand.NOIR["bg"])  # IRLY Noir
+PAPER = brand.rgb(brand.NOIR["text"])
 
 
 def hex_rgb(h: str) -> tuple[int, int, int]:
@@ -161,7 +162,8 @@ class Plan:
     cta_lines: list[str] = field(default_factory=list)
     handle: str = "@irlyofficial"
     screens: list[str] = field(default_factory=list)  # captures réelles de l'app
-    logo: str | None = None  # logo officiel (PNG transparent) ; sinon logotype texte
+    logo: str | None = None  # logo importé (PNG transparent) ; sinon logotype en points de l'app
+    universe: str = "mixte"
 
 
 # Scènes : quelle partie du script prend quelle mise en scène.
@@ -254,21 +256,15 @@ def kinetic_text(canvas: Image.Image, L: Layout, text: str, local_t: float, *,
     return y + len(lines) * lh
 
 
-def wordmark(L: Layout, size: float, color=PAPER) -> Image.Image:
-    """Logotype texte IRLY, utilisé tant que le logo officiel n'est pas importé."""
-    f = font(DISPLAY_FONT, int(size))
-    w = int(text_width(f, "IRLY")) + 10
-    img = Image.new("RGBA", (w, int(size * 1.2)), (0, 0, 0, 0))
-    ImageDraw.Draw(img).text((0, 0), "IRLY", font=f, fill=color + (255,))
-    return img
-
-
 def logo_image(plan: Plan, L: Layout, height: float) -> Image.Image:
+    """Logo de l'app : IRLY en points (ou IRLY Girl pour l'univers Girl), ou un PNG importé."""
     if plan.logo and os.path.exists(plan.logo):
         im = Image.open(plan.logo).convert("RGBA")
         k = height / im.height
         return im.resize((max(1, int(im.width * k)), max(1, int(height))), Image.LANCZOS)
-    return wordmark(L, height)
+    if plan.universe == "girl":
+        return brand.girl_logo(height * 0.75)
+    return brand.wordmark(height * 0.62, accent=brand.NOIR["steel"])
 
 
 def reveal_scene(canvas, L, plan, lt):
@@ -336,9 +332,8 @@ def _screen_image(path: str | None, w: int, h: int, accent: tuple, logo: str | N
         k = w / im.width
         im = im.resize((w, max(h, int(im.height * k))), Image.LANCZOS)
         return im  # peut être plus haute que l'écran : on la fait défiler
-    img = Image.new("RGB", (w, h), accent)
-    plan_stub = Plan([], [], 0, accent, logo=logo)
-    lg = logo_image(plan_stub, Layout(w, h * 2), w * 0.3)
+    img = Image.new("RGB", (w, h), INK)  # écran de lancement de l'app : marque « i » sur noir
+    lg = brand.mark(w * 0.32, accent="#%02x%02x%02x" % accent)
     img.paste(lg, (w // 2 - lg.width // 2, h // 2 - lg.height // 2), lg)
     return img
 
@@ -451,8 +446,9 @@ def endcard_scene(canvas, L, plan, lt):
         y += int(40 * L.s)
         pill = Image.new("RGBA", (int(bw), int(bh)), (0, 0, 0, 0))
         pd = ImageDraw.Draw(pill)
-        pd.rounded_rectangle([0, 0, bw - 1, bh - 1], bh / 2, fill=plan.accent + (255,))
-        pd.text((bw / 2, bh / 2), plan.handle, font=fh, fill=PAPER, anchor="mm")
+        # bouton principal de l'app : blanc, texte encre (tokens brand / onBrand)
+        pd.rounded_rectangle([0, 0, bw - 1, bh - 1], bh / 2, fill=PAPER + (255,))
+        pd.text((bw / 2, bh / 2), plan.handle, font=fh, fill=INK, anchor="mm")
         sc = 0.7 + 0.3 * kk
         pill = pill.resize((max(1, int(bw * sc)), max(1, int(bh * sc))), Image.LANCZOS)
         canvas.paste(pill, (int(L.w / 2 - pill.width / 2), int(y)), pill)

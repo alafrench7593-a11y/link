@@ -14,7 +14,7 @@ import shutil
 import time
 import uuid
 
-from . import catalog, motion, mpt_bridge, render, scripts, subtitles, voice
+from . import app_link, catalog, motion, mpt_bridge, render, scripts, subtitles, voice
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT = os.path.join(ROOT, "output")
@@ -119,6 +119,8 @@ class Project:
     # ------------------------------------------------------------ 6 montage
     def make_base(self) -> str | None:
         mats = self.meta.get("media", {}).get("materials") or []
+        if not mats and self.meta.get("media", {}).get("use_app_photos", True):
+            mats = app_link.photos(self.script.campaign)  # photos libres déjà utilisées par l'app
         if not mats:
             self.meta["base_video"] = None
             self.step("montage", base="fond de marque (aucun média)")
@@ -164,8 +166,10 @@ class Project:
         cta_lines = [cta.split(". ")[0].rstrip(".") + "."] if "@" in cta else [cta]
         return motion.Plan(shots=shots, cues=cues, duration=duration, accent=accent,
                            language=sc.language, chips=CHIPS.get(sc.campaign, {}).get(sc.language, []),
-                           cta_lines=cta_lines, screens=media.get("screens") or [],
-                           logo=media.get("logo"))
+                           cta_lines=cta_lines,
+                           # écrans : ceux choisis, sinon les vraies captures de l'app pour la campagne
+                           screens=media.get("screens") or app_link.screens(sc.campaign, sc.language),
+                           logo=media.get("logo"), universe=info["universe"])
 
     def duration(self) -> float:
         """Durée finale : la durée cible de la campagne, jamais moins que la voix + 0,6 s.
@@ -232,6 +236,7 @@ def ugc_finish(video: str, script_text: str, *, campaign: str = "girl", language
     duration = clip_len + endcard_seconds
     plan = motion.Plan(shots=[motion.Shot("ugc", 0, clip_len, ""), motion.Shot("cta", clip_len, duration, cta)],
                        cues=cues, duration=duration, accent=accent, language=language,
+                       universe=catalog.CAMPAIGNS[campaign]["universe"],
                        cta_lines=[cta.split(". ")[0].rstrip(".") + "."])
     music = p.path("music.wav")
     render.synth_music(music, duration + 1, bpm=96, mood="bright")

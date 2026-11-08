@@ -11,30 +11,30 @@ UNIVERSES = {
         "label": "IRLY Mixte",
         "topics": ["Rencontres amicales", "Activités", "Communautés", "Sorties",
                    "Nouveaux arrivants à Dubaï"],
-        "accent": "#FF5A3C",
+        "accent": "#8EA5BF",
     },
     "girl": {
         "label": "IRLY Girl",
         "topics": ["Communautés féminines", "Girl Trip", "Girl Sport", "Girl Expat",
                    "Girl Networking", "Activités entre femmes"],
-        "accent": "#FF6FA8",
+        "accent": "#E83E87",
     },
     "network": {
         "label": "IRLY Network",
         "topics": ["Networking professionnel", "Entrepreneurs", "Freelances",
                    "Créateurs de startups", "Rencontres professionnelles", "Événements"],
-        "accent": "#4C7DFF",
+        "accent": "#5856D6",
     },
     "sport": {
         "label": "IRLY Sport",
         "topics": ["Running clubs", "Padel", "Football", "Fitness", "Activités sportives"],
-        "accent": "#2FD27A",
+        "accent": "#34C759",
     },
     "activites": {
         "label": "IRLY Activités",
         "topics": ["Restaurants", "Beach clubs", "Zoo", "Sorties", "Excursions",
                    "Week-ends", "Découverte de Dubaï"],
-        "accent": "#FFB020",
+        "accent": "#FF2D55",
     },
 }
 

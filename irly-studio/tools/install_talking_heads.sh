@@ -5,6 +5,7 @@
 set -u
 BASE="${IRLY_TOOLS_DIR:-$(cd "$(dirname "$0")/../../.." && pwd)}"
 CPU=https://download.pytorch.org/whl/cpu
+export HF_HUB_DISABLE_XET=1  # téléchargements Hugging Face en HTTP classique
 LOGS="${IRLY_TOOLS_LOGS:-$BASE/irly_tools_logs}"
 mkdir -p "$LOGS"
 

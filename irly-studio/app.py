@@ -185,21 +185,26 @@ else:
 
     if p and p.meta.get("script_validated"):
         st.markdown('<div class="step">3 · Médias</div>', unsafe_allow_html=True)
-        photos = pipeline.library_files("photos") + pipeline.library_files("videos")
+        from irly_studio import app_link
+        app_photos = app_link.photos(p.script.campaign, limit=8)
+        photos = app_photos + pipeline.library_files("photos") + pipeline.library_files("videos")
         demo = [os.path.join("assets/media/demo", f) for f in sorted(os.listdir("assets/media/demo"))
                 if f.endswith((".jpg", ".png", ".mp4"))]
         mats = st.multiselect("Photos et vidéos (dans l'ordre d'apparition)", photos + demo,
-                              default=(p.meta.get("media", {}).get("materials") or []),
+                              default=(p.meta.get("media", {}).get("materials") or app_photos[:4]),
                               format_func=os.path.basename)
-        screens = st.multiselect("Captures réelles de l'app (écran du téléphone)", pipeline.library_files("screens"),
+        st.caption("Photos de l'app : " + " · ".join(app_link.credit_for(m)[:60] for m in mats[:3]))
+        screens = st.multiselect("Écrans de l'app IRLY dans le téléphone", app_link.all_screens(p.script.language)
+                                 + pipeline.library_files("screens"),
+                                 default=app_link.screens(p.script.campaign, p.script.language),
                                  format_func=os.path.basename)
         logos = pipeline.library_files("logo")
-        logo = st.selectbox("Logo", ["Logotype texte IRLY"] + logos, format_func=os.path.basename)
+        logo = st.selectbox("Logo", ["Logo IRLY de l'app (points)"] + logos, format_func=os.path.basename)
         musics = pipeline.library_files("music")
         music = st.selectbox("Musique", ["Musique générée (sans droits)"] + musics, format_func=os.path.basename)
         if st.button("Valider les médias"):
             p.set_media(photos_videos=mats, screens=screens,
-                        logo=None if logo.startswith("Logotype") else logo,
+                        logo=None if logo.startswith("Logo IRLY") else logo,
                         music=None if music.startswith("Musique") else music)
             st.success("Médias enregistrés.")
 
