@@ -149,7 +149,7 @@ def talk(engine: str, face: str, audio: str, out: str, *, log: str | None = None
     if not installed(engine if engine != "liveportrait" else "liveportrait"):
         raise RuntimeError(f"{ENGINES[engine]['label']} n'est pas installé : tools/install_talking_heads.sh {engine}")
     t0 = time.time()
-    RUNNERS[engine](face, audio, out, log=log, **kw)
+    RUNNERS[engine](os.path.abspath(face), os.path.abspath(audio), os.path.abspath(out), log=log, **kw)
     return {"engine": engine, "file": out, "seconds": round(time.time() - t0)}
 
 
@@ -173,6 +173,7 @@ def chatterbox(text: str, out: str, *, language="fr", reference: str | None = No
     """Voix locale gratuite. `reference` : extrait de voix à imiter, avec l'accord de la personne."""
     if not installed("chatterbox"):
         raise RuntimeError("Chatterbox n'est pas installé : tools/install_talking_heads.sh chatterbox")
+    out = os.path.abspath(out)  # Chatterbox tourne dans son propre dossier
     script = os.path.join(tempfile.mkdtemp(prefix="cbx_"), "run.py")
     open(script, "w").write(CHATTERBOX_SCRIPT)
     wav = out if out.endswith(".wav") else out + ".wav"
