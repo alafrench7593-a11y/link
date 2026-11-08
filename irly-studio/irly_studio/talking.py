@@ -37,7 +37,8 @@ def tool_dir(name: str) -> str:
 
 
 def py(name: str) -> str:
-    return os.path.join(tool_dir(name), ".venv", "bin", "python")
+    sub = ("Scripts", "python.exe") if os.name == "nt" else ("bin", "python")
+    return os.path.join(tool_dir(name), ".venv", *sub)
 
 
 def installed(name: str) -> bool:

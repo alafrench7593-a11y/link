@@ -16,7 +16,8 @@ MPT_DIR = os.environ.get("IRLY_MPT_DIR") or os.path.abspath(
 
 
 def mpt_python() -> str:
-    venv = os.path.join(MPT_DIR, ".venv", "bin", "python")
+    sub = ("Scripts", "python.exe") if os.name == "nt" else ("bin", "python")  # Windows ou Mac/Linux
+    venv = os.path.join(MPT_DIR, ".venv", *sub)
     return venv if os.path.exists(venv) else "python3"
 
 
