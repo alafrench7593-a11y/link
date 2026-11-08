@@ -137,3 +137,18 @@ def test_project_history(tmp_path, monkeypatch):
     p.set_script(scripts.generate("sport", duration=15))
     assert pipeline.Project.history()[0]["id"] == "t1"
     assert pipeline.Project("t1").script.campaign == "sport"
+
+
+# ---------------------------------------------------------------- avatars parlants
+def test_engines_license_flags():
+    from irly_studio import talking
+    assert talking.ENGINES["wav2lip"]["commercial"] is False
+    assert talking.ENGINES["liveportrait"]["commercial"] is False
+    assert talking.ENGINES["sadtalker"]["commercial"] is True
+
+
+def test_engine_missing_gives_clear_error(monkeypatch, tmp_path):
+    from irly_studio import talking
+    monkeypatch.setattr(talking, "TOOLS", str(tmp_path))
+    with pytest.raises(RuntimeError, match="install_talking_heads"):
+        talking.talk("sadtalker", "face.png", VO, str(tmp_path / "o.mp4"))

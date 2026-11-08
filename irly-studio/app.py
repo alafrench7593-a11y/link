@@ -16,7 +16,7 @@ h1, h2, h3 {letter-spacing:-0.02em}
 .step {font-size:0.8rem;letter-spacing:.08em;text-transform:uppercase;opacity:.6}
 </style>""", unsafe_allow_html=True)
 
-PAGES = ["Nouvelle vidéo", "Campagnes IRLY", "Bibliothèque de médias", "Historique"]
+PAGES = ["Nouvelle vidéo", "Avatar UGC", "Campagnes IRLY", "Bibliothèque de médias", "Historique"]
 page = st.sidebar.radio("IRLY Studio", PAGES)
 st.sidebar.caption(f"Moteur de montage : MoneyPrinterTurbo {mpt_bridge.version()}"
                    + ("" if mpt_bridge.available() else " (introuvable)"))
@@ -28,8 +28,61 @@ def project() -> pipeline.Project | None:
     return pipeline.Project(pid) if pid else None
 
 
+# ============================================================== avatar UGC
+if page == "Avatar UGC":
+    from irly_studio import talking
+
+    st.title("Avatar UGC")
+    st.info("Visage qui parle généré par IA. Ne le présente jamais comme une vraie utilisatrice IRLY, "
+            "et active l'étiquette « contenu généré par IA » sur TikTok.")
+    faces = pipeline.library_files("photos") + [os.path.join("assets/media/ugc", f)
+                                                for f in sorted(os.listdir("assets/media/ugc")) if f.endswith(".png")]
+    face = st.selectbox("Visage (photo de face, avec l'accord de la personne, ou illustration IRLY)", faces,
+                        format_func=os.path.basename)
+    if face:
+        st.image(face, width=160)
+    text = st.text_area("Texte dit face caméra (une phrase par ligne)", height=170, value=(
+        "Les filles qui vivent à Dubaï, j'ai une question.\n"
+        "Vous faites comment pour rencontrer de nouvelles copines ?\n"
+        "Parce qu'entre le travail, les groupes WhatsApp et les sorties où tu connais personne… c'est pas toujours évident.\n"
+        "C'est pour ça qu'IRLY Girl a été créé.\n"
+        "Tu peux rejoindre des communautés de filles, proposer des activités et rencontrer du monde dans la vraie vie.\n"
+        "Et en plus, c'est gratuit !"))
+    vsrc = st.radio("Voix", ["Chatterbox (local, gratuit)", "Fichier importé"], horizontal=True)
+    vfile = st.file_uploader("Fichier voix", type=["mp3", "wav", "m4a"]) if vsrc == "Fichier importé" else None
+    exag = st.slider("Expressivité (Chatterbox)", 0.25, 1.0, 0.6) if vsrc.startswith("Chatterbox") else 0.5
+
+    def engine_label(k):
+        e = talking.ENGINES[k]
+        lic = {True: "usage commercial OK", False: "TEST UNIQUEMENT", None: "licence à vérifier"}[e["commercial"]]
+        return f"{e['label']} · {lic}" + ("" if talking.installed(k) else " · non installé")
+
+    engine = st.selectbox("Moteur", list(talking.ENGINES), format_func=engine_label)
+    st.caption(talking.ENGINES[engine]["note"])
+    cta = st.text_input("Carte de fin", "IRLY Girl. Suis @irlyofficial.")
+    if st.button("Générer la vidéo UGC", type="primary"):
+        p = pipeline.Project()
+        try:
+            with st.spinner("Voix…"):
+                voice_path = p.path("voice_source.mp3")
+                if vfile:
+                    open(p.path("upload_" + vfile.name), "wb").write(vfile.getvalue())
+                    voice.import_audio(p.path("upload_" + vfile.name), voice_path)
+                else:
+                    talking.chatterbox(" ".join(l.strip() for l in text.splitlines() if l.strip()),
+                                       voice_path, exaggeration=exag, log=p.path("chatterbox.log"))
+            st.audio(voice_path)
+            with st.spinner(f"{talking.ENGINES[engine]['label']} sur processeur : compter 10 à 40 minutes…"):
+                info = talking.talk(engine, face, voice_path, p.path("talking.mp4"), log=p.path(f"{engine}.log"))
+            with st.spinner("Sous-titres, musique et carte de fin…"):
+                out = pipeline.ugc_finish(p.path("talking.mp4"), text, campaign="girl", cta=cta, pid=p.id)
+            st.success(f"Vidéo prête en {info['seconds']} s de calcul : {out}")
+            st.video(out)
+        except Exception as exc:
+            st.error(str(exc))
+
 # ============================================================== campagnes
-if page == "Campagnes IRLY":
+elif page == "Campagnes IRLY":
     st.title("Campagnes IRLY")
     for key, c in catalog.CAMPAIGNS.items():
         u = catalog.UNIVERSES[c["universe"]]
