@@ -15,6 +15,11 @@ Need python "Python.Python.3.11"
 Need ffmpeg "Gyan.FFmpeg"
 # Recharge le PATH pour voir les outils fraîchement installés
 $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
+# Emplacements par défaut, au cas où Windows n'a pas encore mis le PATH à jour
+foreach ($d in @("$env:ProgramFiles\Git\cmd", "$env:LOCALAPPDATA\Programs\Python\Python311",
+                 "$env:LOCALAPPDATA\Programs\Python\Python311\Scripts", "$env:LOCALAPPDATA\Microsoft\WinGet\Links")) {
+  if ((Test-Path $d) -and ($env:Path -notlike "*$d*")) { $env:Path += ";$d" }
+}
 
 $Root = (Resolve-Path "$PSScriptRoot\..\..").Path
 $Mpt = if ($env:IRLY_MPT_DIR) { $env:IRLY_MPT_DIR } else { Join-Path $Root "MoneyPrinterTurbo" }
