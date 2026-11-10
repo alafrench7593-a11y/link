@@ -315,6 +315,28 @@ function subtitles(ctx, t) {
 }
 const tt = (u) => u * 0.625; // temps -> secondes
 
+// Des membres partout : les portraits d'exemple de l'app (version démo), qui apparaissent autour du téléphone.
+// Aucun chiffre de membres n'est affiché.
+const FACES = ['p-samuel', 'p-layla', 'p-nadia', 'p-omar', 'g-zara', 'p-chloe', 'p-james', 'p-khalid', 'p-amira', 'p-priya', 'p-noah', 'p-sofia', 'p-ketut', 'p-yusuf', 'w-adaeze', 'w-naomi', 'p-lea', 'p-arjun', 'g-sofia', 'p-mia', 'w-salma', 'p-jonas', 'g-maya', 'p-elena'];
+function faceCloud(ctx, u, IMG, u0, u1, seed = 0) {
+  const out = 1 - E.inCubic(prog(u, u1 - 0.4, u1));
+  if (out <= 0 || u < u0) return;
+  for (let i = 0; i < 10; i++) {
+    const k = springU(u, u0 + i * 0.12, SPRING.bouncy); if (k <= 0) continue;
+    const right = i % 2 === 1, row = i >> 1;
+    const x = (right ? 968 : 112) + (hash01(i, 7 + seed) - 0.5) * 50;
+    const y = 560 + row * 175 + (hash01(i, 11 + seed) - 0.5) * 60 + 10 * Math.sin(u * 1.3 + i);
+    const r = (44 + 14 * hash01(i, 13 + seed)) * k;
+    const img = IMG['face' + ((i + seed * 5) % FACES.length)];
+    ctx.save(); ctx.globalAlpha = clamp(k * 2) * out;
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 20;
+    ctx.beginPath(); ctx.arc(x, y, r + 4, 0, TAU); ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fill(); ctx.shadowColor = 'transparent';
+    ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.clip(); if (img) cover(ctx, img, x - r, y - r, 2 * r, 2 * r, { fy: 0.35 }); ctx.restore();
+    ctx.beginPath(); ctx.arc(x + r * 0.7, y + r * 0.7, r * 0.2, 0, TAU); ctx.fillStyle = '#34C759'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#050506'; ctx.stroke();
+    ctx.restore();
+  }
+}
+
 // ---------------------------------------------------------------- HITS
 const HITS = [
   ...[1, 2, 3, 4, 5, 6, 7].map((b) => [b, 'swipe', 'whoosh', { len: 0.18, from: 2600, to: 900, gain: 0.5 }]),
@@ -374,6 +396,7 @@ function s2(ctx, u, IMG) {
   blurBg(ctx, IMG.f6, { blur: 30, dark: 0.55, zoom: 1.25 });
   const k = springU(u, 10.4, SPRING.gentle);
   phone2(ctx, W / 2, 1120, 640, (s) => s2screen(s, u, IMG), { scale: lerp(1.2, 1, k), rotY: 0.06 * Math.sin((u - 10) * 0.4) });
+  faceCloud(ctx, u, IMG, 11.4, 21.3, 0);
   shade(ctx, 0.8, 0.2);
   tik(ctx, 'PAS ENVIE DE SORTIR ?', 320, 72, '#fff', u, 10.6, { out: 19.2 });
   tik(ctx, 'AUCUN PROBLÈME.', 405, 72, IRLY.steel, u, 11.4, { out: 19.2 });
@@ -537,6 +560,7 @@ function s6(ctx, u, IMG) {
     if (u < 65.2) { navTo(s, IMG.a_social, IMG.s1, prog(u, 63.2, 63.6), 'fade'); tap(s, u, 64.4, 849, 1398); const ok = prog(u, 64.45, 64.6); if (ok > 0) { s.save(); s.globalAlpha = ok; rrect(s, 650, 1340, 400, 116, 58); s.fillStyle = '#2E7D4F'; s.fill(); text(s, 'Partant·e ✓', 850, 1418, font(44, 800, UI), '#fff', 'center'); s.restore(); } return; }
     navTo(s, IMG.s1, IMG.a_discover, prog(u, 65.2, 65.6), 'fade');
   });
+  faceCloud(ctx, u, IMG, 60.8, 67.2, 2);
   shade(ctx, 0.8, 0.2);
   tik(ctx, 'À DE VRAIES RENCONTRES ❤️', 340, 70, C.goldL, u, 60.7);
   vignette(ctx, 0.45);
@@ -569,9 +593,10 @@ M.film({
     ...Object.fromEntries([0, 1, 2, 3, 4, 5].map((i) => ['cx' + i, `assets/dx/cards_0${i}.png`])),
     ...Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((i) => ['f' + i, `assets/feed/${i}.webp`])),
     ...Object.fromEntries(PLAYERS.map((_, i) => ['p' + (i + 1), `assets/players/p${i + 1}.jpg`])),
-    a_social: 'assets/app2/social.png', a_discover: 'assets/app2/discover.png',
-    H0: 'assets/home2/home_00.png', H1: 'assets/home2/home_01.png', H2: 'assets/home2/home_02.png', H3: 'assets/home2/home_03.png',
-    s1: 'assets/scroll/social_01.png',
+    a_social: 'assets/real/social_00.png', a_discover: 'assets/real/discover.png',
+    ...Object.fromEntries(FACES.map((n, i) => ['face' + i, `assets/faces/${n}.jpg`])),
+    H0: 'assets/real/home_00.png', H1: 'assets/real/home_01.png', H2: 'assets/real/home_02.png', H3: 'assets/real/home_03.png',
+    s1: 'assets/real/social_01.png',
     logo: 'assets/irly_wordmark_ivory.png', logoW: 'assets/irly_wordmark.png',
   },
   hits: HITS,
