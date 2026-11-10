@@ -276,6 +276,28 @@ function blurBg(ctx, img, { blur = 22, dark = 0.5, zoom = 1.2, fx = 0.5 } = {}) 
   ctx.fillStyle = `rgba(5,5,6,${dark})`; ctx.fillRect(0, 0, W, H);
 }
 
+// Des membres partout : les portraits d'exemple de l'app (version démo), qui apparaissent autour du téléphone.
+// Aucun chiffre de membres n'est affiché.
+const FACES = ['p-samuel', 'p-layla', 'p-nadia', 'p-omar', 'g-zara', 'p-chloe', 'p-james', 'p-khalid', 'p-amira', 'p-priya', 'p-noah', 'p-sofia', 'p-ketut', 'p-yusuf', 'w-adaeze', 'w-naomi', 'p-lea', 'p-arjun', 'g-sofia', 'p-mia', 'w-salma', 'p-jonas', 'g-maya', 'p-elena'];
+function faceCloud(ctx, u, IMG, u0, u1, seed = 0) {
+  const out = 1 - E.inCubic(prog(u, u1 - 0.4, u1));
+  if (out <= 0 || u < u0) return;
+  for (let i = 0; i < 12; i++) {
+    const k = springU(u, u0 + i * 0.12, SPRING.bouncy); if (k <= 0) continue;
+    const right = i % 2 === 1, row = i >> 1;
+    const x = (right ? 968 : 112) + (hash01(i, 7 + seed) - 0.5) * 50;
+    const y = 560 + row * 175 + (hash01(i, 11 + seed) - 0.5) * 60 + 10 * Math.sin(u * 1.3 + i);
+    const r = (44 + 14 * hash01(i, 13 + seed)) * k;
+    const img = IMG['face' + ((i + seed * 5) % FACES.length)];
+    ctx.save(); ctx.globalAlpha = clamp(k * 2) * out;
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 20;
+    ctx.beginPath(); ctx.arc(x, y, r + 4, 0, TAU); ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fill(); ctx.shadowColor = 'transparent';
+    ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.clip(); if (img) cover(ctx, img, x - r, y - r, 2 * r, 2 * r, { fy: 0.35 }); ctx.restore();
+    ctx.beginPath(); ctx.arc(x + r * 0.7, y + r * 0.7, r * 0.2, 0, TAU); ctx.fillStyle = '#34C759'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#050506'; ctx.stroke();
+    ctx.restore();
+  }
+}
+
 // ---------------------------------------------------------------- HITS (son sur chaque accent)
 const HITS = [
   ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((b) => [b, 'swipe', 'whoosh', { len: 0.18, from: 2600, to: 900, gain: 0.5 }]),
@@ -312,7 +334,7 @@ const HITS = [
 ];
 
 // ---------------------------------------------------------------- A  l'ennui (u 0..14)
-const FEED = ['f1', 'f6', 'f4', 'f2', 'f5', 'f3', 'f7', 'f1', 'f6', 'f4', 'f2', 'f5', 'f3', 'f7'];
+const FEED = ['f8', 'f6', 'f9', 'f4', 'f10', 'f2', 'f3', 'f7', 'f5', 'f8', 'f9', 'f10', 'f6', 'f4'];
 function sBored(ctx, u, IMG) {
   blurBg(ctx, IMG.f6, { blur: 26, dark: 0.62, zoom: 1.3 });
   const z = 1.0 * (1.12 / 1.0) ** prog(u, 0, 13);
@@ -370,6 +392,7 @@ function sIrly(ctx, u, IMG) {
   const k = springU(u, 14, SPRING.gentle);
   const yaw = 0.18 * Math.sin((u - 14) * 0.35);
   phone2(ctx, W / 2, 1125, 640, (s) => irlyScreens(s, u, IMG), { rotY: yaw * 0.4, tilt: -0.02, scale: lerp(1.25, 1, k) });
+  faceCloud(ctx, u, IMG, 15.4, 22.9, 0);
   shade(ctx, 0.8, 0.25);
   tik(ctx, 'Attends… tu connais IRLY ? 👀', 330, 70, '#fff', u, 14.2, { out: 16.6 });
   tik(ctx, 'L’appli pour rencontrer', 320, 66, '#fff', u, 16.9, { out: 22.6 });
@@ -628,6 +651,7 @@ function sIrl(ctx, u, IMG) {
     ctx.restore();
     if (pk >= 1) { ctx.save(); ctx.globalAlpha = 0.85; text(ctx, 'Photo d’illustration', W / 2 + fw / 2 - 10, cy + fh / 2 + 48, font(22, 700, UI), C.muted, 'right', 1); ctx.restore(); }
   }
+  if (rot < 0.5) faceCloud(ctx, u, IMG, 58.6, 67.4, 2);
   shade(ctx, 0.85, 0.45);
   tik(ctx, 'Et le meilleur ? 👀', 340, 76, '#fff', u, 58.1, { out: 59.4 });
   tik(ctx, 'Tu peux aussi organiser', 310, 64, '#fff', u, 59.6, { out: 62.0 });
@@ -679,7 +703,8 @@ M.film({
     ...Object.fromEntries(['bg_night', 'bg_day', 'bg_chaos', 'bg_nightmare', 'bg_powers', 'bg_victory', 'werewolf', 'seer'].map((k) => ['c_' + k, `assets/art/c_${k}.webp`])),
     ...Object.fromEntries(['bg_day', 'bg_victory', 'expat', 'escroc', 'influencer', 'ceo', 'millionaire', 'charo'].map((k) => ['d_' + k, `assets/art/d_${k}.webp`])),
     ...Object.fromEntries(['m_classique', 'm_chaos', 'm_manipulation', 'm_apocalypse', 'm_dubai'].map((k) => [k, `assets/v3/${k}.png`])), modes: 'assets/v3/modes_00.png',
-    ...Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((i) => ['f' + i, `assets/feed/${i}.webp`])),
+    ...Object.fromEntries([2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => ['f' + i, `assets/feed/${i}.webp`])),
+    ...Object.fromEntries(FACES.map((n, i) => ['face' + i, `assets/faces/${n}.jpg`])),
     ...Object.fromEntries(PLAYERS.map((_, i) => ['p' + (i + 1), `assets/players/p${i + 1}.jpg`])),
     a_social: 'assets/app2/social.png', a_discover: 'assets/app2/discover.png',
     H0: 'assets/home2/home_00.png', H1: 'assets/home2/home_01.png', H2: 'assets/home2/home_02.png', H3: 'assets/home2/home_03.png', ct: 'assets/games_path/create_table.png',
