@@ -1,7 +1,7 @@
 # IRLY Loup-Garou v2 — l'histoire IRLY (50 s, 9:16, 96 BPM, 1 temps = 0,625 s)
 
-Voix off : ElevenLabs, voix « Agathe » (FR, jeune, réseaux sociaux), texte écrit « Irli » pour la prononciation.
-Une prise unique, découpée en 7 phrases posées chacune sur sa scène (`audio/vo/`, `audio/vo.wav`).
+Voix off : ElevenLabs, voix « Rebecca » (demandée ; chaleureuse, parle français via le modèle v4), texte écrit « Irli » pour la prononciation.
+Une prise unique, découpée en 7 phrases posées chacune sur sa scène (`audio/vo/take_rebecca.mp3` → `audio/vo.wav` ; la prise « Agathe » reste dans `audio/vo/take.mp3`).
 
 | # | Temps | Part | Écrans / images | Voix off et textes |
 |---|---|---|---|---|
@@ -9,7 +9,7 @@ Une prise unique, découpée en 7 phrases posées chacune sur sa scène (`audio/
 | B IRLY | 8,75–14,4 s | 11 % | Bug de l'écran → logo IRLY → **vrai accueil** (défilement réel) → onglet Social : profils et activités → Découvrir « Trouve ta bande » | « Attends… tu connais Irli ? L'appli pour rencontrer du monde à Dubaï. » |
 | C Accès au jeu | 14,4–21,25 s | 14 % | Retour à l'accueil, défilement jusqu'à la **vraie carte « IRLY Games · Loup-Garou »**, toucher « Jouer » → plongée dans l'écran → village, pleine lune, titre réel → **accueil réel du Loup-Garou**, touchers sur Chaos, Cauchemar, Dubaï, Classique | « Et maintenant, tu peux même jouer au Loup-Garou… directement depuis Irli ! » |
 | D La partie | 21,25–31,25 s | 20 % | **Vraie fenêtre « Nouvelle table de Loup-Garou »** (En ligne, 10, Créer la table), puis **mise en scène étiquetée** : joueurs qui rejoignent, mode, distribution, ta carte (Voyante, toi seul la vois), nuit, pouvoir (résultat visible par toi seul), chat (4 messages), vote public, élimination sans révéler le rôle | « Tu crées ton salon… d'autres joueurs te rejoignent… et là, faut trouver qui ment. » |
-| E Les modes | 31,25–36,25 s | 10 % | Grille de 9 modes : 4 tuiles réelles de l'app (Classique, Chaos, Cauchemar, Dubaï) + 5 plaques **BIENTÔT** (Manipulation, Cauchemar Chaos, Manipulation Chaos, Cauchemar Manipulation, Apocalypse) ; village → skyline ; 6 cartes Dubaï | « Plein de modes de jeu… et un mode spécial Dubaï : Expats contre Escrocs. » |
+| E Les modes | 31,25–36,25 s | 10 % | **Nouvelle version de l'app** : vrai écran des 9 modes, toucher Dubaï → skyline, 6 cartes Dubaï, Expats vs Escrocs ; puis **les 8 autres modes en rafale** (tuiles réelles en plein cadre, 2/9 à 9/9) | « Un mode spécial Dubaï : Expats contre Escrocs… et huit autres modes de jeu. » |
 | F La vraie vie | 36,25–45 s | 17 % | Accueil → Social (suggestions, Chloé…) → **activités réelles**, « Je suis partant·e » → **« Lancer une activité »** (Demain, 19:30, Publier) → **table de Loup-Garou « En présentiel (QR code) »** → la photo dans un cadre doré | « Et le meilleur ? Tu peux aussi jouer en vrai… avec des gens que t'as rencontrés sur Irli. » |
 | G Final | 45–50 s | 10 % | Carrousel de vrais écrans → logo IRLY, Loup-Garou + Escroc | « Marre de scroller sans rien faire ? Irli arrive très bientôt à Dubaï. » + « Suis-nous pour le lancement 👀 » |
 
@@ -27,4 +27,4 @@ Une prise unique, découpée en 7 phrases posées chacune sur sa scène (`audio/
   La salle de jeu réelle exige un serveur et des comptes : elle ne peut pas être filmée sans toucher à Supabase.
 - **Pas de type d'activité « Loup-Garou »** dans « Lancer une activité » : la partie en vrai passe par la table
   de Loup-Garou « En présentiel (QR code) », qui existe. La vidéo montre donc les deux, sans inventer de bouton.
-- **5 modes sur les 9 ne sont pas encore codés** : ils portent la mention « BIENTÔT ».
+- **Les 9 modes sont dans la nouvelle version de l'app** (moteur V3) : captures de cette version, sans mention « bientôt ».

@@ -131,14 +131,17 @@ for b, bn in chords(34, 50, MIN, 0.45, "pad", 2000):
         music.add(bass_note(bn, BEAT * 0.45, 900), b + k * 0.5, 0.38)
         music.add(pluck([["D5", "F5", "A5", "F5", "E5", "G5", "A5", "C6"][k]], 0.18, 3000), b + k * 0.5, 0.09, pan=0.35 if k % 2 else -0.35)
 # E 50-58 : modes puis Dubaï (hijaz + darbouka à 52)
-for b, bn in chords(50, 52, MIN, 0.45, "pad", 2400):
+for b, bn in chords(50, 51, MIN, 0.45, "pad", 2400):
     for k in range(4):
         drums.add(kick(), b + k, 0.8 if k % 2 == 0 else 0.5)
         drums.add(clap(), b + k, 0.3 if k % 2 else 0)
-fx.add(riser(2 * BEAT), 50, 0.3)
-drums.add(sub_drop(1.2), 52, 0.8)
-fx.add(crash(2.0), 52, 0.28)
-for b, bn in chords(52, 58, HIJ, 0.4, "pad", 2600):
+fx.add(riser(1 * BEAT), 50, 0.3)
+drums.add(sub_drop(1.2), 51, 0.8)
+fx.add(crash(2.0), 51, 0.28)
+for k in range(9):
+    drums.add(kick(), 55.9 + k * 0.26, 0.55)
+    drums.add(hat(open_=True), 55.9 + k * 0.26, 0.08)
+for b, bn in chords(51, 55, HIJ, 0.4, "pad", 2600):
     for k in range(4):
         drums.add(kick(), b + k, 0.8 if k in (0, 2) else 0.0)
         if k in (1, 3):
@@ -175,7 +178,7 @@ def cut(b):
 m = reverb(cut(music), wet=0.22, length=2.0, decay=0.55)
 d = cut(drums)
 f = reverb(cut(fx), wet=0.3)
-kicks = [b * BEAT for b in range(34, 58)]
+kicks = [b * BEAT for b in range(34, 55)]
 m = m * sidechain(kicks, N, 0.3, 0.12)
 mix = (m + d + f) * np.clip((DUR - tvec(N)) / 1.2, 0, 1)
 mix = mix / np.abs(mix).max() * 10 ** (-3 / 20)

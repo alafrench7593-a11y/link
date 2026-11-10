@@ -296,9 +296,10 @@ const HITS = [
   [43.3, 'chat 1', 'blip', { pitch: 'A5' }], [44.1, 'chat 2', 'blip', { pitch: 'C6' }], [44.9, 'chat 3', 'blip', { pitch: 'E6' }], [45.7, 'chat 4', 'blip', { pitch: 'G6' }],
   [47.2, 'vote 1', 'tick'], [47.6, 'vote 2', 'tick'], [48, 'vote 3', 'tick'], [48.4, 'vote 4', 'tick'],
   [48.9, 'éliminé', 'thud'],
-  [50.2, '9 modes', 'impact'],
-  [52.4, 'dubaï', 'impact'],
-  ...[0, 1, 2, 3, 4, 5].map((i) => [53.8 + i * 0.5, 'carte dubaï ' + (i + 1), 'click']),
+  [50.45, 'tuile dubaï', 'tick'], [51, 'dubaï', 'impact'],
+  ...[0, 1, 2, 3, 4, 5].map((i) => [51.6 + i * 0.5, 'carte dubaï ' + (i + 1), 'click']),
+  [52.9, 'expats vs escrocs', 'thud'],
+  ...[0, 1, 2, 3, 4, 5, 6, 7].map((i) => [55.9 + i * 0.26, 'mode ' + (i + 2), 'click']),
   [58, 'retour irly', 'thud'],
   [59, 'onglet social', 'tick'], [61.5, 'partant', 'click'], [62.5, 'lancer', 'click'],
   [63.6, 'demain', 'tick'], [64.1, '19h30', 'tick'], [64.7, 'publier', 'click'],
@@ -408,11 +409,11 @@ function sAccess(ctx, u, IMG) {
         tap(s, u, 25.2, 373, 1313, 1.2);
       } else {
         // l'accueil réel du Loup-Garou ; on touche les modes : Chaos, Cauchemar, Dubaï, Classique
-        const seq = [[28.6, 'mode_classique'], [30.15, 'mode_chaos'], [31.15, 'mode_cauchemar'], [32.15, 'mode_dubai'], [33.15, 'mode_classique']];
+        const seq = [[28.6, 'm_classique'], [30.15, 'm_chaos'], [31.15, 'm_manipulation'], [32.15, 'm_apocalypse'], [33.15, 'm_dubai']];
         let cur = seq[0][1], prev = null, t0 = 0;
         for (const [b, k] of seq) if (u >= b) { prev = cur; cur = k; t0 = b; }
         if (prev && prev !== cur) navTo(s, IMG[prev], IMG[cur], prog(u, t0, t0 + 0.35), 'fade'); else shot(s, IMG[cur]);
-        tap(s, u, 30, 952, 875); tap(s, u, 31, 402, 1180); tap(s, u, 32, 585, 875); tap(s, u, 33, 218, 875);
+        tap(s, u, 30, 582, 873); tap(s, u, 31, 219, 1179); tap(s, u, 32, 582, 1485); tap(s, u, 33, 951, 1485);
       }
     }, { tilt: u < 27.2 ? -0.02 : 0.03 * (1 - back), glow: u >= 28.6 ? 0.4 : 0 });
     ctx.restore();
@@ -423,7 +424,7 @@ function sAccess(ctx, u, IMG) {
     const sw = 1170, sh = 470, w = 1000, h = w * sh / sw, k = springU(u, 27.4, SPRING.bouncy);
     ctx.save(); ctx.globalAlpha = ta; ctx.translate(W / 2, 1000); ctx.scale(0.8 + 0.2 * k, 0.8 + 0.2 * k);
     ctx.shadowColor = hexA(C.gold, 0.45); ctx.shadowBlur = 60;
-    crop(ctx, IMG.mode_classique, [0, 150, sw, sh], -w / 2, -h / 2, w, h);
+    crop(ctx, IMG.m_classique, [0, 150, sw, sh], -w / 2, -h / 2, w, h);
     ctx.restore();
   }
   shade(ctx, 0.8, 0.25);
@@ -433,7 +434,7 @@ function sAccess(ctx, u, IMG) {
   }
   if (u >= 28.4) {
     tik(ctx, 'Directement depuis IRLY !', 330, 72, '#fff', u, 28.6, { out: 30.8 });
-    words(ctx, 'Classique · Chaos · Cauchemar · Dubaï', W / 2, 330, 46, C.goldL, u, 31, { family: D, weight: 700, step: 0.25, out: 33.8 });
+    words(ctx, 'Chaos · Manipulation · Apocalypse…', W / 2, 330, 46, C.goldL, u, 31, { family: D, weight: 700, step: 0.25, out: 33.8 });
   }
   vignette(ctx, 0.5);
 }
@@ -448,7 +449,7 @@ function sGame(ctx, u, IMG) {
     const zoomIn = E.inCubic(prog(u, 36.1, 36.6));
     ctx.save(); ctx.translate(W / 2, 1060); ctx.scale(1 * (3 / 1) ** zoomIn, 1 * (3 / 1) ** zoomIn); ctx.translate(-W / 2, -1060); ctx.globalAlpha = 1 - zoomIn;
     phone2(ctx, W / 2, 1125, 640, (s) => {
-      navTo(s, IMG.mode_classique, IMG.ct, prog(u, 34, 34.4), 'sheet');
+      navTo(s, IMG.m_classique, IMG.ct, prog(u, 34, 34.4), 'sheet');
       tap(s, u, 34.6, 243, 1600); tap(s, u, 35.3, 438, 2028); tap(s, u, 36, 585, 2302);
     });
     ctx.restore();
@@ -547,54 +548,59 @@ function sGame(ctx, u, IMG) {
   vignette(ctx, 0.5);
 }
 
-// ---------------------------------------------------------------- E  9 modes puis Dubaï (u 50..58)
-// Tuiles réelles (recadrées de l'écran des modes) pour les modes jouables ; plaques « BIENTÔT » pour les autres.
-const MODE_TILES = [
-  ['Classique', [52, 740, 333, 270]], ['Chaos', [787, 740, 330, 270]], ['Cauchemar', [237, 1047, 330, 253]],
-  ['Manipulation', null, 'c_bg_powers'], ['Cauchemar Chaos', null, 'c_bg_nightmare'], ['Manipulation Chaos', null, 'c_bg_chaos'],
-  ['Cauchemar Manipulation', null, 'c_bg_night'], ['Apocalypse', null, 'c_bg_victory'], ['Dubaï', [420, 740, 330, 270]],
-];
+// ---------------------------------------------------------------- E  Dubaï d'abord, puis les 8 autres modes en rafale (u 50..58)
+// Tuiles réelles de l'écran des modes (nouvelle version de l'app, assets/v3/modes_00.png).
+const TILE = (c, r) => [54 + c * 366, 741 + r * 306, 330, 264];
+const OTHERS = [['CLASSIQUE', TILE(0, 0)], ['CHAOS', TILE(1, 0)], ['CAUCHEMAR', TILE(2, 0)], ['MANIPULATION', TILE(0, 1)], ['CAUCHEMAR CHAOS', TILE(1, 1)], ['MANIPULATION CHAOS', TILE(2, 1)], ['CAUCHEMAR MANIPULATION', TILE(0, 2)], ['APOCALYPSE', TILE(1, 2)]];
 function sModes(ctx, u, IMG) {
-  const toDubai = E.inOutCubic(prog(u, 52.2, 53.2));
-  bgImg(ctx, IMG.c_bg_night, { zoom: 1.15, dark: 0.5 });
-  if (toDubai > 0) { bgImg(ctx, IMG.d_bg_day, { zoom: 1.25 * (1.08 / 1.25) ** prog(u, 52.2, 58), alpha: toDubai, dark: 0.15 }); }
-  moon(ctx, lerp(W * 0.7, W * 0.5, toDubai), lerp(H * 0.15, H * 0.34, toDubai), lerp(80, 140, toDubai), 1 - prog(u, 53.6, 54.4), mix('#F3EBD6', '#FFB25A', toDubai), 1 + toDubai);
-  if (u < 53.2) {
-    const gx = [W / 2 - 300, W / 2, W / 2 + 300], gy = [700, 980, 1260], tw = 270, th = 230;
-    MODE_TILES.forEach(([name, rect, art], i) => {
-      const k = springU(u, 50.1 + i * 0.13, SPRING.snappy); if (k <= 0) return;
-      const isD = name === 'Dubaï';
-      const zoom = isD ? toDubai : 0, out = isD ? 0 : toDubai;
-      const x = lerp(gx[i % 3], W / 2, zoom), y = lerp(gy[Math.floor(i / 3)] + (1 - k) * 200, 1000, zoom), s = 1 + zoom * 3;
-      ctx.save(); ctx.globalAlpha = clamp(k * 2) * (1 - out) * (isD ? 1 - prog(u, 52.9, 53.2) : 1); ctx.translate(x, y); ctx.scale(s, s);
-      rrect(ctx, -tw / 2, -th / 2, tw, th, 26); ctx.save(); ctx.clip();
-      if (rect) crop(ctx, IMG.mode_dubai, rect, -tw / 2, -th / 2, tw, th);
-      else { cover(ctx, IMG[art], -tw / 2, -th / 2, tw, th, { zoom: 1.3 }); ctx.fillStyle = 'rgba(8,6,5,0.55)'; ctx.fillRect(-tw / 2, -th / 2, tw, th); const words = name.split(' '); words.forEach((w2, j) => text(ctx, w2.toUpperCase(), 0, 10 + (j - (words.length - 1) / 2) * 40, font(w2.length > 9 ? 28 : 32, 900, D), C.ivory, 'center', 1)); }
-      ctx.restore();
-      ctx.lineWidth = 3; ctx.strokeStyle = rect ? C.gold : hexA(C.gold, 0.45); rrect(ctx, -tw / 2, -th / 2, tw, th, 26); ctx.stroke();
-      if (!rect) { pill(ctx, 'BIENTÔT', 0, -th / 2 + 4, 20, C.black, C.goldL, 1, null, UI, 800); }
-      ctx.restore();
+  if (u < 51) {
+    // l'écran réel des modes, toucher Dubaï, puis on plonge dans sa tuile
+    blurBg(ctx, IMG.c_bg_night, { blur: 24, dark: 0.5, zoom: 1.2 });
+    const dive = E.inCubic(prog(u, 50.6, 51));
+    const pw = 640, ph = pw * SH / SW, px = W / 2, py = 1125, fx = px - pw / 2 + pw * (951 / SW), fy = py - ph / 2 + ph * (1485 / SH);
+    ctx.save(); ctx.translate(fx, fy); ctx.scale(6 ** dive, 6 ** dive); ctx.translate(-fx, -fy);
+    phone2(ctx, px, py, pw, (s) => { shot(s, IMG.modes); tap(s, u, 50.45, 951, 1485); }, { glow: 0.4 });
+    ctx.restore();
+    shade(ctx, 0.8, 0.2);
+    tik(ctx, 'Un mode spécial Dubaï 🇦🇪', 340, 70, '#fff', u, 50.1, { out: 50.9 });
+    return;
+  }
+  if (u < 55.85) {
+    bgImg(ctx, IMG.d_bg_day, { zoom: 1.3 * (1.08 / 1.3) ** prog(u, 51, 56), dark: 0.15 });
+    const flash = 1 - prog(u, 51, 51.35); if (flash > 0) { ctx.fillStyle = `rgba(255,214,150,${0.5 * flash})`; ctx.fillRect(0, 0, W, H); }
+    dust(ctx, u, 40, C.goldL, 0.6, 21);
+    shade(ctx, 0.75, 0.55);
+    words(ctx, 'UN MODE SPÉCIAL', W / 2, 330, 64, C.ivory, u, 51.05, { family: D });
+    words(ctx, 'DUBAÏ 🇦🇪', W / 2, 425, 96, C.gold, u, 51.35, { family: D });
+    const k = springU(u, 52.9, SPRING.snappy);
+    if (k > 0) { ctx.save(); ctx.globalAlpha = clamp(k * 1.5); ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 30; text(ctx, 'EXPATS', W / 2 - 34 - (1 - k) * 300, 1580, font(72, 900, D), C.blue, 'right', 2); text(ctx, 'VS', W / 2, 1572, font(40, 900, D), C.goldL, 'center'); text(ctx, 'ESCROCS', W / 2 + 34 + (1 - k) * 300, 1580, font(72, 900, D), '#E25A60', 'left', 2); ctx.restore(); }
+    const DC = [['d_expat', "L'EXPAT", 'EXPATS', C.blue], ['d_escroc', "L'ESCROC", 'ESCROCS', C.redL], ['d_influencer', "L'INFLUENCEUSE", 'EXPATS', C.blue], ['d_millionaire', 'LE MILLIONNAIRE', 'EXPATS', C.blue], ['d_ceo', 'LE CEO', 'EXPATS', C.blue], ['d_charo', 'LE CHARO', 'INDÉPENDANTS', '#B77BE6']];
+    DC.forEach(([key, name, camp, col], i) => {
+      const u0 = 51.6 + i * 0.5, kk = springU(u, u0 - 0.35, SPRING.snappy); if (kk <= 0) return;
+      const x = [W / 2 - 300, W / 2, W / 2 + 300][i % 3], y = [800, 1180][Math.floor(i / 3)] + (1 - kk) * 240;
+      card(ctx, IMG[key], x, y, 250, { flip: E.outBack(prog(u, u0, u0 + 0.45), 1.2), alpha: clamp(kk * 2), label: name, sub: camp, subColor: col, glow: bump(u, u0 + 0.2, 0.5) * 0.8, rot: i % 2 ? 0.02 : -0.02 });
     });
-    shade(ctx, 0.75, 0.3);
-    tik(ctx, '9 modes de jeu.', 330, 76, '#fff', u, 50.2, { out: 52.4 });
-    tik(ctx, 'Des dizaines de personnages.', 1500, 56, C.goldL, u, 51, { out: 52.4 });
-    const la = prog(u, 50.8, 51.1) * (1 - prog(u, 52.2, 52.4));
-    if (la > 0) { ctx.save(); ctx.globalAlpha = la; text(ctx, '4 modes jouables · 5 arrivent bientôt', W / 2, 1580, font(30, 700, UI), C.muted, 'center'); ctx.restore(); }
     vignette(ctx, 0.5);
     return;
   }
-  dust(ctx, u, 40, C.goldL, 0.6, 21);
-  shade(ctx, 0.75, 0.55);
-  words(ctx, 'ET UN MODE SPÉCIAL', W / 2, 330, 64, C.ivory, u, 52.6, { family: D });
-  words(ctx, 'DUBAÏ 🇦🇪', W / 2, 425, 92, C.gold, u, 53, { family: D });
-  const k = springU(u, 54.4, SPRING.snappy);
-  if (k > 0) { ctx.save(); ctx.globalAlpha = clamp(k * 1.5); ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 30; text(ctx, 'EXPATS', W / 2 - 34, 1560, font(70, 900, D), C.blue, 'right', 2); text(ctx, 'VS', W / 2, 1553, font(40, 900, D), C.goldL, 'center'); text(ctx, 'ESCROCS', W / 2 + 34, 1560, font(70, 900, D), '#E25A60', 'left', 2); ctx.restore(); }
-  const DC = [['d_expat', "L'EXPAT", 'EXPATS', C.blue], ['d_escroc', "L'ESCROC", 'ESCROCS', C.redL], ['d_influencer', "L'INFLUENCEUSE", 'EXPATS', C.blue], ['d_millionaire', 'LE MILLIONNAIRE', 'EXPATS', C.blue], ['d_ceo', 'LE CEO', 'EXPATS', C.blue], ['d_charo', 'LE CHARO', 'INDÉPENDANTS', '#B77BE6']];
-  DC.forEach(([key, name, camp, col], i) => {
-    const u0 = 53.8 + i * 0.5, kk = springU(u, u0 - 0.35, SPRING.snappy); if (kk <= 0) return;
-    const x = [W / 2 - 300, W / 2, W / 2 + 300][i % 3], y = [790, 1170][Math.floor(i / 3)] + (1 - kk) * 240;
-    card(ctx, IMG[key], x, y, 250, { flip: E.outBack(prog(u, u0, u0 + 0.45), 1.2), alpha: clamp(kk * 2), label: name, sub: camp, subColor: col, glow: bump(u, u0 + 0.2, 0.5) * 0.8, rot: i % 2 ? 0.02 : -0.02 });
-  });
+  // + 8 autres modes : chaque tuile réelle passe en plein cadre, un quart de temps chacune
+  bgImg(ctx, IMG.c_bg_night, { zoom: 1.2, dark: 0.55 });
+  const i = Math.min(7, Math.floor((u - 55.9) / 0.26)), lu = u - 55.9 - i * 0.26;
+  if (u >= 55.9) {
+    const [name, rect] = OTHERS[i];
+    ctx.save(); ctx.filter = 'blur(26px)'; crop(ctx, IMG.modes, rect, -60, -60, W + 120, H + 120); ctx.restore();
+    ctx.fillStyle = 'rgba(5,4,3,0.45)'; ctx.fillRect(0, 0, W, H);
+    const k = 0.92 + 0.08 * E.outCubic(clamp(lu / 0.12)), tw = 820 * k, th = tw * rect[3] / rect[2];
+    ctx.save(); ctx.translate(W / 2, 1000); ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 50;
+    rrect(ctx, -tw / 2, -th / 2, tw, th, 50); ctx.save(); ctx.clip(); crop(ctx, IMG.modes, rect, -tw / 2, -th / 2, tw, th); ctx.restore();
+    ctx.lineWidth = 6; ctx.strokeStyle = C.gold; rrect(ctx, -tw / 2, -th / 2, tw, th, 50); ctx.stroke(); ctx.restore();
+    const n = `${i + 2} / 9`;
+    text(ctx, n, W / 2, 1450, font(40, 900, D), C.goldL, 'center', 4);
+  }
+  shade(ctx, 0.75, 0.2);
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 30;
+  text(ctx, '+ 8 AUTRES MODES', W / 2, 400, font(80, 900, D), C.gold, 'center', 2);
+  ctx.restore();
   vignette(ctx, 0.5);
 }
 
@@ -605,7 +611,7 @@ function irlScreens(s, u, IMG) {
   if (u < 62.6) { navTo(s, IMG.a_social, IMG.s1, E.inOutCubic(prog(u, 60.6, 61.1)), 'fade'); tap(s, u, 61.5, 849, 1398); tap(s, u, 62.5, 585, 2151);
     const ok = prog(u, 61.55, 61.7); if (ok > 0) { s.save(); s.globalAlpha = ok; rrect(s, 650, 1340, 400, 116, 58); s.fillStyle = '#2E7D4F'; s.fill(); text(s, 'Partant·e ✓', 850, 1418, font(44, 800, UI), '#fff', 'center'); s.restore(); } return; }
   if (u < 65.4) { navTo(s, IMG.s1, IMG.cr, prog(u, 62.6, 63.0), 'sheet'); tap(s, u, 63.6, 508, 1422); tap(s, u, 64.1, 811, 1557); tap(s, u, 64.7, 584, 2365); return; }
-  navTo(s, IMG.mode_classique, IMG.ct, prog(u, 65.4, 65.8), 'sheet'); tap(s, u, 66.2, 777, 1600); tap(s, u, 66.9, 585, 2302);
+  navTo(s, IMG.m_classique, IMG.ct, prog(u, 65.4, 65.8), 'sheet'); tap(s, u, 66.2, 777, 1600); tap(s, u, 66.9, 585, 2302);
 }
 function sIrl(ctx, u, IMG) {
   blurBg(ctx, IMG.f6, { blur: 30, dark: 0.5, zoom: 1.25 });
@@ -639,7 +645,7 @@ function sIrl(ctx, u, IMG) {
 function sEnd(ctx, u, IMG) {
   if (u < 75) {
     blurBg(ctx, IMG.f6, { blur: 30, dark: 0.55, zoom: 1.25 });
-    const screens = ['a_discover', 's1', 'mode_dubai', 'a_social', 'H1'];
+    const screens = ['a_discover', 's1', 'modes', 'a_social', 'H1'];
     const pos = lerp(0.2, 3.4, E.inOutCubic(prog(u, 71.6, 75)));
     screens.map((k, i) => [k, i - pos]).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).forEach(([k, d]) => {
       const x = W / 2 + d * 330, sc = 1 - Math.min(0.35, Math.abs(d) * 0.18);
@@ -672,7 +678,7 @@ M.film({
   images: {
     ...Object.fromEntries(['bg_night', 'bg_day', 'bg_chaos', 'bg_nightmare', 'bg_powers', 'bg_victory', 'werewolf', 'seer'].map((k) => ['c_' + k, `assets/art/c_${k}.webp`])),
     ...Object.fromEntries(['bg_day', 'bg_victory', 'expat', 'escroc', 'influencer', 'ceo', 'millionaire', 'charo'].map((k) => ['d_' + k, `assets/art/d_${k}.webp`])),
-    ...Object.fromEntries(['mode_classique', 'mode_chaos', 'mode_cauchemar', 'mode_dubai'].map((k) => [k, `assets/app/${k}.png`])),
+    ...Object.fromEntries(['m_classique', 'm_chaos', 'm_manipulation', 'm_apocalypse', 'm_dubai'].map((k) => [k, `assets/v3/${k}.png`])), modes: 'assets/v3/modes_00.png',
     ...Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((i) => ['f' + i, `assets/feed/${i}.webp`])),
     ...Object.fromEntries(PLAYERS.map((_, i) => ['p' + (i + 1), `assets/players/p${i + 1}.jpg`])),
     a_social: 'assets/app2/social.png', a_discover: 'assets/app2/discover.png',
