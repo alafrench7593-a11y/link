@@ -5,3 +5,5 @@ __pycache__/
 *.pyc
 out/
 lg-promo/audio/*.wav
+lg-promo2/audio/*.wav
+lg-promo2/audio/vo/*.wav
