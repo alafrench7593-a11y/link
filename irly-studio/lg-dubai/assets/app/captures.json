@@ -1,0 +1,42 @@
+{
+  "source": "IRLY web DEMO build (EXPO_PUBLIC_DEMO=1)",
+  "captured": "2026-11-10T11:02:42.708Z",
+  "lang": "fr",
+  "shots": [
+    {
+      "name": "lg_accueil",
+      "route": "/games",
+      "space": "mixte",
+      "url": "/games",
+      "errors": 0
+    },
+    {
+      "name": "lg_cartes",
+      "route": "/games/cards",
+      "space": "mixte",
+      "url": "/games/cards",
+      "errors": 0
+    },
+    {
+      "name": "lg_dubai",
+      "route": "/games/dubai",
+      "space": "mixte",
+      "url": "/games/dubai",
+      "errors": 0
+    },
+    {
+      "name": "lg_dubai_regles",
+      "route": "/games/dubai-rules",
+      "space": "mixte",
+      "url": "/games/dubai-rules",
+      "errors": 0
+    },
+    {
+      "name": "lg_partie",
+      "route": "/games/join",
+      "space": "mixte",
+      "url": "/games/join",
+      "errors": 0
+    }
+  ]
+}

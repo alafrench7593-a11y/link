@@ -1,0 +1,85 @@
+IRLY
+LOUP-GAROU
+MODE DUBAÏ
+Collection · Mode Dubaï
+Tout (20)
+Expats (14)
+Escrocs (3)
+Indépendants (2)
+Double Jeu (1)
+L’ESCROC
+Camp : Escrocs
+Pouvoir : Chaque nuit, les Escrocs choisissent ensemble une victime.
+Objectif : Prendre le contrôle de la ville.
+L’AGENT IMMOBILIER
+Camp : Escrocs
+Pouvoir : Fausse annonce : une fois, les enquêtes sur un joueur sont inversées cette nuit.
+Objectif : Aider les Escrocs à gagner.
+LE BROKER
+Camp : Escrocs
+Pouvoir : Manipulation du marché : une fois, de jour, annule en secret le vote d’un joueur.
+Objectif : Aider les Escrocs à gagner.
+L’EXPAT
+Camp : Expats
+Pouvoir : Aucun pouvoir : ton vote et ton instinct.
+Objectif : Éliminer tous les Escrocs.
+L’INVESTISSEUR
+Camp : Expats
+Pouvoir : Due Diligence : une fois, découvre si un joueur est un Escroc.
+Objectif : Faire gagner les Expats.
+L’ÉMIRATI
+Camp : Expats
+Pouvoir : Connaissance du terrain : une fois, découvre si un joueur est un Escroc.
+Objectif : Faire gagner les Expats.
+LE NETWORKER
+Camp : Double Jeu
+Pouvoir : Carnet d’adresses : une fois, découvre la faction d’un joueur.
+Objectif : Victoire des Expats ; la tienne aussi si tu as enquêté sur un Escroc et que tu survis.
+LE CONCIERGE
+Camp : Expats
+Pouvoir : Accès VIP : chaque nuit, découvre si un joueur a reçu une visite (pas le même deux nuits de suite).
+Objectif : Faire gagner les Expats.
+LE CRÉATEUR DE CONTENU
+Camp : Expats
+Pouvoir : Story exclusive : une fois, découvre si un joueur a agi cette nuit.
+Objectif : Faire gagner les Expats.
+L’ENTREPRENEUR
+Camp : Expats
+Pouvoir : Business Plan : une fois, la nuit, protège un autre joueur des Escrocs.
+Objectif : Faire gagner les Expats.
+L’E-COMMERÇANT
+Camp : Expats
+Pouvoir : Livraison express : une fois, la nuit, protège un autre joueur des Escrocs.
+Objectif : Faire gagner les Expats.
+LE RÉSIDENT GOLDEN VISA
+Camp : Expats
+Pouvoir : Résidence protégée : une fois, la nuit, protège-toi des Escrocs.
+Objectif : Faire gagner les Expats.
+LE TOURISTE
+Camp : Expats
+Pouvoir : Court séjour : une fois, les Escrocs ne peuvent pas t’atteindre cette nuit.
+Objectif : Faire gagner les Expats.
+LE MILLIONNAIRE
+Camp : Expats
+Pouvoir : Seconde Chance : survit une fois à l’attaque des Escrocs.
+Objectif : Faire gagner les Expats.
+L’INFLUENCEUSE
+Camp : Expats
+Pouvoir : Bad Buzz : une fois, de jour, le vote d’un joueur compte double aujourd’hui.
+Objectif : Faire gagner les Expats.
+LE CEO
+Camp : Expats
+Pouvoir : Conseil d’administration : une fois, avant un vote, ton vote compte double ce jour-là.
+Objectif : Faire gagner les Expats.
+LE NOUVEL ARRIVANT
+Camp : Expats
+Pouvoir : Nouveau départ : une fois, de jour, tu ne peux pas être éliminé par le vote.
+Objectif : Faire gagner les Expats.
+LE CÉLIBATAIRE
+Camp : Expats
+Pouvoir : Coup de cœur : la première nuit, choisis un joueur ; vous devenez amoureux.
+Objectif : Faire gagner les Expats (ou l’objectif des amoureux).
+LE CHARO
+Camp : Indépendants
+Pouvoir : Chaque nuit, tente de séduire un nouveau joueur.
+Objectif : Trois joueurs séduits, vivants à la t
