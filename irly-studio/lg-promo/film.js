@@ -333,7 +333,7 @@ function sGame(ctx, u, IMG) {
     ctx.lineWidth = 8; ctx.strokeStyle = hexA(C.gold, 0.25); ctx.beginPath(); ctx.arc(W / 2, 840, 92, 0, TAU); ctx.stroke();
     ctx.strokeStyle = phase === 'VOTE' ? C.redL : C.gold; ctx.beginPath(); ctx.arc(W / 2, 840, 92, -Math.PI / 2, -Math.PI / 2 + TAU * (left / tAll)); ctx.stroke();
     text(ctx, `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`, W / 2, 858, font(50, 800, UI), C.ivory, 'center');
-    text(ctx, phase, W / 2, 790 - 40, font(24, 900, D), phase === 'VOTE' ? C.redL : C.gold, 'center', 3);
+    text(ctx, phase, W / 2, 728, font(24, 900, D), phase === 'VOTE' ? C.redL : C.gold, 'center', 3);
     ctx.restore();
   }
   // joueurs qui rejoignent la table
@@ -362,7 +362,7 @@ function sGame(ctx, u, IMG) {
   });
   // compteur de votes sur la cible
   const nv = [22, 22.4, 22.8, 23.1].filter((b) => u >= b + 0.3).length;
-  if (nv > 0 && u < 24) { const [x, y] = SEATS[victim]; pill(ctx, `${nv} vote${nv > 1 ? 's' : ''}`, x + 70, y - 70, 24, '#FFF', C.redL, 1 - prog(u, 23.6, 24)); }
+  if (nv > 0 && u < 24) { const [x, y] = SEATS[victim]; pill(ctx, `${nv} vote${nv > 1 ? 's' : ''}`, x, y + 150, 24, '#FFF', C.redL, 1 - prog(u, 23.6, 24)); }
   // chat de la table (jour : seuls les vivants, visible de tous)
   bubble(ctx, 'Sami', 'Pourquoi tu votes toujours contre moi ?', 90, 1150, 840, E.outBack(prog(u, 18.2, 18.6)) * (1 - prog(u, 20.8, 21.1)));
   bubble(ctx, 'Inès', 'Je suis sûre que c’est toi le loup !', 150, 1270, 780, E.outBack(prog(u, 19.2, 19.6)) * (1 - prog(u, 20.8, 21.1)), true);
@@ -576,8 +576,8 @@ function sEnd(ctx, u, IMG) {
   dust(ctx, u, 70, C.goldL, 0.8, 41);
   // les deux univers se rejoignent : le Loup-Garou classique et l'Escroc de Dubaï
   const k = springU(u, 64, SPRING.gentle);
-  card(ctx, IMG.c_werewolf, lerp(-200, 210, k), 1250, 300, { rot: -0.14, glow: 0.4, alpha: 0.95 });
-  card(ctx, IMG.d_escroc, lerp(W + 200, W - 210, k), 1250, 300, { rot: 0.14, glow: 0.4, alpha: 0.95 });
+  card(ctx, IMG.c_werewolf, lerp(-200, 210, k), 1330, 300, { rot: -0.14, glow: 0.4, alpha: 0.95 });
+  card(ctx, IMG.d_escroc, lerp(W + 200, W - 210, k), 1330, 300, { rot: 0.14, glow: 0.4, alpha: 0.95 });
   shade(ctx, 0.6, 0.85);
   // logo IRLY (logotype en points de l'app)
   const lk = springU(u, 64, SPRING.bouncy);
