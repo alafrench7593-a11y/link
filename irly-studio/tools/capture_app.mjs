@@ -5,6 +5,7 @@
 //   cd <app irly> && EXPO_PUBLIC_DEMO=1 npx expo export -p web --clear --output-dir <dist>
 //   node tools/capture_app.mjs <dist> <dossier de sortie> [fr|en]
 //
+// SHOTS=[[nom, route, espace, inscrit]] remplace la liste ; FULL=1 capture la page entière.
 // Playwright : NODE_PATH vers un dossier qui contient playwright ; Chromium : PW_CHROMIUM.
 import fs from 'node:fs';
 import http from 'node:http';
@@ -29,7 +30,7 @@ const server = http.createServer((req, res) => {
 const BASE = 'http://localhost:8743';
 
 // Les écrans montrés dans les vidéos : [nom, route, espace, membre déjà inscrit ?]
-const SHOTS = [
+const SHOTS = process.env.SHOTS ? JSON.parse(process.env.SHOTS) : [
   ['02_inscription', '/onboarding/you', 'mixte', false],
   ['03_accueil', '/', 'mixte', true],
   ['04_decouvrir', '/discover', 'mixte', true],
@@ -78,7 +79,7 @@ for (const [name, route, space, onboarded] of SHOTS) {
   });
   await page.waitForTimeout(300);
   const file = path.join(outDir, `${name}.png`);
-  await page.screenshot({ path: file });
+  await page.screenshot({ path: file, fullPage: !!process.env.FULL });
   results.push({ name, route, space, url: page.url().replace(BASE, ''), errors: errors.length });
   console.log(`${name}  ${route} -> ${page.url().replace(BASE, '')}  erreurs:${errors.length}`);
   await ctx.close();
