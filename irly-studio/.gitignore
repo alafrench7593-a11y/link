@@ -14,3 +14,5 @@ irly-product-demo/assets/clips/
 irly-preorder*/audio/*.wav
 irly-launch*/audio/*.wav
 irly-photos/audio/*.wav
+assets_music/
+irly-boxe*/audio/*.wav
