@@ -18,17 +18,20 @@ declare -A TRACK=(
   [irly-boxe]="$A/1f4da492-50_Cent_-_Power_Powder_Respect_ft._Lil_Durk_Jeremih_Instrumental.mp3:120.81"
   [irly-boxe-clean]="$A/1f4da492-50_Cent_-_Power_Powder_Respect_ft._Lil_Durk_Jeremih_Instrumental.mp3:120.81"
   [irly-boxe-safe]="$A/1f4da492-50_Cent_-_Power_Powder_Respect_ft._Lil_Durk_Jeremih_Instrumental.mp3:120.81"
+  [lg-promo]="$A/c34a16d2-50_Cent_-_Big_Rich_Town_Instrumental.mp3:77"
+  [irly-product-demo]="$A/fc888b2d-Rick_Ross_-_Aston_Martin_Music_Instrumental.mp3:77"
 )
 declare -A OUT=(
   [irly-launch]=irly_lancement_fr_44s_4k [irly-launch-en]=irly_launch_en_44s_4k
   [irly-preorder]=irly_precommande_fr_75s_soustitree [irly-preorder-clean]=irly_precommande_fr_75s [irly-preorder-15]=irly_precommande_fr_15s
   [irly-photos]=irly_dubai_en_vrai_30s
   [irly-boxe]=irly_concours_boxe_40s_4k [irly-boxe-clean]=irly_concours_boxe_40s_sans_soustitres [irly-boxe-safe]=irly_concours_boxe_40s_sans_affiches
+  [lg-promo]=irly_loupgarou_tiktok_fr_45s [irly-product-demo]=irly_product_demo_en_72s
 )
 LIST=("$@"); [ ${#LIST[@]} -eq 0 ] && LIST=("${!OUT[@]}")
 for d in "${LIST[@]}"; do
   SRC="${TRACK[$d]%:*}"; START="${TRACK[$d]##*:}"
-  [ -f "out/$d/video_9x16.mp4" ] || { echo "skip $d (pas encore rendu)"; continue; }
+  V=out/$d/video_9x16.mp4; [ -f "$V" ] || V=out/$d/video_16x9.mp4; [ -f "$V" ] || { echo "skip $d (pas encore rendu)"; continue; }
   dur=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$d/film.json')).duration)")
   [ -f "$d/audio/music.wav" ] && [ ! -f "$d/audio/music_libre.wav" ] && cp "$d/audio/music.wav" "$d/audio/music_libre.wav"
   ffmpeg -v error -y -ss "$START" -t "$dur" -i "$SRC" -af "afade=t=in:d=0.3,afade=t=out:st=$(echo "$dur - 1.5" | bc):d=1.5" -ar 48000 -ac 2 "$d/audio/music.wav"
