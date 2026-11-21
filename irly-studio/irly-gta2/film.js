@@ -266,7 +266,7 @@ function passed(ctx, t, t0, str = L.passed, y = 1030) { // le tampon de fin de m
   if (t < t0) return; const k = E.outBack(prog(t, t0, t0 + 0.25), 2.2), o = 1 - prog(t, t0 + 1.3, t0 + 1.6); if (o <= 0) return;
   ctx.save(); ctx.translate(W / 2, y); ctx.scale(k, k); gta(ctx, str, 0, 0, 150, YELLOW, { a: o }); ctx.restore();
 }
-function topShade(ctx) { const g = ctx.createLinearGradient(0, 170, 0, 780); g.addColorStop(0, 'rgba(0,0,0,0.5)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 170, W, 610); }
+function topShade(ctx) { } // pas de bande sombre : le texte garde son contour noir pour rester lisible
 
 // ---------------------------------------------------------------- scènes
 let IMGS = {};
