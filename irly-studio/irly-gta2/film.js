@@ -183,19 +183,34 @@ function subtitles(ctx, t, list) {
 
 
 
+// ---------------------------------------------------------------- langue : irly-gta2 (français) ou irly-gta2-en (anglais)
+const EN2 = location.pathname.includes('irly-gta2-en');
+const L = EN2 ? {
+  pov1: 'POV: you have no friends in Dubai,', pov2: 'so you’re grinding GTA 6…', out1: '… while outside,', out2: 'Dubai is already GTA 😭',
+  water: ['NEW MISSION', 'Drive on water'], burj: ['VIEWPOINT UNLOCKED', 'The Burj Al Arab'], rooftop: ['OBJECTIVE', 'Sunset over the sea'],
+  camels: ['NEW AREA UNLOCKED', 'The desert', 'OBJECTIVE', 'Camel safari'], quads: ['NEW MISSION', 'Quad race in the dunes'], palm: ['OBJECTIVE', 'Pool with a Palm view'],
+  khalifa: ['VIEWPOINT UNLOCKED', 'The Burj Khalifa light show'], fireworks: ['NIGHT MISSION', 'Fireworks at sea'], club: ['NIGHT MISSION', 'Party till sunrise'],
+  last: ['FINAL MISSION', 'Sign up on IRLY'], passed: 'MISSION PASSED!', ios: 'IRLY - Available on iOS', bio: 'Free app · Link in bio', real: 'real_en',
+} : {
+  pov1: 'POV : t’as pas de potes à Dubaï,', pov2: 'donc tu saignes GTA 6…', out1: '… alors que dehors,', out2: 'Dubaï c’est déjà GTA 😭',
+  water: ['NOUVELLE MISSION', 'Rouler sur l’eau'], burj: ['POINT DE VUE DÉBLOQUÉ', 'Le Burj Al Arab'], rooftop: ['OBJECTIF', 'Coucher de soleil sur la mer'],
+  camels: ['NOUVELLE ZONE DÉBLOQUÉE', 'Le désert', 'OBJECTIF', 'Safari à dos de chameau'], quads: ['NOUVELLE MISSION', 'Course de quads dans les dunes'], palm: ['OBJECTIF', 'Piscine avec vue sur la Palm'],
+  khalifa: ['POINT DE VUE DÉBLOQUÉ', 'Le show du Burj Khalifa'], fireworks: ['MISSION DE NUIT', 'Feux d’artifice en mer'], club: ['MISSION DE NUIT', 'Faire la fête jusqu’au bout de la nuit'],
+  last: ['DERNIÈRE MISSION', 'S’inscrire sur IRLY'], passed: 'MISSION RÉUSSIE !', ios: 'IRLY - Disponible sur iOS', bio: 'App gratuite · Lien en bio', real: 'real',
+};
 // ---------------------------------------------------------------- plans : un clip par mission, jamais deux fois le même
 const SHOTS = [
   { id: 'heli', clip: 'heli', dur: 3.6, hook: 1 },
   { id: 'lambo', clip: 'lambo', dur: 3.6, hook: 2 },
-  { id: 'water', clip: 'water', dur: 4.5, label: 'NOUVELLE MISSION', title: 'Rouler sur l’eau', at: 0.1 },
-  { id: 'burj', clip: 'burj', dur: 3.5, label: 'POINT DE VUE DÉBLOQUÉ', title: 'Le Burj Al Arab', at: 0.25 },
-  { id: 'rooftop', clip: 'rooftop', dur: 4.0, label: 'OBJECTIF', title: 'Coucher de soleil sur la mer', at: 0.3 },
-  { id: 'camels', clip: 'camels', dur: 5.0, label: 'NOUVELLE ZONE DÉBLOQUÉE', title: 'Le désert', at: 0.15, label2: 'OBJECTIF', title2: 'Safari à dos de chameau', at2: 2.3 },
-  { id: 'quads', clip: 'quads', dur: 4.5, label: 'NOUVELLE MISSION', title: 'Course de quads dans les dunes', at: 0.2 },
-  { id: 'palm', clip: 'palm', dur: 4.0, label: 'OBJECTIF', title: 'Piscine avec vue sur la Palm', at: 0.3 },
-  { id: 'khalifa', clip: 'khalifa', dur: 4.2, label: 'POINT DE VUE DÉBLOQUÉ', title: 'Le show du Burj Khalifa', at: 0.3 },
-  { id: 'fireworks', clip: 'fireworks', dur: 4.5, label: 'MISSION DE NUIT', title: 'Feux d’artifice en mer', at: 0.3 },
-  { id: 'club', clip: 'club', dur: 4.6, label: 'MISSION DE NUIT', title: 'Faire la fête jusqu’au bout de la nuit', at: 0.2 },
+  { id: 'water', clip: 'water', dur: 4.5, label: L.water[0], title: L.water[1], at: 0.1 },
+  { id: 'burj', clip: 'burj', dur: 3.5, label: L.burj[0], title: L.burj[1], at: 0.25 },
+  { id: 'rooftop', clip: 'rooftop', dur: 4.0, label: L.rooftop[0], title: L.rooftop[1], at: 0.3 },
+  { id: 'camels', clip: 'camels', dur: 5.0, label: L.camels[0], title: L.camels[1], at: 0.15, label2: L.camels[2], title2: L.camels[3], at2: 2.3 },
+  { id: 'quads', clip: 'quads', dur: 4.5, label: L.quads[0], title: L.quads[1], at: 0.2 },
+  { id: 'palm', clip: 'palm', dur: 4.0, label: L.palm[0], title: L.palm[1], at: 0.3 },
+  { id: 'khalifa', clip: 'khalifa', dur: 4.2, label: L.khalifa[0], title: L.khalifa[1], at: 0.3 },
+  { id: 'fireworks', clip: 'fireworks', dur: 4.5, label: L.fireworks[0], title: L.fireworks[1], at: 0.3 },
+  { id: 'club', clip: 'club', dur: 4.6, label: L.club[0], title: L.club[1], at: 0.2 },
   { id: 'irly', dur: 8.4 },
 ];
 let acc = 0; for (const s of SHOTS) { s.t0 = acc; acc += s.dur; }
@@ -221,8 +236,8 @@ function clipFrame(ctx, s, t, { zoom = 1, shake = 0 } = {}) {
 }
 
 // ---------------------------------------------------------------- typographie
-// Titres façon jeu en monde ouvert : Bangers (la plus proche de Pricedown parmi les polices libres), gros contour noir et ombre.
-function gta(ctx, str, x, y, size, color = '#fff', { a = 1, align = 'center', maxW = 980, skew = -0.05 } = {}) {
+// Titres façon jeu en monde ouvert : Pricedown (Ray Larabie, freeware, usage commercial autorisé), gros contour noir et ombre.
+function gta(ctx, str, x, y, size, color = '#fff', { a = 1, align = 'center', maxW = 980, skew = 0 } = {}) {
   if (a <= 0) return;
   let f = `${Math.round(size)}px Gta`; ctx.font = f; const w = ctx.measureText(str).width; if (w > maxW) { size *= maxW / w; f = `${Math.round(size)}px Gta`; }
   ctx.save(); ctx.globalAlpha = a; ctx.font = f; ctx.textAlign = align; ctx.lineJoin = 'round';
@@ -244,12 +259,12 @@ function mission(ctx, t, t0, label, title, y = 330, { out = null } = {}) {
   if (t < t0) return;
   const o = out == null ? 1 : 1 - prog(t, out - 0.2, out); if (o <= 0) return;
   const k1 = E.outBack(prog(t, t0, t0 + 0.22), 2), k2 = E.outBack(prog(t, t0 + 0.12, t0 + 0.36), 1.8);
-  ctx.save(); ctx.translate(W / 2, y); ctx.scale(k1, k1); gta(ctx, label, 0, 0, 62, YELLOW, { a: o * clamp(k1 * 2) }); ctx.restore();
-  ctx.save(); ctx.translate(W / 2, y + 110); ctx.scale(k2, k2); gta(ctx, title, 0, 0, 96, '#fff', { a: o * clamp(k2 * 2), maxW: 960 }); ctx.restore();
+  ctx.save(); ctx.translate(W / 2, y); ctx.scale(k1, k1); gta(ctx, label, 0, 0, 84, YELLOW, { a: o * clamp(k1 * 2) }); ctx.restore();
+  ctx.save(); ctx.translate(W / 2, y + 120); ctx.scale(k2, k2); gta(ctx, title, 0, 0, 128, '#fff', { a: o * clamp(k2 * 2), maxW: 960 }); ctx.restore();
 }
-function passed(ctx, t, t0, str = 'MISSION RÉUSSIE !', y = 1030) { // le tampon de fin de mission
+function passed(ctx, t, t0, str = L.passed, y = 1030) { // le tampon de fin de mission
   if (t < t0) return; const k = E.outBack(prog(t, t0, t0 + 0.25), 2.2), o = 1 - prog(t, t0 + 1.3, t0 + 1.6); if (o <= 0) return;
-  ctx.save(); ctx.translate(W / 2, y); ctx.scale(k, k); gta(ctx, str, 0, 0, 120, YELLOW, { a: o }); ctx.restore();
+  ctx.save(); ctx.translate(W / 2, y); ctx.scale(k, k); gta(ctx, str, 0, 0, 150, YELLOW, { a: o }); ctx.restore();
 }
 function topShade(ctx) { const g = ctx.createLinearGradient(0, 170, 0, 780); g.addColorStop(0, 'rgba(0,0,0,0.5)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, 170, W, 610); }
 
@@ -260,11 +275,11 @@ function sceneHook(ctx, s, t) {
   clipFrame(ctx, s, t, { zoom: 1.04 + 0.02 * prog(lt, 0, s.dur), shake: 1.5 });
   topShade(ctx);
   if (s.hook === 1) {
-    tiktok(ctx, 'POV : t’as pas de potes à Dubaï,', W / 2, 520, 64, { a: E.outCubic(prog(lt, 0.1, 0.3)) });
-    tiktok(ctx, 'donc tu saignes GTA 6…', W / 2, 610, 64, { a: E.outCubic(prog(lt, 1.3, 1.5)) });
+    tiktok(ctx, L.pov1, W / 2, 520, 64, { a: E.outCubic(prog(lt, 0.1, 0.3)) });
+    tiktok(ctx, L.pov2, W / 2, 610, 64, { a: E.outCubic(prog(lt, 1.3, 1.5)) });
   } else {
-    tiktok(ctx, '… alors que dehors,', W / 2, 520, 64, { a: E.outCubic(prog(lt, 0.1, 0.3)) });
-    tiktok(ctx, 'Dubaï c’est déjà GTA 😭', W / 2, 615, 72, { a: E.outCubic(prog(lt, 0.8, 1.0)) });
+    tiktok(ctx, L.out1, W / 2, 520, 64, { a: E.outCubic(prog(lt, 0.1, 0.3)) });
+    tiktok(ctx, L.out2, W / 2, 615, 72, { a: E.outCubic(prog(lt, 0.8, 1.0)) });
   }
   const fl = bump(t, s.t0, 0.06); if (fl > 0 && s.hook === 2) { ctx.fillStyle = `rgba(255,255,255,${0.7 * fl})`; ctx.fillRect(0, 0, W, H); }
 }
@@ -292,13 +307,13 @@ function sceneIrly(ctx, s, t, IMG) {
   }, { rotY: 0.08 * Math.sin(t), tilt: -0.02 });
   faceCloud(ctx, t, IMG, s.t0 + 2.7, s.t0 + 8.4, 2, 700);
   topShade(ctx);
-  mission(ctx, t, s.t0 + 0.1, 'DERNIÈRE MISSION', 'S’inscrire sur IRLY', 330, { out: s.t0 + 5.2 });
+  mission(ctx, t, s.t0 + 0.1, L.last[0], L.last[1], 330, { out: s.t0 + 5.2 });
   // fin figée : mission réussie, disponible sur iOS, lien en bio
   const e = prog(lt, 5.3, 5.55);
   if (e > 0) {
-    const k = E.outBack(e, 2); ctx.save(); ctx.translate(W / 2, 300); ctx.scale(k, k); gta(ctx, 'MISSION RÉUSSIE !', 0, 0, 104, YELLOW); ctx.restore();
-    gta(ctx, 'IRLY · Disponible sur iOS', W / 2, 430, 76, '#fff', { a: e });
-    tiktok(ctx, 'App gratuite · Lien en bio', W / 2, 520, 56, { a: prog(lt, 5.6, 5.85) });
+    const k = E.outBack(e, 2); ctx.save(); ctx.translate(W / 2, 300); ctx.scale(k, k); gta(ctx, L.passed, 0, 0, 120, YELLOW); ctx.restore();
+    gta(ctx, L.ios, W / 2, 440, 92, '#fff', { a: e });
+    tiktok(ctx, L.bio, W / 2, 530, 56, { a: prog(lt, 5.6, 5.85) });
   }
 }
 
@@ -314,8 +329,8 @@ HITS.push([B(LAST.t0 + 0.1), 'dernière mission', 'blip+bell', { pitch: 'E6', ga
 M.film({
   fonts: [font(100, 900, D), font(40, 900, UI), font(40, 800, UI), font(40, 700, UI), '100px Gta', '800 60px Tiktok'],
   images: {
-    ob_you: 'assets/real/ob_you.png', ob_interests: 'assets/real/ob_interests.png', home_00: 'assets/real/home_00.png', home_01: 'assets/real/home_01.png',
-    social_00: 'assets/real/social_00.png', girl_00: 'assets/real/girl_00.png', logo: 'assets/irly_wordmark_ivory.png',
+    ob_you: `assets/${L.real}/ob_you.png`, ob_interests: `assets/${L.real}/ob_interests.png`, home_00: `assets/${L.real}/home_00.png`, home_01: `assets/${L.real}/home_01.png`,
+    social_00: `assets/${L.real}/social_00.png`, girl_00: `assets/${L.real}/girl_00.png`, logo: 'assets/irly_wordmark_ivory.png',
     ...Object.fromEntries(FACES.map((n, i) => ['face' + i, `assets/faces/${n}.jpg`])),
   },
   hits: HITS,

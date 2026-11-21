@@ -1,6 +1,6 @@
 # IRLY — « Dubaï c'est déjà GTA » v2 (54 s, 9:16, style vlog)
 
-Fichier : `examples/irly_gta_dubai_v2_54s.mp4`. Source : `irly-gta2/film.js` (table `SHOTS`), `audio/ambience.py`.
+Fichiers : `examples/irly_gta_dubai_v2_fr_54s.mp4` (français) et `examples/irly_gta_dubai_v2_en_54s.mp4` (anglais, dossier `irly-gta2-en` relié au même code). Source : `irly-gta2/film.js` (textes des deux langues dans `L`, plans dans `SHOTS`), `audio/ambience.py`.
 
 **Un clip différent pour chaque mission**, sans réutilisation. Le clip de la Lamborghini a été reçu deux fois et celui du Burj Al Arab aussi : chacun n'est utilisé qu'une fois.
 
@@ -22,8 +22,10 @@ Fichier : `examples/irly_gta_dubai_v2_54s.mp4`. Source : `irly-gta2/film.js` (ta
 Chaque mission se termine par un tampon jaune « MISSION RÉUSSIE ! ».
 
 **Polices**
-- **Titres de mission : Bangers** (Google Fonts, licence libre OFL). C'est la police libre la plus proche de Pricedown, celle des titres GTA. Pricedown, de Typodermic, et la page « GTA 6 font » que tu m'as envoyée sont bloquées depuis cette session. Envoie-moi le fichier .ttf ou .otf de la police que tu veux : je la remplace en une ligne (`@font-face Gta` dans `index.html`).
+- **Titres de mission : Pricedown** (Ray Larabie / Typodermic), la police des titres GTA, envoyée par toi (`fonts/Pricedown.ttf`, licence dans `fonts/Pricedown-READ_ME.txt` : freeware, usage commercial autorisé, don d'environ 40 $ suggéré). Elle n'a pas de point médian « · », remplacé par un tiret dans les titres.
 - **POV : TikTok Sans** (Google Fonts, licence libre OFL), la police officielle de TikTok, en blanc avec un contour noir.
+
+**Version anglaise** : POV « POV: you have no friends in Dubai, so you're grinding GTA 6… / … while outside, Dubai is already GTA 😭 », missions traduites (NEW MISSION, VIEWPOINT UNLOCKED, OBJECTIVE, NEW AREA UNLOCKED, NIGHT MISSION, FINAL MISSION · Sign up on IRLY, MISSION PASSED!), fin « IRLY - Available on iOS · Free app · Link in bio », vrais écrans de l'app en anglais.
 
 **Audio** : aucune musique. Les bandes-son des clips sont coupées. Les sons naturels sont recréés : pales d'hélicoptère, moteur de la Lamborghini, eau, vagues, vent, quads, foule, feux d'artifice. S'y ajoutent des notifications de mission et une cloche « mission réussie ».
 
